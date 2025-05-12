@@ -1,0 +1,208 @@
+﻿@model ResumenConsultasDto
+@using System.Text.Json
+@using Microsoft.AspNetCore.Http
+
+@{
+    ViewData["Title"] = "Resumen de Consultas";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid mt-4">
+    <!-- Título y botones -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="mdi mdi-chart-box"></i> Resumen de Consultas</h2>
+        <div>
+            <a href="@Url.Action("ResumenConsultas")" class="btn btn-light me-2">
+                <i class="mdi mdi-filter-remove"></i> Limpiar Filtros
+            </a>
+            <button class="btn btn-outline-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasFiltros">
+                <i class="mdi mdi-filter-outline"></i> Filtrar por Fecha
+            </button>
+        </div>
+    </div>
+    @if (Context.Session.GetInt32("PerfilId") == 4 && !string.IsNullOrEmpty(Model.NombreEstablecimiento))
+    {
+        <div class="alert alert-primary border-start border-4 px-3 py-2 mb-4">
+            <i class="mdi mdi-office-building"></i>
+            Reporte filtrado por establecimiento: <strong>@Model.NombreEstablecimiento</strong>
+        </div>
+    }
+
+    <!-- Filtros activos -->
+    @if (!string.IsNullOrEmpty(Context.Request.Query["fechaDesde"]) || !string.IsNullOrEmpty(Context.Request.Query["fechaHasta"]))
+    {
+        <div class="alert alert-light border d-inline-block mb-4">
+            <i class="mdi mdi-calendar-range"></i>
+            Mostrando resultados
+            @if (!string.IsNullOrEmpty(Context.Request.Query["fechaDesde"]))
+            {
+                <strong>desde</strong> @Context.Request.Query["fechaDesde"]
+            }
+            @if (!string.IsNullOrEmpty(Context.Request.Query["fechaHasta"]))
+            {
+                <strong> hasta</strong> @Context.Request.Query["fechaHasta"]
+            }
+        </div>
+    }
+
+    <!-- Tarjeta: Ocupación por Consultorio -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <strong><i class="mdi mdi-office-building-marker"></i> Ocupación por Consultorio</strong>
+        </div>
+        <div class="card-body p-2">
+            <table class="table table-sm table-bordered mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Consultorio</th>
+                        <th>Médicos Asignados</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.OcupacionConsultorios)
+                    {
+                        <tr>
+                            <td>@item.Consultorio</td>
+                            <td>@item.MedicosAsignados</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tarjeta: Médico con mayor atención -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-success text-white">
+            <strong><i class="mdi mdi-doctor"></i> Médico con Mayor Índice de Atención</strong>
+        </div>
+        <div class="card-body">
+            @if (Model.MedicoTop != null)
+            {
+                <p><strong>Nombre:</strong> @Model.MedicoTop.Medico</p>
+                <p><strong>Total de Consultas:</strong> @Model.MedicoTop.TotalConsultas</p>
+            }
+            else
+            {
+                <p>No se encontraron datos.</p>
+            }
+        </div>
+    </div>
+
+    <!-- Tarjeta: Tipo de Paciente -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-info text-white">
+            <strong><i class="mdi mdi-account-group-outline"></i> Consultas por Tipo de Paciente</strong>
+        </div>
+        <div class="card-body p-2">
+            <table class="table table-sm table-bordered mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Tipo de Paciente</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var tipo in Model.TiposPacientes)
+                    {
+                        <tr>
+                            <td>@tipo.TipoPaciente</td>
+                            <td>@tipo.Total</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Gráficos en dos columnas -->
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">Gráfico: Ocupación por Consultorio</div>
+                <div class="card-body">
+                    <div id="graficoConsultorios" style="height: 300px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">Gráfico: Tipo de Paciente</div>
+                <div class="card-body">
+                    <div id="graficoPacientes" style="height: 300px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Offcanvas lateral para filtros -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasFiltros" aria-labelledby="offcanvasFiltrosLabel">
+    <div class="offcanvas-header">
+        <h5 id="offcanvasFiltrosLabel" class="offcanvas-title">Filtrar Consultas</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body">
+        <form method="get" asp-action="ResumenConsultas">
+            <div class="mb-3">
+                <label for="fechaDesde" class="form-label">Desde</label>
+                <input type="date" class="form-control" id="fechaDesde" name="fechaDesde" value="@Context.Request.Query["fechaDesde"]" />
+            </div>
+            <div class="mb-3">
+                <label for="fechaHasta" class="form-label">Hasta</label>
+                <input type="date" class="form-control" id="fechaHasta" name="fechaHasta" value="@Context.Request.Query["fechaHasta"]" />
+            </div>
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary"><i class="mdi mdi-magnify"></i> Aplicar Filtros</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const chartConsultorios = echarts.init(document.getElementById('graficoConsultorios'));
+            const chartPacientes = echarts.init(document.getElementById('graficoPacientes'));
+
+            const dataConsultorios = @Html.Raw(JsonSerializer.Serialize(Model.OcupacionConsultorios));
+            const dataPacientes = @Html.Raw(JsonSerializer.Serialize(Model.TiposPacientes));
+
+            chartConsultorios.setOption({
+                tooltip: { trigger: 'axis' },
+                xAxis: { type: 'value' },
+                yAxis: {
+                    type: 'category',
+                    data: dataConsultorios.map(x => x.Consultorio)
+                },
+                series: [{
+                    type: 'bar',
+                    data: dataConsultorios.map(x => x.MedicosAsignados),
+                    label: { show: true, position: 'right' }
+                }]
+            });
+
+            chartPacientes.setOption({
+                tooltip: { trigger: 'item' },
+                legend: { orient: 'vertical', left: 'left' },
+                series: [{
+                    type: 'pie',
+                    radius: '70%',
+                    data: dataPacientes.map(x => ({
+                        name: x.TipoPaciente,
+                        value: x.Total
+                    })),
+                    label: { formatter: '{b}: {c} ({d}%)' }
+                }]
+            });
+
+            window.addEventListener('resize', function () {
+                chartConsultorios.resize();
+                chartPacientes.resize();
+            });
+        });
+    </script>
+}

@@ -37,6 +37,7 @@ namespace ExpertMed
             builder.Services.AddScoped<LaboratoryService>();
             builder.Services.AddScoped<MedicalOfficeService>();
             builder.Services.AddScoped<ImagesService>();
+            builder.Services.AddScoped<ReportService>();
 
             // Configuraci�n de controladores y vistas
             builder.Services.AddControllersWithViews();
