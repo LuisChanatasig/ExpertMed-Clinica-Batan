@@ -1,0 +1,334 @@
+﻿@model IEnumerable<ExpertMed.Models.Consultation>
+@using Microsoft.AspNetCore.Http
+
+@{
+    ViewBag.Title = "Listado de Consultas";
+    ViewBag.pTitle = "Listado de Consultas";
+    ViewBag.pageTitle = "Listado de Consultas";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var perfilId = ViewContext.HttpContext.Session.GetInt32("PerfilId");
+
+    var successMessage = TempData["SuccessMessage"] as string;
+    var errorMessage = TempData["ErrorMessage"] as string;
+}
+
+@section styles {
+    <!--datatable css-->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" />
+    <!--datatable responsive css-->
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap.min.css" />
+
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.dataTables.min.css">
+}
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card">
+            <a href="@Url.Action("AppointmentList", "Appointment")" class="btn btn-sm btn-info">
+                <i class="bx bx-user-plus"></i> Crear una nueva consulta
+            </a>
+            <div class="card-header">
+                <h5 class="card-title mb-0">Listado de consultas</h5>
+            </div>
+
+            <div class="card-body">
+                <table id="alternative-pagination"
+                class="table nowrap dt-responsive align-middle table-hover table-bordered" style="width:100%">
+
+                    <thead>
+                        <tr>
+                            @if(perfilId ==1)
+                            {
+                                <th>Secuencial Consulta</th>
+                                <th>Medico Consulta</th>
+                            }
+                        
+                            <th>Historia Clinica</th>
+                            <th>Fecha de la consulta</th>
+                            <th>Paciente de la consulta</th>
+                            <th>Especialidad </th>
+                            <th>Motivo</th>
+                            <th>Tipos de consulta</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var consultation in Model)
+                        {
+                            <tr>
+                                @if (perfilId == 1)
+                                {
+                                    <td>@consultation.ConsultationId</td>
+                                    <td>
+                                        <div class="d-flex align-items-center fw-medium">
+                                            <img src="~/assets/images/svg/medicUsers.svg" alt="" class="avatar-xxs me-2">
+                                            <a href="javascript:void(0);" class="currency_name">@consultation.ConsultationUsercreateNavigation.UsersNames @consultation.ConsultationUsercreateNavigation.UsersSurcenames</a>
+                                        </div>
+                                    </td>
+                                }
+
+
+                              
+                                <td>@consultation.ConsultationHistoryclinic</td>
+                                <td>
+                                    @(consultation.ConsultationCreationdate.HasValue
+                                        ? consultation.ConsultationCreationdate.Value.ToString("dd/MM/yyyy")
+                                        : "")
+                                </td>
+                                <td>@consultation.ConsultationPatientNavigation.PatientFirstname @consultation.ConsultationPatientNavigation.PatientMiddlename @consultation.ConsultationPatientNavigation.PatientFirstsurname @consultation.ConsultationPatientNavigation.PatientSecondlastname</td>
+                                <td>@consultation.ConsultationSpecialityNavigation.SpecialityName</td>
+                                <td>@consultation.ConsultationReason</td>
+                                <td style="color: @(consultation.ConsultationType == 1 ? "green" : consultation.ConsultationType == 2 ? "blue" : "black")">
+                                    @(consultation.ConsultationType == 1
+                                        ? "Consulta Principal"
+                                        : consultation.ConsultationType == 2
+                                        ? "Seguimiento"
+                                        : "Otro")
+                                </td>
+
+                                <td>
+                                    <a href="#" class="btn btn-sm btn-soft-info"
+                                       data-bs-toggle="modal" data-bs-target="#optionModal"
+                                       onclick="openOptionModal(@consultation.ConsultationId)">
+                                        <i class="ri-edit-line"></i> Revisar
+                                    </a>
+
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+
+                </table>
+            </div>
+
+
+        </div>
+    </div>
+</div>
+
+<!--Modal opciones consulta-->
+<div class="modal flip" id="optionModal" tabindex="-1" aria-labelledby="exampleModalgridLabel" aria-modal="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <!-- Hidden input to store AppointmentId -->
+            <input type="hidden" id="consultationId" name="ConsultationId" />
+            <input type="hidden" id="perfiltIdInput" value="@perfilId" name="perfil" />
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="optionModal">¿Qué desea hacer con esta consulta?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="row g-3">
+                    <!-- Buttons Group -->
+                    <div class="col-6">
+                        <button type="button" class="btn btn-soft-info btn-label btn-sm w-100 waves-effect waves-light"
+                                onclick="openReviewConsulta()">
+
+                            <i class=" ri-eye-fill label-icon align-middle fs-16 me-2"></i> Revisar Consulta
+
+                        </button>
+                    </div>
+
+                    <div class="col-6">
+                        <button type="button" class="btn btn-soft-success btn-label btn-sm w-100 waves-effect waves-light"
+                                onclick="openModalDocument()">
+                            <i class="ri-file-text-fill label-icon align-middle fs-16 me-2"></i> Generar Documento
+                        </button>
+                    </div>
+
+                   
+
+                </div><!--end row-->
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="optionsDocuments" tabindex="-1" aria-labelledby="optionsDocuments">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="optionsDocuments">¿Qué documento desea generar?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="javascript:void(0);">
+                    <div class="row g-3">
+                        <select class="form-select mb-3" id="documentType" aria-label="Seleccione un documento" onchange="enableDownloadButton()">
+                            <option selected>Seleccione un documento</option>
+                            <option value="justificante">Certificado Médico</option>
+                            <option value="formulario">Formulario Médico</option>
+                            <option value="receta">Receta</option>
+                            <option value="laboratorio">Laboratorio</option>
+                            <option value="imagen">Imagen</option>
+                        </select>
+                    </div><!--end row-->
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" id="downloadButton" onclick="downloadDocument()" disabled>
+                    <span id="downloadText">Descargar</span>
+                    <span id="downloadSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section scripts {
+    <script src="~/assets/js/app.js"></script>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"
+            integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- DataTables -->
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.print.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.html5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+
+    <!-- Inicializar DataTables -->
+    <script src="~/assets/js/pages/datatables.init.js"></script>
+
+    <script>
+                function openOptionModal(consultationId) {
+            // Establecer el consultationId en el input oculto
+            document.getElementById('consultationId').value = consultationId;
+        }
+
+        // Abrir modal de documentos
+        function openModalDocument() {
+            var modalElement = document.getElementById('optionsDocuments');
+            if (!modalElement) {
+                console.error("El modal 'optionsDocuments' no fue encontrado.");
+                return;
+            }
+            var myModal = new bootstrap.Modal(modalElement, { keyboard: false });
+            myModal.show();
+        }
+
+            function openReviewConsulta() {
+            // Obtener el consultationId desde el input oculto
+            var consultationId = document.getElementById('consultationId').value;
+            if (!consultationId) {
+                alert("No se encontró un ID de consulta válido.");
+                return;
+            }
+
+            // Ahora puedes hacer lo que necesites con el consultationId, por ejemplo:
+window.location.href = '@Url.Action("ConsultationDetails", "Consultation")' + '?consultationId=' + consultationId;
+        }
+
+
+        // Habilitar/deshabilitar el botón de descarga según selección
+        function enableDownloadButton() {
+            const selectedValue = document.getElementById('documentType').value;
+            const downloadButton = document.getElementById('downloadButton');
+
+            if (!downloadButton) {
+                console.error("Botón de descarga no encontrado.");
+                return;
+            }
+
+            downloadButton.disabled = (selectedValue === "Seleccione un documento");
+        }
+
+        // Descargar documento según la opción seleccionada
+             // Descargar documento según la opción seleccionada
+        function downloadDocument() {
+            const selectedValue = document.getElementById('documentType').value;
+            const downloadButton = document.getElementById('downloadButton');
+            const downloadText = document.getElementById('downloadText');
+            const downloadSpinner = document.getElementById('downloadSpinner');
+
+            // Obtener el consultationId desde el input oculto
+            const consultationId = document.getElementById('consultationId').value;
+            if (!consultationId) {
+                alert("No se encontró un ID de consulta válido.");
+                return;
+            }
+
+            if (!downloadButton || !downloadText || !downloadSpinner) {
+                console.error("Elementos del botón de descarga no encontrados.");
+                return;
+            }
+
+            // Mostrar el spinner y deshabilitar el botón
+            downloadText.textContent = "Generando...";
+            downloadSpinner.classList.remove('d-none');
+            downloadButton.disabled = true;
+
+            // Mapear opción seleccionada a URL correspondiente
+            const actions = {
+    
+    justificante: '@Url.Action("MedicalCertificate", "Documents")',
+    formulario: '@Url.Action("MedicalForm", "Documents")',
+    receta: '@Url.Action("MedicationRecipe", "Documents")',
+    laboratorio: '@Url.Action("LaboratoryDoc", "Documents")',
+    imagen: '@Url.Action("ImageDoc", "Documents")'
+
+
+            };
+
+            // Si la opción es válida, agregar el consultationId como query parameter
+            if (actions[selectedValue]) {
+                const url = actions[selectedValue] + "?consultationId=" + encodeURIComponent(consultationId);
+                window.open(url, '_blank');
+            } else {
+                alert("Opción no válida.");
+            }
+
+            // Restaurar el botón después de 2 segundos
+            setTimeout(() => {
+                downloadText.textContent = "Descargar";
+                downloadSpinner.classList.add('d-none');
+                downloadButton.disabled = false;
+            }, 2000);
+        }
+
+    </script>
+
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <script>
+            Swal.fire({
+                title: '¡Success!',
+                text: '@successMessage',
+                icon: 'success',
+                confirmButtonText: 'OK',
+                timer: 3000
+            });
+        </script>
+    }
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <script>
+            Swal.fire({
+                title: 'Success',
+                text: '@errorMessage',
+                icon: 'error',
+                confirmButtonText: 'OK',
+                timer: 3000
+            });
+        </script>
+    }
+
+}

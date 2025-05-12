@@ -1,0 +1,165 @@
+﻿@using Microsoft.AspNetCore.Http
+@{
+    ViewBag.Title = "Home";
+    ViewBag.pTitle = "Home";
+    ViewBag.pageTitle = "Dashboards";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var perfilId = Context.Session.GetInt32("PerfilId") ?? 0;
+
+    string mensajeBot = perfilId switch
+    {
+        1 => "Hola administrador, ¿qué área quieres revisar hoy?",
+        3 => "¡Listo para ayudarte a gestionar pacientes y citas!",
+        4 => "Administra tu clínica con eficiencia. ¿Comenzamos?",
+        5 => "¿Listo para registrar nuevos resultados de laboratorio?",
+        6 => "Puedes consultar o subir estudios de imagen ahora mismo.",
+        2 => "Bienvenido doctor, tienes acceso a tus pacientes y consultas.",
+        _ => "Pronto me tendrás como tu asistente inteligente!"
+    };
+}
+
+@section styles {
+    <link href="~/assets/libs/swiper/swiper-bundle.min.css" rel="stylesheet" />
+    <link href="~/assets/libs/jsvectormap/css/jsvectormap.min.css" rel="stylesheet" />
+}
+
+<div class="row dash-nft">
+    <div class="col-xxl-12">
+        <div class="row">
+            <div class="col-xl-12">
+                <div class="card overflow-hidden">
+                    <div class="card-body bg-marketplace d-flex">
+                        <div class="flex-grow-1">
+                            <h4 class="fs-18 lh-base mb-0">
+                                Otras opciones <br> para <span class="text-success">ti.</span>
+                            </h4>
+                            <p class="mb-0 mt-2 pt-1 text-muted">¿Qué desea hacer hoy?</p>
+                            <div class="d-flex gap-3 mt-4">
+                                @if (perfilId == 3)
+                                {
+                                    <a href="@Url.Action("AppointmentList","Appointment")" class="btn btn-primary">
+                                        <i class="ri-file-search-line"></i> VER TODAS MIS CITAS
+                                    </a>
+                                    <a href="@Url.Action("Create","Patient")" class="btn btn-secondary">
+                                        <i class="ri-user-add-line"></i> REGISTRAR PACIENTE
+                                    </a>
+                                }
+                                else if (perfilId == 5)
+                                {
+                                    <a href="@Url.Action("LaboratoryList","Laboratorio")" class="btn btn-primary">
+                                        <i class="mdi mdi-flask-outline"></i> SOLICITUDES DE LABORATORIO
+                                    </a>
+                                    <a href="@Url.Action("RegistrarResultado","Laboratorio")" class="btn btn-secondary">
+                                        <i class="mdi mdi-pencil-box-outline"></i> REGISTRAR RESULTADOS
+                                    </a>
+                                }
+                                else if (perfilId == 6)
+                                {
+                                    <a href="@Url.Action("ListaImagenes","Imagenes")" class="btn btn-primary">
+                                        <i class="mdi mdi-image-multiple-outline"></i> SOLICITUDES DE IMÁGENES
+                                    </a>
+                                    <a href="@Url.Action("RegistrarResultadoImagen","Imagenes")" class="btn btn-secondary">
+                                        <i class="mdi mdi-pencil-box-outline"></i> REGISTRAR RESULTADOS
+                                    </a>
+                                }
+                                else if (perfilId == 1 || perfilId == 4)
+                                {
+                                    <a href="@Url.Action("AppointmentList","Appointment")" class="btn btn-primary">
+                                        <i class="ri-file-search-line"></i> CITAS
+                                    </a>
+                                    <a href="@Url.Action("NewConsultation","Consultation")" class="btn btn-secondary">
+                                        <i class="ri-newspaper-line"></i> CONSULTAS MÉDICAS
+                                    </a>
+                                    <a href="@Url.Action("ReporteGeneral","Reportes")" class="btn btn-outline-success">
+                                        <i class="mdi mdi-chart-bar"></i> VER REPORTES
+                                    </a>
+                                }
+                                else
+                                {
+                                    <a href="@Url.Action("AppointmentList","Appointment")" class="btn btn-primary">
+                                        <i class="ri-file-search-line"></i> CITAS
+                                    </a>
+                                    <a href="@Url.Action("NewConsultation","Consultation")" class="btn btn-secondary">
+                                        <i class="ri-newspaper-line"></i> CONSULTAS
+                                    </a>
+                                }
+                            </div>
+                        </div>
+
+                        <img src="~/assets/images/ExpermedBotGif.gif" alt="Imagen" style="height: 80px;"
+                             class="img-fluid" role="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBot" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Offcanvas tipo asistente -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasBot">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title"><i class="mdi mdi-robot"></i> ExpertBot</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body">
+        <p class="text-muted">@mensajeBot</p>
+        <form id="chatForm">
+            <div class="input-group mb-3">
+                <input type="text" id="chatPrompt" class="form-control" placeholder="¿En qué puedo ayudarte?" />
+                <button type="submit" class="btn btn-primary"><i class="mdi mdi-send"></i></button>
+                <button type="button" id="btnVoz" class="btn btn-outline-secondary" title="Usar micrófono">
+                    <i class="mdi mdi-microphone"></i>
+                </button>
+            </div>
+        </form>
+        <div id="chatResponse" class="border rounded p-3 bg-light" style="min-height: 150px;"></div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        document.getElementById("chatForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+            const prompt = document.getElementById("chatPrompt").value;
+            const responseDiv = document.getElementById("chatResponse");
+            responseDiv.innerHTML = "<em>Consultando a ExpertBot...</em>";
+            try {
+                const res = await fetch("@Url.Action("Ask", "Chat")", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ prompt })
+                });
+                const data = await res.json();
+                responseDiv.innerHTML = `<p>${data.response}</p>`;
+            } catch {
+                responseDiv.innerHTML = "<span class='text-danger'>Error al consultar.</span>";
+            }
+        });
+
+        const micBtn = document.getElementById("btnVoz");
+        const input = document.getElementById("chatPrompt");
+        if ('webkitSpeechRecognition' in window) {
+            const recognition = new webkitSpeechRecognition();
+            recognition.lang = "es-ES";
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            micBtn.addEventListener("click", () => {
+                recognition.start();
+                micBtn.innerHTML = '<i class="mdi mdi-microphone-off"></i>';
+            });
+            recognition.onresult = function (event) {
+                const result = event.results[0][0].transcript;
+                input.value = result;
+                recognition.stop();
+                micBtn.innerHTML = '<i class="mdi mdi-microphone"></i>';
+            };
+            recognition.onerror = function () {
+                recognition.stop();
+                micBtn.innerHTML = '<i class="mdi mdi-microphone-alert"></i>';
+            };
+        } else {
+            micBtn.disabled = true;
+            micBtn.title = "Tu navegador no soporta reconocimiento de voz";
+        }
+    </script>
+}

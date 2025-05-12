@@ -1,0 +1,202 @@
+﻿@{
+    Layout = null;
+}
+@using System.Globalization
+
+@model NewPatientViewModel
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificado Médico</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+            .header h1 {
+                font-size: 20px;
+                font-weight: bold;
+                margin: 0;
+            }
+
+            .header p {
+                font-size: 9px;
+                margin: 2px 0;
+            }
+
+        .division {
+            border: 3px solid black
+        }
+
+        .content {
+            margin-top: 40px;
+        }
+
+            .content h2 {
+                font-size: 30px;
+                font-weight: bold;
+                text-align: center;
+                margin-bottom: 15px;
+            }
+
+            .content p {
+                font-size: 23px;
+            }
+
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #808080;
+            font-style: italic;
+        }
+
+        .signature {
+            margin-top: 20px;
+            padding-top: 150px;
+        }
+
+            .signature .left {
+                float: left;
+                font-size: 20px;
+                font-weight: lighter;
+            }
+
+            .signature .right {
+                float: right;
+                font-size: 20px;
+                font-weight: bold;
+            }
+
+            .signature p {
+                float: right;
+                font-size: 20px;
+                font-weight: bold;
+            }
+
+        .clear {
+            clear: both;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="data:image/jpeg;base64,@(Model.Consultation.UsersProfilephoto64)"
+             alt="Foto de perfil"
+             style="width: 100px; height: 100px; border-radius: 50%; border: 2px solid black; object-fit: cover;" />
+        <div class="division"></div>
+    </div>
+
+
+    <div class="content">
+        <br />
+        <br />
+
+        <h3 style="text-align: end; font-family: Arial;">
+            @{
+                // Obtener la fecha inicial (nullable)
+                var fechaInicial = Model.Consultation.ConsultationCreationdate;
+
+                // Obtener los días de descanso (nullable)
+                var diasDescanso = Model.Consultation.ConsultationDisablilitydays;
+
+                // Declarar variables para fechas formateadas
+                string fechaInicialFormateada = "";
+                string fechaFinalFormateada = "";
+
+                // Verificar si la fecha inicial y los días de descanso tienen valor
+                if (fechaInicial.HasValue && diasDescanso.HasValue)
+                {
+                    // Convertir días de descanso a double (no nullable)
+                    double diasDescansoDouble = diasDescanso.Value;
+
+                    // Calcular la fecha final sumando los días de descanso
+                    var fechaFinal = fechaInicial.Value.AddDays(diasDescansoDouble);
+
+                    // Formatear la fecha inicial
+                    fechaInicialFormateada = String.Format(CultureInfo.CreateSpecificCulture("es-ES"), "{0:dddd dd MMMM yyyy}", fechaInicial.Value);
+                    var fechaInicialCapitalizada = char.ToUpper(fechaInicialFormateada[0]) + fechaInicialFormateada.Substring(1);
+
+                    // Formatear la fecha final
+                    fechaFinalFormateada = String.Format(CultureInfo.CreateSpecificCulture("es-ES"), "{0:dddd dd MMMM yyyy}", fechaFinal);
+
+                    // Mostrar la fecha inicial
+                    <text>Quito, @fechaInicialCapitalizada</text>
+                }
+                else
+                {
+                    // Mostrar un mensaje alternativo si la fecha o los días de descanso son null
+                    <text>Quito, Fecha o días de descanso no disponibles</text>
+                }
+            }
+        </h3>
+        <br />
+        <br />
+        <h2>CERTIFICADO MÉDICO</h2>
+        <p style="text-align: justify; max-width: 880px; margin: 0 auto;">
+            @{
+                // Buscar primero el diagnóstico definitivo, si no existe, usar el presuntivo.
+                var ultimoDiagnostico = Model.Consultation.DiagnosisConsultations
+                    ?.OrderByDescending(d => d.DiagnosisDiagnosisid)
+                    .FirstOrDefault(d => d.DiagnosisDefinitive == true)
+                    ?? Model.Consultation.DiagnosisConsultations
+                    ?.OrderByDescending(d => d.DiagnosisDiagnosisid)
+                    .FirstOrDefault(d => d.DiagnosisPresumptive == true);
+
+                var nombreDiagnostico = ultimoDiagnostico != null
+                    ? Model.Diagnoses.FirstOrDefault(d => d.DiagnosisId == ultimoDiagnostico.DiagnosisDiagnosisid)?.DiagnosisName ?? "N/A"
+                    : "N/A";
+            }
+
+
+            @Html.Raw("Certifico que el sr(a) <strong>" +
+                              Model.DetailsPatient.PatientFirstsurname + " " +
+                              Model.DetailsPatient.PatientSecondlastname + " " +
+                              Model.DetailsPatient.PatientFirstname + " " +
+                              Model.DetailsPatient.PatientMiddlename + "</strong> con CI: " +
+                              Model.DetailsPatient.PatientDocumentnumber +
+                              " fue ingresado en este establecimiento, se recomienda reposo ABSOLUTO POR " +
+                              Model.Consultation.ConsultationDisablilitydays +
+                              " DIAS, conjuntamente con tratamiento prescrito, desde el día " +
+                              fechaInicialFormateada + " hasta el día " +
+                              fechaFinalFormateada + ", con un diagnóstico de <strong>" +
+                              nombreDiagnostico + "</strong>")
+                     <br />
+                     <br />
+            Esto es todo lo que puedo certificar en honor a la verdad.
+
+        </p>
+
+
+    </div>
+
+    <div class="signature">
+
+
+        <div class="left">
+            ATENTAMENTE,
+            <div style="padding-top: 100px">
+
+            </div>
+            <p>
+                Dr. @Model.Consultation.UsersNames @Model.Consultation.UsersSurcenames
+                <br />
+                @Model.Consultation.SpecialityName
+            </p>
+        </div>
+
+
+
+    </div>
+
+
+</body>
+</html>

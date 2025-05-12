@@ -1,0 +1,283 @@
+﻿
+@{
+    ViewData["Title"] = "Facturacion";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var successMessage = TempData["SuccessMessage"] as string;
+    var errorMessage = TempData["ErrorMessage"] as string;
+}
+
+
+<div class="col-xl-12">
+    <div class="card">
+        <div class="card-header">
+            <h4 class="card-title mb-0">Generación de pago</h4>
+        </div>
+        <div class="card-body">
+            <!-- Contenedor de pestañas -->
+            <div class="step-arrow-nav mb-4">
+                <ul class="nav nav-pills custom-nav nav-justified" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="efectivo-tab" data-bs-toggle="pill" data-bs-target="#efectivo" type="button" role="tab">Efectivo</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="transferencia-tab" data-bs-toggle="pill" data-bs-target="#transferencia" type="button" role="tab">Transferencia</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tarjeta-tab" data-bs-toggle="pill" data-bs-target="#tarjeta" type="button" role="tab">Tarjeta</button>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Contenido de las pestañas -->
+            <div class="tab-content">
+                <!-- Plantilla para cada tipo de pago -->
+                <div class="tab-pane fade show active" id="efectivo" role="tabpanel">
+                    <form asp-action="Billing" asp-controller="Billing" method="post">
+                        <input class="form-control" type="hidden" id="CitaId" name="CitaId" value="@ViewBag.AppointmentId" />
+                        <input class="form-control" type="hidden" id="AppointmentPatientId" name="AppointmentPatientId" value="@ViewBag.AppointmentPatientId" />
+                        <input class="form-control" type="hidden" id="MetodoPago" name="MetodoPago" value="efectivo" />
+                        <input hidden id="comprobantePagoFile" name="comprobantePagoFile" type="file" accept=".jpeg,.jpg,.png" />
+                        <div class="row mb-3">
+                            <div class="col">
+                                <button type="button" class="btn btn-outline-primary w-100" onclick="cargarDatosPaciente(this)">
+                                    <i class="ri-user-line align-middle"></i> Mismos datos del paciente
+                                </button>
+                            </div>
+                            <div class="col">
+                                <button type="button" class="btn btn-outline-secondary w-100" data-bs-toggle="collapse" data-bs-target="#facturacion-efectivo" onclick="limpiarFormulario(this)">
+                                    <i class="ri-edit-box-line align-middle"></i> Otros datos
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="collapse" id="facturacion-efectivo">
+                            <div class="card card-body mb-3">
+                                <h5 class="card-title mb-3">Datos de Facturación</h5>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <input type="text" class="form-control fact-input" name="BillingDetailsNames" id="billing_details_names" placeholder="Nombre completo">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <input type="text" class="form-control fact-input" name="BillingDetailsCiNumber" id="billing_details_cinumber" placeholder="Identificación">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <select class="form-control fact-input" name="BillingDetailsDocumentType" id="billing_details_documenttype">
+                                            <option value="">Seleccione un tipo de documento</option>
+                                            <option value="05">Cédula</option>
+                                            <option value="04">RUC</option>
+                                            <option value="06">Pasaporte</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <input type="email" class="form-control fact-input" name="BillingDetailsEmail" id="billing_details_email" placeholder="Correo electrónico">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <input type="text" class="form-control fact-input" name="BillingDetailsAddress" id="billing_details_address" placeholder="Dirección">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <input type="tel" class="form-control fact-input" name="BillingDetailsPhone" id="billing_details_phone" placeholder="Teléfono">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div class="mb-3">
+                            <label class="form-label">Valor de la consulta</label>
+                            <input type="number" class="form-control" name="TotalFactura" placeholder="60" required>
+                        </div>
+                        <button type="submit" class="btn btn-success">Registrar Pago</button>
+                    </form>
+                </div>
+
+                <!-- Transferencia -->
+                <div class="tab-pane fade" id="transferencia" role="tabpanel">
+                    <form asp-action="Billing" asp-controller="Billing" method="post">
+                        <input class="form-control" type="hidden" id="CitaId" name="CitaId" value="@ViewBag.AppointmentId" />
+                        <input class="form-control" type="hidden" id="AppointmentPatientId" name="AppointmentPatientId" value="@ViewBag.AppointmentPatientId" />
+
+                        <input class="form-control" type="hidden" id="MetodoPago" name="MetodoPago" value="transferencia" />
+                    
+
+                        <div class="row mb-3">
+                            <div class="col"><button type="button" class="btn btn-outline-primary w-100" onclick="cargarDatosPaciente(this)"><i class="ri-user-line align-middle"></i> Mismos datos del paciente</button></div>
+                            <div class="col"><button type="button" class="btn btn-outline-secondary w-100" data-bs-toggle="collapse" data-bs-target="#facturacion-transferencia" onclick="limpiarFormulario(this)"><i class="ri-edit-box-line align-middle"></i> Otros datos</button></div>
+                        </div>
+
+
+                        <div class="collapse" id="facturacion-transferencia">
+                            <div class="card card-body mb-3">
+                                <h5 class="card-title mb-3">Datos de Facturación</h5>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <input type="text" class="form-control fact-input" name="BillingDetailsNames" id="billing_details_names" placeholder="Nombre completo">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <input type="text" class="form-control fact-input" name="BillingDetailsCiNumber" id="billing_details_cinumber" placeholder="Identificación">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <select class="form-control fact-input" name="BillingDetailsDocumentType" id="billing_details_documenttype">
+                                            <option value="">Seleccione un tipo de documento</option>
+                                            <option value="05">Cédula</option>
+                                            <option value="04">RUC</option>
+                                            <option value="06">Pasaporte</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <input type="email" class="form-control fact-input" name="BillingDetailsEmail" id="billing_details_email" placeholder="Correo electrónico">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <input type="text" class="form-control fact-input" name="BillingDetailsAddress" id="billing_details_address" placeholder="Dirección">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <input type="tel" class="form-control fact-input" name="BillingDetailsPhone" id="billing_details_phone" placeholder="Teléfono">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+
+                        <div class="mb-3"><label class="form-label">Comprobante</label><input class="form-control" id="comprobantePagoFile" name="comprobantePagoFile" type="file" accept=".jpeg,.jpg,.png" required></div>
+                        <div class="mb-3"><label class="form-label">Valor</label><input type="number" class="form-control" name="TotalFactura" placeholder="60" required></div>
+                        <button type="submit" class="btn btn-success">Registrar Pago</button>
+                    </form>
+                </div>
+
+                <!-- Tarjeta -->
+                <div class="tab-pane fade" id="tarjeta" role="tabpanel">
+                    <form asp-action="Billing" asp-controller="Billing" method="post">
+                        <input class="form-control" type="hidden" id="CitaId" name="CitaId" value="@ViewBag.AppointmentId" />
+                        <input class="form-control" type="hidden" id="AppointmentPatientId" name="AppointmentPatientId" value="@ViewBag.AppointmentPatientId" />
+
+                        <input class="form-control" type="hidden" id="MetodoPago" name="MetodoPago" value="tarjeta_credito" />
+
+                        <div class="row mb-3">
+                            <div class="col"><button type="button" class="btn btn-outline-primary w-100" onclick="cargarDatosPaciente(this)"><i class="ri-user-line align-middle"></i> Mismos datos del paciente</button></div>
+                            <div class="col"><button type="button" class="btn btn-outline-secondary w-100" data-bs-toggle="collapse" data-bs-target="#facturacion-tarjeta" onclick="limpiarFormulario(this)"><i class="ri-edit-box-line align-middle"></i> Otros datos</button></div>
+                        </div>
+
+                        <div class="collapse" id="facturacion-tarjeta">
+                            <div class="card card-body mb-3">
+                                <h5 class="card-title mb-3">Datos de Facturación</h5>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <input type="text" class="form-control fact-input" name="BillingDetailsNames" id="billing_details_names" placeholder="Nombre completo">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <input type="text" class="form-control fact-input" name="BillingDetailsCiNumber" id="billing_details_cinumber" placeholder="Identificación">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <select class="form-control fact-input" name="BillingDetailsDocumentType" id="billing_details_documenttype">
+                                            <option value="">Seleccione un tipo de documento</option>
+                                            <option value="05">Cédula</option>
+                                            <option value="04">RUC</option>
+                                            <option value="06">Pasaporte</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <input type="email" class="form-control fact-input" name="BillingDetailsEmail" id="billing_details_email" placeholder="Correo electrónico">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <input type="text" class="form-control fact-input" name="BillingDetailsAddress" id="billing_details_address" placeholder="Dirección">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <input type="tel" class="form-control fact-input" name="BillingDetailsPhone" id="billing_details_phone" placeholder="Teléfono">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+
+                        <div class="mb-3"><label class="form-label">Comprobante</label><input class="form-control" id="comprobantePagoFile" name="comprobantePagoFile" type="file" accept=".jpeg,.jpg,.png" required></div>
+                        <div class="mb-3"><label class="form-label">Valor</label><input type="number" class="form-control" name="TotalFactura" placeholder="60" required></div>
+                        <button type="submit" class="btn btn-success">Registrar Pago</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function cargarDatosPaciente(btn) {
+            const patientId = parseInt(document.getElementById("AppointmentPatientId").value, 10);
+            const form = btn.closest('form');
+            if (!patientId) {
+                alert("No se encontró el ID del paciente.");
+                return;
+            }
+
+            const url = '@Url.Action("GetPatientDetails", "Patient")' + '?patientId=' + patientId;
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error al cargar los datos del paciente.');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Find the specific billing details collapse for this form
+                    const collapseDiv = form.querySelector('.collapse[id^="facturacion-"]');
+
+                    const nameField = form.querySelector('#billing_details_names');
+                    const cinumberField = form.querySelector('#billing_details_cinumber');
+                    const documentTypeField = form.querySelector('#billing_details_documenttype');
+                    const emailField = form.querySelector('#billing_details_email');
+                    const addressField = form.querySelector('#billing_details_address');
+                    const phoneField = form.querySelector('#billing_details_phone');
+
+                    nameField.value = data.patientFirstname + ' ' + data.patientFirstsurname;
+                    cinumberField.value = data.patientDocumentnumber;
+                    documentTypeField.value = data.patientDocumentType;
+                    emailField.value = data.patientEmail;
+                    addressField.value = data.patientAddress;
+                    phoneField.value = data.patientCellularPhone;
+
+                    // Open the collapse div
+                    if (collapseDiv) {
+                        const bsCollapse = new bootstrap.Collapse(collapseDiv, {
+                            toggle: true
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Hubo un problema al cargar los datos del paciente.');
+                });
+        }
+        function limpiarFormulario(btn) {
+            btn.closest('form').querySelectorAll('.fact-input').forEach(input => input.value = '');
+        }
+    </script>
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <script>
+            Swal.fire({
+                title: '¡Éxito!',
+                text: '@successMessage',
+                icon: 'success',
+                confirmButtonText: 'OK',
+                timer: 3000
+            });
+        </script>
+    }
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <script>
+            Swal.fire({
+                title: 'Error',
+                text: '@errorMessage',
+                icon: 'error',
+                confirmButtonText: 'OK',
+                timer: 3000
+            });
+        </script>
+    }
+
+
+}

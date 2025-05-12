@@ -1,0 +1,700 @@
+﻿@using Microsoft.AspNetCore.Http
+@{
+    var usuarioId = ViewContext.HttpContext.Session.GetInt32("UsuarioId");
+    var perfilId = ViewContext.HttpContext.Session.GetInt32("PerfilId");
+    var usuarioNombre = ViewContext.HttpContext.Session.GetString("UsuarioNombre");
+    var usuarioApellido = ViewContext.HttpContext.Session.GetString("UsuarioApellido");
+    var usuarioEspecialidad = ViewContext.HttpContext.Session.GetString("UsuarioEspecialidad");
+    var especialidadId = ViewContext.HttpContext.Session.GetInt32("UsuarioIdEspecialidad");
+
+    var fotoPerfilBase64 = ViewContext.HttpContext.Session.GetString("UsuarioFotoPerfil");
+    var rutaImagenPorDefecto = Url.Content("~/assets/images/users/multi-user.jpg");
+
+    string fotoPerfilSrc = string.IsNullOrEmpty(fotoPerfilBase64)
+    ? rutaImagenPorDefecto
+    : $"data:image/jpeg;base64,{fotoPerfilBase64}";
+}
+
+<!-- ========== App Menú ========== -->
+<div class="app-menu navbar-menu">
+    <!-- LOGO -->
+    <div class="navbar-brand-box">
+        <!-- Dark Logo-->
+        <a href="@Url.Action("Home", "Dashboard")" class="logo logo-dark">
+            <span class="logo-sm">
+                <img src="~/assets/images/LogoAzulE.png" alt="" height="22">
+            </span>
+            <span class="logo-lg">
+                <img src="~/assets/images/LogoLogin.png" alt="" height="100">
+            </span>
+        </a>
+        <!-- Light Logo-->
+        <a href="@Url.Action("Home", "Dashboard")" class="logo logo-light">
+            <span class="logo-sm">
+                <img src="~/assets/images/LogoAzulE.png" alt="" height="22">
+            </span>
+
+        </a>
+        <button type="button" class="btn btn-sm p-0 fs-20 header-item float-end btn-vertical-sm-hover"
+                id="vertical-hover">
+            <i class="ri-record-circle-line"></i>
+        </button>
+    </div>
+
+    <div id="scrollbar">
+        <div class="container-fluid">
+
+            <div id="two-column-menu">
+            </div>
+            <ul class="navbar-nav" id="navbar-nav">
+
+                <li class="menu-title"><span data-key="t-menu">Inicio</span></li>
+
+
+                <li class="nav-item">
+                    <a class="nav-link menu-link" href="@Url.Action("Index", "Home")">
+                        <i class="mdi mdi-view-dashboard-outline"></i> <span>Inicio</span>
+                    </a>
+                </li>
+
+                @if (perfilId == 1 || perfilId == 4)
+                {
+
+                    <li class="menu-title"><span>Administración</span></li>
+
+
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarConsultorios" data-bs-toggle="collapse" role="button">
+                            <i class="mdi mdi-hospital-building"></i> <span>Gestion de Consultorios</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarConsultorios">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("CreateMedicalOffice", "MedicalOffice")" class="nav-link">
+                                        <i class="mdi mdi-plus-box-outline"></i> Crear Consultorio
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("ListaConsultorios", "MedicalOffice")" class="nav-link">
+                                        <i class="mdi mdi-timer-sand-square"></i> Listado Consultorios
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("OfficeAssignment", "MedicalOffice")" class="nav-link">
+                                        <i class="mdi mdi-account-arrow-right-outline"></i> Asignar a Médico
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarUsuarios" data-bs-toggle="collapse" role="button">
+                            <i class="mdi mdi-account-multiple-outline"></i> <span>Usuarios</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarUsuarios">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("UserList", "Users")" class="nav-link">
+                                        <i class="mdi mdi-timer-sand"></i> Listado
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("NewUser", "Users")" class="nav-link">
+                                        <i class="mdi mdi-account-plus-outline"></i> Crear
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarPacientes" data-bs-toggle="collapse" role="button">
+                            <i class="mdi mdi-hospital-box-outline"></i> <span>Pacientes</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarPacientes">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("PatientList", "Patient")" class="nav-link">
+                                        <i class="mdi mdi-account-box-outline"></i> Listado
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("NewPatient", "Patient")" class="nav-link">
+                                        <i class="mdi mdi-account-plus"></i> Crear
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                    <!-- Agenda -->
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarAppointment" data-bs-toggle="collapse" role="button"
+                           aria-expanded="false" aria-controls="sidebarAppointment">
+                            <i class="mdi mdi-calendar-month-outline"></i> <span>Agenda</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarAppointment">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("AppointmentList", "Appointment")" class="nav-link">
+                                        <i class="mdi mdi-calendar-text-outline"></i> Lista de citas
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("PatientList", "Patient")" class="nav-link">
+                                        <i class="mdi mdi-calendar-plus-outline"></i> Nueva cita
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarConsultas" data-bs-toggle="collapse" role="button">
+                            <i class="mdi mdi-stethoscope"></i> <span>Consultas Médicas</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarConsultas">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("ConsultationList", "Consultation")" class="nav-link">
+                                        <i class="mdi mdi-history"></i> Historial
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("AppointmentList", "Appointment")" class="nav-link">
+                                        <i class="mdi mdi-plus-box-outline"></i> Nueva Consulta
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <li class="menu-title"><span>Laboratorio</span></li>
+
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarLab" data-bs-toggle="collapse" role="button">
+                            <i class="mdi mdi-flask-outline"></i> <span>Solicitudes</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarLab">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("LaboratoryList", "Laboratorio")" class="nav-link">
+                                        <i class="mdi mdi-timer-sand"></i> Pendientes
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("LaboratoryHistory", "Laboratorio")" class="nav-link">
+                                        <i class="mdi mdi-history"></i> Historial
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarResultados" data-bs-toggle="collapse" role="button">
+                            <i class="mdi mdi-file-chart-outline"></i> <span>Resultados</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarResultados">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("RecordResult", "Laboratorio")" class="nav-link">
+                                        <i class="mdi mdi-pencil-box-outline"></i> Registrar
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("DownloadResults", "Laboratorio")" class="nav-link">
+                                        <i class="mdi mdi-download"></i> Descargar resultados
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarReportes" data-bs-toggle="collapse" role="button">
+                            <i class="mdi mdi-chart-box-outline"></i> <span>Reportes</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarReportes">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("Laboratoryreport", "Laboratorio")" class="nav-link">
+                                        <i class="mdi mdi-chart-arc"></i> Dashboard Resultados
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("ReportePorPaciente", "Laboratorio")" class="nav-link">
+                                        <i class="mdi mdi-account-search-outline"></i> Por Paciente
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("ReportePorTipo", "Laboratorio")" class="nav-link">
+                                        <i class="mdi mdi-timer-sand-type"></i> Por Tipo
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+
+                    <li class="menu-title"><span>Imagenes</span></li>
+                    <!-- Solicitudes de Imágenes -->
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarSolicitudesImagen" data-bs-toggle="collapse" role="button"
+                           aria-expanded="false" aria-controls="sidebarSolicitudesImagen">
+                            <i class="mdi mdi-image-multiple-outline"></i> <span>Solicitudes</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarSolicitudesImagen">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("ImagesList", "Images")" class="nav-link">
+                                        <i class="mdi mdi-timer-sand"></i> Solicitudes pendientes
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("ImagesHistory", "Images")" class="nav-link">
+                                        <i class="mdi mdi-history"></i> Historial de solicitudes
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <!-- Resultados de Imágenes -->
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarResultadosImagen" data-bs-toggle="collapse" role="button"
+                           aria-expanded="false" aria-controls="sidebarResultadosImagen">
+                            <i class="mdi mdi-flask-outline"></i> <span>Resultados</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarResultadosImagen">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("RecordResult", "Images")" class="nav-link">
+                                        <i class="mdi mdi-pencil-box-outline"></i> Registrar resultados
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("DownloadResults", "Images")" class="nav-link">
+                                        <i class="mdi mdi-download"></i> Descargar resultados
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <!-- Reportes de Imágenes -->
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarReportesImagen" data-bs-toggle="collapse" role="button"
+                           aria-expanded="false" aria-controls="sidebarReportesImagen">
+                            <i class="mdi mdi-chart-bar"></i> <span>Reportes</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarReportesImagen">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("ReporteImagenesPorFecha", "Images")" class="nav-link">
+                                        <i class="mdi mdi-calendar"></i> Por fecha
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("ReporteImagenesPorPaciente", "Images")" class="nav-link">
+                                        <i class="mdi mdi-account-search"></i> Por paciente
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("ReporteImagenesPorTipo", "Images")" class="nav-link">
+                                        <i class="mdi mdi-image-filter-hdr"></i> Por tipo de imagen
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                }
+
+
+                @if (perfilId == 2)
+                {
+                    <!-- Pacientes -->
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarPatients" data-bs-toggle="collapse" role="button"
+                           aria-expanded="false" aria-controls="sidebarPatients">
+                            <i class="mdi mdi-account-multiple-outline"></i> <span>Pacientes</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarPatients">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("PatientList", "Patient")" class="nav-link">
+                                        <i class="mdi mdi-timer-sand-type"></i> Lista de pacientes
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("NewPatient", "Patient")" class="nav-link">
+                                        <i class="mdi mdi-account-plus-outline"></i> Nuevo paciente
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <!-- Agenda -->
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarAppointment" data-bs-toggle="collapse" role="button"
+                           aria-expanded="false" aria-controls="sidebarAppointment">
+                            <i class="mdi mdi-calendar-month-outline"></i> <span>Agenda</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarAppointment">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("AppointmentList", "Appointment")" class="nav-link">
+                                        <i class="mdi mdi-calendar-text-outline"></i> Lista de citas
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("PatientList", "Patient")" class="nav-link">
+                                        <i class="mdi mdi-calendar-plus-outline"></i> Nueva cita
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <!-- Consultas -->
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarConsultation" data-bs-toggle="collapse" role="button"
+                           aria-expanded="false" aria-controls="sidebarConsultation">
+                            <i class="mdi mdi-stethoscope"></i> <span>Consultas</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarConsultation">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("ConsultationList", "Consultation")" class="nav-link">
+                                        <i class="mdi mdi-clipboard-list-outline"></i> Lista de consultas
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("AppointmentList", "Appointment")" class="nav-link">
+                                        <i class="mdi mdi-clipboard-plus-outline"></i> Nueva consulta
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <li class="menu-title"><span>Laboratorio</span></li>
+
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarLab" data-bs-toggle="collapse" role="button">
+                            <i class="mdi mdi-flask-outline"></i> <span>Solicitudes</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarLab">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("LaboratoryList", "Laboratorio")" class="nav-link">
+                                        <i class="mdi mdi-timer-sand"></i> Pendientes
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("LaboratoryHistory", "Laboratorio")" class="nav-link">
+                                        <i class="mdi mdi-history"></i> Historial
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarResultados" data-bs-toggle="collapse" role="button">
+                            <i class="mdi mdi-file-chart-outline"></i> <span>Resultados</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarResultados">
+                            <ul class="nav nav-sm flex-column">
+
+                                <li class="nav-item">
+                                    <a href="@Url.Action("DownloadResults", "Laboratorio")" class="nav-link">
+                                        <i class="mdi mdi-download"></i> Descargar resultados
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <li class="menu-title"><span>Imagenes</span></li>
+                    <!-- Solicitudes de Imágenes -->
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarSolicitudesImagen" data-bs-toggle="collapse" role="button"
+                           aria-expanded="false" aria-controls="sidebarSolicitudesImagen">
+                            <i class="mdi mdi-image-multiple-outline"></i> <span>Solicitudes</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarSolicitudesImagen">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("ImagesList", "Images")" class="nav-link">
+                                        <i class="mdi mdi-timer-sand"></i> Solicitudes pendientes
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("ImagesHistory", "Images")" class="nav-link">
+                                        <i class="mdi mdi-history"></i> Historial de solicitudes
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <!-- Resultados de Imágenes -->
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarResultadosImagen" data-bs-toggle="collapse" role="button"
+                           aria-expanded="false" aria-controls="sidebarResultadosImagen">
+                            <i class="mdi mdi-flask-outline"></i> <span>Resultados</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarResultadosImagen">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("RecordResult", "Images")" class="nav-link">
+                                        <i class="mdi mdi-pencil-box-outline"></i> Registrar resultados
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("DownloadResults", "Images")" class="nav-link">
+                                        <i class="mdi mdi-download"></i> Descargar resultados
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <!-- Reportes de Imágenes -->
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarReportesImagen" data-bs-toggle="collapse" role="button"
+                           aria-expanded="false" aria-controls="sidebarReportesImagen">
+                            <i class="mdi mdi-chart-bar"></i> <span>Reportes</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarReportesImagen">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("ReporteImagenesPorFecha", "Images")" class="nav-link">
+                                        <i class="mdi mdi-calendar"></i> Por fecha
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("ReporteImagenesPorPaciente", "Images")" class="nav-link">
+                                        <i class="mdi mdi-account-search"></i> Por paciente
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("ReporteImagenesPorTipo", "Images")" class="nav-link">
+                                        <i class="mdi mdi-image-filter-hdr"></i> Por tipo de imagen
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                }
+
+
+                @if (perfilId == 3)
+                {
+                    <!-- Pacientes -->
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarPatients" data-bs-toggle="collapse" role="button"
+                           aria-expanded="false" aria-controls="sidebarPatients">
+                            <i class="mdi mdi-account-multiple-outline"></i> <span>Pacientes</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarPatients">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("PatientList", "Patient")" class="nav-link">
+                                        <i class="mdi mdi-timer-sand-type"></i> Lista de pacientes
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("NewPatient", "Patient")" class="nav-link">
+                                        <i class="mdi mdi-account-plus-outline"></i> Nuevo paciente
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <!-- Agenda -->
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarAppointment" data-bs-toggle="collapse" role="button"
+                           aria-expanded="false" aria-controls="sidebarAppointment">
+                            <i class="mdi mdi-calendar-month-outline"></i> <span>Agenda</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarAppointment">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("AppointmentList", "Appointment")" class="nav-link">
+                                        <i class="mdi mdi-calendar-text-outline"></i> Lista de citas
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("PatientList", "Patient")" class="nav-link">
+                                        <i class="mdi mdi-calendar-plus-outline"></i> Nueva cita
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                }
+
+                @if (perfilId == 5)
+                {
+                    <li class="menu-title"><span>Imagenes</span></li>
+                    <!-- Solicitudes de Imágenes -->
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarSolicitudesImagen" data-bs-toggle="collapse" role="button"
+                           aria-expanded="false" aria-controls="sidebarSolicitudesImagen">
+                            <i class="mdi mdi-image-multiple-outline"></i> <span>Solicitudes</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarSolicitudesImagen">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("ImagesList", "Images")" class="nav-link">
+                                        <i class="mdi mdi-timer-sand"></i> Solicitudes pendientes
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("ImagesHistory", "Images")" class="nav-link">
+                                        <i class="mdi mdi-history"></i> Historial de solicitudes
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <!-- Resultados de Imágenes -->
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarResultadosImagen" data-bs-toggle="collapse" role="button"
+                           aria-expanded="false" aria-controls="sidebarResultadosImagen">
+                            <i class="mdi mdi-flask-outline"></i> <span>Resultados</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarResultadosImagen">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("RecordResult", "Images")" class="nav-link">
+                                        <i class="mdi mdi-pencil-box-outline"></i> Registrar resultados
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("DownloadResults", "Images")" class="nav-link">
+                                        <i class="mdi mdi-download"></i> Descargar resultados
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <!-- Reportes de Imágenes -->
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarReportesImagen" data-bs-toggle="collapse" role="button"
+                           aria-expanded="false" aria-controls="sidebarReportesImagen">
+                            <i class="mdi mdi-chart-bar"></i> <span>Reportes</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarReportesImagen">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("ReporteImagenesPorFecha", "Images")" class="nav-link">
+                                        <i class="mdi mdi-calendar"></i> Por fecha
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("ReporteImagenesPorPaciente", "Images")" class="nav-link">
+                                        <i class="mdi mdi-account-search"></i> Por paciente
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("ReporteImagenesPorTipo", "Images")" class="nav-link">
+                                        <i class="mdi mdi-image-filter-hdr"></i> Por tipo de imagen
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                }
+
+
+
+                @if (perfilId == 6)
+                {
+                    <li class="menu-title"><span>Laboratorio</span></li>
+
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarLab" data-bs-toggle="collapse" role="button">
+                            <i class="mdi mdi-flask-outline"></i> <span>Solicitudes</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarLab">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("LaboratoryList", "Laboratorio")" class="nav-link">
+                                        <i class="mdi mdi-timer-sand"></i> Pendientes
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("LaboratoryHistory", "Laboratorio")" class="nav-link">
+                                        <i class="mdi mdi-history"></i> Historial
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarResultados" data-bs-toggle="collapse" role="button">
+                            <i class="mdi mdi-file-chart-outline"></i> <span>Resultados</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarResultados">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("RecordResult", "Laboratorio")" class="nav-link">
+                                        <i class="mdi mdi-pencil-box-outline"></i> Registrar
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("DownloadResults", "Laboratorio")" class="nav-link">
+                                        <i class="mdi mdi-download"></i> Descargar resultados
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarReportes" data-bs-toggle="collapse" role="button">
+                            <i class="mdi mdi-chart-box-outline"></i> <span>Reportes</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarReportes">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("Laboratoryreport", "Laboratorio")" class="nav-link">
+                                        <i class="mdi mdi-chart-arc"></i> Dashboard Resultados
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("ReportePorPaciente", "Laboratorio")" class="nav-link">
+                                        <i class="mdi mdi-account-search-outline"></i> Por Paciente
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("ReportePorTipo", "Laboratorio")" class="nav-link">
+                                        <i class="mdi mdi-timer-sand-type"></i> Por Tipo
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+
+                }
+
+            </ul>
+        </div>
+        <!-- Sidebar -->
+    </div>
+    <div class="sidebar-background"></div>
+</div>
+<!-- Left Sidebar End -->
+<!-- Vertical Overlay-->
+<div class="vertical-overlay"></div>
+

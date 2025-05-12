@@ -1,0 +1,264 @@
+﻿@model List<ExpertMed.Models.ImagenPendienteDto>
+
+@{
+    ViewBag.Title = "Historial de Imágenes";
+    ViewBag.pTitle = "Historial";
+    ViewBag.pageTitle = "Historial de Imágenes";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var successMessage = TempData["SuccessMessage"] as string;
+    var errorMessage = TempData["ErrorMessage"] as string;
+}
+
+@using Microsoft.AspNetCore.Http
+@{
+    var perfilId = ViewContext.HttpContext.Session.GetInt32("PerfilId");
+}
+
+@section styles {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" />
+}
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="mdi mdi-clipboard-text-clock-outline"></i> Historial de solicitudes agrupado
+                </h5>
+                <input type="text" id="globalSearch" class="form-control form-control-sm w-50"
+                       placeholder="🔍 Buscar paciente, médico o examen..." />
+            </div>
+
+            <div class="card-body">
+                @if (Model != null && Model.Any())
+                {
+                    var agrupadoPorPaciente = Model.GroupBy(x => x.CedulaPaciente);
+                    int pacienteIndex = 1;
+
+                    foreach (var pacienteGrupo in agrupadoPorPaciente)
+                    {
+                        var paciente = pacienteGrupo.First();
+                        var pacienteCollapseId = $"collapsePaciente{pacienteIndex}";
+
+                        <div class="mb-3 border rounded grupo-historial">
+                            <div class="bg-light px-3 py-2 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong><i class="mdi mdi-account-circle-outline"></i> @paciente.NombrePaciente</strong>
+                                    — <i class="mdi mdi-card-account-details-outline"></i> @paciente.CedulaPaciente<br />
+                                    <i class="mdi mdi-shield-account-outline"></i> Seguro: @paciente.NombreSeguro
+                                </div>
+                                <div>
+                                    <a class="btn btn-sm btn-soft-info"
+                                       data-bs-toggle="collapse"
+                                       href="#@pacienteCollapseId"
+                                       role="button">
+                                        <i class="mdi mdi-folder-multiple-outline"></i> Ver pedidos
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="collapse px-2 py-2" id="@pacienteCollapseId">
+                                @{
+                                    var agrupadoPorConsulta = pacienteGrupo.GroupBy(x => x.ImagesConsultationId);
+                                    int consultaIndex = 1;
+
+                                    foreach (var consultaGrupo in agrupadoPorConsulta)
+                                    {
+                                        var consulta = consultaGrupo.First();
+                                        var consultaCollapseId = $"collapseConsulta{pacienteIndex}_{consultaIndex}";
+
+                                        <div class="border rounded mb-2">
+                                            <div class="bg-white px-3 py-2 d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <i class="mdi mdi-stethoscope"></i> <strong>Médico:</strong> @consulta.NombreMedico<br />
+                                                    <i class="mdi mdi-calendar-range-outline"></i> <strong>Fecha:</strong> @consulta.FechaSolicitud.ToString("dd/MM/yyyy")
+                                                </div>
+                                                <div>
+                                                    <a class="btn btn-sm btn-soft-secondary me-2"
+                                                       data-bs-toggle="collapse"
+                                                       href="#@consultaCollapseId"
+                                                       role="button">
+                                                        <i class="mdi mdi-file-document-outline"></i> Ver detalles
+                                                    </a>
+                                                    <a class="btn btn-sm btn-soft-primary"
+                                                       href="@Url.Action("ImageDoc", "Documents", new { consultationId = consulta.ImagesConsultationId })">
+                                                        <i class="mdi mdi-file-download-outline"></i> Descargar Pedido
+                                                    </a>
+                                                </div>
+                                            </div>
+
+                                            <div class="collapse px-3 py-2" id="@consultaCollapseId">
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm table-bordered align-middle mb-0">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th>#</th>
+                                                                <th>Examen</th>
+                                                                <th>Observación</th>
+                                                                <th>Estado</th>
+                                                                <th>Acción</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @foreach (var item in consultaGrupo.Select((e, i) => new { e, i }))
+                                                            {
+                                                                var badge = item.e.EstadoTexto switch
+                                                                {
+                                                                    "Pendiente de Toma" => "bg-warning",
+                                                                    "En Proceso" => "bg-info",
+                                                                    "Pendiente de Resultado" => "bg-secondary",
+                                                                    "Finalizado" => "bg-success",
+                                                                    "Cancelado" => "bg-danger",
+                                                                    _ => "bg-dark"
+                                                                };
+
+                                                                <tr>
+                                                                    <td>@(item.i + 1)</td>
+                                                                    <td>@item.e.NombreExamen</td>
+                                                                    <td>@item.e.ImagesObservation</td>
+                                                                    <td><span class="badge @badge">@item.e.EstadoTexto</span></td>
+                                                                    @if (perfilId == 1 || perfilId == 4)
+                                                                    {
+                                                                        <td>
+                                                                            <button type="button"
+                                                                                    class="btn btn-sm btn-soft-primary"
+                                                                                    data-bs-toggle="offcanvas"
+                                                                                    data-bs-target="#cambiarEstado_@item.e.ImagesId"
+                                                                                    aria-controls="cambiarEstado_@item.e.ImagesId">
+                                                                                <i class="mdi mdi-sync"></i> Cambiar estado
+                                                                            </button>
+                                                                        </td>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <td>-</td>
+                                                                    }
+                                                                </tr>
+
+                                                                @if (perfilId == 1 || perfilId == 4)
+                                                                {
+                                                                    <div class="offcanvas offcanvas-end" tabindex="-1"
+                                                                         id="cambiarEstado_@item.e.ImagesId"
+                                                                         aria-labelledby="cambiarEstadoLabel_@item.e.ImagesId">
+                                                                        <div class="offcanvas-header">
+                                                                            <h5 class="offcanvas-title" id="cambiarEstadoLabel_@item.e.ImagesId">
+                                                                                Cambiar estado — ID: @item.e.ImagesId
+                                                                            </h5>
+                                                                            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+                                                                        </div>
+                                                                        <div class="offcanvas-body">
+                                                                            <p><strong>Paciente:</strong> @item.e.NombrePaciente</p>
+                                                                            <p><strong>Examen:</strong> @item.e.NombreExamen</p>
+                                                                            <p><strong>Estado actual:</strong> <span class="badge @badge">@item.e.EstadoTexto</span></p>
+
+                                                                            <form asp-action="ChangeStatus" asp-controller="Images" method="post">
+                                                                                <input type="hidden" name="imagenId" value="@item.e.ImagesId" />
+
+                                                                                <div class="d-grid gap-2">
+                                                                                    <button type="submit" name="nuevoEstado" value="1" class="btn btn-warning">
+                                                                                        <i class="mdi mdi-timer-sand"></i> Pendiente de Toma
+                                                                                    </button>
+                                                                                    <button type="submit" name="nuevoEstado" value="2" class="btn btn-info">
+                                                                                        <i class="mdi mdi-camera"></i> En Proceso
+                                                                                    </button>
+                                                                                    <button type="submit" name="nuevoEstado" value="3" class="btn btn-secondary">
+                                                                                        <i class="mdi mdi-clock-outline"></i> Pendiente de Resultado
+                                                                                    </button>
+                                                                                    <button type="submit" name="nuevoEstado" value="4" class="btn btn-success">
+                                                                                        <i class="mdi mdi-check-circle-outline"></i> Finalizado
+                                                                                    </button>
+                                                                                    <button type="submit" name="nuevoEstado" value="5" class="btn btn-danger">
+                                                                                        <i class="mdi mdi-close-circle-outline"></i> Cancelado
+                                                                                    </button>
+                                                                                </div>
+                                                                            </form>
+                                                                        </div>
+                                                                    </div>
+                                                                }
+                                                            }
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        consultaIndex++;
+                                    }
+                                }
+                            </div>
+                        </div>
+
+                        pacienteIndex++;
+                    }
+                }
+                else
+                {
+                    <div class="text-center text-muted">No hay historial disponible.</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        $(document).ready(function () {
+            const searchInput = $('#globalSearch');
+
+            $('[data-bs-toggle="collapse"]').each(function () {
+                const target = $(this).attr('href');
+                if (localStorage.getItem(target) === 'true') {
+                    $(target).addClass('show');
+                }
+            });
+
+            $('[data-bs-toggle="collapse"]').on('click', function () {
+                const target = $(this).attr('href');
+                setTimeout(() => {
+                    const isOpen = $(target).hasClass('show');
+                    localStorage.setItem(target, isOpen);
+                }, 300);
+            });
+
+            searchInput.on('keyup', function () {
+                const filtro = $(this).val().toLowerCase();
+                $('.grupo-historial').each(function () {
+                    const texto = $(this).text().toLowerCase();
+                    const match = texto.includes(filtro);
+                    $(this).toggle(match);
+                    if (match) {
+                        $(this).find('.collapse').addClass('show');
+                    } else {
+                        $(this).find('.collapse').removeClass('show');
+                    }
+                });
+            });
+        });
+    </script>
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <script>
+            Swal.fire({
+                title: '¡Éxito!',
+                text: '@successMessage',
+                icon: 'success',
+                confirmButtonText: 'OK',
+                timer: 3000
+            });
+        </script>
+    }
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <script>
+            Swal.fire({
+                title: 'Error',
+                text: '@errorMessage',
+                icon: 'error',
+                confirmButtonText: 'OK',
+                timer: 3000
+            });
+        </script>
+    }
+}

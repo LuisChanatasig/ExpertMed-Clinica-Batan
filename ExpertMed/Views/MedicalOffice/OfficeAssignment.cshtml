@@ -1,0 +1,243 @@
+﻿@model IEnumerable<ExpertMed.Models.AssignedOfficeDto>
+
+@{
+    ViewBag.Title = "Asignar Consultorios";
+    ViewBag.pTitle = "Asignar Consultorios";
+    ViewBag.pageTitle = "Asignación de Consultorios";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var successMessage = TempData["SuccessMessage"] as string;
+    var errorMessage = TempData["ErrorMessage"] as string;
+    var urlGetAssignmentById = @Url.Action("GetAsignacionById", "MedicalOffice");
+}
+
+@section styles {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-12">
+        <div class="card shadow rounded-3 border-0">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Asignar Consultorios a Médicos</h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="AsignarConsultorios" asp-controller="MedicalOffice" method="post">
+                    <h6 class="text-muted fw-semibold mb-2">Datos del Médico</h6>
+                    <div class="mb-3">
+                        <label class="form-label">Médico</label>
+                        <select class="form-select" id="selectUsuario" name="userId" required>
+                            <option value="">Seleccione un médico</option>
+                            @foreach (var medico in ViewBag.Medicos)
+                            {
+                                <option value="@medico.UsersId">@medico.UsersNames @medico.UsersSurcenames</option>
+                            }
+                        </select>
+                    </div>
+
+                    <h6 class="text-muted fw-semibold mb-2">Consultorios</h6>
+                    <div class="mb-3">
+                        <label class="form-label">Consultorios a asignar</label>
+                        <select class="form-select" id="selectConsultorios" name="consultorios" multiple required>
+                            @foreach (var c in ViewBag.Consultorios)
+                            {
+                                <option value="@c.MedicalOfficeId">@c.Name - @c.EstablishmentName</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="mdi mdi-content-save-outline"></i> Asignar Consultorios
+                        </button>
+                        <button type="reset" class="btn btn-soft-secondary ms-2">
+                            <i class="mdi mdi-refresh"></i> Limpiar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Asignaciones Realizadas</h5>
+            </div>
+            <div class="card-body">
+                <table class="table nowrap dt-responsive align-middle table-hover table-bordered" id="tablaAsignaciones">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Médico</th>
+                            <th>Consultorio</th>
+                            <th>Estado</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            int i = 1;
+                            foreach (var row in Model)
+                            {
+                                <tr>
+                                    <td>@i</td>
+                                    <td>@row.Medico</td>
+                                    <td>@row.Consultorio</td>
+                                    <td>
+                                        @if (row.AssignmentStatus)
+                                        {
+                                            <span class="badge bg-danger">Inactivo</span>
+
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success">Activo</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-soft-warning btn-editar"
+                                                data-id="@row.UserId"
+                                                data-bs-toggle="offcanvas"
+                                                data-bs-target="#editAsignacionOffcanvas">
+                                            <i class="mdi mdi-pencil-outline"></i> Editar
+                                        </button>
+                                    </td>
+                                </tr>
+                                i++;
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="offcanvas offcanvas-end" tabindex="-1" id="editAsignacionOffcanvas" aria-labelledby="editAsignacionLabel">
+    <div class="offcanvas-header">
+        <h5 id="editAsignacionLabel">Editar Asignación</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+    </div>
+    <div class="offcanvas-body">
+        <form method="post" asp-action="ActualizarAsignacion" asp-controller="MedicalOffice">
+            <input type="hidden" id="editAssignmentId" name="AssignmentId" />
+
+            <div class="mb-3">
+                <label class="form-label">Médico</label>
+                <select class="form-select" id="editMedico" name="UserId" required>
+                    <option value="">Seleccione un médico</option>
+                    @foreach (var medico in ViewBag.Medicos)
+                    {
+                        <option value="@medico.UsersId">@medico.UsersNames @medico.UsersSurcenames</option>
+                    }
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Consultorios</label>
+                <select class="form-select" id="editConsultorio" name="MedicalOfficeId" multiple required>
+                    @foreach (var c in ViewBag.Consultorios)
+                    {
+                        <option value="@c.MedicalOfficeId">@c.Name - @c.EstablishmentName</option>
+                    }
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Estado</label>
+                <select class="form-select" id="editStatus" name="AssignmentStatus">
+                    <option value="true">Activo</option>
+                    <option value="false">Inactivo</option>
+                </select>
+            </div>
+
+            <div class="text-end">
+                <button type="submit" class="btn btn-success">
+                    <i class="mdi mdi-content-save-outline"></i> Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+
+    <script>
+        const urlGetAssignmentById = '@urlGetAssignmentById';
+        let editConsultorioChoices;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            editConsultorioChoices = new Choices('#editConsultorio', {
+                removeItemButton: true,
+                placeholder: true,
+                shouldSort: false
+            });
+
+            new Choices('#selectConsultorios', {
+                removeItemButton: true,
+                placeholder: true,
+                shouldSort: false
+            });
+
+            $('#tablaAsignaciones').DataTable({
+                responsive: true,
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/es_es.json'
+                }
+            });
+        });
+
+        $(document).on('click', '.btn-editar', function () {
+            const id = $(this).data('id');
+            if (!id) {
+                Swal.fire({ icon: 'warning', title: 'ID no válido' });
+                return;
+            }
+
+            $.ajax({
+                url: urlGetAssignmentById,
+                method: 'GET',
+                data: { id: id },
+                success: function (data) {
+                    if (!data || !data.assignmentId) {
+                        Swal.fire({ icon: 'warning', title: 'No encontrado' });
+                        return;
+                    }
+
+                    $('#editAssignmentId').val(data.assignmentId);
+                    $('#editStatus').val(data.assignmentStatus.toString());
+                    $('#editMedico').val(data.userId);
+
+                    editConsultorioChoices.removeActiveItems();
+                    data.medicalOfficeId.forEach(id => {
+                        editConsultorioChoices.setChoiceByValue(id.toString());
+                    });
+                },
+                error: function () {
+                    Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo cargar la asignación.' });
+                }
+            });
+        });
+    </script>
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <script>
+            Swal.fire({ icon: 'success', title: '¡Éxito!', text: '@successMessage' });
+        </script>
+    }
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <script>
+            Swal.fire({ icon: 'error', title: 'Error', text: '@errorMessage' });
+        </script>
+    }
+}

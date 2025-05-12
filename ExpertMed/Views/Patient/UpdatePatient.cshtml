@@ -1,0 +1,693 @@
+﻿@using Microsoft.AspNetCore.Http
+@{
+    ViewBag.Title = "Modificar Paciente";
+    ViewBag.pTitle = "Pacientes";
+    ViewBag.pageTitle = "Modificar Paciente";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var successMessage = TempData["SuccessMessage"] as string;
+    var errorMessage = TempData["ErrorMessage"] as string;
+
+    var usuarioId = ViewContext.HttpContext.Session.GetInt32("UsuarioId");
+    var perfilId = ViewContext.HttpContext.Session.GetInt32("PerfilId");
+
+}
+@model NewPatientViewModel
+
+<div class="position-relative mx-n4 mt-n4">
+    <div class="profile-wid-bg profile-setting-img">
+        <img src="~/assets/images/auth-one-bg.jpg" class="profile-wid-img" alt="">
+        <div class="overlay-content">
+            <div class="text-end p-3">
+                <div class="p-0 ms-auto rounded-circle profile-photo-edit">
+                    <input id="profile-foreground-img-file-input" type="file" class="profile-foreground-img-file-input">
+                    <h1 class="cabeceras"> <i class=" ri-survey-fill"></i>Modificar un paciente</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <form asp-action="UpdatePatient" asp-controller="Patient" method="POST" class="row g-3 needs-validation" novalidate enctype="multipart/form-data">
+        <input asp-for="Patient.PatientId" class="form-control" hidden />
+        <input type="hidden" name="patient.PatientCode" value="null" />
+        <input type="hidden" name="patient.PatientCreationuser" value="@usuarioId" />
+        <input type="hidden" name="patient.PatientModificationuser" value="@usuarioId" />
+        <div class="col-xxl-12">
+            <div class="card mt-xxl-n5">
+                <div class="card-body p-4">
+                    <div class="tab-content">
+
+                        <h6 class="camp">Campos obligatorios *</h6>
+                        <div class="tab-pane active" id="personalDetails" role="tabpanel">
+                            <div class="row">
+
+                                <div class="divider-with-text">
+                                    <i class="ri-user-fill" id="icons"></i>  <span> Datos Personales </span>
+                                </div>
+
+                                @if (perfilId == 3 || perfilId == 1)
+                                {
+                                    <div class="col-lg-3" hidden>
+                                        <div class="mb-3">
+                                            <label for="doctorsSelect" class="form-label">Seleccionar médico asignado</label>
+                                            <select class="form-control" id="doctorsSelect" name="doctorsId" disabled data-choices data-choices-sorting-false>
+                                                <option value="">Seleccione un médico</option>
+
+                                                <option value=""></option>
+
+                                            </select>
+                                        </div>
+                                    </div>
+                                }
+
+
+                                <div class="col-lg-3">
+                                    <div class="mb-3">
+                                        <label for="documentNumberInput" class="form-label">Primer apellido *</label>
+                                        <input type="text" class="form-control" id="firstlastnameInput" name="patient.PatientFirstsurname" value="@Model.Patient.PatientFirstsurname" placeholder="Ingrese su primer apellido" required>
+
+                                        <div class="invalid-feedback">
+                                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <div class="mb-3">
+                                        <label for="documentNumberInput" class="form-label">Segundo Apellido</label>
+                                        <input type="text" class="form-control" id="Input" name="patient.PatientSecondlastname" value="@Model.Patient.PatientSecondlastname" placeholder="Ingrese su segundo apellido">
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <div class="mb-3">
+                                        <label for="documentNumberInput" class="form-label">Primer Nombre *</label>
+                                        <input type="text" class="form-control" id="firstnameInput" name="patient.PatientFirstname" value="@Model.Patient.PatientFirstname" placeholder="Ingrese su primer nombre" required>
+
+                                        <div class="invalid-feedback">
+                                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <div class="mb-3">
+                                        <label for="documentNumberInput" class="form-label">Segundo nombre</label>
+                                        <input type="text" class="form-control" id="Input" name="patient.PatientMiddlename" value="@Model.Patient.PatientMiddlename" placeholder="Ingrese su segundo nombre">
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <div class="mb-3">
+                                        <label for="specialtySelect" class="form-label">Seleccione el tipo de documento *</label>
+                                        <select class="form-control" id="documenttyoeId" name="patient.PatientDocumenttype" asp-for="Patient.PatientDocumenttype" data-choices data-choices-sorting-false required>
+                                            @foreach (var documenttype in Model.DocumentTypes)
+                                            {
+                                                <option value="@documenttype.CatalogId">@documenttype.CatalogName</option>
+                                            }
+                                        </select>
+                                        <div class="invalid-feedback">
+                                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <div class="mb-3">
+                                        <label for="lastnameInput" class="form-label">Número de documento *</label>
+                                        <input type="text" class="form-control" id="documentnumber" name="patient.PatientDocumentnumber" value="@Model.Patient.PatientDocumentnumber" placeholder="Ingrese el número de documento" required>
+                                        <div class="invalid-feedback">
+                                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <div class="mb-3">
+                                        <label for="specialtySelect" class="form-label">Seleccione el tipo de sangre</label>
+                                        <select class="form-control" id="bloodtype" name="patient.PatientBloodtype" asp-for="Patient.PatientBloodtype" data-choices data-choices-sorting-false>
+                                            @foreach (var bloodtype in Model.BloodTypes)
+                                            {
+                                                <option value="@bloodtype.CatalogId">@bloodtype.CatalogName</option>
+                                            }
+                                        </select>
+
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-2">
+                                    <div class="mb-3">
+                                        <label for="specialtySelect" class="form-label">Es donante? </label>
+                                        <select class="form-control" id="documenttyoeId" name="patient.PatientDonor" asp-for="Patient.PatientDonor" data-choices data-choices-sorting-false>
+                                            <option value="Si">Sí</option>
+                                            <option value="No">No</option>
+                                        </select>
+
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <div class="mb-3">
+                                        <label for="lastnameInput" class="form-label">Fecha de Nacimiento *</label>
+                                        <input type="date" class="form-control" id="birthdate" name="patient.PatientBirthdate"
+                                               value="@((Model.Patient.PatientBirthdate.HasValue) ? Model.Patient.PatientBirthdate.Value.ToString("yyyy-MM-dd") : string.Empty)" required>                                        <div class="invalid-feedback">
+                                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-2">
+                                    <div class="mb-3">
+                                        <label for="lastnameInput" class="form-label">Edad</label>
+                                        <input type="number" class="form-control" id="agePatient" value="@Model.Patient.PatientAge" name="patient.PatientAge">
+
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <div class="mb-3">
+                                        <label for="specialtySelect" class="form-label">Seleccione su género</label>
+                                        <select class="form-control" id="genderPatient" name="patient.PatientGender" asp-for="Patient.PatientGender" data-choices data-choices-sorting-false>
+                                            @foreach (var gendertype in Model.GenderTypes)
+                                            {
+                                                <option value="@gendertype.CatalogId">@gendertype.CatalogName</option>
+                                            }
+                                        </select>
+
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <div class="mb-3">
+                                        <label for="specialtySelect" class="form-label">Seleccione su estado civil</label>
+                                        <select class="form-control" id="maritalStatus" name="patient.PatientMaritalstatus" asp-for="Patient.PatientMaritalstatus" data-choices data-choices-sorting-false>
+                                            @foreach (var maritalStatus in Model.CivilTypes)
+                                            {
+                                                <option value="@maritalStatus.CatalogId">@maritalStatus.CatalogName</option>
+                                            }
+                                        </select>
+
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <div class="mb-3">
+                                        <label for="specialtySelect" class="form-label">Seleccione su profesión</label>
+                                        <select class="form-control" id="vocationalTraining" asp-for="Patient.PatientVocationalTraining" name="patient.PatientVocationalTraining" data-choices data-choices-sorting-false>
+                                            @foreach (var professionaltraining in Model.ProfessionalTrainingTypes)
+                                            {
+                                                <option value="@professionaltraining.CatalogId">@professionaltraining.CatalogName</option>
+                                            }
+                                        </select>
+
+                                    </div>
+                                </div>
+
+
+                                <div class="divider-with-text">
+                                    <i class="ri-contacts-book-2-fill" id="icons"></i>  <span> Datos de Contacto </span>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <div class="mb-3">
+                                        <label for="specialtySelect" class="form-label">Seleccione su nacionalidad</label>
+                                        <select class="form-control" id="nationalitytypeId" name="patient.PatientNationality" asp-for="Patient.PatientNationality" data-choices data-choices-sorting-false>
+                                            @foreach (var nacionality in Model.Countries)
+                                            {
+                                                <option value="@nacionality.CountryId">@nacionality.CountryNationality</option>
+                                            }
+                                        </select>
+
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-4">
+                                    <div class="mb-3">
+                                        <label for="specialtySelect" class="form-label">Seleccione su provincia</label>
+                                        <select class="form-control" id="provincetypeId" name="patient.PatientProvince" asp-for="Patient.PatientProvince" data-choices data-choices-sorting-false>
+                                            @foreach (var provinces in Model.Provinces)
+                                            {
+                                                <option value="@provinces.ProvinceId">@provinces.ProvinceName</option>
+                                            }
+                                        </select>
+
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-12">
+                                    <div class="mb-3">
+                                        <label for="addressInput" class="form-label">Dirección</label>
+                                        <div class="input-group">
+                                            <!-- Input para ingresar la dirección -->
+                                            <input type="text" id="addressInput" class="form-control" name="patient.PatientAddress" value="@Model.Patient.PatientAddress" aria-label="Recipient's username" aria-describedby="button-addon2" placeholder="Escribe tu dirección" required>
+                                            <div class="invalid-feedback">
+                                                POR FAVOR ESTE CAMPO ES REQUERIDO
+                                            </div>
+                                            <!-- Botón para mostrar el mapa -->
+                                            <button class="btn btn-outline-success" type="button" id="mapButton"><i class="ri-map-pin-line"></i></button>
+                                        </div>
+
+                                        <!-- Contenedor para el mapa que se generará dinámicamente -->
+                                        <div id="map" style="display: none; height: 400px; margin-top: 15px;"></div>
+
+                                        <!-- Contenedor de sugerencias que se generará dinámicamente -->
+                                        <div id="suggestions" class="suggestions-container" style="display: none;"></div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-4">
+                                    <div class="mb-3">
+                                        <label for="codeSenecytInput" class="form-label">Número de teléfono fijo</label>
+                                        <input type="text" class="form-control" id="landlinetInput" name="patient.PatientLandlinePhone" value="@Model.Patient.PatientLandlinePhone" placeholder="Ingrese su número de teléfono fijo">
+
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-4">
+                                    <div class="mb-3">
+                                        <label for="phonenumberInput" class="form-label">Número de celular</label>
+                                        <input type="text" class="form-control" id="phonenumberInput" name="patient.PatientCellularPhone" value="@Model.Patient.PatientCellularPhone" placeholder="Ingrese su número de teléfono +(1) 987 6543">
+
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-4">
+                                    <div class="mb-3">
+                                        <label for="emailInput" class="form-label">Email *</label>
+                                        <input type="email" class="form-control" id="emailInput" name="patient.PatientEmail" value="@Model.Patient.PatientEmail" placeholder="Ingrese su correo electrónico" required>
+                                        <div class="invalid-feedback">
+
+                                            POR FAVOR ESTE CAMPO ES REQUERIDO, O EL EMAIL NO ES VALIDO
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-4">
+                                    <div class="mb-3">
+                                        <label for="phonenumberInput" class="form-label">Ocupacion</label>
+                                        <input type="text" class="form-control" id="phonenumberInput" name="patient.PatientOcupation" value="@Model.Patient.PatientOcupation" placeholder="Ingrese su ocupación">
+
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-4">
+                                    <div class="mb-3">
+                                        <label for="phonenumberInput" class="form-label">Compañía</label>
+                                        <input type="text" class="form-control" id="phonenumberInput" name="patient.PatientCompany" value="@Model.Patient.PatientCompany" placeholder="Ingrese su empresa">
+
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <div class="mb-3">
+                                        <label for="specialtySelect" class="form-label">Seleccione su seguro médico</label>
+                                        <select class="form-control" id="healtInsurancetyoeId" name="patient.PatientHealtInsurance" asp-for="Patient.PatientHealtInsurance" data-choices data-choices-sorting-false required>
+                                            @foreach (var healtinsurance in Model.SureHealthTypes)
+                                            {
+                                                <option value="@healtinsurance.CatalogId">@healtinsurance.CatalogName</option>
+                                            }
+                                        </select>
+                                        <div class="invalid-feedback">
+                                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-lg-12" style="padding-top: 3px">
+                        <div class="hstack gap-2 justify-content-end">
+
+                            <button type="submit" id="btnCrearUsuario" class="btn btn-primary">
+                                <i class="ri-user-add-line"></i> Actualizar paciente
+                            </button>
+                            <a type="button" class="btn btn-soft-info" data-bs-toggle="modal" data-bs-target="#appointmentModalgrid">
+                                <i class="ri-calendar-todo-fill"></i> Agendar cita medica
+                            </a>
+                            <a type="button" href="@Url.Action("UserList", "Users")" class="btn btn-soft-secondary">
+                                <i class=" ri-arrow-go-back-line"></i> Cancelar
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </form>
+</div>
+
+<div class="modal flip" id="appointmentModalgrid" tabindex="-1" aria-labelledby="appointmentModalgridLabel">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="appointmentModalgridLabel">Agendar Cita</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <form class="row g-3 needs-validation" novalidate name="formData">
+
+                    @if (perfilId == 3 || perfilId == 1)
+                    {
+                        <div class="col-xxl-6">
+                            <div class="mb-3">
+                                <label for="doctorsSelect" class="form-label">Seleccionar médico asignado</label>
+                                <select class="form-control" id="doctorUserId" name="doctorUserId" data-choices data-choices-sorting-false>
+                                    <option value="">Seleccione</option>
+                                    @foreach (var doctor in Model.Users)
+                                    {
+                                        <option value="@doctor.UsersId">@doctor.UsersNames @doctor.UsersSurcenames</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="col-xxl-6" hidden>
+                        <label for="patientId" class="form-label">Patient Id</label>
+                        <input type="number" class="form-control" value="@Model.Patient.PatientId" id="patientId" required>
+                    </div>
+
+                    <input type="hidden" name="AppointmentStatus" id="appointmentStatus" value="1" />
+
+                    <!-- Fecha y hora -->
+                    <div class="col-xxl-6">
+                        <label for="selectedDate" class="form-label">Seleccione la fecha</label>
+                        <input type="date" class="form-control" id="selectedDate" required>
+                    </div>
+
+                    <div class="col-xxl-6 d-flex align-items-end gap-2">
+                        <div class="w-100">
+                            <label for="appointmentTime" class="form-label">Hora seleccionada</label>
+                            <input type="time" class="form-control" id="appointmentTime" readonly required>
+                        </div>
+                        <button type="button" class="btn btn-soft-info mt-auto" id="viewHoursButton" style="height: 40px;">
+                            <i class="ri-eye-fill"></i> Ver horas
+                        </button>
+                    </div>
+
+                    <!-- Consultorios -->
+                    <div class="col-xxl-12 mt-3">
+                        <label class="form-label">Consultorios disponibles</label>
+                        <div id="consultoriosContainer" class="row row-cols-1 row-cols-md-2 g-3">
+                            <!-- Tarjetas de consultorios se insertan aquí -->
+                        </div>
+                        <input type="hidden" id="AppointmentMedicalofficeid" />
+                    </div>
+
+                    <!-- Confirmar -->
+                    <button type="button" class="btn btn-primary" id="confirmAppointmentBtn" disabled>
+                        <i class="ri-check-line"></i> Confirmar cita
+                    </button>
+
+
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Modal de las horas disponibles -->
+
+<div class="modal flip" id="hoursModalgrid" tabindex="-1" aria-labelledby="hoursModalgridLabel">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="hoursModalgridLabel">Horas Disponibles</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex flex-wrap gap-2 justify-content-center" id="availableHoursContainer">
+                    <!-- Aquí se mostrarán las horas disponibles -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"
+            integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script src="~/assets/js/pages/select2.init.js"></script>
+    <script src="~/assets/libs/flatpickr/flatpickr.min.js"></script>
+    <script src="~/assets/libs/choices.js/public/assets/scripts/choices.min.js"></script>
+
+    <script>
+        document.getElementById('birthdate').addEventListener('input', function () {
+            const birthDate = new Date(this.value);
+            const today = new Date();
+
+            // Calcular la edad
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const month = today.getMonth() - birthDate.getMonth();
+
+            // Ajustar la edad si aún no ha ocurrido el mes de nacimiento o si está antes del día actual
+            if (month < 0 || (month === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+
+            // Establecer el valor de la edad
+            document.getElementById('agePatient').value = age;
+        });
+
+    </script>
+
+    <script>
+        $(document).ready(function () {
+
+            // Función para habilitar o deshabilitar el botón
+            function toggleConfirmButton() {
+                const timeSelected = $('#appointmentTime').val();
+                const officeSelected = $('#AppointmentMedicalofficeid').val();
+                $('#confirmAppointmentBtn').prop('disabled', !(timeSelected && officeSelected));
+            }
+
+            // Ver horas disponibles
+            $('#viewHoursButton').click(function () {
+                const userId = @usuarioId;
+                const selectedDate = $('#selectedDate').val();
+                const doctorUserId = $('#doctorUserId').val();
+
+                if (!selectedDate) {
+                    Swal.fire('Error', 'Por favor selecciona una fecha.', 'warning');
+                    return;
+                }
+
+                $.ajax({
+                    url: '@Url.Action("GetAvailableHours", "Appointment")',
+                    type: 'GET',
+                    data: {
+                        userId: userId,
+                        date: selectedDate,
+                        doctorUserId: doctorUserId
+                    },
+                    success: function (response) {
+                        $('#availableHoursContainer').empty();
+
+                        if (response.length > 0) {
+                            response.forEach(function (hour) {
+                                $('#availableHoursContainer').append(
+                                    `<button type="button" class="btn btn-outline-primary btn-sm" data-hour="${hour}">${hour}</button>`
+                                );
+                            });
+                        } else {
+                            $('#availableHoursContainer').append('<p class="text-muted">No hay horas disponibles para esta fecha.</p>');
+                        }
+
+                        $('#hoursModalgrid').modal('show');
+                    },
+                    error: function () {
+                        Swal.fire('Error', 'No se pudieron obtener las horas.', 'error');
+                    }
+                });
+            });
+
+            // Selección de hora
+            $('#availableHoursContainer').on('click', 'button', function () {
+                const selectedHour = $(this).data('hour');
+                const selectedDate = $('#selectedDate').val();
+                const doctorUserId = $('#doctorUserId').val();
+
+                $('#appointmentTime').val(selectedHour);
+                toggleConfirmButton(); // Actualizar estado del botón
+
+                $('#hoursModalgrid').modal('hide'); // Cerrar modal de horas
+
+                Swal.fire({
+                    title: 'Buscando consultorios...',
+                    text: 'Por favor espera un momento.',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+
+                $.ajax({
+                    url: '@Url.Action("GetAvailableOffices", "Appointment")',
+                    method: "GET",
+                    data: {
+                        date: selectedDate,
+                        hour: selectedHour,
+                        doctorUserId: doctorUserId
+                    },
+                    success: function (response) {
+                        Swal.close();
+
+                        Swal.fire({
+                            title: 'Consultorios disponibles',
+                            text: 'Selecciona uno para continuar',
+                            icon: 'info',
+                            timer: 2500,
+                            showConfirmButton: false
+                        });
+
+                        const container = $('#consultoriosContainer');
+                        container.empty();
+                        $('#AppointmentMedicalofficeid').val(''); // Limpiar si se cambió de hora
+
+                        if (response.success && response.offices.length > 0) {
+                            response.offices.forEach(o => {
+                                const card = `
+                                    <div class="col">
+                                        <div class="card consultorio-card shadow-sm h-100" data-id="${o.medicalOfficeId}">
+                                            <span class="checkmark"><i class="ri-check-line"></i></span>
+                                            <div class="card-body text-center">
+                                                <h5 class="card-title">${o.medicalOfficeName}</h5>
+                                                <p class="card-text"><i class="mdi mdi-hospital-building"></i> Consultorio #${o.medicalOfficeId}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                                container.append(card);
+                            });
+
+                            $('.consultorio-card').on('click', function () {
+                                $('.consultorio-card').removeClass('border-primary selected');
+                                $(this).addClass('border-primary selected');
+                                $('#AppointmentMedicalofficeid').val($(this).data('id'));
+                                toggleConfirmButton(); // Activar botón
+                            });
+
+                        } else {
+                            container.append('<div class="col-12 text-center text-muted">No hay consultorios disponibles.</div>');
+                        }
+                    },
+                    error: function () {
+                        Swal.close();
+                        Swal.fire('Error', 'No se pudieron cargar los consultorios.', 'error');
+                    }
+                });
+            });
+
+            // Confirmar cita
+            $('#confirmAppointmentBtn').on('click', function () {
+                const selectedHour = $('#appointmentTime').val();
+                const selectedDate = $('#selectedDate').val();
+                const patientId = $('#patientId').val();
+                const doctorUserId = $('#doctorUserId').val();
+                const appointmentStatus = $('#appointmentStatus').val();
+                const consultorioId = $('#AppointmentMedicalofficeid').val();
+
+                Swal.fire({
+                    title: 'Resumen de Cita',
+                    html: `
+                        <p><strong>Fecha:</strong> ${selectedDate}</p>
+                        <p><strong>Hora:</strong> ${selectedHour}</p>
+                        <p><strong>Consultorio ID:</strong> ${consultorioId}</p>
+                        <p>¿Deseas confirmar esta cita?</p>
+                    `,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, confirmar',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '@Url.Action("CreateAppointment", "Appointment")?doctorUserId=' + parseInt(doctorUserId),
+                            type: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify({
+                                AppointmentDate: selectedDate,
+                                AppointmentHour: selectedHour,
+                                AppointmentPatientid: patientId,
+                                AppointmentStatus: appointmentStatus,
+                                AppointmentMedicalofficeid: consultorioId
+                            }),
+                            success: function (response) {
+                                if (response.success) {
+                                    Swal.fire({
+                                        title: 'Cita Confirmada!',
+                                        text: response.message,
+                                        icon: 'success',
+                                        showCancelButton: response.whatsappUrl ? true : false,
+                                        confirmButtonText: response.whatsappUrl ? 'Enviar Recordatorio' : 'OK',
+                                        cancelButtonText: 'Omitir'
+                                    }).then((r) => {
+                                        if (r.isConfirmed && response.whatsappUrl) {
+                                            window.open(response.whatsappUrl, '_blank');
+                                        }
+                                        window.location.href = '@Url.Action("AppointmentList", "Appointment")';
+                                    });
+                                } else {
+                                    Swal.fire('Error', response.message || 'Hubo un error al guardar.', 'error');
+                                }
+                            },
+                            error: function () {
+                                Swal.fire('Error', 'No se pudo registrar la cita.', 'error');
+                            }
+                        });
+                    }
+                });
+            });
+
+        });
+    </script>
+
+
+
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <script>
+            Swal.fire({
+                title: '¡Éxito!',
+                text: '@successMessage',
+                icon: 'success',
+                confirmButtonText: 'OK',
+                timer: 3000
+            });
+        </script>
+    }
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <script>
+            Swal.fire({
+                title: 'Error',
+                text: '@errorMessage',
+                icon: 'error',
+                confirmButtonText: 'OK',
+
+            });
+        </script>
+    }
+
+}
+

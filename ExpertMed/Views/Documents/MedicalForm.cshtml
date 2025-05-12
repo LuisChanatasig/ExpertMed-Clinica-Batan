@@ -1,0 +1,946 @@
+﻿@{
+    Layout = null;
+}
+@model NewPatientViewModel
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+
+    <link href="~/assets/css/documentos.css" rel="stylesheet" />
+</head>
+<body>
+    <header>
+
+        <table class="encabezado">
+
+            <thead>
+                <tr style="border: 2px solid gray">
+                    <td class="headform">ESTABLECIMIENTO</td>
+                    <td class="headform">NOMBRE</td>
+                    <td class="headform">APELLIDO</td>
+                    <td class="headform">SEXO</td>
+                    <td class="headform">EDAD</td>
+                    <td class="headform">Nº HISTORIA CLÍNICA</td>
+                </tr>
+                <tr style="border: 2px soli gray">
+                    <td class="headform2">@Model.Consultation.UsersEstablishmentName</td>
+                    <td class="headform2">@Model.DetailsPatient.PatientFirstname @Model.DetailsPatient.PatientMiddlename</td>
+                    <td class="headform2">@Model.DetailsPatient.PatientFirstsurname @Model.DetailsPatient.PatientSecondlastname</td>
+                    <td class="headform2">@Model.DetailsPatient.PatientGenderName</td>
+                    <td class="headform2">@Model.DetailsPatient.PatientAge</td>
+                    <td class="headform2">@Model.DetailsPatient.PatientDocumentnumber</td>
+                </tr>
+
+            </thead>
+
+        </table>
+        <div class="spaciado"></div>
+        <table class="MotivoConsulta">
+
+            <thead>
+                <tr>
+                    <td class="motivotitle">1. MOTIVO CONSULTA</td>
+
+                </tr>
+                <tr>
+                    <td class="motivodes">@Model.Consultation.ConsultationReason</td>
+
+                </tr>
+
+            </thead>
+
+        </table>
+        <div class="spaciado"></div>
+        <table class="MotivoConsulta">
+
+            <thead>
+                <tr>
+                    <td class="motivotitle">2. ANTECEDENTES PERSONALES</td>
+
+                </tr>
+                <tr>
+                    <td class="motivodes">@Model.Consultation.ConsultationPersonalbackground</td>
+
+                </tr>
+                <tr>
+                    <td class="motivodes">
+                        <strong>Alergias:</strong>
+                        @{
+                            var allergyNames = Model.Consultation.AllergiesConsultations?
+                            .Select(alle => Model.AllergiesTypes
+                            .FirstOrDefault(d => d.CatalogId == alle.AllergiesCatalogid)?.CatalogName ?? "N/A")
+                            .ToList() ?? new List<string>();
+                        }
+                        @string.Join(", ", allergyNames)
+                    </td>
+
+                </tr>
+                <tr>
+                    <td class="motivodes">
+                        <strong>Cirugias:</strong>
+                        @{
+                            var surgeriesName = Model.Consultation.SurgeriesConsultations?
+                            .Select(alle => Model.SurgeriesTypes
+                            .FirstOrDefault(d => d.CatalogId == alle.SurgeriesCatalogid)?.CatalogName ?? "N/A")
+                            .ToList() ?? new List<string>();
+                        }
+                        @string.Join(", ", surgeriesName)
+                    </td>
+
+                </tr>
+                <tr>
+                    <td class="motivodes">
+                        <strong>Diagnostico:</strong>
+                        @{
+                            var ultimoDiagnosticoDefinitivo = Model.Consultation.DiagnosisConsultations?
+                            .Where(d => d.DiagnosisDefinitive == true)
+                            .OrderByDescending(d => d.DiagnosisDiagnosisid)
+                            .FirstOrDefault();
+
+                            var nombreDiagnostico = ultimoDiagnosticoDefinitivo != null
+                            ? Model.Diagnoses.FirstOrDefault(d => d.DiagnosisId == ultimoDiagnosticoDefinitivo.DiagnosisDiagnosisid)?.DiagnosisName ?? "N/A"
+                            : "N/A";
+                        }
+                        @nombreDiagnostico
+                    </td>
+
+                </tr>
+
+            </thead>
+
+        </table>
+        <div class="spaciado"></div>
+
+        <table class="MotivoConsulta">
+            <thead>
+                <!-- Primera fila: check marks para cada antecedente -->
+                <tr>
+                    <!-- 1. CARDIOPATÍA -->
+                    <td class="antf">1.CARDIOPATÍA</td>
+                    <td class="antfx">
+                        @if (Model.Consultation.FamiliaryBackground?.FamiliaryBackgroundHeartdisease == true)
+                        {
+                            <text>X</text>
+                        }
+                    </td>
+                    <!-- 2. DIABETES -->
+                    <td class="antf">2. DIABETES</td>
+                    <td class="antfx">
+                        @if (Model.Consultation.FamiliaryBackground?.FamiliaryBackgroundDiabetes == true)
+                        {
+                            <text>X</text>
+                        }
+                    </td>
+                    <!-- 3. ENF. CARDIOVASCULAR -->
+                    <td class="antf">3. ENF. CARDIOVASCULAR</td>
+                    <td class="antfx">
+                        @if (Model.Consultation.FamiliaryBackground?.FamiliaryBackgroundDxcardiovascular == true)
+                        {
+                            <text>X</text>
+                        }
+                    </td>
+                    <!-- 4. HIPERTENSIÓN -->
+                    <td class="antf">4. HIPERTENSIÓN</td>
+                    <td class="antfx">
+                        @if (Model.Consultation.FamiliaryBackground?.FamiliaryBackgroundHypertension == true)
+                        {
+                            <text>X</text>
+                        }
+                    </td>
+                    <!-- 5. CÁNCER -->
+                    <td class="antf">5. CÁNCER</td>
+                    <td class="antfx">
+                        @if (Model.Consultation.FamiliaryBackground?.FamiliaryBackgroundCancer == true)
+                        {
+                            <text>X</text>
+                        }
+                    </td>
+                    <!-- 6. TUBERCULOSIS -->
+                    <td class="antf">6. TUBERCULOSIS</td>
+                    <td class="antfx">
+                        @if (Model.Consultation.FamiliaryBackground?.FamiliaryBackgroundTuberculosis == true)
+                        {
+                            <text>X</text>
+                        }
+                    </td>
+                    <!-- 7. ENF. MENTAL -->
+                    <td class="antf">7. ENF. MENTAL</td>
+                    <td class="antfx">
+                        @if (Model.Consultation.FamiliaryBackground?.FamiliaryBackgroundDxmental == true)
+                        {
+                            <text>X</text>
+                        }
+                    </td>
+                    <!-- 8. ENF. INFECCIOSA -->
+                    <td class="antf">8. ENF. INFECCIOSA</td>
+                    <td class="antfx">
+                        @if (Model.Consultation.FamiliaryBackground?.FamiliaryBackgroundDxinfectious == true)
+                        {
+                            <text>X</text>
+                        }
+                    </td>
+                    <!-- 9. MALFORMACIÓN -->
+                    <td class="antf">9. MALFORMACIÓN</td>
+                    <td class="antfx">
+                        @if (Model.Consultation.FamiliaryBackground?.FamiliaryBackgroundMalformation == true)
+                        {
+                            <text>X</text>
+                        }
+                    </td>
+                    <!-- 10. OTROS -->
+                    <td class="antf">10. OTROS</td>
+                    <td class="antfx">
+                        @if (Model.Consultation.FamiliaryBackground?.FamiliaryBackgroundOther == true)
+                        {
+                            <text>X</text>
+                        }
+                    </td>
+                </tr>
+            </thead>
+
+            <tbody>
+                @* A continuación, para cada antecedente se genera una fila (si existe relación y/o observación) *@
+
+                @* CARDIOPATÍA *@
+                @if (Model.Consultation.FamiliaryBackground != null &&
+                (Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogHeartdisease != null ||
+                !string.IsNullOrWhiteSpace(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundHeartdiseaseObservation)))
+                {
+                    <tr style="font-size: 7px">
+                        <td class="motivodes" colspan="20">
+                            @if (Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogHeartdisease != null)
+                            {
+
+                                var heartCatalogName = Model.FamilyMember?
+                                .FirstOrDefault(c => c.CatalogId == Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogHeartdisease)
+                                ?.CatalogName ?? "N/A";
+
+                                <div><strong>Relación:</strong> @heartCatalogName</div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundHeartdiseaseObservation))
+                            {
+                                <div><strong>Observación:</strong> @Model.Consultation.FamiliaryBackground.FamiliaryBackgroundHeartdiseaseObservation</div>
+                            }
+                        </td>
+                    </tr>
+                }
+
+                @* DIABETES *@
+
+                @if (Model.Consultation.FamiliaryBackground != null &&
+                (Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogDiabetes != null ||
+                !string.IsNullOrWhiteSpace(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundDiabetesObservation)))
+                {
+                    <tr style="font-size: 7px">
+                        <td class="motivodes" colspan="20">
+                            @if (Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogDiabetes != null)
+                            {
+
+                                var diabetesCatalogName = Model.FamilyMember?
+                                .FirstOrDefault(c => c.CatalogId == Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogDiabetes)
+                                ?.CatalogName ?? "N/A";
+
+                                <div><strong>Relación:</strong> @diabetesCatalogName</div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundDiabetesObservation))
+                            {
+                                <div><strong>Observación:</strong> @Model.Consultation.FamiliaryBackground.FamiliaryBackgroundDiabetesObservation</div>
+                            }
+                        </td>
+                    </tr>
+                }
+
+
+
+                @* ENF. CARDIOVASCULAR *@
+                @if (Model.Consultation.FamiliaryBackground != null &&
+                (Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogDxcardiovascular != null ||
+                !string.IsNullOrWhiteSpace(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundDxcardiovascularObservation)))
+                {
+                    <tr style="font-size: 7px">
+                        <td class="motivodes" colspan="20">
+                            @if (Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogDxcardiovascular != null)
+                            {
+
+                                var heartCatalogName = Model.FamilyMember?
+                                .FirstOrDefault(c => c.CatalogId == Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogDxcardiovascular)
+                                ?.CatalogName ?? "N/A";
+
+                                <div><strong>Relación:</strong> @heartCatalogName</div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundDxcardiovascularObservation))
+                            {
+                                <div><strong>Observación:</strong> @Model.Consultation.FamiliaryBackground.FamiliaryBackgroundDxcardiovascularObservation</div>
+                            }
+                        </td>
+                    </tr>
+                }
+
+                @* HIPERTENSIÓN *@
+                @if (Model.Consultation.FamiliaryBackground != null &&
+                (Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogHypertension != null ||
+                !string.IsNullOrWhiteSpace(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundHypertensionObservation)))
+                {
+                    <tr style="font-size: 7px">
+                        <td class="motivodes" colspan="20">
+                            @if (Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogHypertension != null)
+                            {
+
+                                var heartCatalogName = Model.FamilyMember?
+                                .FirstOrDefault(c => c.CatalogId == Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogHypertension)
+                                ?.CatalogName ?? "N/A";
+
+                                <div><strong>Relación:</strong> @heartCatalogName</div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundHypertensionObservation))
+                            {
+                                <div><strong>Observación:</strong> @Model.Consultation.FamiliaryBackground.FamiliaryBackgroundHypertensionObservation</div>
+                            }
+                        </td>
+                    </tr>
+                }
+
+                @* CÁNCER *@
+                @if (Model.Consultation.FamiliaryBackground != null &&
+                (Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogCancer != null ||
+                !string.IsNullOrWhiteSpace(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundCancerObservation)))
+                {
+                    <tr style="font-size: 7px">
+                        <td class="motivodes" colspan="20">
+                            @if (Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogCancer != null)
+                            {
+
+                                var heartCatalogName = Model.FamilyMember?
+                                .FirstOrDefault(c => c.CatalogId == Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogCancer)
+                                ?.CatalogName ?? "N/A";
+
+                                <div><strong>Relación:</strong> @heartCatalogName</div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundCancerObservation))
+                            {
+                                <div><strong>Observación:</strong> @Model.Consultation.FamiliaryBackground.FamiliaryBackgroundCancerObservation</div>
+                            }
+                        </td>
+                    </tr>
+                }
+
+                @* TUBERCULOSIS *@
+                @if (Model.Consultation.FamiliaryBackground != null &&
+                (Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshTuberculosis != null ||
+                !string.IsNullOrWhiteSpace(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundTuberculosisObservation)))
+                {
+                    <tr style="font-size: 7px">
+                        <td class="motivodes" colspan="20">
+                            @if (Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshTuberculosis != null)
+                            {
+
+                                var heartCatalogName = Model.FamilyMember?
+                                .FirstOrDefault(c => c.CatalogId == Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshTuberculosis)
+                                ?.CatalogName ?? "N/A";
+
+                                <div><strong>Relación:</strong> @heartCatalogName</div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundTuberculosisObservation))
+                            {
+                                <div><strong>Observación:</strong> @Model.Consultation.FamiliaryBackground.FamiliaryBackgroundTuberculosisObservation</div>
+                            }
+                        </td>
+                    </tr>
+                }
+
+                @* ENF. MENTAL *@
+                @if (Model.Consultation.FamiliaryBackground != null &&
+                (Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogDxmental != null ||
+                !string.IsNullOrWhiteSpace(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundDxmentalObservation)))
+                {
+                    <tr style="font-size: 7px">
+                        <td class="motivodes" colspan="20">
+                            @if (Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogDxmental != null)
+                            {
+
+                                var heartCatalogName = Model.FamilyMember?
+                                .FirstOrDefault(c => c.CatalogId == Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogDxmental)
+                                ?.CatalogName ?? "N/A";
+
+                                <div><strong>Relación:</strong> @heartCatalogName</div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundDxmentalObservation))
+                            {
+                                <div><strong>Observación:</strong> @Model.Consultation.FamiliaryBackground.FamiliaryBackgroundDxmentalObservation</div>
+                            }
+                        </td>
+                    </tr>
+                }
+
+                @* ENF. INFECCIOSA *@
+                @if (Model.Consultation.FamiliaryBackground != null &&
+                (Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogDxinfectious != null ||
+                !string.IsNullOrWhiteSpace(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundDxinfectiousObservation)))
+                {
+                    <tr style="font-size: 7px">
+                        <td class="motivodes" colspan="20">
+                            @if (Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogDxinfectious != null)
+                            {
+
+                                var heartCatalogName = Model.FamilyMember?
+                                .FirstOrDefault(c => c.CatalogId == Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogDxinfectious)
+                                ?.CatalogName ?? "N/A";
+
+                                <div><strong>Relación:</strong> @heartCatalogName</div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundDxinfectiousObservation))
+                            {
+                                <div><strong>Observación:</strong> @Model.Consultation.FamiliaryBackground.FamiliaryBackgroundDxinfectiousObservation</div>
+                            }
+                        </td>
+                    </tr>
+                }
+
+                @* MALFORMACIÓN *@
+                @if (Model.Consultation.FamiliaryBackground != null &&
+                (Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogMalformation != null ||
+                !string.IsNullOrWhiteSpace(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundMalformationObservation)))
+                {
+                    <tr style="font-size: 7px">
+                        <td class="motivodes" colspan="20">
+                            @if (Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogMalformation != null)
+                            {
+
+                                var heartCatalogName = Model.FamilyMember?
+                                .FirstOrDefault(c => c.CatalogId == Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogMalformation)
+                                ?.CatalogName ?? "N/A";
+
+                                <div><strong>Relación:</strong> @heartCatalogName</div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundMalformationObservation))
+                            {
+                                <div><strong>Observación:</strong> @Model.Consultation.FamiliaryBackground.FamiliaryBackgroundMalformationObservation</div>
+                            }
+                        </td>
+                    </tr>
+                }
+
+                @* OTROS *@
+                @if (Model.Consultation.FamiliaryBackground != null &&
+                (Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogOther != null ||
+                !string.IsNullOrWhiteSpace(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundOtherObservation)))
+                {
+                    <tr style="font-size: 7px">
+                        <td class="motivodes" colspan="20">
+                            @if (Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogOther != null)
+                            {
+
+                                var heartCatalogName = Model.FamilyMember?
+                                .FirstOrDefault(c => c.CatalogId == Model.Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogOther)
+                                ?.CatalogName ?? "N/A";
+
+                                <div><strong>Relación:</strong> @heartCatalogName</div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundOtherObservation))
+                            {
+                                <div><strong>Observación:</strong> @Model.Consultation.FamiliaryBackground.FamiliaryBackgroundOtherObservation</div>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <div class="spaciado"></div>
+        <table class="MotivoConsulta">
+
+            <thead>
+                <tr>
+                    <td class="motivotitle">4. ENFERMEDAD O PROBLEMA ACTUAL</td>
+
+                </tr>
+                <tr>
+                    <td class="motivodes">@Model.Consultation.ConsultationDisease</td>
+
+                </tr>
+                <tr>
+                    <td class="motivodes" style="height:12px"></td>
+
+                </tr>
+                <tr>
+                    <td class="motivodes" style="height:12px"></td>
+
+                </tr>
+                <tr>
+                    <td class="motivodes" style="height:12px"></td>
+
+                </tr>
+                <tr>
+                    <td class="motivodes" style="height:12px"></td>
+
+                </tr>
+                <tr>
+                    <td class="motivodes" style="height:12px"></td>
+
+                </tr>
+
+
+            </thead>
+
+        </table>
+        <div class="spaciado"></div>
+
+
+
+        <table class="MotivoConsulta">
+            <thead>
+                <tr>
+                    <td class="motivotitle" colspan="15">
+                        5. REVISION ACTUAL DE ORGANOS Y SISTEMAS
+                    </td>
+                </tr>
+                <tr>
+                    <td class="header-cell"></td>
+                    <td class="header-cell">CP</td>
+                    <td class="header-cell">SP</td>
+                    <td class="header-cell"></td>
+                    <td class="header-cell">CP</td>
+                    <td class="header-cell">SP</td>
+                    <td class="header-cell"></td>
+                    <td class="header-cell">CP</td>
+                    <td class="header-cell">SP</td>
+                    <td class="header-cell"></td>
+                    <td class="header-cell">CP</td>
+                    <td class="header-cell">SP</td>
+                    <td class="header-cell"></td>
+                    <td class="header-cell">CP</td>
+                    <td class="header-cell">SP</td>
+                </tr>
+            </thead>
+            <tbody>
+                @* Add a <tbody> tag *@
+                <tr>
+                    <td class="system-name">1 ÓRGANO DE LOS SENTIDOS</td>
+                    <td class="data-cell">@(Model.Consultation.OrgansSystem.OrganssystemsOrgansenses == true ? "X" : "")</td>
+                    <td class="data-cell">@(Model.Consultation.OrgansSystem.OrganssystemsOrgansenses == false ? "X" : "")</td>
+                    <td class="system-name">3 CARDIO VASCULAR</td>
+                    <td class="data-cell">@(Model.Consultation.OrgansSystem.OrganssystemsCardiovascular == true ? "X" : "")</td>
+                    <td class="data-cell">@(Model.Consultation.OrgansSystem.OrganssystemsCardiovascular == false ? "X" : "")</td>
+                    <td class="system-name">5. GENITAL</td>
+                    <td class="data-cell">@(Model.Consultation.OrgansSystem.OrganssystemsGenital == true ? "X" : "")</td>
+                    <td class="data-cell">@(Model.Consultation.OrgansSystem.OrganssystemsGenital == false ? "X" : "")</td>
+                    <td class="system-name">7.MUSCULO ESQUELETICO</td>
+                    <td class="data-cell">@(Model.Consultation.OrgansSystem.OrganssystemsSkeletalM == true ? "X" : "")</td>
+                    <td class="data-cell">@(Model.Consultation.OrgansSystem.OrganssystemsSkeletalM == false ? "X" : "")</td>
+                    <td class="system-name">9.HEMO LINFATICO</td>
+                    <td class="data-cell">@(Model.Consultation.OrgansSystem.OrganssystemsLymphatic == true ? "X" : "")</td>
+                    <td class="data-cell">@(Model.Consultation.OrgansSystem.OrganssystemsLymphatic == false ? "X" : "")</td>
+                </tr>
+                <tr>
+                    <td class="system-name">2.RESPIRATORIO</td>
+                    <td class="data-cell">@(Model.Consultation.OrgansSystem.OrganssystemsRespiratory == true ? "X" : "")</td>
+                    <td class="data-cell">@(Model.Consultation.OrgansSystem.OrganssystemsRespiratory == false ? "X" : "")</td>
+                    <td class="system-name">4. DIGESTIVO</td>
+                    <td class="data-cell">@(Model.Consultation.OrgansSystem.OrganssystemsDigestive == true ? "X" : "")</td>
+                    <td class="data-cell">@(Model.Consultation.OrgansSystem.OrganssystemsDigestive == false ? "X" : "")</td>
+                    <td class="system-name">6. URINARIO</td>
+                    <td class="data-cell">@(Model.Consultation.OrgansSystem.OrganssystemsUrinary == true ? "X" : "")</td>
+                    <td class="data-cell">@(Model.Consultation.OrgansSystem.OrganssystemsUrinary == false ? "X" : "")</td>
+                    <td class="system-name">8. ENDOCRINO</td>
+                    <td class="data-cell">@(Model.Consultation.OrgansSystem.OrganssystemsEndrocrine == true ? "X" : "")</td>
+                    <td class="data-cell">@(Model.Consultation.OrgansSystem.OrganssystemsEndrocrine == false ? "X" : "")</td>
+                    <td class="system-name">10. NERVIOSO</td>
+                    <td class="data-cell">@(Model.Consultation.OrgansSystem.OrganssystemsNervous == true ? "X" : "")</td>
+                    <td class="data-cell">@(Model.Consultation.OrgansSystem.OrganssystemsNervous == false ? "X" : "")</td>
+                </tr>
+
+
+                @* Dynamic Observation Row *@
+                @if (!string.IsNullOrEmpty(Model.Consultation.OrgansSystem.OrganssystemsOrgansensesObs)) // Check for null or empty observation
+                {
+                    <tr>
+                        <td colspan="15" class="observation-cell">
+                            <strong>Observaciones:</strong> @Model.Consultation.OrgansSystem.OrganssystemsOrgansensesObs)
+                        </td>
+                    </tr>
+                }
+                @if (!string.IsNullOrEmpty(Model.Consultation.OrgansSystem.OrganssystemsRespiratoryObs)) // Check for null or empty observation
+                {
+                    <tr>
+                        <td colspan="15" class="observation-cell">
+                            <strong>Observaciones:</strong> @Model.Consultation.OrgansSystem.OrganssystemsRespiratoryObs)
+                        </td>
+                    </tr>
+                }
+                @if (!string.IsNullOrEmpty(Model.Consultation.OrgansSystem.OrganssystemsCardiovascularObs)) // Check for null or empty observation
+                {
+                    <tr>
+                        <td colspan="15" class="observation-cell">
+                            <strong>Observaciones:</strong> @Model.Consultation.OrgansSystem.OrganssystemsCardiovascularObs)
+                        </td>
+                    </tr>
+                }
+                @if (!string.IsNullOrEmpty(Model.Consultation.OrgansSystem.OrganssystemsDigestiveObs)) // Check for null or empty observation
+                {
+                    <tr>
+                        <td colspan="15" class="observation-cell">
+                            <strong>Observaciones:</strong> @Model.Consultation.OrgansSystem.OrganssystemsDigestiveObs)
+                        </td>
+                    </tr>
+                }
+                @if (!string.IsNullOrEmpty(Model.Consultation.OrgansSystem.OrganssystemsGenitalObs)) // Check for null or empty observation
+                {
+                    <tr>
+                        <td colspan="15" class="observation-cell">
+                            <strong>Observaciones:</strong> @Model.Consultation.OrgansSystem.OrganssystemsGenitalObs)
+                        </td>
+                    </tr>
+                }
+                @if (!string.IsNullOrEmpty(Model.Consultation.OrgansSystem.OrganssystemsUrinaryObs)) // Check for null or empty observation
+                {
+                    <tr>
+                        <td colspan="15" class="observation-cell">
+                            <strong>Observaciones:</strong> @Model.Consultation.OrgansSystem.OrganssystemsUrinaryObs)
+                        </td>
+                    </tr>
+                }
+                @if (!string.IsNullOrEmpty(Model.Consultation.OrgansSystem.OrganssystemsSkeletalMObs)) // Check for null or empty observation
+                {
+                    <tr>
+                        <td colspan="15" class="observation-cell">
+                            <strong>Observaciones:</strong> @Model.Consultation.OrgansSystem.OrganssystemsSkeletalMObs)
+                        </td>
+                    </tr>
+                }
+                @if (!string.IsNullOrEmpty(Model.Consultation.OrgansSystem.OrganssystemsEndocrine)) // Check for null or empty observation
+                {
+                    <tr>
+                        <td colspan="15" class="observation-cell">
+                            <strong>Observaciones:</strong> @Model.Consultation.OrgansSystem.OrganssystemsEndocrine)
+                        </td>
+                    </tr>
+                }
+                @if (!string.IsNullOrEmpty(Model.Consultation.OrgansSystem.OrganssystemsLymphaticObs)) // Check for null or empty observation
+                {
+                    <tr>
+                        <td colspan="15" class="observation-cell">
+                            <strong>Observaciones:</strong> @Model.Consultation.OrgansSystem.OrganssystemsLymphaticObs)
+                        </td>
+                    </tr>
+                }
+                @if (!string.IsNullOrEmpty(Model.Consultation.OrgansSystem.OrganssystemsNervousObs)) // Check for null or empty observation
+                {
+                    <tr>
+                        <td colspan="15" class="observation-cell">
+                            <strong>Observaciones:</strong> @Model.Consultation.OrgansSystem.OrganssystemsNervousObs)
+                        </td>
+                    </tr>
+                }
+            </tbody> @* Close the <tbody> tag *@
+        </table>
+        <div class="spaciado"></div>
+        <table class="MotivoConsulta">
+
+            <thead>
+                <tr>
+                    <td class="motivotitle" colspan="15">
+                        6. SIGNOS VITALES Y ANTROPOMETRIA
+                    </td>
+
+                </tr>
+                <tr>
+                    <td style="background-color:ccffcc" class="sgvtitle"> FECHA DE MEDICION</td>
+                    <td class="sgvvalue"> @Model.Consultation.ConsultationCreationdate</td>
+                    <td class="sgvvalue"> </td>
+                    <td class="sgvvalue"> </td>
+                    <td class="sgvvalue"> </td>
+                    <td class="sgvvalue"> </td>
+                    <td class="sgvvalue"> </td>
+
+                </tr>
+                <tr>
+                    <td style="background-color:ccffcc" class="sgvtitle"> TEMPERATURA °C </td>
+                    <td class="sgvvalue"> @Model.Consultation.ConsultationTemperature °C</td>
+                    <td class="sgvvalue"> </td>
+                    <td class="sgvvalue"> </td>
+                    <td class="sgvvalue"> </td>
+                    <td class="sgvvalue"> </td>
+                    <td class="sgvvalue"> </td>
+                </tr>
+                <tr>
+                    <td class="sgvtitle">PRESION ARTERIAL</td>
+                    <td class="sgvvalueAs" style="width:2px">@Model.Consultation.ConsultationBloodpressuredAs| @Model.Consultation.ConsultationBloodpresuredDis</td>  @* Systolic *@
+                    <td class="sgvvalueAs"></td>  @* Diastolic *@
+                    <td class="sgvvalueAs"></td>  @* Empty cell for spacing or other data *@
+                    <td class="sgvvalueAs"></td>  @* Empty cell for spacing or other data *@
+                    <td class="sgvvalueAs"></td>  @* Empty cell for spacing or other data *@
+                    <td class="sgvvalueAs"></td>  @* Empty cell for spacing or other data *@
+
+                </tr>
+
+                <tr>
+                    <td class="sgvtitle">PULSO / min FRECUENCIA</td>
+                    <td class="sgvvalueAs" style="width:2px">@Model.Consultation.ConsultationPulse| @Model.Consultation.ConsultationRespirationrate</td>  @* Systolic *@
+                    <td class="sgvvalueAs"></td>  @* Diastolic *@
+                    <td class="sgvvalueAs"></td>  @* Empty cell for spacing or other data *@
+                    <td class="sgvvalueAs"></td>  @* Empty cell for spacing or other data *@
+                    <td class="sgvvalueAs"></td>  @* Empty cell for spacing or other data *@
+                    <td class="sgvvalueAs"></td>  @* Empty cell for spacing or other data *@
+
+                </tr>
+                <tr>
+                    <td class="sgvtitle">PESO / Kg TALLA / cm </td>
+                    <td class="sgvvalueAs" style="width:2px">@Model.Consultation.ConsultationSize| @Model.Consultation.ConsultationWeight</td>  @* Systolic *@
+                    <td class="sgvvalueAs"></td>  @* Diastolic *@
+                    <td class="sgvvalueAs"></td>  @* Empty cell for spacing or other data *@
+                    <td class="sgvvalueAs"></td>  @* Empty cell for spacing or other data *@
+                    <td class="sgvvalueAs"></td>  @* Empty cell for spacing or other data *@
+                    <td class="sgvvalueAs"></td>  @* Empty cell for spacing or other data *@
+
+                </tr>
+
+
+            </thead>
+
+        </table>
+        <div class="spaciado"></div>
+
+        <table class="MotivoConsulta">
+            <thead>
+                <tr>
+                    <td class="motivotitle" colspan="6">
+                        7 EXAMEN FÍSICO
+                    </td>
+                    <td class="motivotitle" style="font-size:11px" colspan="6">
+                        CP = CON EVIDENCIA DE PATOLOGÍA:
+                        MARCAR "X" Y DESCRIBIR
+
+                    </td>
+                    <td class="motivotitle" style="font-size:11px" colspan="8">
+                        SP = SIN EVIDENCIA DE PATOLOGÍA:
+                        MARCAR "X" Y NO DESCRIBIR
+                    </td>
+                </tr>
+                <tr>
+                    <td class="header-cell"></td>
+                    <td class="header-cell">CP</td>
+                    <td class="header-cell">SP</td>
+                    <td class="header-cell"></td>
+                    <td class="header-cell">CP</td>
+                    <td class="header-cell">SP</td>
+                    <td class="header-cell"></td>
+                    <td class="header-cell">CP</td>
+                    <td class="header-cell">SP</td>
+                    <td class="header-cell"></td>
+                    <td class="header-cell">CP</td>
+                    <td class="header-cell">SP</td>
+                    <td class="header-cell"></td>
+                    <td class="header-cell">CP</td>
+                    <td class="header-cell">SP</td>
+                    <td class="header-cell"></td>
+                    <td class="header-cell">CP</td>
+                    <td class="header-cell">SP</td>
+                </tr>
+            </thead>
+            <tbody>
+                @* Add a <tbody> tag *@
+                <tr>
+                    <td class="system-name">1 CABEZA</td>
+                    <td class="data-cell">@(Model.Consultation.PhysicalExamination.PhysicalexaminationHead == true ? "X" : "")</td>
+                    <td class="data-cell">@(Model.Consultation.PhysicalExamination.PhysicalexaminationHead == false ? "X" : "")</td>
+                    <td class="system-name">2 CUELLO</td>
+                    <td class="data-cell">@(Model.Consultation.PhysicalExamination.PhysicalexaminationNeck == true ? "X" : "")</td>
+                    <td class="data-cell">@(Model.Consultation.PhysicalExamination.PhysicalexaminationNeck == false ? "X" : "")</td>
+                    <td class="system-name">3. TORAX</td>
+                    <td class="data-cell">@(Model.Consultation.PhysicalExamination.PhysicalexaminationChest == true ? "X" : "")</td>
+                    <td class="data-cell">@(Model.Consultation.PhysicalExamination.PhysicalexaminationChest == false ? "X" : "")</td>
+                    <td class="system-name">4 ABDOMEN</td>
+                    <td class="data-cell">@(Model.Consultation.PhysicalExamination.PhysicalexaminationAbdomen == true ? "X" : "")</td>
+                    <td class="data-cell">@(Model.Consultation.PhysicalExamination.PhysicalexaminationAbdomen == false ? "X" : "")</td>
+                    <td class="system-name">5. PELVIS</td>
+                    <td class="data-cell">@(Model.Consultation.PhysicalExamination.PhysicalexaminationPelvis == true ? "X" : "")</td>
+                    <td class="data-cell">@(Model.Consultation.PhysicalExamination.PhysicalexaminationPelvis == false ? "X" : "")</td>
+                    <td class="system-name" style="text-align:left">6. EXTREMIDADES</td>
+                    <td class="data-cell">@(Model.Consultation.PhysicalExamination.PhysicalexaminationLimbs == true ? "X" : "")</td>
+                    <td class="data-cell">@(Model.Consultation.PhysicalExamination.PhysicalexaminationLimbs == false ? "X" : "")</td>
+                </tr>
+                @* Dynamic Observation Row *@
+                @if (!string.IsNullOrEmpty(Model.Consultation.PhysicalExamination.PhysicalexaminationHeadObs)) // Check for null or empty observation
+                {
+                    <tr>
+                        <td colspan="15" class="observation-cell">
+                            <strong>Observaciones:</strong> @Model.Consultation.PhysicalExamination.PhysicalexaminationHeadObs)
+                        </td>
+                    </tr>
+                }
+                @* Dynamic Observation Row *@
+                @if (!string.IsNullOrEmpty(Model.Consultation.PhysicalExamination.PhysicalexaminationNeckObs)) // Check for null or empty observation
+                {
+                    <tr>
+                        <td colspan="15" class="observation-cell">
+                            <strong>Observaciones:</strong> @Model.Consultation.PhysicalExamination.PhysicalexaminationNeckObs)
+                        </td>
+                    </tr>
+                }
+                @* Dynamic Observation Row *@
+                @if (!string.IsNullOrEmpty(Model.Consultation.PhysicalExamination.PhysicalexaminationChestObs)) // Check for null or empty observation
+                {
+                    <tr>
+                        <td colspan="15" class="observation-cell">
+                            <strong>Observaciones:</strong> @Model.Consultation.PhysicalExamination.PhysicalexaminationChestObs)
+                        </td>
+                    </tr>
+                }
+                @* Dynamic Observation Row *@
+                @if (!string.IsNullOrEmpty(Model.Consultation.PhysicalExamination.PhysicalexaminationAbdomenObs)) // Check for null or empty observation
+                {
+                    <tr>
+                        <td colspan="15" class="observation-cell">
+                            <strong>Observaciones:</strong> @Model.Consultation.PhysicalExamination.PhysicalexaminationAbdomenObs)
+                        </td>
+                    </tr>
+                }
+                @* Dynamic Observation Row *@
+                @if (!string.IsNullOrEmpty(Model.Consultation.PhysicalExamination.PhysicalexaminationPelvisObs)) // Check for null or empty observation
+                {
+                    <tr>
+                        <td colspan="15" class="observation-cell">
+                            <strong>Observaciones:</strong> @Model.Consultation.PhysicalExamination.PhysicalexaminationPelvisObs)
+                        </td>
+                    </tr>
+                }
+                @* Dynamic Observation Row *@
+                @if (!string.IsNullOrEmpty(Model.Consultation.PhysicalExamination.PhysicalexaminationLimbsObs)) // Check for null or empty observation
+                {
+                    <tr>
+                        <td colspan="15" class="observation-cell">
+                            <strong>Observaciones:</strong> @Model.Consultation.PhysicalExamination.PhysicalexaminationLimbsObs)
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <div class="spaciado"></div>
+        <table class="MotivoConsulta">
+            <thead>
+                <tr>
+                    <td class="motivotitle" colspan="4">
+                        8 DIAGNOSTICO
+                    </td>
+                    <td class="motivotitle" style="font-size:11px">
+                        PRE = PRESUNTIVO
+                        DEF = DEFINITIVO
+
+                    </td>
+                    <td class="motivotitle" style="font-size:11px" >
+                        CIE10
+                    </td>
+                    <td class="motivotitle" style="font-size:11px" >
+                      PRE
+                    </td>     <td class="motivotitle" style="font-size:11px" >
+                 DEF
+                    </td>
+                    </td>
+                    <td class="motivotitle" style="font-size:11px" colspan="16">
+                        
+                    </td> 
+         
+                    <td class="motivotitle" style="font-size:11px">
+                        CIE 10
+                    </td>
+                    <td class="motivotitle" style="font-size:11px" >
+                        PRE
+                    </td>
+                    <td class="motivotitle" style="font-size:11px" >
+                        DEF
+                    </td>
+                </tr>
+                <tr>
+                    @{
+                        var diagnosis = Model.Consultation.DiagnosisConsultations?
+                        .Select(alle => new
+                        {
+                            Description = Model.Diagnoses
+                        .FirstOrDefault(d => d.DiagnosisId == alle.DiagnosisDiagnosisid)?.DiagnosisDescription ?? "N/A",
+                            CIE10 = Model.Diagnoses
+                        .FirstOrDefault(d => d.DiagnosisId == alle.DiagnosisDiagnosisid)?.DiagnosisCie10 ?? "N/A",
+                            IsPresumptive = alle.DiagnosisPresumptive ?? false, // Manejo de nulos
+                            IsDefinitive = alle.DiagnosisDefinitive ?? false
+                        })
+                        .ToList(); // Eliminado '?? new List<dynamic>()'
+                    }
+
+                    @for (int i = 0; i < diagnosis.Count; i += 2)
+                    {
+                        var diag1 = diagnosis[i];
+                        var diag2 = (i + 1 < diagnosis.Count) ? diagnosis[i + 1] : null; // Verifica si hay segundo diagnóstico
+
+                    <tr>
+                        <!-- Primer diagnóstico -->
+                        <td class="sgvvalue" style="width: 20PX" >@diag1.Description</td>
+                        <td class="sgvvalue" style="width: 20PX" >@diag1.CIE10</td>
+                        <td class="sgvvalue" style="width: 20PX" >@(diag1.IsPresumptive ? "PRE" : "")</td>
+                        <td class="sgvvalue" style="width: 20PX" >@(diag1.IsDefinitive ? "DEF" : "")</td>
+
+
+                            @if (diag2 != null)
+                            {
+                            <!-- Segundo diagnóstico -->
+                            <td class="sgvvalue">@diag2.Description</td>
+
+                            <td class="sgvvalue">@diag2.CIE10</td>
+                            <td class="sgvvalue">@(diag2.IsPresumptive ? "PRE" : "")</td>
+                            <td class="sgvvalue">@(diag2.IsDefinitive ? "DEF" : "")</td>
+                            }
+                            else
+                            {
+                            <!-- Espacios vacíos si no hay segundo diagnóstico -->
+                            <td class="sgvvalue"></td>
+                            <td class="sgvvalue"></td>
+                            <td class="sgvvalue"></td>
+                            <td class="sgvvalue"></td>
+                            <td class="sgvvalue"></td>
+                            }
+                    </tr>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @* Add a <tbody> tag *@
+                <tr>
+                    <td class="system-name">1 CABEZA</td>
+                    <td class="data-cell">@(Model.Consultation.PhysicalExamination.PhysicalexaminationHead == true ? "X" : "")</td>
+                    <td class="data-cell">@(Model.Consultation.PhysicalExamination.PhysicalexaminationHead == false ? "X" : "")</td>
+                    <td class="system-name">2 CUELLO</td>
+                    <td class="data-cell">@(Model.Consultation.PhysicalExamination.PhysicalexaminationNeck == true ? "X" : "")</td>
+                    <td class="data-cell">@(Model.Consultation.PhysicalExamination.PhysicalexaminationNeck == false ? "X" : "")</td>
+                    <td class="system-name">3. TORAX</td>
+                    <td class="data-cell">@(Model.Consultation.PhysicalExamination.PhysicalexaminationChest == true ? "X" : "")</td>
+                    <td class="data-cell">@(Model.Consultation.PhysicalExamination.PhysicalexaminationChest == false ? "X" : "")</td>
+                    <td class="system-name">4 ABDOMEN</td>
+                    <td class="data-cell">@(Model.Consultation.PhysicalExamination.PhysicalexaminationAbdomen == true ? "X" : "")</td>
+                    <td class="data-cell">@(Model.Consultation.PhysicalExamination.PhysicalexaminationAbdomen == false ? "X" : "")</td>
+                    <td class="system-name">5. PELVIS</td>
+                    <td class="data-cell">@(Model.Consultation.PhysicalExamination.PhysicalexaminationPelvis == true ? "X" : "")</td>
+                    <td class="data-cell">@(Model.Consultation.PhysicalExamination.PhysicalexaminationPelvis == false ? "X" : "")</td>
+                    <td class="system-name" style="text-align:left">6. EXTREMIDADES</td>
+                    <td class="data-cell">@(Model.Consultation.PhysicalExamination.PhysicalexaminationLimbs == true ? "X" : "")</td>
+                    <td class="data-cell">@(Model.Consultation.PhysicalExamination.PhysicalexaminationLimbs == false ? "X" : "")</td>
+                </tr>
+              
+            </tbody>
+        </table>
+
+    </header>
+
+    <div class="page-break"></div> <!-- Esto iniciará la segunda página -->
+
+    <table class="nuevaPagina">
+        <thead>
+            <tr>
+                <td class="titulo">Información de la Segunda Página</td>
+            </tr>
+            <tr>
+                <td class="contenido">@Model.Consultation.ConsultationNonpharmacologycal</td>
+            </tr>
+        </thead>
+    </table>
+
+</body>
+</html>
+

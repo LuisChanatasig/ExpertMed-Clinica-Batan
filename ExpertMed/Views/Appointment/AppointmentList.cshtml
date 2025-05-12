@@ -1,0 +1,721 @@
+﻿@using Microsoft.AspNetCore.Http
+@{
+    ViewData["Title"] = "Listado De citas";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var successMessage = TempData["SuccessMessage"] as string;
+    var errorMessage = TempData["ErrorMessage"] as string;
+    var usuarioId = ViewContext.HttpContext.Session.GetInt32("UsuarioId");
+    var perfilId = ViewContext.HttpContext.Session.GetInt32("PerfilId");
+}
+
+@section styles {
+    <!--datatable css-->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" />
+    <!--datatable responsive css-->
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap.min.css" />
+
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.dataTables.min.css">
+
+    <style>
+        /* Cabecera adaptable */
+        .card-header.d-flex {
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        /* Collapse de filtros */
+        #filterCollapse .btn-group {
+            flex-wrap: wrap;
+        }
+
+        /* Tabla responsive */
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        /* Offcanvas y modales */
+        .offcanvas-end {
+            z-index: 1060 !important;
+        }
+
+        .modal-backdrop.show {
+            z-index: 1050 !important;
+        }
+
+        /* Consultorios cards */
+        .consultorio-card {
+            cursor: pointer;
+            position: relative;
+        }
+
+            .consultorio-card .checkmark {
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                display: none;
+            }
+
+            .consultorio-card.selected .checkmark {
+                display: block;
+            }
+    </style>
+}
+
+<div class="row">
+    <div class="col-lg-12">
+
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger">@TempData["Error"]</div>
+        }
+
+        <div class="card">
+
+            <div class="card-body">
+                <!-- Cabecera con título y botón de filtros -->
+                <div class="card-header d-flex justify-content-between align-items-start align-items-md-center">
+                    <h5 class="card-title mb-0">Lista de citas</h5>
+                    <button class="btn btn-outline-primary"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#filterCollapse"
+                            aria-expanded="false"
+                            aria-controls="filterCollapse">
+                        <i class="mdi mdi-filter-variant"></i> Filtros
+                    </button>
+                </div>
+
+                <!-- Collapse de filtros -->
+                <div class="collapse mb-3" id="filterCollapse">
+                    <div class="card card-body p-2">
+                        <div class="btn-group flex-wrap w-100" role="group">
+                            <button class="btn btn-soft-success @(ViewBag.CurrentStatus == 0 ? "active" : "")"
+                                    onclick="filterAppointments(0)">
+                                Pagadas
+                            </button>
+                            <button class="btn btn-soft-warning @(ViewBag.CurrentStatus == 1 ? "active" : "")"
+                                    onclick="filterAppointments(1)">
+                                Activas
+                            </button>
+                            <button class="btn btn-soft-danger @(ViewBag.CurrentStatus == 2 ? "active" : "")"
+                                    onclick="filterAppointments(2)">
+                                Canceladas
+                            </button>
+                            <button class="btn btn-soft-info @(ViewBag.CurrentStatus == 3 ? "active" : "")"
+                                    onclick="filterAppointments(3)">
+                                Seguimiento
+                            </button>
+                            <button class="btn btn-soft-dark @(ViewBag.CurrentStatus == 4 ? "active" : "")"
+                                    onclick="filterAppointments(4)">
+                                Finalizadas
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cuerpo con tabla -->
+
+                <table id="appointmentTable"
+                       class="table nowrap dt-responsive align-middle table-hover table-bordered" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th hidden>ID</th>
+                            <th hidden>ID PATIENT</th>
+                            @if (perfilId == 1 || perfilId == 3 || perfilId == 4)
+                            {
+                                <th>Nombre del médico</th>
+                            }
+                            <th>Fecha / Hora</th>
+                            <th>Paciente</th>
+                            <th>Consultorio</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var appt in Model)
+                        {
+                            <tr>
+                                <td hidden>@appt.AppointmentId</td>
+                                <td hidden>@appt.AppointmentPatientid</td>
+                                @if (perfilId == 1 || perfilId == 3 || perfilId == 4)
+                                {
+                                    <td>@(appt.DoctorName ?? appt.DoctorName2)</td>
+                                }
+                                <td>
+                                    @appt.AppointmentDate.ToString("dd/MM/yyyy")
+                                    @appt.AppointmentHour.ToString("hh\\:mm")
+                                </td>
+                                <td>@appt.PatientName</td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(appt.MedicalOfficeName))
+                                    {
+                                        <span class="badge bg-success text-uppercase">
+                                            <i class="mdi mdi-hospital-building"></i>
+                                            @appt.MedicalOfficeName
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Sin asignar</span>
+                                    }
+                                </td>
+                                <td>
+                                    @{
+                                        var (cls, txt) = appt.AppointmentStatus switch
+                                        {
+                                            0 => ("bg-success", "Pagadas"),
+                                            1 => ("bg-warning", "Activas"),
+                                            2 => ("bg-danger", "Canceladas"),
+                                            3 => ("bg-info", "Seguimiento"),
+                                            4 => ("bg-dark", "Finalizadas"),
+                                            _ => ("bg-secondary", "Desconocido")
+                                        };
+                                    }
+                                    <span class="badge @cls">@txt</span>
+                                </td>
+                                <td>
+                                    @if (appt.AppointmentStatus == 2 || appt.AppointmentStatus == 4)
+                                    {
+                                        <button class="btn btn-sm btn-soft-secondary" disabled>
+                                            <i class="ri-edit-line"></i> Revisar
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-sm btn-soft-info"
+                                                onclick="openOptionModal(
+                                                        @appt.AppointmentId,
+                                                        @appt.AppointmentStatus,
+                                                        @appt.AppointmentPatientid)">
+                                            <i class="ri-edit-line"></i> Revisar
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal Opciones Cita -->
+<div class="modal fade" id="optionModal" tabindex="-1"
+     aria-labelledby="optionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <input type="hidden" id="appointmentIdInput" />
+            <input type="hidden" id="appointmentStatus" />
+            <input type="hidden" id="appointmentPatientId" />
+            <input type="hidden" id="perfilIdInput" value="@perfilId" />
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="optionModalLabel">
+                    ¿Qué desea hacer con esta cita?
+                </h5>
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-4" id="rescheduleCol">
+                        <button class="btn btn-soft-info btn-sm w-100"
+                                onclick="openRescheduleModal()">
+                            <i class="ri-user-smile-line"></i> Reprogramar
+                        </button>
+                    </div>
+                    <div class="col-4" id="cancelCol">
+                        <button class="btn btn-soft-danger btn-sm w-100"
+                                onclick="cancelAppointment()">
+                            <i class="ri-error-warning-fill"></i> Cancelar
+                        </button>
+                    </div>
+                    <div class="col-4" id="payCol">
+                        <button class="btn btn-soft-success btn-sm w-100"
+                                onclick="payAppointment()">
+                            <i class="ri-secure-payment-line"></i> Pagar cita
+                        </button>
+                    </div>
+                    <div class="col-4" id="startConsultCol">
+                        <button class="btn btn-soft-dark btn-sm w-100"
+                                onclick="startConsultation()">
+                            <i class="las la-file-medical-alt"></i> Empezar Consulta
+                        </button>
+                    </div>
+                    <div class="col-4" id="startFollowupCol">
+                        <button class="btn btn-soft-dark btn-sm w-100"
+                                onclick="startFollowupConsultation()">
+                            <i class="las la-file-medical-alt"></i> Seguimiento
+                        </button>
+                    </div>
+                    <div class="col-4" id="reminderCol">
+                        <button class="btn btn-soft-success btn-sm w-100"
+                                onclick="sendReminderMessage()">
+                            <i class="ri-whatsapp-fill"></i> Recordatorio
+                        </button>
+                    </div>
+                    <div class="col-4" id="vitalSignsCol">
+                        <button class="btn btn-soft-primary btn-sm w-100"
+                                data-bs-toggle="offcanvas"
+                                data-bs-target="#vitalSignsCanvas"
+                                onclick="prepareVitalSigns()">
+                            <i class="ri-heart-pulse-line"></i> Signos Vitales
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Agendar/Editar Cita -->
+<div class="modal fade" id="appointmentModalgrid" tabindex="-1" aria-labelledby="appointmentModalgridLabel"
+     aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="appointmentModalgridLabel">Agendar / Editar cita</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form class="row g-3 needs-validation" novalidate id="formData">
+                    <input type="hidden" name="AppointmentId" id="appointment" />
+                    <input type="hidden" name="AppointmentPatientid" id="patientId" />
+                    <input type="hidden" id="doctorUserId" />
+                    <input type="hidden" name="AppointmentMedicalofficeid" id="AppointmentMedicalofficeid" />
+
+                    <div class="col-6">
+                        <label for="selectedDate" class="form-label">Fecha</label>
+                        <input type="date" class="form-control" id="selectedDate" required>
+                    </div>
+                    <div class="col-6 d-flex align-items-end gap-2">
+                        <div class="w-100">
+                            <label for="appointmentTime" class="form-label">Hora</label>
+                            <input type="time" class="form-control" id="appointmentTime" readonly required>
+                        </div>
+                        <button type="button" class="btn btn-soft-info" id="viewHoursButton">
+                            <i class="ri-eye-fill"></i> Ver horas
+                        </button>
+                    </div>
+                    <div class="col-12 mt-3">
+                        <label class="form-label">Consultorios disponibles</label>
+                        <div id="consultoriosContainer" class="row row-cols-1 row-cols-md-2 g-3"></div>
+                    </div>
+                    <div class="col-12 text-end">
+                        <button type="button" class="btn btn-primary" id="confirmAppointmentBtn" disabled>
+                            <i class="ri-check-line"></i> Confirmar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Horas Disponibles -->
+<div class="modal fade" id="hoursModalgrid" tabindex="-1" aria-labelledby="hoursModalgridLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="hoursModalgridLabel">Horas Disponibles</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="availableHoursContainer" class="d-flex flex-wrap gap-2 justify-content-center"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-light" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- OFFCANVAS Signos Vitales -->
+<div class="offcanvas offcanvas-end" id="vitalSignsCanvas" tabindex="-1" aria-labelledby="vitalSignsCanvasLabel">
+    <div class="offcanvas-header">
+        <h5 id="vitalSignsCanvasLabel">Registro de Signos Vitales</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body">
+        <div class="alert alert-info"><strong>Use “·” para decimales</strong></div>
+        <form id="vitalSignsForm">
+            <input type="hidden" id="vsAppointmentId" />
+            <input type="hidden" id="vsPatientId" />
+            <div class="row g-3">
+                <div class="col-6">
+                    <label class="form-label">Temperatura °C</label>
+                    <input type="number" step="0.1" class="form-control" id="temperature" required>
+                </div>
+                <div class="col-6">
+                    <label class="form-label">Frecuencia respiratoria</label>
+                    <input type="number" class="form-control" id="respiratoryRate" required>
+                </div>
+                <div class="col-6">
+                    <label class="form-label">Presión Arterial</label>
+                    <input type="text" class="form-control" id="bloodPressure" placeholder="046/123" required>
+                </div>
+                <div class="col-6">
+                    <label class="form-label">Pulso</label>
+                    <input type="number" class="form-control" id="heartRate" required>
+                </div>
+                <div class="col-6">
+                    <label class="form-label">Peso (kg)</label>
+                    <input type="number" step="0.1" class="form-control" id="weight" required>
+                </div>
+                <div class="col-6">
+                    <label class="form-label">Altura (cm)</label>
+                    <input type="number" class="form-control" id="height" required>
+                </div>
+            </div>
+            <button type="button" class="btn btn-primary w-100 mt-3" onclick="submitVitalSigns()">Guardar Signos</button>
+        </form>
+    </div>
+</div>
+
+@section scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"
+            integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+   
+            
+            <!--datatable js-->
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.print.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.html5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+
+    <script src="~/assets/js/pages/datatables.init.js"></script>
+
+
+    <script>
+        $(document).ready(function () {
+            $('#appointmentTable').DataTable({
+                responsive: true,
+                pageLength: 10,
+                order: [[0, 'desc']]
+            });
+        });
+
+        function filterAppointments(status) {
+            window.location.href = '@Url.Action("AppointmentList", "Appointment")?appointmentStatus=' + status;
+        }
+                   function openOptionModal(id, status, patientId) {
+            $.get('@Url.Action("AppointmentGetById", "Appointment")', { id, userProfile: @perfilId })
+             .done(data => {
+                 console.log('Datos recibidos de AppointmentGetById:', data);
+
+                 // Rellenar los hidden
+                 $('#appointmentIdInput').val(data.appointmentId);
+                 $('#appointmentStatus').val(data.status);
+                 $('#appointmentPatientId').val(data.patientId);
+
+                 // Ocultar siempre los botones de consulta
+                 $('#startConsultCol, #startFollowupCol').hide();
+
+                 // Mostrar “Empezar Consulta” si está pagada(0) o activa(1) y NO hay consulta
+                 if ((data.status === 0 || data.status === 1) && data.hasConsultation === false) {
+                     $('#startConsultCol').show();
+                 }
+
+                 // Mostrar “Seguimiento” si está en seguimiento(3) y NO hay consulta previa
+                 if (data.status === 3 && data.hasConsultation === false) {
+                     $('#startFollowupCol').show();
+                 }
+
+                 // Mostrar el resto de botones
+                 $('#rescheduleCol, #cancelCol, #payCol, #reminderCol, #vitalSignsCol').show();
+
+                 // Abrir modal
+                 new bootstrap.Modal($('#optionModal')).show();
+             })
+             .fail(() => alert('Error al obtener datos de la cita.'));
+        }
+
+        
+
+
+        
+
+
+        // Abre el modal de reprogramación y limpia campos de hora/consultorio
+        function openRescheduleModal() {
+            const id = $('#appointmentIdInput').val();
+            const perfil = $('#perfilIdInput').val();
+            if (!id) return alert('ID de cita no hallado.');
+
+            $.get('@Url.Action("AppointmentGetById", "Appointment")', { id, userProfile: perfil })
+                .done(data => {
+                    if (!data) return alert('Cita no encontrada.');
+                    $('#appointment').val(id);
+        $('#patientId').val(data.patientId);          // ahora coincide: id + propiedad
+                        $('#selectedDate').val(data.date);
+                    $('#appointmentTime').val('');
+                    $('#doctorUserId').val(data.doctorUserId);
+                    $('#AppointmentMedicalofficeid').val('');
+                    $('#consultoriosContainer').empty();
+                    $('#confirmAppointmentBtn').hide().prop('disabled', true);
+                    new bootstrap.Modal($('#appointmentModalgrid')).show();
+
+                console.log('Enviando al modal de aceptacion:', data);
+                })
+
+                .fail(() => alert('Error al obtener datos de la cita.'));
+
+                            
+
+        }
+
+        // Carga consultorios según fecha, hora y doctor
+        function loadAvailableOffices() {
+            const date = $('#selectedDate').val();
+            const time = $('#appointmentTime').val();
+            const doctorUserId = $('#doctorUserId').val();
+            if (!date || !time) return;
+
+            $.get('@Url.Action("GetAvailableOffices", "Appointment")', {
+                date: date,
+                hour: time,
+                doctorUserId: doctorUserId
+            })
+            .done(resp => {
+                const $cnt = $('#consultoriosContainer').empty();
+                const officesList = Array.isArray(resp.offices) ? resp.offices : [];
+                if (resp.success && officesList.length > 0) {
+                    officesList.forEach(o => {
+                        $cnt.append(`
+                            <div class="col">
+                              <div class="card consultorio-card" data-id="${o.medicalOfficeId}">
+                                <span class="checkmark"><i class="ri-check-line"></i></span>
+                                <div class="card-body text-center">
+                                  <h5>${o.medicalOfficeName}</h5>
+                                  <p><i class="mdi mdi-hospital-building"></i> #${o.medicalOfficeId}</p>
+                                </div>
+                              </div>
+                            </div>
+                        `);
+                    });
+                    $('.consultorio-card').on('click', function () {
+                        $('.consultorio-card').removeClass('selected');
+                        $(this).addClass('selected');
+                        $('#AppointmentMedicalofficeid').val($(this).data('id'));
+                        $('#confirmAppointmentBtn').show().prop('disabled', false);
+                    });
+                } else {
+                    $cnt.append('<div class="col-12 text-center text-muted">No hay consultorios disponibles.</div>');
+                }
+            })
+            .fail(() => Swal.fire('Error', 'No cargó consultorios.', 'error'));
+        }
+
+        // Cuando cambian fecha u hora, recargar consultorios
+        $('#selectedDate, #appointmentTime').on('change', loadAvailableOffices);
+
+        // Mostrar horas disponibles
+        $('#viewHoursButton').click(() => {
+            const userId = @usuarioId;
+            const date = $('#selectedDate').val();
+            const docId = $('#doctorUserId').val();
+            if (!date) return alert('Seleccione una fecha.');
+
+            $.get('@Url.Action("GetAvailableHours", "Appointment")', { userId, date, doctorUserId: docId })
+                .done(response => {
+                    const hoursList = Array.isArray(response.hours) ? response.hours : response;
+                    const cnt = $('#availableHoursContainer').empty();
+                    if (hoursList.length > 0) {
+                        hoursList.forEach(h => {
+                            cnt.append(`<button class="btn btn-outline-primary btn-sm m-1" data-hour="${h}">${h}</button>`);
+                        });
+                    } else {
+                        cnt.append('<p>No hay horas disponibles.</p>');
+                    }
+                    new bootstrap.Modal($('#hoursModalgrid')).show();
+                })
+                .fail((_, __, e) => alert('Error al cargar horas: ' + e));
+        });
+
+        // Selección de hora: cierra modal de horas y carga consultorios
+        $('#availableHoursContainer').on('click', 'button', function () {
+            const selectedHour = $(this).data('hour');
+            $('#appointmentTime').val(selectedHour);
+            $('#hoursModalgrid').modal('hide');
+            loadAvailableOffices();
+        });
+
+        // Confirmar reprogramación
+             $('#confirmAppointmentBtn').click(function() {
+            const payload = {
+                AppointmentId:              $('#appointment').val(),
+                AppointmentPatientid:       $('#patientId').val(),
+                AppointmentDate:            $('#selectedDate').val(),
+                AppointmentHour:            $('#appointmentTime').val(),
+                AppointmentMedicalofficeid: $('#AppointmentMedicalofficeid').val()
+            };
+
+            console.log('Enviando JSON:', payload);
+
+            $.ajax({
+                url: '@Url.Action("ModifyAppointment", "Appointment")',
+                type: 'POST',
+                contentType: 'application/json; charset=utf-8',  // ⚠️ IMPORTANTE
+                dataType: 'json',
+                data: JSON.stringify(payload)                    // ⚠️ enviamos JSON
+            })
+            .done(resp => {
+                if (resp.success) {
+                    Swal.fire({
+                        title: '¡Actualizada!',
+                        text: resp.message,
+                        icon: 'success',
+                        showCancelButton: !!resp.whatsappUrl,
+                        confirmButtonText: resp.whatsappUrl ? 'Enviar recordatorio' : 'OK',
+                        cancelButtonText: 'Omitir'
+                    }).then(r => {
+                        if (r.isConfirmed && resp.whatsappUrl) window.open(resp.whatsappUrl, '_blank');
+                        location.href = '@Url.Action("AppointmentList", "Appointment")';
+                    });
+                } else {
+                    Swal.fire('Error', resp.message || 'Fallo al actualizar.', 'error');
+                }
+            })
+            .fail((jq, status, err) => {
+                console.error(status, err, jq.responseText);
+                Swal.fire('Error', 'Solicitud falló', 'error');
+            });
+        });
+
+
+
+
+        function cancelAppointment() {
+            Swal.fire({
+                title: '¿Seguro de cancelar?',
+                text: 'Esto desactivará la cita.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, cancelar',
+                cancelButtonText: 'No'
+            }).then(result => {
+                if (result.isConfirmed) {
+                    const data = {
+                        AppointmentId: $('#appointmentIdInput').val(),
+                        AppointmentModifyuser: @usuarioId
+                    };
+                    fetch('@Url.Action("DesactivateAppointment", "Appointment")', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    })
+                    .then(res => res.json())
+                    .then(resp => {
+                        Swal.fire('Cancelada', resp.message, 'success')
+                            .then(() => location.href = '@Url.Action("AppointmentList", "Appointment")');
+                    })
+                    .catch(() => Swal.fire('Error', 'No se pudo cancelar', 'error'));
+                }
+            });
+        }
+
+        function startConsultation() {
+            const id = $('#appointmentIdInput').val();
+            fetch(`@Url.Action("AppointmentGetById", "Appointment")?id=${id}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.patient) return alert('Paciente no encontrado.');
+                    window.location.href = `@Url.Action("NewConsultation", "Consultation")?patientId=${data.patient}`;
+                })
+                .catch(() => alert('Error al iniciar consulta'));
+        }
+
+        function startFollowupConsultation() {
+            const pid = $('#appointmentPatientId').val();
+            window.location.href = `@Url.Action("ConsultationFollowUp", "Consultation")?patientid=${pid}`;
+        }
+
+        function payAppointment() {
+            const id = $('#appointmentIdInput').val();
+            const pid = $('#appointmentPatientId').val();
+            if (!id || !pid) return alert('Faltan IDs de cita o paciente.');
+            window.location.href = `@Url.Action("Facturacion", "Billing")?appointmentId=${id}&patientId=${pid}`;
+        }
+
+        function sendReminderMessage() {
+            const id = $('#appointmentIdInput').val();
+            window.location.href = `@Url.Action("SendWhatsAppReminder", "Appointment")?appointmentId=${id}&userProfile=@ViewBag.UserProfile`;
+        }
+
+        function prepareVitalSigns() {
+            $('#vsAppointmentId').val($('#appointmentIdInput').val());
+            $('#vsPatientId').val($('#appointmentPatientId').val());
+        }
+
+        function submitVitalSigns() {
+            const rawBP = $('#bloodPressure').val().replace(/[^\d/]/g, '');
+            const parts = rawBP.split('/');
+            if (parts.length !== 2 || parts[0].length !== 3 || parts[1].length < 2 || parts[1].length > 3) {
+                return Swal.fire('Error', 'Formato presión debe ser 3 dígitos/2-3 dígitos', 'warning');
+            }
+            const data = {
+                appointmentId: parseInt($('#vsAppointmentId').val()),
+                patientId:    parseInt($('#vsPatientId').val()),
+                temperature:  parseFloat($('#temperature').val()),
+                respiratoryRate: parseInt($('#respiratoryRate').val()),
+                bloodPressureAS: parts[0],
+                bloodPressureDIS: parts[1],
+                pulse:             parseInt($('#heartRate').val()),
+                weight:            parseFloat($('#weight').val()),
+                size:              parseInt($('#height').val()),
+                createdBy:         @usuarioId
+            };
+            fetch('@Url.Action("InsertVitalSigns", "Appointment")', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(resp => {
+                if (resp.success) {
+                    Swal.fire('¡Guardado!', resp.message, 'success');
+                    $('#vitalSignsForm')[0].reset();
+                    bootstrap.Offcanvas.getInstance($('#vitalSignsCanvas')).hide();
+                } else {
+                    Swal.fire('Error', resp.message, 'error');
+                }
+            })
+            .catch(() => Swal.fire('Error', 'No se pudo guardar', 'error'));
+        }
+
+        // Formato automático de presión arterial
+        $('#bloodPressure').on('input', function () {
+            let v = this.value.replace(/[^\d]/g, '').slice(0, 6);
+            if (v.length > 3) v = v.slice(0, 3) + '/' + v.slice(3);
+            this.value = v;
+        });
+
+        // Evitar que queden backdrops/residuos al cerrar modal
+        $('#optionModal').on('hidden.bs.modal', () => {
+            $('.modal-backdrop').remove();
+            document.body.classList.remove('modal-open');
+            document.body.style.paddingRight = '';
+        });
+    </script>
+
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <script>Swal.fire('¡Éxito!', '@successMessage', 'success');</script>
+    }
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <script>Swal.fire('Error', '@errorMessage', 'error');</script>
+    }
+}

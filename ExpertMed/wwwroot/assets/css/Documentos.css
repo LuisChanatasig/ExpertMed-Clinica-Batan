@@ -1,0 +1,183 @@
+﻿* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+@page {
+    size: A4;
+    margin: 20mm;
+}
+
+header {
+    page-break-before: always;
+    page-break-after: avoid;
+}
+
+.page-break {
+    page-break-before: always;
+}
+
+.spaciado {
+    height: 10px;
+}
+
+body {
+    font-family: Calibri;
+}
+
+.headform {
+    background-color: #ccffcc;
+    border: 1px solid gray;
+    text-align: center;
+    border-bottom: none;
+}
+
+.headform2 {
+    background-color: #ffffff;
+    border: 1px solid gray;
+    text-align: center;
+    border-top: none;
+}
+
+.encabezado {
+    width: 100%;
+    border: 2px solid gray;
+    font-size: 11px;
+    border-collapse: collapse;
+}
+
+.motivotitle {
+    background-color: #ccccff;
+    border-top: 1px solid gray;
+    text-align: left;
+    font-size: 14px;
+    width: 100%;
+    border-bottom: none;
+}
+
+.motivodes {
+    background-color: #ffffff;
+    border: 1px solid gray;
+    text-align: left;
+    font-size: 12px;
+    border-top: none;
+}
+
+.MotivoConsulta {
+    width: 100%;
+    border: 2px solid gray;
+    font-size: 11px;
+    border-collapse: collapse;
+ 
+}
+
+.antf {
+    background-color: #ccffcc;
+    border: 1px solid gray;
+    text-align: center;
+    font-size: 7px;
+    width: 2%; /* Ancho fijo para todas las celdas antf */
+    padding: 2px;
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+.antfx {
+    background-color: #e8ef5c;
+    border: 1px solid gray;
+    text-align: center;
+    font-size: 10px;
+    width: 2%;
+    padding: 2px;
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+td.antf:first-child {
+    white-space: nowrap;
+    min-width: 50px;
+}
+
+.trrel {
+    font-size: 7px;
+}
+
+.header-cell {
+    background-color: #99ccff;
+    text-align: center;
+    /* Use percentages or em/rem for better responsiveness */
+    width: 2%; /* Let content determine width, or use % */
+    font-weight: bold; /* Make headers bold */
+}
+
+
+
+.cp {
+    width: 2%;
+    text-align: center; /* Center CP content */
+}
+
+.sp {
+    width: 2%;
+    text-align: center; /* Center SP content */
+
+}
+
+.system-name {
+    background-color: #ccffcc;
+    width: 15%; /* Adjust as needed */
+    font-size: 9px;
+
+    text-align: right; /* Align text to the left */
+}
+
+.data-cell {
+    background-color: #ffff99;
+    text-align: center;
+    width: 1px; /* Match CP/SP widths */
+    height: 1px;
+}
+
+.sgvtitle{
+
+    background-color: #ccffcc;
+    width: 20%; /* Adjust as needed */
+    font-size: 9px;
+
+    text-align: center; /* Align text to the left */
+
+}
+.sgvvalue{
+
+    background-color: #ffffff;
+    width: 10%; /* Adjust as needed */
+    font-size: 9px;
+
+    text-align: center; /* Align text to the left */
+}
+.sgvvalueAs{
+
+    background-color: #ffffff;
+    width: 2%; /* Each value column takes 10% of the table width */
+    font-size: 9px;
+
+    text-align: center; /* Align text to the left */
+}
+.MotivoConsulta td {
+    border: 1px solid #ccc;
+    padding: 5px;
+}
+
+/* Media query for print */
+@media print {
+    .MotivoConsulta {
+        font-size: 10px; /* Slightly smaller font for print */
+    }
+    .header-cell, .system-name, .data-cell, .antf, .antfx {
+        padding: 3px; /* Reduce padding for print */
+    }
+    @page {
+        margin: 10mm; /* Adjust margins for print */
+    }
+}

@@ -1,0 +1,178 @@
+﻿@{
+    ViewBag.Title = "Reportes de Laboratorio";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var selectedDesde = ViewBag.FechaDesde as string;
+    var selectedHasta = ViewBag.FechaHasta as string;
+    var selectedMedico = ViewBag.MedicoId as int?;
+    var selectedSeguro = ViewBag.SeguroId as int?;
+}
+
+@section styles {
+    <style>
+        .chart-container {
+            height: 400px;
+        }
+    </style>
+}
+
+<div class="card mb-4">
+    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="mdi mdi-chart-bar"></i> Panel de Reportes de Laboratorio</h5>
+        <button class="btn btn-light btn-sm" data-bs-toggle="offcanvas" data-bs-target="#offcanvasFilters">
+            <i class="mdi mdi-tune"></i> Filtros
+        </button>
+    </div>
+    <div class="card-body">
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div id="pieEstados" class="chart-container"></div>
+            </div>
+            <div class="col-md-6">
+                <div id="barrasMes" class="chart-container"></div>
+            </div>
+            <div class="col-md-6">
+                <div id="topMedicos" class="chart-container"></div>
+            </div>
+            <div class="col-md-6">
+                <div id="comparativoMes" class="chart-container"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de resultados -->
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h6 class="mb-0"><i class="mdi mdi-table"></i> Detalle de Resultados de Laboratorio</h6>
+    </div>
+    <div class="card-body table-responsive">
+        <table class="table table-bordered table-hover table-sm align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Fecha Consulta</th>
+                    <th>Médico</th>
+                    <th>Paciente</th>
+                    <th>Seguro</th>
+                    <th>Resultado</th>
+                    <th>Fecha Resultado</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null )
+                {
+                    foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.FechaConsulta.ToString("dd/MM/yyyy")</td>
+                            <td>@item.NombreMedico</td>
+                            <td>@item.NombrePaciente</td>
+                            <td>@item.NombreSeguro</td>
+                            <td>@item.Resultado</td>
+                            <td>@(item.FechaResultado?.ToString("dd/MM/yyyy") ?? "Sin resultado")</td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="6" class="text-center">No hay resultados para los filtros aplicados.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasFilters">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title"><i class="mdi mdi-tune"></i> Filtros Avanzados</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body">
+        <form id="filtrosForm" method="get" asp-action="Laboratoryreport">
+            <div class="mb-3">
+                <label for="fechaDesde" class="form-label">Desde:</label>
+                <input type="date" class="form-control form-control-sm" id="fechaDesde" name="fechaDesde" value="@selectedDesde">
+            </div>
+            <div class="mb-3">
+                <label for="fechaHasta" class="form-label">Hasta:</label>
+                <input type="date" class="form-control form-control-sm" id="fechaHasta" name="fechaHasta" value="@selectedHasta">
+            </div>
+            <div class="mb-3">
+                <label for="medicoSelect" class="form-label">Médico:</label>
+                <select class="form-select form-select-sm" id="medicoSelect" name="medicoId">
+                    <option value="">Todos</option>
+                    @foreach (var medico in ViewBag.Medicos)
+                    {
+                        <option value="@medico.UsersId" >@medico.UsersNames</option>
+                    }
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="seguroSelect" class="form-label">Seguro:</label>
+                <select class="form-select form-select-sm" id="seguroSelect" name="seguroId">
+                    <option value="">Todos</option>
+                    @foreach (var seguro in ViewBag.Seguros)
+                    {
+                        <option value="@seguro.CatalogId" >@seguro.CatalogName</option>
+                    }
+                </select>
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary btn-sm">Aplicar</button>
+                <a href="@Url.Action("Laboratoryreport", "Laboratorio")" class="btn btn-outline-secondary btn-sm">Limpiar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.2/dist/echarts.min.js"></script>
+    <script>
+               const datos = @Html.Raw(ViewBag.ChartDataJson ?? "{}");
+
+        echarts.init(document.getElementById('pieEstados')).setOption({
+            title: { text: 'Distribución por Estado', left: 'center' },
+            tooltip: { trigger: 'item' },
+            legend: { bottom: 10 },
+            series: [{
+                type: 'pie',
+                radius: '60%',
+                data: datos.Estados?.map(e => ({ name: e.Nombre, value: e.Valor })) || []
+            }]
+        });
+
+        echarts.init(document.getElementById('barrasMes')).setOption({
+            title: { text: 'Solicitudes por Mes' },
+            tooltip: {},
+            xAxis: { type: 'category', data: datos.Meses || [] },
+            yAxis: { type: 'value' },
+            series: [{ type: 'bar', data: datos.ValoresPorMes || [] }]
+        });
+
+        echarts.init(document.getElementById('topMedicos')).setOption({
+            title: { text: 'Top Médicos Solicitantes' },
+            tooltip: {},
+            xAxis: { type: 'value' },
+            yAxis: {
+                type: 'category',
+                data: datos.TopMedicos?.map(m => m.Nombre) || []
+            },
+            series: [{ type: 'bar', data: datos.TopMedicos?.map(m => m.Cantidad) || [] }]
+        });
+
+        echarts.init(document.getElementById('comparativoMes')).setOption({
+            title: { text: 'Exámenes Pendientes vs Finalizados' },
+            tooltip: { trigger: 'axis' },
+            legend: { data: ['Pendientes', 'Finalizados'] },
+            xAxis: { type: 'category', data: datos.Meses || [] },
+            yAxis: { type: 'value' },
+            series: [
+                { name: 'Pendientes', type: 'line', data: datos.Pendientes || [] },
+                { name: 'Finalizados', type: 'line', data: datos.Finalizados || [] }
+            ]
+        });
+
+    </script>
+}

@@ -1,0 +1,56 @@
+﻿<!doctype html>
+<html lang="es" data-layout="vertical" data-topbar="light" data-sidebar="light" data-sidebar-size="lg" data-sidebar-image="none" data-preloader="disable">
+<head>
+    @await Html.PartialAsync("_title_meta")
+    @RenderSection("styles", required: false)
+    @await Html.PartialAsync("_head_css")
+</head>
+<body>
+    <!-- Begin page -->
+    <div id="layout-wrapper">
+        @await Html.PartialAsync("_menu")
+
+        <!-- ============================================================== -->
+        <!-- Start right Content here -->
+        <!-- ============================================================== -->
+        <div class="main-content">
+
+            <div class="page-content">
+                <div class="container-fluid">
+                   @*  @await Html.PartialAsync("_page_title") *@
+
+                    @RenderBody()
+                </div>
+            </div>
+            @await Html.PartialAsync("_footer")
+        </div>
+
+    </div>
+    <!-- END layout-wrapper -->
+
+    @await Html.PartialAsync("_vendor_scripts")
+
+    @RenderSection("scripts", required: false)
+
+    <script>
+        var timeout = 30 * 60 * 1000; // 30 minutos en milisegundos
+
+        var logoutTimer = setTimeout(logout, timeout);
+
+        function logout() {
+            window.location.href = "@Url.Action("SignIn", "Authentication")"; // Redirige al login
+        }
+
+        function resetTimer() {
+            clearTimeout(logoutTimer);
+            logoutTimer = setTimeout(logout, timeout);
+        }
+
+        // Detectar actividad del usuario
+        document.addEventListener("mousemove", resetTimer);
+        document.addEventListener("keydown", resetTimer);
+    </script>
+
+
+</body>
+</html>

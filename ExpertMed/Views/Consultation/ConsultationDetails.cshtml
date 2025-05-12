@@ -1,0 +1,2373 @@
+﻿@using Microsoft.AspNetCore.Http
+
+@{
+    ViewBag.Title = "Revisar Consulta";
+    ViewBag.pTitle = "Revisar Consulta";
+    ViewBag.pageTitle = "Revisar Consulta";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var successMessage = TempData["SuccessMessage"] as string;
+    var errorMessage = TempData["ErrorMessage"] as string;
+
+    var usuarioId = ViewContext.HttpContext.Session.GetInt32("UsuarioId");
+    var perfilId = ViewContext.HttpContext.Session.GetInt32("PerfilId");
+    var especialidadId = ViewContext.HttpContext.Session.GetInt32("UsuarioEspecialidadId");
+}
+
+@model NewPatientViewModel
+<div class="position-relative mx-n4 mt-n4">
+    <div class="profile-wid-bg profile-setting-img">
+        <img src="~/assets/images/auth-one-bg.jpg" class="profile-wid-img" alt="">
+        <div class="overlay-content">
+            <div class="text-end p-3">
+                <div class="p-0 ms-auto rounded-circle profile-photo-edit">
+                    <input id="profile-foreground-img-file-input" type="file" class="profile-foreground-img-file-input">
+                    <h1 class="cabeceras"> <i class=" ri-survey-fill"></i> NUEVA CONSULTA</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="col-xxl-12">
+    <div class="card">
+        <div class="card-body">
+            <!-- #region Formulario (FORM)-->
+            <form id="consultationForm" class="form-steps" autocomplete="off">
+                <!--Campos ocultos para manejo de variables-->
+                <input type="hidden" class="form-control" id="consultation_usercreate" value="@usuarioId" />
+                <input type="hidden" id="consultation_sequential" value="0" />
+                <input type="hidden" id="consultation_patient" value="@Model.DetailsPatient.PatientId" />
+                <input type="hidden" id="consultation_speciality" value="@especialidadId" />
+                <input type="hidden" id="consultation_date" value="" />
+                <input type="hidden" id="consultation_type" value="1" />
+                <input type="hidden" id="consultation_status" value="1" />
+
+                <!-- #region Steps -->
+                <div class="step-arrow-nav mb-4">
+                    <ul class="nav nav-pills custom-nav nav-justified" role="tablist">
+                        <!-- #region Step Uno-->
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="steparrow-gen-info-tab"
+                                    data-bs-toggle="pill" data-bs-target="#steparrow-gen-info"
+                                    type="button" role="tab" aria-controls="steparrow-gen-info"
+                                    aria-selected="true">
+                             Datos del paciente
+                            </button>
+                        </li>
+                        <!-- #endregion Step Uno-->
+                        <!-- #region Step Dos-->
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="steparrow-consultation-data-tab"
+                                    data-bs-toggle="pill" data-bs-target="#steparrow-consultation-data"
+                                    type="button" role="tab" aria-controls="steparrow-consultation-data"
+                                    aria-selected="false">
+                                Datos de consulta
+
+                            </button>
+                        </li>
+                        <!-- #endregion Step Dos -->
+                        <!-- #region Step Tres-->
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="steparrow-vital-signs-tab"
+                                    data-bs-toggle="pill" data-bs-target="#steparrow-vital-signs"
+                                    type="button" role="tab" aria-controls="steparrow-vital-signs"
+                                    aria-selected="false">
+                              Signos Vitales
+                            </button>
+                        </li>
+                        <!-- #endregion  Step Tres-->
+                        <!-- #region Step Cuatro-->
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="steparrow-diagnostic-tab"
+                                    data-bs-toggle="pill" data-bs-target="#steparrow-diagnostic"
+                                    type="button" role="tab" aria-controls="steparrow-diagnostic"
+                                    aria-selected="false">
+                                Diagnosticos
+
+                            </button>
+                        </li>
+                        <!-- #endregion Step Cuatro-->
+
+                    </ul>
+                </div>
+                <!-- #endregion Steps-->
+                <!-- #region Tab Content-->
+                <div class="tab-content">
+                    <!-- #region Primer panel-->
+                    <div class="tab-pane fade show active" id="steparrow-gen-info" role="tabpanel"
+                         aria-labelledby="steparrow-gen-info-tab">
+
+                        <div class="row">
+
+                            <div class="divider-with text">
+                                <i class="ri-user fill" id="icons"></i><span>DATOS PERSONALES</span>
+                            </div>
+
+                            <div class="col-lg-3">
+                                <div class="mb-3">
+                                    <label class="form-label" for="firstName">
+                                       Primer apellido
+                                    </label>
+                                    <input type="text" class="form-control" id="firstlastnameInput"
+                                           name="FirstLastName"
+                                           value="@Model.DetailsPatient.PatientFirstsurname" disabled>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-3">
+                                <div class="mb-3">
+                                    <label for="documentNumberInput" class="form-label">
+                                        Segundo apellido
+                                    </label>
+                                    <input type="text" class="form-control" id="Input"
+                                           name="PatientSecondlastname"
+                                           value="@Model.DetailsPatient.PatientSecondlastname"
+                                           disabled>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-3">
+                                <div class="mb-3">
+                                    <label for="documentNumberInput" class="form-label">
+                                        Primer Nombre
+                                    </label>
+                                    <input type="text" class="form-control" id="firstnameInput"
+                                           name="PatientFirstname"
+                                           value="@Model.DetailsPatient.PatientFirstname" disabled>
+                                </div>
+                            </div>
+
+
+                            <div class="col-lg-3">
+                                <div class="mb-3">
+                                    <label for="documentNumberInput" class="form-label">
+                                        Segundo Nombre
+                                    </label>
+                                    <input type="text" class="form-control" id="Input"
+                                           name="PatientMiddlename"
+                                           value="@Model.DetailsPatient.PatientMiddlename" disabled>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-3">
+                                <div class="mb-3">
+                                    <label for="specialtySelect" class="form-label">
+                                        Seleccione el tipo de documento *
+                                    </label>
+                                    <select class="form-control"
+                                            asp-for="DetailsPatient.PatientDocumenttype"
+                                            id="documenttyoeId" name="PatientDocumenttype" data-choices
+                                            data-choices-sorting-false disabled>
+                                        @foreach (var documenttype in Model.DocumentTypes)
+                                        {
+                                            <option value="@documenttype.CatalogId">
+                                                @documenttype.CatalogName
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-3">
+                                <div class="mb-3">
+                                    <label for="lastnameInput" class="form-label">
+                                        Numero de documento
+                                        *
+                                    </label>
+                                    <input type="text" class="form-control" id="documentnumber"
+                                           name="PatientDocumentnumber"
+                                           value="@Model.DetailsPatient.PatientDocumentnumber"
+                                           disabled>
+
+                                </div>
+                            </div>
+
+                            <div class="col-lg-3">
+
+                                <div class="mb-3">
+                                    <label for="specialtySelect" class="form-label">
+                                        Seleccione el tipo de sangre
+                                    </label>
+                                    <select class="form-control" id="bloodtype"
+                                            name="PatientBloodtype"
+                                            asp-for="DetailsPatient.PatientBloodtype" data-choices
+                                            data-choices-sorting-false disabled>
+
+                                        @foreach (var bloodtype in Model.BloodTypes)
+                                        {
+                                            <option value="@bloodtype.CatalogId">
+                                                @bloodtype.CatalogName
+                                            </option>
+                                        }
+                                    </select>
+
+                                </div>
+
+                            </div>
+
+                            <div class="col-lg-3">
+                                <div class="mb-3">
+                                    <label for="donorSelect" class="form-label">¿Él es donante?</label>
+                                    <select class="form-control" id="donorSelect"
+                                            name="PatientDonor" asp-for="DetailsPatient.PatientDonor"
+                                            data-choices data-choices-sorting-false disabled>
+                                        <option value="Yes">Yes</option>
+                                        <option value="No">No</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-3">
+                                <div class="mb-3">
+                                    <label for="lastnameInput" class="form-label">
+                                        Fecha de nacimiento
+                                        *
+                                    </label>
+                                    <input type="date" class="form-control" id="birhdate"
+                                           name="PatientBirthdate"
+                                           value="@((Model.DetailsPatient.PatientBirthdate.HasValue) ? Model.DetailsPatient.PatientBirthdate.Value.ToString("yyyy-MM-dd") : string.Empty)"
+                                           disabled>
+
+                                </div>
+                            </div>
+
+                            <div class="col-lg-2">
+                                <div class="mb-3">
+                                    <label for="lastnameInput" class="form-label">Edad</label>
+                                    <input type="number" class="form-control" id="agePatient"
+                                           name="PatientAge" value="@Model.DetailsPatient.PatientAge"
+                                           disabled>
+
+                                </div>
+                            </div>
+
+                            <div class="col-lg-3">
+                                <div class="mb-3">
+                                    <label for="selectMaritalStatus" class="form-label">
+                                        Seleccione su estado civil
+                                    </label>
+                                    <select class="form-control" id="maritalStatus"
+                                            name="PatientMaritalStatus"
+                                            asp-for="DetailsPatient.PatientMaritalstatus" data-choices
+                                            data-choices-sorting-false disabled>
+                                        @foreach (var maritalStatus in Model.CivilTypes)
+                                        {
+                                            <option value="@maritalStatus.CatalogId">
+                                                @maritalStatus.CatalogName
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+
+                            </div>
+
+                            <div class="col-lg-3">
+                                <div class="mb-3">
+                                    <label for="professionalSelect" class="form-label">
+                                        Seleccione su profesión laboral
+                                    </label>
+                                    <select class="form-control" id="vocationalTraining"
+                                            name="PatientVocationalTraining"
+                                            asp-for="DetailsPatient.PatientVocationalTraining"
+                                            data-choices data-choices-sorting-false disabled>
+
+                                        @foreach (var professionaltraining in
+                                        Model.ProfessionalTrainingTypes)
+                                        {
+                                            <option value="@professionaltraining.CatalogId">
+                                                @professionaltraining.CatalogName
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="divider-with-text">
+                                <i class="ri-contacts-book-2-fill" id="icons"></i> <span>
+                                    Datos de contacto
+                                </span>
+                            </div>
+
+
+                            <div class="col-lg-3">
+                                <div class="mb-3">
+                                    <label for="selectNationality" class="form-label">
+                                        Seleccione su nacionalidad
+                                    </label>
+                                    <select class="form-control" id="nationalitytypeId"
+                                            name="PatientNationality"
+                                            asp-for="DetailsPatient.PatientNationality" data-choices
+                                            data-choices-sorting-false disabled>
+                                        @foreach (var nacionality in Model.Countries)
+                                        {
+                                            <option value="@nacionality.CountryId">
+                                                @nacionality.CountryNationality
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="3">
+                                    <label for="selectProvice" class="form-label">
+                                        Seleccione su provincia
+                                    </label>
+                                    <select class="form-control" id="provincetypeId"
+                                            name="PatientProvince"
+                                            asp-for="DetailsPatient.PatientProvince" data-choices
+                                            data-choices-sorting-false disabled>
+
+                                        @foreach (var provinces in Model.Provinces)
+                                        {
+                                            <option value="@provinces.ProvinceId">
+                                                @provinces.ProvinceName
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+
+
+                            <div class="col-lg-12">
+                                <div class="mb-3">
+                                    <label for="addressInput" class="form-label">Dirección</label>
+                                    <div class="input-group">
+                                        <!-- Input para ingresar la dirección -->
+                                        <input type="text" id="addressInput" class="form-control"
+                                               name="PatientAddress"
+                                               value="@Model.DetailsPatient.PatientAddress"
+                                               aria-label="Recipient's username"
+                                               aria-describedby="button-addon2"
+                                               placeholder="Escribe tu dirección" disabled <button class="btn btn-outline-success" type="button"
+                                                                                                 id="mapButton" disabled>
+                                            <i class="ri-map-pin-line"></i>
+                                        </button>
+                                    </div>
+
+                                    <!-- Contenedor para el mapa que se generará dinámicamente -->
+                                    <div id="map"
+                                         style="display: none; height: 400px; margin-top: 15px;">
+                                    </div>
+
+                                    <!-- Contenedor de sugerencias que se generará dinámicamente -->
+                                    <div id="suggestions" class="suggestions-container"
+                                         style="display: none;"></div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-4">
+                                <div class="mb-3">
+                                    <label for="codeSenecytInput" class="form-label">
+                                        Número de teléfono Fijo
+                                    </label>
+                                    <input type="text" class="form-control" id="landlinetInput"
+                                           name="PatientLandlinePhone"
+                                           value="@Model.DetailsPatient.PatientLandlinePhone"
+                                           placeholder="Ingrese su número de teléfono fijo" disabled>
+
+                                </div>
+                            </div>
+
+
+                            <div class="col-lg-4">
+                                <div class="mb-3">
+                                    <label for="phonenumberInput" class="form-label">
+                                        Número de Celular
+                                    </label>
+                                    <input type="text" class="form-control" id="phonenumberInput"
+                                           name="PatientCellularPhone"
+                                           value="@Model.DetailsPatient.PatientCellularPhone"
+                                           placeholder="Ingrese su número de teléfono +(1) 987 6543"
+                                           disabled>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-4">
+                                <div class="mb-3">
+                                    <label for="emailInput" class="form-label">Email </label>
+                                    <input type="email" class="form-control"
+                                           id="steparrow-gen-info-email-input" name="PatientEmail"
+                                           value="@Model.DetailsPatient.PatientEmail" readonly>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-4">
+                                <div class="mb-3">
+                                    <label for="patientOcupationLabel"
+                                           class="form-label">Ocupación</label>
+
+                                    <input type="text" class="form-control"
+                                           id="patientOcupationInput" name="PatientOcupation"
+                                           placeholder="Ingrese su ocupacion"
+                                           value="@Model.DetailsPatient.PatientOcupation" disabled>
+
+                                </div>
+                            </div>
+
+                            <div class="col-lg-4">
+                                <div class="mb-3">
+                                    <label for="companyInput" class="form-label">Compañía</label>
+                                    <input type="text" class="form-control" id="companyInput"
+                                           name="PatientCompany" placeholder="Ingrese su empresa"
+                                           value="@Model.DetailsPatient.PatientCompany" disabled>
+
+                                </div>
+                            </div>
+
+                            <div class="col-lg-3">
+                                <div class="mb-3">
+                                    <label for="selectHealtInsurance">
+                                        Seleccione su seguro médico
+                                    </label>
+                                    <select class="form-control" id="healtInsuranceId"
+                                            name="PatientHealthInsurance"
+                                            asp-for="DetailsPatient.PatientHealthInsurance" data-choices
+                                            data-choices-sorting-false disabled>
+
+                                        @foreach (var healtinsurance in Model.SureHealthTypes)
+                                        {
+                                            <option value="@healtinsurance.CatalogId">
+                                                @healtinsurance.CatalogName
+                                            </option>
+                                        }
+                                    </select>
+
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="mb-3">
+                                    <label class="form-label" for="historyClinic">
+                                        Historia clínica
+                                    </label>
+                                    <input type="text" class="form-control" id="consultation_historyclinic"
+                                           placeholder="Ingrese su historial clínico"
+                                           value="@Model.DetailsPatient.PatientDocumentnumber" name="ConsultationHistoryClinic" required
+                                           readonly>
+                                    <div class="invalid-feedback">
+                                       Ingrese un historial válido
+Clínica.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex align-items-start gap-3 mt-4">
+                                <button type="button" class="btn btn-success nexttab"
+                                        data-nexttab="steparrow-consultation-data-tab">
+                                   Siguiente
+                                </button>
+
+
+                                <a type="button" class="btn btn-soft-info" data-bs-toggle="modal" data-bs-target="#appointmentModalgrid">
+                                    <i class="ri-calendar-todo-fill"></i>Agendar Cita seguimiento
+                                </a>
+                                <a asp-action="ConsultationList" asp-controller="Consultation" class="btn btn-outline-danger"><i class="fa fa-close"></i> Salir</a>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                    <!-- #endregion Primer Panel-->
+                    <!-- #region Segundo Panel -->
+                    <div class="tab-pane fade" id="steparrow-consultation-data" role="tabpanel"
+                         aria-labelledby="steparrow-consultation-data-tab">
+
+                        <div class="row">
+
+                            <div class="divider-with-text">
+                                <i class="ri-user-search-fill" id="icons"></i> <span>
+                                    Datos de contacto
+                                </span>
+                            </div>
+
+                            <!-- #region Tabla datos paciente-->
+                            <table class="table table-striped">
+                                <tbody>
+                                    <tr>
+                                        <td style="font-size: 0.7rem;">
+                                            <i class="ri-account-circle-fill"></i> <br />
+                                            Paciente:  <br /> @Model.DetailsPatient.PatientFirstname
+                                            @Model.DetailsPatient.PatientFirstsurname
+                                        </td>
+                                        <td style="font-size: 0.7rem;">
+                                            <i class="ri-bank-card-fill"></i> <br /> Numeró de documento <br />
+                                            @Model.DetailsPatient.PatientDocumentnumber
+                                        </td>
+                                        <td style="font-size: 0.7rem;">
+                                            <i class="mdi-gender-male-female"></i> <br /> Género
+                                            <br /> @Model.DetailsPatient.PatientGenderName
+                                        </td>
+                                        <td style="font-size: 0.7rem;">
+                                            <i class="ri-drop-fill"></i>
+                                            <br /> Tipo de sangre <br />
+                                            @Model.DetailsPatient.PatientBloodtypeName
+                                        </td>
+                                        <td style="font-size: 0.7rem;">
+                                            <i class="ri-calendar-event-fill"></i> <br /> Fecha de nacimiento <br />
+                                            @((Model.DetailsPatient.PatientBirthdate.HasValue) ?
+                                                Model.DetailsPatient.PatientBirthdate.Value.ToString("yyyy-MM-dd")
+                                                : string.Empty) </span>
+                                        </td>
+                                        <td style="font-size: 0.7rem;">
+                                            <i class="ri-calendar-event-fill"></i> <br /> Edad
+                                            <br /> @Model.DetailsPatient.PatientAge
+                                        </td>
+
+                                    </tr>
+                                    <tr>
+
+                                        <td style="font-size: 0.7rem;">
+                                            <i class="ri-file-user-fill"></i><br /> Estado Civil
+                                            <br /> @Model.DetailsPatient.PatientMaritalstatusName
+                                        </td>
+                                        <td style="font-size: 0.7rem;">
+                                            <i class="ri-honour-fill"></i><br />Profesión
+                                            <br />@Model.PatientVocationalTrainingNavigation
+                                        </td>
+                                        <td style="font-size: 0.7rem;">
+                                            <i class="ri-flag-fill"></i><br /> Nacionalidad
+                                            <br />@Model.DetailsPatient.PatientNationalityName
+                                        </td>
+                                        <td style="font-size: 0.7rem;">
+                                            <i class="ri-phone-fill"></i><br /> Teléfono
+                                            <br />@Model.DetailsPatient.PatientLandlinePhone
+                                        </td>
+                                        <td style="font-size: 0.7rem;">
+                                            <i class="ri-smartphone-fill"></i><br />Celular
+                                            <br />@Model.DetailsPatient.PatientCellularPhone
+                                        </td>
+                                        <td style="font-size: 0.7rem;">
+                                            <i class="ri-mail-fill"></i><br />Email
+                                            <br />@Model.DetailsPatient.PatientEmail
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <!-- #endregion Tabla datos paciente-->
+
+                            <div class="col-lg-4">
+                                <div class="mb-3">
+                                    <label for="phonenumberInput" class="form-label">
+                                        Nombre del acompañante
+                                    </label>
+                                    <input type="text" class="form-control" id="consultation_familiaryname"
+                                           name="ConsultationFamiliaryName" value="@Model.Consultation.ConsultationFamiliaryname" placeholder="Nombre(s), Apellido(s)">
+
+                                </div>
+                            </div>
+
+                            <div class="col-lg-3">
+                                <div class="mb-3">
+                                    <label for="parentSelect" class="form-label">
+                                        Seleccione su parentesco
+                                    </label>
+                                    <select class="form-control" id="consultation_familiarytype" asp-for="Consultation.ConsultationFamiliarytype" name="ConsultationFamiliaryType"
+                                            data-choices data-choices-sorting-false>
+                                        @foreach (var parents in Model.Parents)
+                                        {
+                                            <option value="@parents.CatalogId">
+                                                @parents.CatalogName
+                                            </option>
+                                        }
+
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-4">
+                                <div class="mb-3">
+                                    <label for="phonenumberInput" class="form-label">
+                                        Número contacto del acompañante
+                                    </label>
+                                    <input type="text" class="form-control" id="consultation_familiaryphone"
+                                           name="ConsultationFamiliaryPhone" value="@Model.Consultation.ConsultationFamiliaryphone" placeholder="0900000000">
+
+                                </div>
+                            </div>
+
+                            <div class="col-lg-12">
+                                <div class="mb-3">
+                                    <label for="phonenumberInput" class="form-label">
+                                        Motivo de la consulta *
+                                    </label>
+                                    <input type="text" class="form-control"
+                                           id="consultation_reason" name="ConsultationReason"
+                                           placeholder="Ingrese su motivo de consulta" value="@Model.Consultation.ConsultationReason" required>
+
+                                </div>
+                            </div>
+
+
+                            <div class="divider-with-text">
+                                <i class="ri-user-3-fill" id="icons"></i> <span>
+                                   Antecedentes personales
+                                </span>
+                            </div>
+
+                            <div class="col-lg-12">
+                                <div class="mb-3">
+
+                                    <textarea class="form-control" id="consultation_personalbackground"
+                                              rows="3" name="ConsultationPersonalBackground" asp-for="Consultation.ConsultationPersonalbackground"
+                                              placeholder="Escriba una descripción o hable mediante el microfono"></textarea>
+                                    <i id="dictationIcon1" class=" ri-mic-fill position-absolute" style="top: 35px; right: 15px; cursor: pointer;"></i>
+
+                                </div>
+
+                            </div>
+
+                            <!-- #region Alergias-->
+                            <div class="col-lg-12">
+                                <div class="mb-3">
+                                    <label for="allergiesSelect">Seleccione sus alergias</label>
+                                    <select class="form-control" id="allergiesSelect" name="allergiesSelect" data-choices data-choices-removeItem multiple>
+                                        @foreach (var allergy in Model.AllergiesTypes)
+                                        {
+                                            // Verificar si la alergia está asociada a la consulta
+                                            var isSelected = Model.Consultation.AllergiesConsultations
+                                            .Any(a => a.AllergiesCatalogid == allergy.CatalogId);
+
+                                            <option value="@allergy.CatalogId" selected="@(isSelected ? "selected" : null)">
+                                                @allergy.CatalogName
+                                            </option>
+                                        }
+                                    </select>
+                                    <input type="hidden" id="selectallergiesId" name="selectallergiesId" value="@string.Join(",", Model.Consultation.AllergiesConsultations.Select(a => a.AllergiesCatalogid))">
+                                </div>
+                            </div>
+                            <!-- #endregion Alergias-->
+                            <!-- #region Cirugías-->
+                            <div class="col-lg-12" id="surgeriesSelectContainer">
+                                <div class="mb-3">
+                                    <label for="surgeriesSelect" class="form-label">Seleccione las cirugías </label>
+                                    <select class="form-control" id="surgeriesSelect" name="surgeriesSelect" data-choices data-choices-removeItem multiple>
+                                        @foreach (var surgery in Model.SurgeriesTypes)
+                                        {
+                                            // Verificar si la cirugía está asociada a la consulta
+                                            var isSelected = Model.Consultation.SurgeriesConsultations
+                                            .Any(s => s.SurgeriesCatalogid == surgery.CatalogId);
+
+                                            <option value="@surgery.CatalogId" selected="@(isSelected ? "selected" : null)">
+                                                @surgery.CatalogName
+                                            </option>
+                                        }
+                                    </select>
+                                    <!-- Input oculto para enviar los IDs seleccionados -->
+                                    <input type="hidden" id="selectSurgeriesId" name="selectSurgeriesId" value="@string.Join(",", Model.Consultation.SurgeriesConsultations.Select(s => s.SurgeriesCatalogid))">
+                                </div>
+                            </div>
+                            <!-- #endregion Cirugías-->
+                            <!-- #region Antecedentes familiares-->
+                            <div class="divider-with-text">
+                                <i class="ri-arrow-go-back-fill" id="icons"></i> <span>
+                                   Antecedentes Familiares
+                                </span>
+                            </div>
+
+                            <!-- #region  Cardiopatía-->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="familiary_background_heartdisease"
+                                       name="familiary_background_heartdisease"
+                                @(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundHeartdisease == true ? "checked" : "")>
+                                <label class="form-check-label" for="familiary_background_heartdisease">
+                                    Cardiopatía
+                                </label>
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+
+                                    <select class="form-control" asp-for="Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogHeartdisease" id="familiary_background_relatshcatalog_heartdisease"
+                                            name="familyMemberHeartDisease" data-choices
+                                            data-choices-sorting-false>
+                                        <option value="">Selecciona el miembro de tu familia</option>
+                                        @foreach (var familyMember in Model.FamilyMember)
+                                        {
+                                            <option value="@familyMember.CatalogId">
+                                                @familyMember.CatalogName
+                                            </option>
+                                        }
+                                    </select>
+
+                                </div>
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+
+                                    <input type="text" class="form-control observation-input"
+                                           id="familiary_background_heartdisease_observation" value="@Model.Consultation.FamiliaryBackground.FamiliaryBackgroundHeartdiseaseObservation" name="observationHeartDisease"
+                                           placeholder="ingrese una observación">
+
+                                </div>
+                            </div>
+                            <!-- #endregion Cardiopatía-->
+                            <!-- #region Diabetes-->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="familiary_background_diabetes" @(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundDiabetes == true ? "checked" : "")>
+                                <label class="form-check-label"
+                                       for="SwitchCheckDiabetes">Diabetes</label>
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+                                    <select class="form-control" asp-for="Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogDiabetes" id="familiary_background_relatshcatalog_diabetes"
+                                            name="familyMemberDiabetes" data-choices
+                                            data-choices-sorting-false>
+                                        <option value="">Selecciona el miembro de tu familia</option>
+                                        @foreach (var familyMember in Model.FamilyMember)
+                                        {
+                                            <option value="@familyMember.CatalogId">
+                                                @familyMember.CatalogName
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+
+                                    <input type="text" class="form-control" value="@Model.Consultation.FamiliaryBackground.FamiliaryBackgroundDiabetesObservation" id="familiary_background_diabetes_observation"
+                                           name="observationDiabetes"
+                                           placeholder="Ingrese una observación">
+
+                                </div>
+                            </div>
+                            <!-- #endregion Diabetes-->
+                            <!-- #region Enfermedad Cardiovascular-->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="familiary_background_dxcardiovascular" @(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundDxcardiovascular == true ? "checked" : "")>
+                                <label class="form-check-label"
+                                       for="SwitchCheckCardiovascular">Enfermedad Cardiovascular</label>
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+                                    <select class="form-control" id="familiary_background_relatshcatalog_dxcardiovascular"
+                                            name="familyMemberCardiovascularDisease" asp-for="Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogDxcardiovascular" data-choices
+                                            data-choices-sorting-false>
+                                        <option value="">Selecciona el miembro de tu familia</option>
+                                        @foreach (var familyMember in Model.FamilyMember)
+                                        {
+                                            <option value="@familyMember.CatalogId">
+                                                @familyMember.CatalogName
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+
+                                    <input type="text" class="form-control"
+                                           id="familiary_background_dxcardiovascular_observation"
+                                           name="observationCardiovascularDisease"
+                                           placeholder="Ingrese una observación" value="@Model.Consultation.FamiliaryBackground.FamiliaryBackgroundDxcardiovascularObservation">
+
+                                </div>
+                            </div>
+                            <!-- #endregion Enfermedad Cardiovascular-->
+                            <!-- #region Hipertension-->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="familiary_background_hypertension" @(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundHypertension == true ? "checked" : "")>
+                                <label class="form-check-label"
+                                       for="SwitchCheckHypertension">Hipertensión</label>
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+                                    <select class="form-control" id="familiary_background_relatshcatalog_hypertension"
+                                            name="familiary_background_relatshcatalog_hypertension" asp-for="Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogHypertension" data-choices
+                                            data-choices-sorting-false>
+                                        <option value="">Selecciona el miembro de tu familia</option>
+                                        @foreach (var familyMember in Model.FamilyMember)
+                                        {
+                                            <option value="@familyMember.CatalogId">
+                                                @familyMember.CatalogName
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+
+                                    <input type="text" class="form-control"
+                                           id="familiary_background_hypertension_observation" name="observationHypertension"
+                                           placeholder="Ingrese una observación" value="@Model.Consultation.FamiliaryBackground.FamiliaryBackgroundHypertensionObservation">
+
+                                </div>
+                            </div>
+                            <!-- #endregion Hipertension-->
+                            <!-- #region Cáncer-->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="familiary_background_cancer" @(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundCancer == true ? "checked" : "")>
+                                <label class="form-check-label"
+                                       for="SwitchCheckCancer">Cáncer</label>
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+                                    <select class="form-control" id="familiary_background_relatshcatalog_cancer"
+                                            name="familyMemberCancer" data-choices
+                                            data-choices-sorting-false asp-for="Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogCancer">
+                                        <option value="">Selecciona el miembro de tu familia</option>
+                                        @foreach (var familyMember in Model.FamilyMember)
+                                        {
+                                            <option value="@familyMember.CatalogId">
+                                                @familyMember.CatalogName
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+
+                                    <input type="text" class="form-control" id="familiary_background_cancer_observation"
+                                           name="observationCancer" placeholder="Ingrese una observación" value="@Model.Consultation.FamiliaryBackground.FamiliaryBackgroundCancerObservation">
+
+                                </div>
+                            </div>
+                            <!-- #endregion Cáncer-->
+                            <!-- #region Tuberculosis-->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="familiary_background_tuberculosis" @(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundTuberculosis == true ? "checked" : "")>
+                                <label class="form-check-label"
+                                       for="SwitchCheckTuberculosis">Tuberculosis</label>
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+                                    <select class="form-control" id="familiary_background_relatshcatalog_tuberculosis"
+                                            name="familyMemberTuberculosis" data-choices
+                                            data-choices-sorting-false asp-for="Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshTuberculosis">
+                                        <option value="">Selecciona el miembro de tu familia</option>
+                                        @foreach (var familyMember in Model.FamilyMember)
+                                        {
+                                            <option value="@familyMember.CatalogId">
+                                                @familyMember.CatalogName
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+
+                                    <input type="text" class="form-control"
+                                           id="familiary_background_tuberculosis_observation" name="observationTuberculosis"
+                                           placeholder="Ingrese una Observación" value="@Model.Consultation.FamiliaryBackground.FamiliaryBackgroundTuberculosisObservation">
+
+                                </div>
+                            </div>
+                            <!-- #endregion Tuberculosis-->
+                            <!-- #region Enfermedad Mental-->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="familiary_background_dxmental" @(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundDxmental == true ? "checked" : "")>
+                                <label class="form-check-label"
+                                       for="SwitchCheckMentalIllness">Enfermedad mental</label>
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+                                    <select class="form-control" id="familiary_background_relatshcatalog_dxmental"
+                                            name="familyMemberMentalIllness" data-choices
+                                            data-choices-sorting-false asp-for="Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogDxmental">
+                                        <option value="">Selecciona el miembro de tu familia</option>
+                                        @foreach (var familyMember in Model.FamilyMember)
+                                        {
+                                            <option value="@familyMember.CatalogId">
+                                                @familyMember.CatalogName
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+
+                                    <input type="text" class="form-control"
+                                           id="familiary_background_dxmental_observation"
+                                           name="observationMentalIllness"
+                                           placeholder="Ingrese una Observación" value="@Model.Consultation.FamiliaryBackground.FamiliaryBackgroundDxcardiovascularObservation">
+
+                                </div>
+                            </div>
+                            <!-- #endregion Enfermedad Mental---->
+                            <!-- #region Enfermedad Infecciosa-->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="familiary_background_dxinfectious" @(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundDxinfectious == true ? "checked" : "")>
+                                <label class="form-check-label"
+                                       for="SwitchCheckInfectious">Enfermedad Infecciosa</label>
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+                                    <select class="form-control" id="FamilyMembers"
+                                            name="familiary_background_relatshcatalog_dxinfectious" data-choices
+                                            data-choices-sorting-false asp-for="Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogDxinfectious">
+                                        <option value="">Selecciona el miembro de tu familia</option>
+                                        @foreach (var familyMember in Model.FamilyMember)
+                                        {
+                                            <option value="@familyMember.CatalogId">
+                                                @familyMember.CatalogName
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+
+                                    <input type="text" class="form-control"
+                                           id="familiary_background_dxinfectious_observation" name="observationInfectious"
+                                           placeholder="Ingrese una Observación" value="@Model.Consultation.FamiliaryBackground.FamiliaryBackgroundDxinfectiousObservation">
+
+                                </div>
+                            </div>
+                            <!-- #endregion Enfermedad Infecciosa-->
+                            <!-- #region Malformación-->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="familiary_background_malformation" @(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundMalformation == true ? "checked" : "")>
+                                <label class="form-check-label"
+                                       for="SwitchCheckMalformation">Mal formación</label>
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+                                    <select class="form-control" id="familiary_background_relatshcatalog_malformation"
+                                            name="familyMemberMalformation" data-choices
+                                            data-choices-sorting-false asp-for="Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogMalformation">
+                                        <option value="">Selecciona el miembro de tu familia</option>
+                                        @foreach (var familyMember in Model.FamilyMember)
+                                        {
+                                            <option value="@familyMember.CatalogId">
+                                                @familyMember.CatalogName
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+
+                                    <input type="text" class="form-control"
+                                           id="familiary_background_malformation_observation" name="observationMalformation"
+                                           placeholder="Ingrese una Observación" value="@Model.Consultation.FamiliaryBackground.FamiliaryBackgroundMalformationObservation">
+
+                                </div>
+                            </div>
+                            <!-- #endregion Malformación-->
+                            <!-- #region Other-->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="familiary_background_other" @(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundOther == true ? "checked" : "")>
+                                <label class="form-check-label" for="SwitchCheckOther">Otro</label>
+                            </div>
+
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+                                    <select class="form-control" id="familiary_background_relatshcatalog_other"
+                                            name="familyMemberOther" data-choices
+                                            data-choices-sorting-false asp-for="Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogOther">
+                                        <option value="">Selecciona el miembro de tu familia</option>
+                                        @foreach (var familyMember in Model.FamilyMember)
+                                        {
+                                            <option value="@familyMember.CatalogId">
+                                                @familyMember.CatalogName
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+
+                                    <input type="text" class="form-control" id="familiary_background_relatshcatalog_malformation"
+                                           name="observationOther" placeholder="Ingrese una Observación" value="@Model.Consultation.FamiliaryBackground.FamiliaryBackgroundOtherObservation">
+
+                                </div>
+                            </div>
+                            <!-- #endregion Other-->
+                            <!-- #endregion Antecedentes familiares-->
+
+                            <div class="divider-with-text">
+                                <i class="las la-notes-medical" id="icons"></i> <span>
+                                    Enfermedad o problema actual (*)
+                                </span>
+                            </div>
+
+                            <div class="col-lg-12">
+                                <div class="mb-3">
+
+                                    <textarea class="form-control" id="consultation_disease"
+                                              rows="3" asp-for="Consultation.ConsultationDisease"
+                                              placeholder="Escriba un descripcion o hable mediante el micrófono"
+                                              required></textarea>
+                                    <i id="dictationIcon2" class=" ri-mic-fill position-absolute" style="top: 35px; right: 15px; cursor: pointer;"></i>
+
+                                </div>
+                            </div>
+
+                            <div class="d-flex align-items-start gap-3 mt-4">
+                                <button type="button" class="btn btn-light previestab"
+                                        data-previous="steparrow-gen-info-tab">
+                                    Regresar
+                                </button>
+
+                                <a type="button" class="btn btn-soft-info" data-bs-toggle="modal" data-bs-target="#appointmentModalgrid">
+                                    <i class="ri-calendar-todo-fill"></i>Agendar Cita seguimiento
+                                </a>
+                                <button type="button" class="btn btn-success nexttab"
+                                        data-nexttab="steparrow-vital-signs-tab">
+                                   Siguiente
+                                </button>
+                                <a asp-action="ConsultationList" asp-controller="Consultation" class="btn btn-outline-danger"><i class="fa fa-close"></i> Salir</a>
+
+                            </div>
+
+                        </div>
+                    </div>
+                    <!-- #endregion Segundi Panel-->
+                    <!-- #region Tercer Panel-->
+                    <div class="tab-pane fade" id="steparrow-vital-signs" role="tabpanel"
+                         aria-labelledby="steparrow-vital-signs-tab">
+
+                        <div class="row">
+
+                            <div class="divider-with-text">
+                                <i class="ri-user-search-fill" id="icons"></i> <span>
+                                    Datos de contacto
+                                </span>
+                            </div>
+
+                            <!-- #region Tabla datos paciente-->
+                            <table class="table table-striped">
+                                <tbody>
+                                    <tr>
+                                        <td style="font-size: 0.7rem;">
+                                            <i class="ri-account-circle-fill"></i> <br />
+                                            Paciente:  <br /> @Model.DetailsPatient.PatientFirstname
+                                            @Model.DetailsPatient.PatientFirstsurname
+                                        </td>
+                                        <td style="font-size: 0.7rem;">
+                                            <i class="ri-bank-card-fill"></i> <br /> Número de documento <br />
+                                            @Model.DetailsPatient.PatientDocumentnumber
+                                        </td>
+                                        <td style="font-size: 0.7rem;">
+                                            <i class="mdi-gender-male-female"></i> <br /> Género
+                                            <br /> @Model.DetailsPatient.PatientGenderName
+                                        </td>
+                                        <td style="font-size: 0.7rem;">
+                                            <i class="ri-drop-fill"></i>
+                                            <br /> Tipo de sangre <br />
+                                            @Model.DetailsPatient.PatientBloodtypeName
+                                        </td>
+                                        <td style="font-size: 0.7rem;">
+                                            <i class="ri-calendar-event-fill"></i> <br /> Fecha de nacimiento <br />
+                                            @((Model.DetailsPatient.PatientBirthdate.HasValue) ?
+                                                Model.DetailsPatient.PatientBirthdate.Value.ToString("yyyy-MM-dd")
+                                                : string.Empty) </span>
+                                        </td>
+                                        <td style="font-size: 0.7rem;">
+                                            <i class="ri-calendar-event-fill"></i> <br /> Edad
+                                            <br /> @Model.DetailsPatient.PatientAge
+                                        </td>
+
+                                    </tr>
+                                    <tr>
+
+                                        <td style="font-size: 0.7rem;">
+                                            <i class="ri-file-user-fill"></i><br /> Estado Civil
+                                            <br /> @Model.DetailsPatient.PatientMaritalstatusName
+                                        </td>
+                                        <td style="font-size: 0.7rem;">
+                                            <i class="ri-honour-fill"></i><br />Profesión
+                                            <br />@Model.PatientVocationalTrainingNavigation
+                                        </td>
+                                        <td style="font-size: 0.7rem;">
+                                            <i class="ri-flag-fill"></i><br /> Nacionalidad
+                                            <br />@Model.DetailsPatient.PatientNationalityName
+                                        </td>
+                                        <td style="font-size: 0.7rem;">
+                                            <i class="ri-phone-fill"></i><br /> Teléfono
+                                            <br />@Model.DetailsPatient.PatientLandlinePhone
+                                        </td>
+                                        <td style="font-size: 0.7rem;">
+                                            <i class="ri-smartphone-fill"></i><br />Celular
+                                            <br />@Model.DetailsPatient.PatientCellularPhone
+                                        </td>
+                                        <td style="font-size: 0.7rem;">
+                                            <i class="ri-mail-fill"></i><br />Email
+                                            <br />@Model.DetailsPatient.PatientEmail
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <!-- #endregion Tabla datos paciente-->
+                            <div class="divider-with-text">
+                                <i class="las la-stethoscope" id="icons"></i> <span>
+                                    Revisión de los órganos y sentidos
+                                </span>
+                            </div>
+
+                            <!-- #region Revisión de órganos y sistemas-->
+                            <!-- #region órganos de los sentidos-->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" name="SwitchCheckSenseOrgans"
+                                       type="checkbox" role="switch" id="organssystems_organsenses" @(Model.Consultation.OrgansSystem.OrganssystemsOrgansenses == true ? "checked" : "")>
+                                <label class="form-check-label" for="SwitchCheckSenseOrgans">
+                                   Órganos de los sentidos
+                                </label>
+                            </div>
+
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+                                    <input type="text" class="form-control" id="organssystems_organsenses_Obs"
+                                           name="observationSenseOrgans" value="@Model.Consultation.OrgansSystem.OrganssystemsOrgansensesObs" placeholder="Ingrese una Observación">
+                                </div>
+                            </div>
+                            <!-- #endregion organos de los sentidos-->
+                            <!-- #region Respiratory-->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="organssystems_respiratory" name="SwitchCheckRespiratory" @(Model.Consultation.OrgansSystem.OrganssystemsRespiratory == true ? "checked" : "")>
+                                <label class="form-check-label" for="SwitchCheckRespiratory">Respiratorio</label>
+                            </div>
+
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+                                    <input type="text" class="form-control" id="organssystems_respiratory_obs"
+                                           name="observationRespiratory" placeholder="Ingrese una Observación" value="@Model.Consultation.OrgansSystem.OrganssystemsRespiratoryObs">
+                                </div>
+                            </div>
+                            <!-- #endregion Respiratory-->
+                            <!-- #region Cardiovascular-->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" name="SwitchCheckCardiovascular"
+                                       type="checkbox" role="switch" id="organssystems_cardiovascular" @(Model.Consultation.OrgansSystem.OrganssystemsCardiovascular == true ? "checked" : "")>
+                                <label class="form-check-label" for="SwitchCheckCardiovascular">Cardiovascular</label>
+                            </div>
+
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+                                    <input type="text" class="form-control" id="organssystems_cardiovascular_obs"
+                                           name="observationCardiovascular" placeholder="Ingrese una Observación" value="@Model.Consultation.OrgansSystem.OrganssystemsCardiovascularObs">
+                                </div>
+                            </div>
+                            <!-- #endregion Cardiovascular-->
+                            <!-- #region Digestive-->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" name="SwitchCheckDigestive"
+                                       type="checkbox" role="switch" id="organssystems_digestive" @(Model.Consultation.OrgansSystem.OrganssystemsDigestive == true ? "checked" : "")>
+                                <label class="form-check-label" for="SwitchCheckDigestive">Digestivo</label>
+                            </div>
+
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+                                    <input type="text" class="form-control" id="organssystems_digestive_obs" value="@Model.Consultation.OrgansSystem.OrganssystemsDigestiveObs"
+                                           name="observationDigestive" placeholder="Ingrese una Observación">
+                                </div>
+                            </div>
+                            <!-- #endregion Digestive-->
+                            <!-- #region Genital-->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" name="SwitchCheckGenital"
+                                       type="checkbox" role="switch" id="organssystems_genital" @(Model.Consultation.OrgansSystem.OrganssystemsGenital == true ? "checked" : "")>
+                                <label class="form-check-label" for="SwitchCheckGenital">Genital</label>
+                            </div>
+
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+                                    <input type="text" class="form-control" id="organssystems_genital_obs"
+                                           name="observationGenital" placeholder="Ingrese una Observación" value="@Model.Consultation.OrgansSystem.OrganssystemsGenitalObs">
+                                </div>
+                            </div>
+                            <!-- #endregion Genital-->
+                            <!-- #region Urinaria-->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" name="SwitchCheckUrinary"
+                                       type="checkbox" role="switch" id="organssystems_urinary" @(Model.Consultation.OrgansSystem.OrganssystemsUrinary == true ? "checked" : "")>
+                                <label class="form-check-label" for="SwitchCheckUrinary">Urinario</label>
+                            </div>
+
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+                                    <input type="text" class="form-control" id="organssystems_urinary_obs"
+                                           name="observationUrinary" placeholder="Ingrese una observación" value="@Model.Consultation.OrgansSystem.OrganssystemsUrinaryObs">
+                                </div>
+                            </div>
+                            <!-- #endregion Urinaria-->
+                            <!-- #region Skeletal Muscle-->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" name="SwitchCheckSkeletalMuscle"
+                                       type="checkbox" role="switch" id="organssystems_skeletal_m" @(Model.Consultation.OrgansSystem.OrganssystemsSkeletalM == true ? "checked" : "")>
+                                <label class="form-check-label" for="SwitchCheckSkeletalMuscle">Musculo esquelético</label>
+                            </div>
+
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+                                    <input type="text" class="form-control" id="organssystems_skeletal_m_obs"
+                                           name="observationSkeletalMuscle" placeholder="Ingrese una Observación" value="@Model.Consultation.OrgansSystem.OrganssystemsSkeletalMObs">
+                                </div>
+                            </div>
+                            <!-- #endregion Skeletal Muscle-->
+                            <!-- #region Endocrine-->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" name="SwitchCheckEndocrine"
+                                       type="checkbox" role="switch" id="organssystems_endrocrine" @(Model.Consultation.OrgansSystem.OrganssystemsEndrocrine == true ? "checked" : "")>
+                                <label class="form-check-label" for="SwitchCheckEndocrine">Endocrino</label>
+                            </div>
+
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+                                    <input type="text" class="form-control" id="organssystems_endocrine"
+                                           name="observationEndocrine" placeholder="Ingrese una Observación" value="@Model.Consultation.OrgansSystem.OrganssystemsEndocrine"> 
+                                </div>
+                            </div>
+                            <!-- #endregion Endocrine-->
+                            <!-- #region Lymphatic Heme-->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" name="SwitchCheckLymphaticHeme"
+                                       type="checkbox" role="switch" id="organssystems_lymphatic" @(Model.Consultation.OrgansSystem.OrganssystemsLymphatic == true ? "checked" : "")>
+                                <label class="form-check-label" for="SwitchCheckLymphaticHeme"> Hemolinfatico</label>
+                            </div>
+
+
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+                                    <input type="text" class="form-control" id="organssystems_lymphatic_obs"
+                                           name="observationLymphaticHeme" placeholder="Ingrese una observación" value="@Model.Consultation.OrgansSystem.OrganssystemsLymphaticObs">
+                                </div>
+                            </div>
+                            <!-- #endregion Lymphatic Heme-->
+                            <!-- #region Nervous System-->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" name="SwitchCheckHighlystrung"
+                                       type="checkbox" role="switch" id="organssystems_nervous" @(Model.Consultation.OrgansSystem.OrganssystemsNervous == true ? "checked" : "")>
+                                <label class="form-check-label" for="SwitchCheckHighlystrung">Sistema Nervioso</label>
+                            </div>
+
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+                                    <input type="text" class="form-control" id="organssystems_nervous_obs"
+                                           name="observationHighlystrung" placeholder="Ingrese una observación" value="@Model.Consultation.OrgansSystem.OrganssystemsNervousObs">
+                                </div>
+                            </div>
+                            <!-- #endregion Nervous System-->
+                            <!-- #endregion Revisión de organos y sistemas-->
+
+                         
+                            <br /> <br />
+
+                            <div class="divider-with-text">
+                                <i class="las la-stethoscope" id="icons"></i> <span>
+                                   Signos vitales y antropometría
+                                </span>
+                            </div>
+                            <!-- #region Alert info-->
+
+                            <div class="alert alert-info" role="alert">
+
+                                <strong> Separador Decimal! </strong> <br /> <i class="ri-calculator-line" id="icons"></i>Use el carácter <b> <span style="font-size: 25px;">.</span> </b>para separar decimales
+                            </div>
+
+                            <!-- #endregion Alert info-->
+                            <!--#region Signos Vitales-->
+
+                            <div class="col-lg-4">
+                                <div class="mb-3">
+                                    <label for="temperatureInput" class="form-label">Temperatura ºC *</label>
+                                    <input type="text" class="form-control" id="consultation_temperature" name="temperatureInput"value="@Model.Consultation.ConsultationTemperature" placeholder="37.5" required>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-4">
+                                <div class="mb-3">
+                                    <label for="respiratoryRateInput" class="form-label"> Frecuencia respiratoria *</label>
+                                    <input type="text" class="form-control" id="consultation_respirationrate" name="respiratoryRateInput" value="@Model.Consultation.ConsultationRespirationrate" placeholder="12" required>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-4">
+                                <div class="mb-3">
+                                    <label for="bloodPressureInput" class="form-label"> Presión sanguínea * </label>
+                                    <input type="text" class="form-control" id="bloodPressureInput" name="bloodPressureInput" value="@Model.Consultation.ConsultationBloodpresuredDis / @Model.Consultation.ConsultationBloodpressuredAs" placeholder="/" required>
+                                    <span>Si la presión es de dos cifras, anteceda el 0 antes del número. Ej.: 046/123 siempre colocar como el ejemplo</span>
+
+                                    <input type="hidden" name="PresionArterialDiastolica" id="consultation_bloodpresuredDIS" />
+                                    <input type="hidden" name="PresionArterialSistolica" id="consultation_bloodpressuredAS" />
+
+                                </div>
+                            </div>
+
+                            <div class="col-lg-4">
+                                <div class="mb-3">
+                                    <label for="pulseMinuteInput" class="form-label"> Pulso por minuto * </label>
+                                    <input type="text" class="form-control" id="consultation_pulse" name="pulseMinuteInput" value="@Model.Consultation.ConsultationPulse" placeholder="12" required>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-4">
+                                <div class="mb-3">
+                                    <label for="weightInput" class="form-label"> Peso * (Kg)</label>
+                                    <input type="text" class="form-control" id="consultation_weight" name="weightInput" value="@Model.Consultation.ConsultationWeight" placeholder="40" required>
+                                </div>
+                            </div>
+
+
+                            <div class="col-lg-4">
+                                <div class="mb-3">
+                                    <label for="pointofsaleInput" class="form-label"> Altura * (cm)</label>
+                                    <input type="text" class="form-control" id="consultation_size" name="weightInput" value="@Model.Consultation.ConsultationSize" placeholder="160" required>
+                                </div>
+                            </div>
+                            <!-- #endregion Signos Vitales-->
+                            <!-- #region Examen Físico Regional-->
+
+                            <div class="divider-with-text">
+                                <i class="las la-stethoscope" id="icons"></i> <span>
+                                   Examen físico regional
+                                </span>
+                            </div>
+
+
+                            <!-- #region  Head-->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="physicalexamination_head" @(Model.Consultation.PhysicalExamination.PhysicalexaminationHead == true ? "checked" : "")>
+                                <label class="form-check-label" for="SwitchCheckHead">Cabeza</label>
+                            </div>
+
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+
+                                    <input type="text" class="form-control" id="physicalexamination_head_obs"
+                                           name="observationHead" placeholder="Ingrese una Observación" value="@Model.Consultation.PhysicalExamination.PhysicalexaminationHeadObs">
+
+                                </div>
+                            </div>
+
+                            <!-- #endregion Head-->
+                            <!-- #region Neck-->
+
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="physicalexamination_neck" @(Model.Consultation.PhysicalExamination.PhysicalexaminationNeck == true ? "checked" : "")>
+                                <label class="form-check-label" for="SwitchCheckNeck">Cuello</label>
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+
+                                    <input type="text" class="form-control" id="physicalexamination_neck_obs"
+                                           name="observationNeck" placeholder="Ingrese una Observación" value="@Model.Consultation.PhysicalExamination.PhysicalexaminationNeckObs">
+
+                                </div>
+                            </div>
+
+                            <!-- #endregion Neck-->
+                            <!-- #region Chest-->
+
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="physicalexamination_chest" @(Model.Consultation.PhysicalExamination.PhysicalexaminationChest == true ? "checked" : "")>
+                                <label class="form-check-label" for="SwitchCheckNeck">Tórax</label>
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+
+                                    <input type="text" class="form-control" id="physicalexamination_chest_obs"
+                                           name="observationChest" placeholder="Ingrese una Observación" value="@Model.Consultation.PhysicalExamination.PhysicalexaminationChestObs">
+
+                                </div>
+                            </div>
+
+                            <!--#endRegion Chest-->
+                            <!-- #region Abdomen-->
+
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="physicalexamination_abdomen" @(Model.Consultation.PhysicalExamination.PhysicalexaminationAbdomen == true ? "checked" : "")>
+                                <label class="form-check-label" for="SwitchCheckAbdomen">Abdomen</label>
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+
+                                    <input type="text" class="form-control" id="physicalexamination_abdomen_obs"
+                                           name="observationAbdomen" placeholder="Ingrese una Observación" value="@Model.Consultation.PhysicalExamination.PhysicalexaminationAbdomenObs">
+
+                                </div>
+                            </div>
+
+                            <!-- #endregion Abdomen-->
+                            <!-- #region Pelvis-->
+
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="physicalexamination_pelvis" @(Model.Consultation.PhysicalExamination.PhysicalexaminationPelvis == true ? "checked" : "") >
+                                <label class="form-check-label" for="SwitchCheckPelvis">Pelvis</label>
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+
+                                    <input type="text" class="form-control" id="physicalexamination_pelvis_obs"
+                                           name="observationPelvis" placeholder="Ingrese una observación" value="@Model.Consultation.PhysicalExamination.PhysicalexaminationPelvisObs">
+
+                                </div>
+                            </div>
+
+                            <!-- #endregion Pelvis-->
+                            <!-- #region Extremidades-->
+
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="physicalexamination_limbs" @(Model.Consultation.PhysicalExamination.PhysicalexaminationLimbs == true ? "checked" : "")>
+                                <label class="form-check-label" for="SwitchCheckExtremities">Extremidades</label>
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+
+                                    <input type="text" class="form-control" id="physicalexamination_limbs_obs"
+                                           name="observationExtremities" placeholder="Ingrese una observación" value="@Model.Consultation.PhysicalExamination.PhysicalexaminationLimbsObs">
+
+                                </div>
+                            </div>
+
+                            <!-- #endregion Extremidades-->
+                            <!-- #endregion Examen Físico Regional-->
+
+                            <div class="d-flex align-items-start gap-3 mt-4">
+                                <button type="button" class="btn btn-light previestab"
+                                        data-previous="steparrow-consultation-data-tab">
+                                    Back
+                                </button>
+
+
+                                <a type="button" class="btn btn-soft-info" data-bs-toggle="modal" data-bs-target="#appointmentModalgrid">
+                                    <i class="ri-calendar-todo-fill"></i>Agendar Cita seguimiento
+                                </a>
+                                <button type="button" class="btn btn-successnexttab"
+                                        data-nexttab="steparrow-diagnostic-tab">
+                                   Siguiente
+                                </button>
+                                <a asp-action="ConsultationList" asp-controller="Consultation" class="btn btn-outline-danger"><i class="fa fa-close"></i> Salir</a>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                    <!-- #endregion Tercer Panel -->
+                    <!-- #region Cuarto Panel-->
+
+                    <div class="tab-pane fade" id="steparrow-diagnostic" role="tabpanel"
+                         aria-labelledby="steparrow-diagnostic-tab">
+
+                        <!-- #region Tabla Datos paciente-->
+
+                        <table class="table table-striped">
+                            <tbody>
+                                <tr>
+                                    <td style="font-size: 0.7rem;">
+                                        <i class="ri-account-circle-fill"></i> <br />
+                                        Paciente <br /> @Model.DetailsPatient.PatientFirstname
+                                        @Model.DetailsPatient.PatientFirstsurname
+                                    </td>
+                                    <td style="font-size: 0.7rem;">
+                                        <i class="ri-bank-card-fill"></i>
+                                        <br /> Numero de documento <br />
+                                        @Model.DetailsPatient.PatientDocumentnumber
+                                    </td>
+                                    <td style="font-size: 0.7rem;">
+                                        <i class="mdi-gender-male-female"></i> <br /> Genero
+                                        <br /> @Model.DetailsPatient.PatientGenderName
+                                    </td>
+                                    <td style="font-size: 0.7rem;">
+                                        <i class="ri-drop-fill"></i>
+                                        <br /> Tipo de sangre <br />
+                                        @Model.DetailsPatient.PatientBloodtypeName
+                                    </td>
+                                    <td style="font-size: 0.7rem;">
+                                        <i class="ri-calendar-event-fill"></i> <br /> Fecha de nacimiento <br />
+                                        @((Model.DetailsPatient.PatientBirthdate.HasValue) ?
+                                            Model.DetailsPatient.PatientBirthdate.Value.ToString("yyyy-MM-dd")
+                                            : string.Empty) </span>
+                                    </td>
+                                    <td style="font-size: 0.7rem;">
+                                        <i class="ri-calendar-event-fill"></i> <br /> Edad
+                                        <br /> @Model.DetailsPatient.PatientAge
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="font-size: 0.7rem;">
+                                        <i class="ri-file-user-fill"></i><br /> Estado civil
+                                        <br /> @Model.DetailsPatient.PatientMaritalstatusName
+                                    </td>
+                                    <td style="font-size: 0.7rem;">
+                                        <i class="ri-honour-fill"></i><br />Profesión
+                                        <br />@Model.PatientVocationalTrainingNavigation
+                                    </td>
+                                    <td style="font-size: 0.7rem;">
+                                        <i class="ri-flag-fill"></i><br /> Nacionalidad
+                                        <br />@Model.DetailsPatient.PatientNationalityName
+                                    </td>
+                                    <td style="font-size: 0.7rem;">
+                                        <i class="ri-phone-fill"></i><br />Teléfono
+                                        <br />@Model.DetailsPatient.PatientLandlinePhone
+                                    </td>
+                                    <td style="font-size: 0.7rem;">
+                                        <i class="ri-smartphone-fill"></i><br />Celular
+                                        <br />@Model.DetailsPatient.PatientCellularPhone
+                                    </td>
+                                    <td style="font-size: 0.7rem;">
+                                        <i class="ri-mail-fill"></i><br />Email
+                                        <br />@Model.DetailsPatient.PatientEmail
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- #endregion Tabla Datos paciente-->
+                        <!-- #region Diagnosis-->
+                        <div class="row">
+
+                            <div class="col-xxl-12 col-lg-12">
+
+                                <div class="card" id="baccard">
+
+                                    <div class="card-header" id="card-header-color">
+                                        <h6 class="card-title mb-0">Diagnostico</h6>
+                                    </div>
+                                    <select name="DiagnosisConsultation" id="DiagnosisConsultation"
+                                            class="form-control" data-choices data-choices-sorting-false>
+                                        <option value="">Busque y seleccione un diagnóstico</option>
+                                        @foreach (var diagnosis in Model.Diagnoses)
+                                        {
+                                            <option value="@diagnosis.DiagnosisId"
+                                                    data-name="@diagnosis.DiagnosisName"
+                                                    data-search="@diagnosis.DiagnosisName">
+                                                @diagnosis.DiagnosisName
+                                            </option>
+                                        }
+                                    </select>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-lg-12">
+                                                <div class="mb-3">
+                                                   
+
+                                                </div>
+                                            </div>
+
+                                            <div class="col-lg-2">
+                                                <button type="button" class="btn btn-soft-success waves-effect waves-light" id="selectDiagnosis">Seleccionar</button>
+                                            </div>
+                                        </div>
+
+                                        <table class="table table-nowrap" id="selectedDiagnosesTable">
+                                            <thead>
+                                                <tr>
+                                                    <th scope="col" hidden style="font-size: 12px;">Diagnosis ID</th>
+                                                    <th scope="col" style="font-size: 12px;">Nombre del diagnóstico</th>
+                                                    <th scope="col" style="font-size: 12px;">Presuntivo</th>
+                                                    <th scope="col" style="font-size: 12px;">Definitivo</th>
+                                                    <th scope="col" style="font-size: 12px;">Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @if (Model.Consultation.DiagnosisConsultations != null)
+                                                {
+                                                    foreach (var diag in Model.Consultation.DiagnosisConsultations)
+                                                    {
+                                                        <tr>
+                                                            <td hidden>@diag.DiagnosisDiagnosisid</td>
+                                                            <!-- Suponiendo que tienes el nombre en alguna propiedad, por ejemplo diag.DiagnosisName,
+                                                                 de lo contrario, podrías hacer una búsqueda en Model.Diagnoses -->
+                                                            <td>
+                                                                @* Si no cuentas con el nombre directamente, puedes buscarlo:
+                               Model.Diagnoses.FirstOrDefault(d => d.DiagnosisId == diag.DiagnosisDiagnosisid)?.DiagnosisName
+                             *@
+                                                                @(Model.Diagnoses.FirstOrDefault(d => d.DiagnosisId == diag.DiagnosisDiagnosisid)?.DiagnosisName ?? "N/A")
+                                                            </td>
+                                                            <td>
+                                                                <input type="checkbox" disabled @(diag.DiagnosisPresumptive == true ? "checked" : "") />
+                                                            </td>
+                                                            <td>
+                                                                <input type="checkbox" disabled @(diag.DiagnosisDefinitive == true ? "checked" : "") />
+                                                            </td>
+                                                            <td>
+                                                                <button class="btn btn-danger btn-sm">Eliminar</button>
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+
+
+
+                                </div>
+
+                            </div>
+
+                        </div>
+                        <!-- #endregion Diagnosis-->
+                        <!--region Planes de tratamiento-->
+                        <div class="row">
+
+                            <div class="col-xxl-12 col-lg-12">
+
+                                <div class="card" id="baccard">
+
+                                    <div class="card-header" id="card-header-color">
+                                        <h6 class="card-title mb-0">Plan de tratamiento</h6>
+                                    </div>
+
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-lg-12">
+                                                <div class="mb-3">
+                                                    <textarea class="form-control" id="consultation_treatmentplan"
+                                                              rows="3" asp-for="@Model.Consultation.ConsultationTreatmentplan"
+                                                              placeholder="Escriba un descripcion o hable mediante el micrófono"></textarea>
+                                                    <i id="dictationIcon3" class=" ri-mic-fill position-absolute" style="top: 35px; right: 15px; cursor: pointer;"></i>
+
+                                                </div>
+                                            </div>
+
+
+                                        </div>
+
+                                    </div>
+
+
+
+                                </div>
+
+                            </div>
+
+                        </div>
+                        <!--end region planes de tratamiento-->
+                        <!-- #region Medicamentos -->
+
+                        <div class="row">
+
+                            <div class="col-xxl-12">
+
+                                <div class="card" id="baccard">
+
+                                    <div class="card-header" id="card-header-color">
+                                        <h6 class="card-title mb-0">Medicamentos</h6>
+                                    </div>
+                                    <select name="MedicationsConsultation" id="MedicationsConsultation"
+                                            class="form-control" data-choices data-choices-sorting-false>
+                                        <option value="">Busque y seleccione un medicamento</option>
+                                        @foreach (var medication in Model.Medications)
+                                        {
+                                            <option value="@medication.MedicationsId" data-name="@medication.MedicationsDescription">
+                                                @medication.MedicationsDescription
+                                            </option>
+                                        }
+                                    </select>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-lg-12">
+                                                <div class="mb-3">
+                                                    
+                                                </div>
+                                            </div>
+
+                                            <div class="col-lg-2">
+                                                <button type="button" class="btn btn-soft-success waves-effect waves-light" id="selectMedications">Select</button>
+                                            </div>
+                                        </div>
+
+                                        <table class="table table-nowrap" id="selectedMedicationsTable">
+                                            <thead>
+                                                <tr>
+                                                    <th scope="col" hidden style="font-size: 12px;">Medication ID</th>
+                                                    <th scope="col" style="font-size: 12px;">Nombre del medicamento</th>
+                                                    <th scope="col" style="font-size: 12px;">Cantidad</th>
+                                                    <th scope="col" style="font-size: 12px;">Observación</th>
+                                                    <th scope="col" style="font-size: 12px;">Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @if (Model.Consultation.MedicationsConsultations != null)
+                                                {
+                                                    foreach (var med in Model.Consultation.MedicationsConsultations)
+                                                    {
+                                                        <tr>
+                                                            <td hidden>@med.MedicationsMedicationsid</td>
+                                                            <td>
+                                                                @* Buscamos la descripción en la lista de medicamentos, en caso de que el DTO no la tenga directamente *@
+                                                                @(Model.Medications.FirstOrDefault(m => m.MedicationsId == med.MedicationsMedicationsid)?.MedicationsDescription ?? "N/A")
+                                                            </td>
+                                                            <td>@med.MedicationsAmount</td>
+                                                            <td>@med.MedicationsObservation</td>
+                                                            <td>
+                                                                <button class="btn btn-danger btn-sm">Eliminar</button>
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                }
+                                            </tbody>
+                                        </table>
+
+
+                                        <div class="row">
+                                            <div class="col-lg-12">
+                                                <div class="mb-3">
+                                                    <label>Recomendaciones no farmacológicas</label>
+                                                    <textarea class="form-control" id="consultation_nonpharmacologycal"
+                                                              rows="3" asp-for="Consultation.ConsultationNonpharmacologycal"
+                                                              placeholder="Escriba un descripcion o hable mediante el micrófono"></textarea>
+                                                    <i id="dictationIcon4" class=" ri-mic-fill position-absolute" style="top: 35px; right: 15px; cursor: pointer;"></i>
+
+                                                </div>
+                                            </div>
+
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-lg-12">
+                                                <div class="mb-3">
+                                                    <label>Signos de alarma</label>
+                                                    <textarea class="form-control" id="consultation_warningsings"
+                                                              rows="3" asp-for="Consultation.ConsultationWarningsings"
+                                                              placeholder="Escriba un descripcion o hable mediante el microfono"></textarea>
+                                                    <i id="dictationIcon5" class=" ri-mic-fill position-absolute" style="top: 35px; right: 15px; cursor: pointer;"></i>
+
+                                                </div>
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <!-- #endregion Medicamentos-->
+                        <!-- #region Imágenes-->
+                        <div class="row">
+                            <div class="col-xxl-12 col-lg-12">
+                                <div class="card" id="baccard">
+                                    <div class="card-header" id="card-header-color">
+                                        <h6 class="card-title mb-0">Imágenes(Test)</h6>
+                                    </div>
+                                    <select name="ImagesConsultation" id="ImagesConsultation"
+                                            class="form-control" data-choices data-choices-sorting-false>
+                                        <option value="">Busque y seleccione</option>
+                                        @foreach (var image in Model.Images)
+                                        {
+                                            <option value="@image.ImagesId" data-name="@image.ImagesDescription">
+                                                @image.ImagesDescription
+                                            </option>
+                                        }
+                                    </select>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-lg-12">
+                                                <div class="mb-3">
+                                                    
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-2">
+                                                <button type="button" class="btn btn-soft-success waves-effect waves-light" id="selectImages">Seleccionar</button>
+                                            </div>
+                                        </div>
+                                        <table class="table table-nowrap" id="selectedImagesTable">
+                                            <thead>
+                                                <tr>
+                                                    <th scope="col" hidden style="font-size: 12px;">Images ID</th>
+                                                    <th scope="col" style="font-size: 12px;">Nombre de la imagen</th>
+                                                    <th scope="col" style="font-size: 12px;">Cantidad</th>
+                                                    <th scope="col" style="font-size: 12px;">Observación</th>
+                                                    <th scope="col" style="font-size: 12px;">Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @if (Model.Consultation.ImagesConsultations != null)
+                                                {
+                                                    foreach (var img in Model.Consultation.ImagesConsultations)
+                                                    {
+                                                        <tr>
+                                                            <td hidden>@img.ImagesImagesid</td>
+                                                            <td>
+                                                                @(Model.Images.FirstOrDefault(i => i.ImagesId == img.ImagesImagesid)?.ImagesDescription ?? "N/A")
+                                                            </td>
+                                                            <td>@img.ImagesAmount</td>
+                                                            <td>@img.ImagesObservation</td>
+                                                            <td>
+                                                                <button class="btn btn-danger btn-sm">Eliminar</button>
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- #endregion Imágenes-->
+                        <!-- #region Laboratorios-->
+                        <div class="row">
+                            <div class="col-xxl-12 col-lg-12">
+                                <div class="card" id="baccard">
+                                    <div class="card-header" id="card-header-color">
+                                        <h6 class="card-title mb-0">Laboratorios(Test)</h6>
+                                    </div>
+                                    <select name="LaboratoriesConsultation" id="LaboratoriesConsultation"
+                                            class="form-control" data-choices data-choices-sorting-false>
+                                        <option value="">Busque y seleccione</option>
+                                        @foreach (var lab in Model.Laboratories)
+                                        {
+                                            <option value="@lab.LaboratoriesId" data-name="@lab.LaboratoriesDescription">
+                                                @lab.LaboratoriesDescription
+                                            </option>
+                                        }
+                                    </select>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-lg-12">
+                                                <div class="mb-3">
+                                                    
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-2">
+                                                <button type="button" class="btn btn-soft-success waves-effect waves-light" id="selectLaboratories">Seleccionar</button>
+                                            </div>
+                                        </div>
+
+                                        <table class="table table-nowrap" id="selectedLaboratoriesTable">
+                                            <thead>
+                                                <tr>
+                                                    <th scope="col" hidden style="font-size: 12px;">Laboratorios ID</th>
+                                                    <th scope="col" style="font-size: 12px;">Nombre del Laboratorio</th>
+                                                    <th scope="col" style="font-size: 12px;">Cantidad</th>
+                                                    <th scope="col" style="font-size: 12px;">Observación</th>
+                                                    <th scope="col" style="font-size: 12px;">Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @if (Model.Consultation.LaboratoriesConsultations != null)
+                                                {
+                                                    foreach (var labConsulta in Model.Consultation.LaboratoriesConsultations)
+                                                    {
+                                                        <tr>
+                                                            <td hidden>@labConsulta.LaboratoriesLaboratoriesid</td>
+                                                            <td>
+                                                                @(Model.Laboratories.FirstOrDefault(l => l.LaboratoriesId == labConsulta.LaboratoriesLaboratoriesid)?.LaboratoriesDescription ?? "N/A")
+                                                            </td>
+                                                            <td>@labConsulta.LaboratoriesAmount</td>
+                                                            <td>@labConsulta.LaboratoriesObservation</td>
+                                                            <td>
+                                                                <button class="btn btn-danger btn-sm">Eliminar</button>
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- #endregion Laboratorios-->
+                        <!--region días incapacidad-->
+                        <div class="row">
+
+                            <div class="col-xxl-12 col-lg-12">
+
+                                <div class="card" id="baccard">
+
+                                    <div class="card-header" id="card-header-color">
+                                        <h6 class="card-title mb-0">Días de incapacidad</h6>
+                                    </div>
+
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-lg-12">
+                                                <div class="mb-3">
+                                                    <input type="type" name="diasincapacidad" value="@Model.Consultation.ConsultationDisablilitydays" id="consultation_disablilitydays" />
+                                                </div>
+                                            </div>
+
+
+                                        </div>
+
+                                    </div>
+
+
+
+                                </div>
+
+                            </div>
+
+                        </div>
+                        <!--end region incapacidad-->
+                        <!--region Observación-->
+                        <div class="row">
+
+                            <div class="col-xxl-12 col-lg-12">
+
+                                <div class="card" id="baccard">
+
+                                    <div class="card-header" id="card-header-color">
+                                        <h6 class="card-title mb-0">Observación</h6>
+                                    </div>
+
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-lg-12">
+                                                <div class="mb-3">
+                                                    <textarea class="form-control" id="consultation_observation"
+                                                              rows="3" asp-for="@Model.Consultation.ConsultationObservation"
+                                                              placeholder="Escriba una descripción o hable mediante el microfono"></textarea>
+                                                    <i id="dictationIcon6" class=" ri-mic-fill position-absolute" style="top: 35px; right: 15px; cursor: pointer;"></i>
+
+                                                </div>
+                                            </div>
+
+
+                                        </div>
+
+                                    </div>
+
+
+
+                                </div>
+
+                            </div>
+
+                        </div>
+                        <!--end region Observación-->
+
+                        <div class="form-group">
+                            <a asp-action="ConsultationList" asp-controller="Consultation" class="btn btn-outline-danger"><i class="fa fa-close"></i> Salir</a>
+
+
+                            <a type="button" class="btn btn-soft-info" data-bs-toggle="modal" data-bs-target="#appointmentModalgrid">
+                                <i class="ri-calendar-todo-fill"></i>Agendar Cita seguimiento
+                            </a>
+
+                        </div>
+                    </div>
+
+                    <!-- #endregion Cuarto Panel-->
+
+                </div>
+                <!-- #endregion Tab Content-->
+
+            </form>
+            <!-- #endregion  Formulario(FORM)-->
+        </div>
+    </div>
+</div>
+
+<div class="modal flip" id="appointmentModalgrid" tabindex="-1" aria-labelledby="appointmentModalgridLabel">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="appointmentModalgridLabel">Agendar Cita</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <form class="row g-3 needs-validation" novalidate name="formData">
+
+                    @if (perfilId == 3 || perfilId == 1 || perfilId == 4)
+                    {
+                        <div class="col-xxl-6">
+                            <div class="mb-3">
+                                <label for="doctorsSelect" class="form-label">Seleccionar médico asignado</label>
+                                <select class="form-control" id="doctorUserId" name="doctorUserId" data-choices data-choices-sorting-false>
+                                    <option value="">Seleccione</option>
+                                    @foreach (var doctor in Model.Users)
+                                    {
+                                        <option value="@doctor.UsersId">@doctor.UsersNames @doctor.UsersSurcenames</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    }
+
+
+                    <div class="col-xxl-6" hidden>
+                        <label for="patientId" class="form-label">Patient Id</label>
+                        <input type="number" class="form-control" value="@Model.DetailsPatient.PatientId" id="patientId" required>
+                    </div>
+
+                    <input type="hidden" name="AppointmentStatus" id="appointmentStatus" value="3" />
+                    <!-- Input de usuarioId y fecha -->
+                    <div class="col-xxl-6">
+                        <label for="selectedDate" class="form-label">Seleccione una fecha</label>
+                        <input type="date" class="form-control" id="selectedDate" required>
+                    </div>
+
+                    <div class="col-xxl-6">
+                        <label for="ui" class="form-label">Su hora de la cita es:</label>
+                        <input type="time" class="form-control" id="appointmentTime" required readonly>
+                    </div>
+
+                </form>
+
+                <div class="col-xxl-6">
+                    <button type="button" class="btn btn-soft-info" id="viewHoursButton">
+                        <i class="ri-eye-fill"></i> Ver horas disponibles
+                    </button>
+                </div>
+
+              
+            </div>
+
+        </div>
+    </div>
+</div>
+<!-- Modal de las horas disponibles -->
+<div class="modal flip" id="hoursModalgrid" tabindex="-1" aria-labelledby="hoursModalgridLabel">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="hoursModalgrid">Horas disponibles</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex flex-wrap gap-2 justify-content-center" id="availableHoursContainer">
+                    <!-- Aquí se mostrarán las horas disponibles -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- #endregion Formulario-->
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Selecciona todos los switches
+            const switches = document.querySelectorAll(".form-check-input");
+
+            switches.forEach(switchElement => {
+                // Busca el contenedor más cercano al switch
+                const parentDiv = switchElement.closest(".form-check");
+                if (!parentDiv) return;
+
+                // Encuentra los campos de selección y observación asociados
+                const nextSibling = parentDiv.nextElementSibling;
+                const selectField =nextSibling ?nextSibling.querySelector("select") : null;
+                const observationField = nextSibling && nextSibling.nextElementSibling ?nextSibling.nextElementSibling.querySelector("input") : null;
+
+                // Verifica que los elementos existen antes de manipularlos
+                if (selectField && observationField) {
+                    const selectContainer = selectField.closest(".col-lg-5");
+                    const observationContainer = observationField.closest(".col-lg-5");
+
+                    // Función para actualizar la visibilidad según el estado del switch
+                    const updateVisibility = () => {
+                        const isChecked = switchElement.checked;
+                        selectContainer.style.display = isChecked ? "block" : "none";
+                        observationContainer.style.display = isChecked ? "block" : "none";
+                    };
+
+                    // Aplica la lógica inicial (para detectar switches activados al cargar la página)
+                    updateVisibility();
+
+                    // Agrega el evento para cuando el usuario cambie el estado del switch
+                    switchElement.addEventListener("change", updateVisibility);
+                }
+            });
+        });
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Selecciona todos los switches
+            const switches = document.querySelectorAll(".form-check-input");
+
+            switches.forEach(switchElement => {
+                // Obtén el contenedor del switch
+                const formCheckDiv = switchElement.closest(".form-check");
+                if (!formCheckDiv) return;
+
+                // Asume que el contenedor del campo de observación es el siguiente elemento
+                const observationContainer = formCheckDiv.nextElementSibling;
+                if (!observationContainer) return;
+
+                // Función para actualizar la visibilidad del contenedor de observación
+                const updateVisibility = () => {
+                    observationContainer.style.display = switchElement.checked ? "block" : "none";
+                };
+
+                // Aplica la lógica inicial al cargar la página
+                updateVisibility();
+
+                // Agrega el evento para actualizar cuando cambie el switch
+                switchElement.addEventListener("change", updateVisibility);
+            });
+        });
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            Array.from(document.querySelectorAll(".form-steps")).forEach(function (form) {
+                // Botones "Next"
+                Array.from(form.querySelectorAll(".nexttab")).forEach(function (nextButton) {
+                    nextButton.addEventListener("click", function () {
+                        var currentTab = nextButton.closest(".tab-pane");
+                        var inputs = currentTab.querySelectorAll(".form-control");
+
+                        // Validar campos en el paso actual
+                        var isValid = true;
+                        inputs.forEach(function (input) {
+                            if (!input.checkValidity()) {
+                                input.classList.add("is-invalid");
+                                isValid = false;
+                            } else {
+                                input.classList.remove("is-invalid");
+                                input.classList.add("is-valid");
+                            }
+                        });
+
+                        if (isValid) {
+                            var nextTabId = nextButton.getAttribute('data-nexttab');
+                            var nextTab = document.getElementById(nextTabId);
+                            if (nextTab) {
+                                var tab = new bootstrap.Tab(nextTab);
+                                tab.show();
+                                form.classList.remove("was-validated");
+                            } else {
+                                console.error("No se encontró el siguiente tab:", nextTabId);
+                            }
+                        } else {
+                            form.classList.add("was-validated");
+                        }
+                    });
+                });
+
+                // Botones "Previous"
+                Array.from(form.querySelectorAll(".previestab")).forEach(function (prevButton) {
+                    prevButton.addEventListener("click", function () {
+                        var prevTabId = prevButton.getAttribute('data-previous');
+                        var prevTab = document.getElementById(prevTabId);
+                        if (prevTab) {
+                            var tab = new bootstrap.Tab(prevTab);
+                            tab.show();
+                        } else {
+                            console.error("No se encontró el tab anterior:", prevTabId);
+                        }
+                    });
+                });
+            });
+        });
+
+
+    </script>
+    <script>
+            document.addEventListener('DOMContentLoaded', function () {
+            const allergiesSelect = document.getElementById('allergiesSelect');
+            const selectedAllergiesIdsInput = document.getElementById('selectallergiesId');
+
+            // Actualiza el input oculto cada vez que cambie la selección
+            allergiesSelect.addEventListener('change', function () {
+                const selectedOptions = Array.from(allergiesSelect.selectedOptions).map(option => option.value);
+                selectedAllergiesIdsInput.value = selectedOptions.join(','); // Convierte los valores en una lista separada por comas
+            });
+
+             const surgeriesSelect = document.getElementById('surgeriesSelect');
+            const selectSurgeriesIdsInput = document.getElementById('selectSurgeriesId');
+
+            // Actualiza el input oculto cada vez que cambie la selección
+            surgeriesSelect.addEventListener('change', function () {
+                const selectedOptions = Array.from(surgeriesSelect.selectedOptions).map(option => option.value);
+                selectSurgeriesIdsInput.value = selectedOptions.join(','); // Convierte los valores en una lista separada por comas
+            });
+        });
+
+    </script>
+
+    <script>
+        $(document).ready(function () {
+            // Al hacer clic en el botón para ver las horas disponibles
+            $('#viewHoursButton').click(function () {
+                var userId = @usuarioId;  // Este valor debe ser dinámico, por ejemplo, extraído de la sesión o del usuario autenticado
+                var selectedDate = $('#selectedDate').val();
+                var doctorUserId = $('#doctorUserId').val(); // Obtener el ID del médico seleccionado
+
+                console.log('User ID:', userId);
+                console.log('Selected Date:', selectedDate);
+                console.log('Doctor User ID:', doctorUserId); // Imprimir el ID del médico
+
+                if (!selectedDate) {
+                    alert('Por favor seleccione una fecha.');
+                    return;
+                }
+
+                // Realizar la solicitud AJAX al backend
+                $.ajax({
+                    url: '@Url.Action("GetAvailableHours", "Appointment")',
+                    type: 'GET',
+                    data: {
+                        userId: userId,
+                        date: selectedDate,
+                        doctorUserId: doctorUserId // Pasar el ID del médico si es necesario
+                    },
+                    success: function (response) {
+                        $('#availableHoursContainer').empty();  // Limpiar el contenedor de horas disponibles
+
+                        if (response.length > 0) {
+                            // Mostrar las horas en el contenedor
+                            response.forEach(function (hour) {
+                                $('#availableHoursContainer').append(
+                                    '<button type="button" class="btn btn-outline-primary btn-sm" data-hour="' + hour + '">' + hour + '</button>'
+                                );
+                            });
+                        } else {
+                            // Si no hay horas disponibles
+                            $('#availableHoursContainer').append(
+                                '<p>No hay horas disponibles para la fecha especificada.</p>'
+                            );
+                        }
+
+                        $('#hoursModalgrid').modal('show');  // Mostrar el modal con las horas disponibles
+                    },
+                    error: function (xhr, status, error) {
+                        alert('An error occurred while fetching available hours: ' + error);
+                    }
+                });
+            });
+
+
+            // Al hacer clic en una de las horas disponibles
+            $('#availableHoursContainer').on('click', 'button', function () {
+                // Obtener la hora seleccionada desde el atributo 'data-hour' del botón
+                var selectedHour = $(this).data('hour');
+
+                // Establecer la hora seleccionada en el campo de entrada
+                $('#appointmentTime').val(selectedHour);
+
+                console.log('Selected Hour:', selectedHour);
+                console.log('Selected Date:', $('#selectedDate').val());
+                console.log('Patient ID:', $('#patientId').val());
+                console.log('Medico ID:', $('#doctorUserId').val());
+                console.log('Status ID:', $('#appointmentStatus').val());
+
+                // Mostrar SweetAlert para confirmación
+                var selectedDate = $('#selectedDate').val(); // Obtener la fecha seleccionada
+                var patientId = $('#patientId').val();  // Obtener el ID del paciente
+                var doctorUserId = $('#doctorUserId').val(); // Obtener el ID del médico seleccionado
+                var appointmentStatus = $('#appointmentStatus').val(); // Obtener el ID del médico seleccionado
+
+                Swal.fire({
+                    title: 'Confirmar Cita',
+                    text: 'La hora de la cita es ' + selectedHour + ' de la fecha ' + selectedDate + '. Está seguro de agendar en este horario?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Si, agendar!',
+                    cancelButtonText: 'No, volver a seleccionar',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Si el usuario confirma, enviamos la cita al backend
+
+                       $.ajax({
+            url: '@Url.Action("CreateAppointment", "Appointment")?doctorUserId=' + parseInt(doctorUserId),  // Convertir doctorUserId a número
+            type: 'POST',
+            contentType: 'application/json', // Asegúrate de especificar el tipo de contenido
+            data: JSON.stringify({
+               // Asegúrate de que patientId es un número entero
+                AppointmentDate: selectedDate,  // Asegúrate de que sea en formato adecuado, por ejemplo: "2025-01-31"
+                AppointmentHour: selectedHour,
+                  AppointmentPatientid: patientId, // Asegúrate de que selectedHour esté en formato adecuado, por ejemplo: "16:00"
+                  AppointmentStatus: appointmentStatus, // Asegúrate de que selectedHour esté en formato adecuado, por ejemplo: "16:00"
+            }),
+            success: function (response) {
+                if (response.success) {
+                    // Mostrar mensaje de éxito
+                    Swal.fire('Cita Confirmada!', response.message, 'success').then(() => {
+                        window.location.href = '@Url.Action("AppointmentList", "Appointment")'; // Redirigir a la lista de citas
+                    });
+                } else {
+                    // Si algo salió mal
+                    Swal.fire('Error', response.message || 'Hubo un problema programando su cita.', 'error');
+                }
+            },
+            error: function (xhr, status, error) {
+                // Manejo de errores si la solicitud falla
+                Swal.fire('Error', 'Hubo un problema programando su cita.Por favor intente de nuevo.', 'error');
+            }
+        });
+
+
+                        // Imprimir datos de la solicitud para depuración
+                        console.log('Sending data to backend:', JSON.stringify({
+                            AppointmentPatientid: patientId,
+                            AppointmentDate: selectedDate,
+                            AppointmentHour: selectedHour,
+                            DoctorUserId: doctorUserId  // Agregar el ID del médico aquí
+                        }));
+
+                    } else if (result.dismiss === Swal.DismissReason.cancel) {
+                        // Si el usuario cancela, cerramos el modal
+                        $('#hoursModalgrid').modal('hide');
+                    }
+                });
+            });
+        });
+    </script>
+  <script src="~/assets/js/consultation.js"></script>
+    <script src="~/assets/js/app.js"></script>
+
+}

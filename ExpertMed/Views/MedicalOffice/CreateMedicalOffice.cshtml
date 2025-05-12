@@ -1,0 +1,89 @@
+﻿@using Microsoft.AspNetCore.Http
+
+@{
+    ViewData["Title"] = "Crear Consultorio";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var successMessage = TempData["SuccessMessage"] as string;
+    var errorMessage = TempData["ErrorMessage"] as string;
+    var perfilId = ViewContext.HttpContext.Session.GetInt32("PerfilId");
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Crear Consultorio</h5>
+    </div>
+    <div class="card-body">
+        <form asp-action="CreateMedicalOffice" asp-controller="MedicalOffice" method="POST" class="row g-3 needs-validation" novalidate enctype="multipart/form-data">
+            <div class="row gy-3">
+                @if (perfilId == 1)
+                {
+                    <div class="col-md-12">
+                        <label class="form-label">Seleccionar Clínica</label>
+                        <select class="form-select" name="ClinicaId" data-choices data-choices-sorting-false  required>
+                            <option value="">Seleccione una clínica</option>
+                            @foreach (var clinica in ViewBag.Clinicas)
+                            {
+                                <option value="@clinica.EstablishmentId" selected>@clinica.EstablishmentName</option>
+                            }
+                        </select>
+                        <div class="invalid-feedback">
+                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                        </div>
+                    </div>
+                }
+
+                <div class="col-md-6">
+                    <label class="form-label">Número o Nombre del Consultorio</label>
+                    <input type="text" class="form-control" name="Name" placeholder="Ej: Consultorio 3, Pediatría" required />
+                    <div class="invalid-feedback">
+                        POR FAVOR ESTE CAMPO ES REQUERIDO
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Ubicación en la Clínica (opcional)</label>
+                    <input type="text" class="form-control" name="Location" placeholder="Ej: Primer piso, ala norte" />
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label">Descripción adicional (opcional)</label>
+                    <textarea class="form-control" name="Description"></textarea>
+                </div>
+                <div class="col-md-12 text-end">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="mdi mdi-content-save-outline"></i> Guardar Consultorio
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+@section scripts{
+
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <script>
+            Swal.fire({
+                title: '¡Success!',
+                text: '@successMessage',
+                icon: 'success',
+                confirmButtonText: 'OK',
+                timer: 3000
+            });
+        </script>
+    }
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <script>
+            Swal.fire({
+                title: 'Success',
+                text: '@errorMessage',
+                icon: 'error',
+                confirmButtonText: 'OK',
+                timer: 3000
+            });
+        </script>
+    }
+}

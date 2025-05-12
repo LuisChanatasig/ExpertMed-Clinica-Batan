@@ -1,0 +1,457 @@
+﻿@{
+    ViewBag.Title = "Mis Datos";
+    ViewBag.pTitle = "Mis Datos";
+    ViewBag.pageTitle = "Mis Datos";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var successMessage = TempData["SuccessMessage"] as string;
+    var errorMessage = TempData["ErrorMessage"] as string;
+
+
+}
+
+ @model NewUserViewModel
+
+
+@section styles {
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+}
+
+<div class="position-relative mx-n4 mt-n4">
+    <div class="profile-wid-bg profile-setting-img">
+        <img src="~/assets/images/auth-one-bg.jpg" class="profile-wid-img" alt="">
+        <div class="overlay-content">
+            <div class="text-end p-3">
+                <div class="p-0 ms-auto rounded-circle profile-photo-edit">
+                    <input id="profile-foreground-img-file-input" type="file" class="profile-foreground-img-file-input">
+                    <h1 class="cabeceras"> <i class=" ri-survey-fill"></i>MODIFICAR MIS DATOS</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+
+    <form asp-action="UpdateUser" asp-asp-controller="User" method="POST" class="row g-3 needs-validation" novalidate enctype="multipart/form-data">
+        <!-- #region  photo profile -->
+
+        <div class="col-xxl-3">
+            <div class="card mt-n5">
+
+                <div card-body p-4>
+
+                    <div class="text-center">
+
+                        <div class="profile-user position-relative d-inline-block mx-auto mb-4">
+                            <img src="@(!string.IsNullOrEmpty(Model.User.ProfilePhoto64) ? Model.User.ProfilePhoto64 : Url.Content("~/assets/images/users/UsersIcon"))"
+                                 class="rounded-circle avatar-xl img-thumbnail user-profile-image" alt="user-profile">                            <div class="avatar-xs p-0 rounded-circle profile-photo-edit">
+                                <input type="file" class="profile-img-file-input" id="profile-img-file-input" name="ProfilePhoto">
+                                <label for="profile-img-file-input" class="profile-photo-edit avatar-xs">
+                                    <span class="avatar-title rounded-circle bg-light text-body">
+                                        <i class="ri-camera-fill"></i>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                        <h5 class="fs-16 mb-1">Seleccione una foto de perfil</h5>
+
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- #endregion photo profile -->
+        <div class="col-xxl-12">
+
+            <div class="card mt-xxl-n5">
+
+                <div class="card-body p-4">
+
+                    <div class="tab-content">
+
+                        <div class="tab-pane active" id="personalDetails" role="tabpanel">
+
+                            <div class="row">
+
+                                <div class="col-lg-3" hidden>
+
+                                    <div class="mb-6">
+
+                                        <label for="profileSelect">Seleccione el perfil</label>
+                                        <select class="form-control" id="profileSelect" name="UserProfileid" asp-for="User.ProfileId" data-choices data-choices-sorting-false required>
+                                            @foreach (var profile in Model.Profiles)
+                                            {
+                                                <option value="@profile.ProfileId">@profile.ProfileName</option>
+                                            }
+
+                                        </select>
+                                    </div>
+
+                                </div>
+                                <input type="hidden" name="id" value="@Model.User.UserId" />
+                                <div class="col-lg-3" id="doctorSelectContainer" style="display: none;">
+                                    <!-- Oculto por defecto -->
+                                    <div class="mb-3">
+                                        <label for="doctorSelect" class="form-label">Select the doctor to assign the assistant to</label>
+                                        <select class="form-control" id="doctorSelect" name="doctorSelect" data-choices data-choices-removeItem multiple>
+                                            <!-- Médicos ya asignados (si los hay) -->
+                                            @if (Model.User.Doctors != null)
+                                            {
+                                                @foreach (var assignedDoctor in Model.User.Doctors)
+                                                {
+                                                    <option value="@assignedDoctor.DoctorId" selected>
+                                                        Dr(a): @assignedDoctor.DoctorNames @assignedDoctor.DoctorSurnames (@assignedDoctor.DoctorSpecialtyName)
+                                                    </option>
+                                                }
+                                            }
+
+                                            <!-- Médicos disponibles -->
+                                            @foreach (var availableDoctor in Model.Users)
+                                            {
+                                                <option value="@availableDoctor.UsersId">
+                                                    Dr(a): @availableDoctor.UsersNames @availableDoctor.UsersSurcenames (@availableDoctor.UsersSpeciality.SpecialityName)
+                                                </option>
+                                            }
+                                        </select>
+                                        <!-- Input oculto para enviar los IDs seleccionados -->
+                                        <input type="hidden" id="selectedDoctorIds" name="selectedDoctorIds">
+                                    </div>
+                                </div>
+
+
+                                <div class="col-lg-3">
+                                    <div class="mb-3">
+                                        <label for="documentNumberInput" class="form-label">Numero de documento</label>
+                                        <input type="text" class="form-control" id="documentNumberInput" value="@Model.User.DocumentNumber" name="UserDocumentNumber" placeholder="1759999999" required>
+
+                                        <div class="invalid-feedback">
+                                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <div class="mb-3">
+                                        <label for="firstnameInput" class="form-label">Nombres</label>
+                                        <input type="text" class="form-control" id="firstnameInput" value="@Model.User.Names" name="UserNames" placeholder="Enter your firstname" required>
+
+                                        <div class="invalid-feedback">
+                                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <div class="mb-3">
+                                        <label for="lastnameInput" class="form-label">Apellidos</label>
+                                        <input type="text" class="form-control" id="lastnameInput" class="UserSurnames" value="@Model.User.Surnames" name="UserSurnames" placeholder="Enter your lastname" required>
+                                        <div class="invalid-feedback">
+                                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-12">
+                                    <div class="mb-3">
+                                        <label for="addressInput" class="form-label">Direccion</label>
+                                        <div class="input-group">
+                                            <!-- Input para ingresar la dirección -->
+                                            <input type="text" id="addressInput" class="form-control" class="UserAddress" value="@Model.User.Address" name="UserAddress" aria-label="Recipient's username" aria-describedby="button-addon2" placeholder="Escribe una dirección" required>
+                                            <div class="invalid-feedback">
+                                                POR FAVOR ESTE CAMPO ES REQUERIDO
+                                            </div>
+                                            <!-- Botón para mostrar el mapa -->
+                                            <button class="btn btn-outline-success" type="button" id="mapButton"><i class="ri-map-pin-line"></i></button>
+                                        </div>
+
+                                        <!-- Contenedor para el mapa que se generará dinámicamente -->
+                                        <div id="map" style="display: none; height: 400px; margin-top: 15px;"></div>
+
+                                        <!-- Contenedor de sugerencias que se generará dinámicamente -->
+                                        <div id="suggestions" class="suggestions-container" style="display: none;"></div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <div class="mb-3">
+                                        <label for="codeSenecytInput" class="form-label">Codigo del senecyt</label>
+                                        <input type="text" class="form-control" id="codeSenecytInput" value="@Model.User.SenecytCode" name="UserSenecytcode" placeholder="Enter your Senecyt code" required>
+                                        <div class="invalid-feedback">
+                                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <div class="mb-3">
+                                        <label for="phonenumberInput" class="form-label">Numero de telefono</label>
+                                        <input type="text" class="form-control" id="phonenumberInput" value="@Model.User.Phone" name="UserPhone" placeholder="Enter your phone number +(1) 987 6543" required>
+                                        <div class="invalid-feedback">
+                                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <div class="mb-3">
+                                        <label for="emailInput" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="emailInput" value="@Model.User.Email" name="UserEmail" placeholder="Enter your email" required>
+                                        <div class="invalid-feedback">
+
+                                            POR FAVOR ESTE CAMPO ES REQUERIDO, OR IT IS NOT A VALID EMAIL
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <div class="mb-3">
+                                        <label for="specialtySelect" class="form-label">Seleccione la especialidad</label>
+                                        <select class="form-control" id="specialtyId" name="UserSpecialtyid" asp-for="User.UserSpecialtyid" data-choices data-choices-sorting-false required>
+                                            @foreach (var specialities in Model.Specialties)
+                                            {
+                                                <option value="@specialities.SpecialityId">@specialities.SpecialityName</option>
+                                            }
+                                        </select>
+                                        <div class="invalid-feedback">
+                                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-6">
+                                    <div class="mb-3">
+                                        <label for="countrySelect" class="form-label">Seleccione su pais</label>
+                                        <select class="form-control" id="countryId" asp-for="User.UserCountryid" name="UserCountryid" data-choices data-choices-sorting-false required>
+                                            @foreach (var countries in Model.Countries)
+                                            {
+                                                <option value="@countries.CountryId">@countries.CountryNationality</option>
+                                            }
+                                        </select>
+                                        <div class="invalid-feedback">
+                                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <div class="col-lg-3">
+                                    <div class="mb-3">
+                                        <label for="loginInput" class="form-label">Log-in</label>
+                                        <input type="text" class="form-control" id="loginInput" value="@Model.User.Login" name="UserLogin" placeholder="nickname" required>
+                                        <div class="invalid-feedback">
+                                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <div class="mb-3">
+                                        <label for="passwordInput" class="form-label">Contaseña</label>
+                                        <input type="password" class="form-control" id="passwordInput" value="@Model.User.Password" name="UserPassword" placeholder="********" required>
+                                        <div class="invalid-feedback">
+                                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!--PARAMETROS DE TAXO-->
+                                <div class="divider-with-text">
+                                    <span>Configuracion de parametros de taxo</span>
+                                </div>
+
+
+                                <div class="col-lg-6">
+                                    <div class="mb-3">
+                                        <label for="establishmentnameInput" class="form-label">Seleccione el Establecimiento</label>
+                                        <select class="form-control" id="establishmentId" asp-for="User.UserEstablishmentid" data-choices data-choices-sorting-false required>
+                                            <option value="">Seleccione un establecimiento</option>
+                                            @foreach (var establishment in Model.Establishments)
+                                            {
+                                                <option value="@establishment.EstablishmentId">@establishment.EstablishmentName</option>
+                                            }
+                                        </select>                                        <div class="invalid-feedback">
+                                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <div class="col-lg-3">
+                                    <div class="mb-3">
+                                        <label for="stablishSelect" class="form-label">Seleccione el porcentaje de IVA</label>
+                                        <select class="form-control" id="vatPercentageId" name="UserVatpercentageid" asp-for="User.UserVatpercentageid" data-choices data-choices-sorting-false required>
+                                            @foreach (var percentage in Model.VatBillings)
+                                            {
+                                                <option value="@percentage.VatbillingId">@percentage.VatbillingPercentage</option>
+                                            }
+                                        </select>
+                                        <div class="invalid-feedback">
+                                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-4">
+                                    <div class="mb-3">
+                                        <label for="xkeyInput" class="form-label">X-KEY del usuario en taxo</label>
+                                        <input type="text" class="form-control" id="xkeyInput" value="@Model.User.XKeyTaxo" name="UserXkeytaxo" placeholder="provided by taxo" required>
+                                        <div class="invalid-feedback">
+                                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-4">
+                                    <div class="mb-3">
+                                        <label for="xpassInput" class="form-label">X-PASS del usuario en taxo</label>
+                                        <input type="text" class="form-control" id="xpassInput" value="@Model.User.XPassTaxo" name="UserXpasstaxo" placeholder="provided by taxo" required>
+                                        <div class="invalid-feedback">
+                                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-4">
+                                    <div class="mb-3">
+                                        <label for="sequentialBillingInput" class="form-label">Secuencial del usuario en taxo</label>
+                                        <input type="text" class="form-control" id="sequentialBillingInput" value="@Model.User.SequentialBilling" name="UserSequentialBilling" placeholder="provided by taxo" required>
+                                        <div class="invalid-feedback">
+                                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!--Horarios de atencion-->
+                                <div class="divider-with-text">
+                                    <span>Configuracion Horas de trabajo</span>
+                                </div>
+
+                                <div class="col-lg-4">
+                                    <div class="mb-3">
+                                        <label for="startHour" class="form-label">Hora de inicio</label>
+                                        <input class="form-control" type="time" id="startHour" value="@Model.User.StartTime" name="StartTime" required>
+                                        <div class="invalid-feedback">
+                                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-4">
+                                    <div class="mb-3">
+                                        <label for="endHour" class="form-label">Hora final</label>
+                                        <input class="form-control" type="time" id="endHour" value="@Model.User.EndTime" name="EndTime" required>
+                                        <div class="invalid-feedback">
+                                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-4">
+                                    <div class="mb-3">
+                                        <label for="endHour" class="form-label">Intervalo de citas</label>
+                                        <input class="form-control" type="number" id="appointmentInterval" value="@Model.User.AppointmentInterval" name="AppointmentInterval" placeholder="120 in minutes" required>
+                                        <div class="invalid-feedback">
+                                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class=" col-lg-12">
+                                    <div>
+                                        <label for="exampleFormControlTextarea5" class="form-label">Descripcion del doctor</label>
+                                        <textarea class="form-control" id="description" asp-for="User.UserDescription" name="UserDescription" rows="3" required></textarea>
+                                        <div class="invalid-feedback">
+                                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                                        </div>
+                                    </div>
+                                </div>
+
+
+
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                    <div class="col-lg-12" style="padding-top: 3px">
+                        <div class="hstack gap-2 justify-content-end">
+
+
+                            <button type="submit" id="btnCrearUsuario" class="btn btn-primary">
+                                <i class="ri-user-add-line"></i> Modificar Usuario
+                            </button>
+                            <a type="button" href="@Url.Action("UserList", "Users")" class="btn btn-soft-secondary">
+                                <i class=" ri-arrow-go-back-line"></i> Cancelar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </form>
+
+
+</div>
+
+@section scripts {
+    <!--jquery cdn-->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    <!--select2 cdn-->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script src="~/assets/js/pages/select2.init.js"></script>
+
+    <!-- App js -->
+    <script src="~/assets/js/app.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const profileSelect = document.getElementById("profileSelect");
+            const doctorSelectContainer = document.getElementById("doctorSelectContainer");
+
+            // Función para actualizar la visibilidad del contenedor de médicos
+            function updateDoctorSelectContainer() {
+                const selectedValue = profileSelect.value;
+                if (selectedValue === "3") { // Mostrar si el ProfileId es 3
+                    doctorSelectContainer.style.display = "block";
+                } else { // Ocultar en caso contrario
+                    doctorSelectContainer.style.display = "none";
+                }
+            }
+
+            // Validación inicial al cargar la página
+            updateDoctorSelectContainer();
+
+            // Escuchar cambios en el select de perfiles
+            profileSelect.addEventListener("change", updateDoctorSelectContainer);
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const doctorSelect = document.getElementById('doctorSelect');
+            const selectedDoctorIdsInput = document.getElementById('selectedDoctorIds');
+
+            // Función para actualizar los IDs seleccionados
+            function updateSelectedDoctorIds() {
+                const selectedOptions = Array.from(doctorSelect.selectedOptions).map(option => option.value);
+                selectedDoctorIdsInput.value = selectedOptions.join(',');
+            }
+
+            // Actualiza el input oculto cada vez que cambie la selección
+            doctorSelect.addEventListener('change', updateSelectedDoctorIds);
+
+            // Llamar inicialmente para establecer los IDs de los médicos ya seleccionados
+            updateSelectedDoctorIds();
+        });
+
+
+    </script>
+}
+
+

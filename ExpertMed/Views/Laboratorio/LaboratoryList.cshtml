@@ -1,0 +1,209 @@
+﻿@model List<ExpertMed.Models.PendingLabRequest>
+
+@{
+    ViewBag.Title = "Solicitudes de Laboratorio";
+    ViewBag.pTitle = "Solicitudes de Laboratorio";
+    ViewBag.pageTitle = "Solicitudes de Laboratorio";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var successMessage = TempData["SuccessMessage"] as string;
+    var errorMessage = TempData["ErrorMessage"] as string;
+}
+
+@using Microsoft.AspNetCore.Http
+@{
+    var perfilId = ViewContext.HttpContext.Session.GetInt32("PerfilId");
+}
+
+@section styles {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.dataTables.min.css">
+}
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card">
+
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0"><i class="mdi mdi-file-document-multiple"></i> Solicitudes pendientes</h5>
+                <input type="text" id="globalSearch" class="form-control form-control-sm w-50" placeholder="🔍 Buscar paciente, médico o examen..." />
+            </div>
+
+            <div class="card-body">
+                @if (Model != null && Model.Any())
+                {
+                    var agrupadoPorPaciente = Model.GroupBy(x => x.CedulaPaciente);
+                    int index = 1;
+                    int grupoId = 1;
+
+                    foreach (var grupo in agrupadoPorPaciente)
+                    {
+                        var firstItem = grupo.First();
+                        var collapseId = $"collapsePaciente{grupoId}";
+
+                        <div class="mb-3 border rounded grupo-solicitud">
+                            <div class="bg-light px-3 py-2 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong><i class="mdi mdi-account"></i> @firstItem.NombrePaciente</strong> — @firstItem.CedulaPaciente
+                                    <br />
+                                    <span class="text-muted"><i class="mdi mdi-stethoscope"></i> Médico: @firstItem.NombreMedico</span>
+                                    <br />
+                                    <span class="text-muted"><i class="mdi mdi-medical-bag"></i> Seguro: @firstItem.NombreSeguro</span>
+                                </div>
+                                <div>
+                                    <a class="btn btn-sm btn-soft-info" data-bs-toggle="collapse" href="#@collapseId" role="button" aria-expanded="false" aria-controls="@collapseId">
+                                       <i class="mdi mdi-eye-outline"></i>  Ver detalles
+                                    </a>
+
+                                    <a href="@Url.Action("LaboratoryDoc", "Documents", new { consultationId = firstItem.LaboratoriesConsultationId })"
+                                       class="btn btn-sm btn-soft-primary">
+                                        <i class="ri-file-download-fill"></i> Descargar pedido
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="collapse px-2 py-2" id="@collapseId">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Examen</th>
+                                                <th>Observación</th>
+                                                <th>Fecha</th>
+                                                <th>Estado</th>
+                                                @if (perfilId != 2)
+                                                {
+                                                    <th>Cambiar</th>
+                                                }
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var item in grupo)
+                                            {
+                                                <tr>
+                                                    <td>@index</td>
+                                                    <td>@item.NombreExamen</td>
+                                                    <td>@item.LaboratoriesObservation</td>
+                                                    <td>@item.FechaSolicitud.ToString("dd/MM/yyyy")</td>
+                                                    <td><span class="badge bg-warning">@item.EstadoTexto</span></td>
+                                                    @if (perfilId != 2)
+                                                    {
+                                                       <td>
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-soft-primary"
+                                                                    data-bs-toggle="offcanvas"
+                                                                    data-bs-target="#cambiarEstado_@item.LaboratoriesId"
+                                                                    aria-controls="cambiarEstado_@item.LaboratoriesId">
+                                                                <i class="mdi mdi-sync"></i> Cambiar estado
+                                                            </button>
+                                                       </td>
+                                                    }
+
+                                                </tr>
+
+                                                <!-- Offcanvas -->
+                                                <div class="offcanvas offcanvas-end" tabindex="-1" id="cambiarEstado_@item.LaboratoriesId" aria-labelledby="cambiarEstadoLabel_@item.LaboratoriesId">
+                                                    <div class="offcanvas-header">
+                                                        <h5 class="offcanvas-title" id="cambiarEstadoLabel_@item.LaboratoriesId">
+                                                            Cambiar estado - Solicitud #@item.LaboratoriesSequential
+                                                        </h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+                                                    </div>
+                                                    <div class="offcanvas-body">
+                                                        <p><strong>Paciente:</strong> @item.NombrePaciente</p>
+                                                        <p><strong>Examen:</strong> @item.NombreExamen</p>
+                                                        <p><strong>Estado actual:</strong> <span class="badge bg-warning">@item.EstadoTexto</span></p>
+
+                                                        <form asp-action="ChangeStatus" asp-controller="Laboratorio" method="post">
+                                                            <input type="hidden" name="laboratorioId" value="@item.LaboratoriesId" />
+                                                            <div class="d-grid gap-2">
+                                                                <button type="submit" name="nuevoEstado" value="1" class="btn btn-warning">
+                                                                    <i class="mdi mdi-timer-sand"></i> Pendiente de Toma
+                                                                </button>
+                                                                <button type="submit" name="nuevoEstado" value="2" class="btn btn-info">
+                                                                    <i class="mdi mdi-flask"></i> En Proceso
+                                                                </button>
+                                                                <button type="submit" name="nuevoEstado" value="3" class="btn btn-secondary">
+                                                                    <i class="mdi mdi-clock-outline"></i> Pendiente de Resultado
+                                                                </button>
+                                                                <button type="submit" name="nuevoEstado" value="4" class="btn btn-success">
+                                                                    <i class="mdi mdi-check-circle-outline"></i> Finalizado
+                                                                </button>
+                                                                <button type="submit" name="nuevoEstado" value="5" class="btn btn-danger">
+                                                                    <i class="mdi mdi-close-circle-outline"></i> Cancelado
+                                                                </button>
+                                                            </div>
+                                                        </form>
+
+                                                    </div>
+                                                </div>
+
+                                                index++;
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        grupoId++;
+                    }
+                }
+                else
+                {
+                    <div class="text-center text-muted">No hay solicitudes pendientes.</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#globalSearch').on('keyup', function () {
+                var filtro = $(this).val().toLowerCase();
+                $('.grupo-solicitud').each(function () {
+                    var textoGrupo = $(this).text().toLowerCase();
+                    var match = textoGrupo.indexOf(filtro) > -1;
+                    $(this).toggle(match);
+
+                    var collapse = $(this).find('.collapse');
+                    if (match) {
+                        collapse.addClass('show');
+                    } else {
+                        collapse.removeClass('show');
+                    }
+                });
+            });
+        });
+    </script>
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <script>
+            Swal.fire({
+                title: '¡Éxito!',
+                text: '@successMessage',
+                icon: 'success',
+                confirmButtonText: 'OK',
+                timer: 3000
+            });
+        </script>
+    }
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <script>
+            Swal.fire({
+                title: 'Error',
+                text: '@errorMessage',
+                icon: 'error',
+                confirmButtonText: 'OK',
+                timer: 3000
+            });
+        </script>
+    }
+}

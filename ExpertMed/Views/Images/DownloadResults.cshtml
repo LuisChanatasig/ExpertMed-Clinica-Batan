@@ -1,0 +1,187 @@
+﻿@model List<ExpertMed.Models.ImagenPendienteDto>
+@{
+    ViewBag.Title = "Descargar Resultados de Imágenes";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var medicos = ViewBag.Medicos as List<ExpertMed.Models.User>;
+    var successMessage = TempData["SuccessMessage"] as string;
+    var errorMessage = TempData["ErrorMessage"] as string;
+}
+
+<div class="card">
+    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="mdi mdi-image-multiple"></i> Resultados de Imágenes para Descargar</h5>
+        <button class="btn btn-sm btn-light" data-bs-toggle="offcanvas" data-bs-target="#offcanvasFilters">
+            <i class="mdi mdi-tune"></i> Filtros
+        </button>
+    </div>
+
+    <div class="card-body">
+        <div class="mb-3">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="mdi mdi-magnify"></i></span>
+                <input type="text" id="searchInput" class="form-control" placeholder="Buscar paciente..." onkeyup="filterResults()" />
+                <button class="btn btn-outline-danger" onclick="clearFilters()">
+                    <i class="mdi mdi-close"></i>
+                </button>
+            </div>
+        </div>
+
+        @if (Model != null && Model.Any())
+        {
+            var agrupado = Model.GroupBy(x => x.ImagesConsultationId);
+
+            foreach (var grupo in agrupado)
+            {
+                var first = grupo.First();
+                var consultaId = first.ImagesConsultationId;
+
+                <div class="accordion mb-3 resultado-bloque"
+                     data-paciente="@first.NombrePaciente.ToLower()"
+                     data-medico="@first.NombreMedico.ToLower()"
+                     data-fecha="@first.FechaSolicitud.ToString("yyyy-MM-dd")">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="heading-@consultaId">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@consultaId">
+                                <div class="text-start">
+                                    <div><strong><i class="mdi mdi-account me-1"></i>@first.NombrePaciente</strong> — @first.CedulaPaciente</div>
+                                    <div class="text-muted"><i class="mdi mdi-stethoscope me-1"></i> Médico: @first.NombreMedico</div>
+                                    <div class="text-muted"><i class="mdi mdi-medical-bag me-1"></i> Seguro: @first.NombreSeguro</div>
+                                </div>
+                            </button>
+                        </h2>
+                        <div id="collapse-@consultaId" class="accordion-collapse collapse">
+                            <div class="accordion-body">
+                                <table class="table table-sm table-bordered align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Examen</th>
+                                            <th>Observación</th>
+                                            <th>Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var examen in grupo.Select((e, i) => new { e, i }))
+                                        {
+                                            <tr>
+                                                <td>@(examen.i + 1)</td>
+                                                <td>@examen.e.NombreExamen</td>
+                                                <td>@examen.e.ImagesObservation</td>
+                                                <td>
+                                                    <a class="btn btn-sm btn-outline-primary"
+                                                       href="@Url.Action("DescargarArchivoResultado", "Images", new { id = examen.e.ImagesId })"
+                                                       target="_blank">
+                                                        <i class="mdi mdi-file-download-outline"></i> Descargar Resultado
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="alert alert-warning">No hay resultados de imágenes disponibles para descarga.</div>
+        }
+    </div>
+</div>
+
+<!-- Offcanvas Filtros -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasFilters" aria-labelledby="offcanvasFiltersLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title"><i class="mdi mdi-tune me-1"></i> Filtros Avanzados</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body">
+        @if (medicos != null)
+        {
+            <div class="mb-3">
+                <label class="form-label">Médico:</label>
+                <select id="medicoInput" class="form-select form-select-sm" onchange="filterResults()">
+                    <option value="">Todos</option>
+                    @foreach (var medico in medicos)
+                    {
+                        <option value="@medico.UsersNames.ToLower()">@medico.UsersNames</option>
+                    }
+                </select>
+            </div>
+        }
+
+        <div class="mb-3">
+            <label class="form-label">Desde:</label>
+            <input type="date" id="fechaDesde" class="form-control form-control-sm" onchange="filterResults()" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Hasta:</label>
+            <input type="date" id="fechaHasta" class="form-control form-control-sm" onchange="filterResults()" />
+        </div>
+        <button class="btn btn-sm btn-outline-danger w-100" onclick="clearFilters()">
+            <i class="mdi mdi-close-circle-outline"></i> Limpiar Filtros
+        </button>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function clearFilters() {
+            document.getElementById("searchInput").value = "";
+            document.getElementById("medicoInput").value = "";
+            document.getElementById("fechaDesde").value = "";
+            document.getElementById("fechaHasta").value = "";
+            filterResults();
+        }
+
+        function filterResults() {
+            const texto = document.getElementById("searchInput").value.toLowerCase();
+            const medico = document.getElementById("medicoInput").value.toLowerCase();
+            const desde = document.getElementById("fechaDesde").value;
+            const hasta = document.getElementById("fechaHasta").value;
+
+            const bloques = document.querySelectorAll(".resultado-bloque");
+
+            bloques.forEach(bloque => {
+                const paciente = bloque.dataset.paciente;
+                const medicoNombre = bloque.dataset.medico;
+                const fecha = bloque.dataset.fecha;
+
+                const cumpleBusqueda = paciente.includes(texto);
+                const cumpleMedico = medico === "" || medicoNombre.includes(medico);
+                const cumpleDesde = desde === "" || fecha >= desde;
+                const cumpleHasta = hasta === "" || fecha <= hasta;
+
+                bloque.style.display = (cumpleBusqueda && cumpleMedico && cumpleDesde && cumpleHasta) ? "" : "none";
+            });
+        }
+    </script>
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <script>
+            Swal.fire({
+                title: '¡Éxito!',
+                text: '@successMessage',
+                icon: 'success',
+                confirmButtonText: 'OK',
+                timer: 3000
+            });
+        </script>
+    }
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <script>
+            Swal.fire({
+                title: 'Error',
+                text: '@errorMessage',
+                icon: 'error',
+                confirmButtonText: 'OK',
+                timer: 3000
+            });
+        </script>
+    }
+}
