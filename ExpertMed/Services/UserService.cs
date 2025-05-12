@@ -246,96 +246,136 @@ namespace ExpertMed.Services
         }
 
 
-        //TRAER EL USUARIO POR EL ID
+
         // Método para obtener un usuario por su ID
         public async Task<UserWithDetails> GetUserDetailsAsync(int userId)
         {
             UserWithDetails userDetails = null;
-            List<DoctorDto> doctors = new List<DoctorDto>();
+            var doctors = new List<DoctorDto>();
+            var consultorios = new List<MedicalOfficeDto>();
+            var files = new List<UserFileDto>();
 
-            using (var connection = new SqlConnection(_dbContext.Database.GetConnectionString()))
+            using var connection = new SqlConnection(_dbContext.Database.GetConnectionString());
+            using var command = new SqlCommand("sp_ListUserById", connection)
             {
-                try
+                CommandType = CommandType.StoredProcedure
+            };
+            command.Parameters.AddWithValue("@user_id", userId);
+
+            try
+            {
+                await connection.OpenAsync();
+                using var reader = await command.ExecuteReaderAsync();
+
+                // 🧾 Primer result set: datos del usuario
+                if (await reader.ReadAsync())
                 {
-                    // Abrir la conexión
-                    await connection.OpenAsync();
-
-                    // Configurar el comando para ejecutar el procedimiento almacenado
-                    using (var command = new SqlCommand("sp_ListUserById", connection))
+                    userDetails = new UserWithDetails
                     {
-                        command.CommandType = CommandType.StoredProcedure;
-                        command.Parameters.AddWithValue("@user_id", userId);
+                        UserId = reader.GetInt32(reader.GetOrdinal("users_id")),
+                        DocumentNumber = reader.GetString(reader.GetOrdinal("users_document_number")),
+                        Names = reader.GetString(reader.GetOrdinal("users_names")),
+                        Surnames = reader.GetString(reader.GetOrdinal("users_surcenames")),
+                        Phone = reader.GetString(reader.GetOrdinal("users_phone")),
+                        Email = reader.GetString(reader.GetOrdinal("users_email")),
+                        CreationDate = reader.GetDateTime(reader.GetOrdinal("users_creationdate")),
+                        ModificationDate = reader.IsDBNull(reader.GetOrdinal("users_modificationdate"))
+                            ? null
+                            : reader.GetDateTime(reader.GetOrdinal("users_modificationdate")),
+                        Address = reader.GetString(reader.GetOrdinal("users_address")),
+                        ProfilePhoto = reader["users_profilephoto"] as byte[],
+                        ProfilePhoto64 = reader["users_profilephoto"] != DBNull.Value
+                            ? "data:image/png;base64," + Convert.ToBase64String((byte[])reader["users_profilephoto"])
+                            : "assets/images/users/UsersIcon",
+                        SenecytCode = reader["users_senecytcode"] as string,
+                        XKeyTaxo = reader["users_xkeytaxo"] as string,
+                        XPassTaxo = reader["users_xpasstaxo"] as string,
+                        Login = reader.GetString(reader.GetOrdinal("users_login")),
+                        Status = reader.GetInt32(reader.GetOrdinal("users_status")),
+                        ProfileId = reader.GetInt32(reader.GetOrdinal("users_profileid")),
+                        UserCountryid = reader.IsDBNull(reader.GetOrdinal("users_countryid")) ? null : reader.GetInt32(reader.GetOrdinal("users_countryid")),
+                        UserDescription = reader.IsDBNull(reader.GetOrdinal("users_description"))
+                            ? "Sin especificar"
+                            : reader.GetString(reader.GetOrdinal("users_description")),
+                        ProfileName = reader.IsDBNull(reader.GetOrdinal("profile_name"))
+                            ? "Sin perfil"
+                            : reader.GetString(reader.GetOrdinal("profile_name")),
+                        UserEstablishmentid = reader.IsDBNull(reader.GetOrdinal("user_establishment_id")) ? null : reader.GetInt32(reader.GetOrdinal("user_establishment_id")),
+                        SpecialtyName = reader.IsDBNull(reader.GetOrdinal("speciality_name"))
+                            ? "Sin especialidad"
+                            : reader.GetString(reader.GetOrdinal("speciality_name")),
+                        CountryName = reader.IsDBNull(reader.GetOrdinal("country_name"))
+                            ? "Sin país"
+                            : reader.GetString(reader.GetOrdinal("country_name")),
+                        StartTime = reader.GetTimeSpan(reader.GetOrdinal("start_time")),
+                        EndTime = reader.GetTimeSpan(reader.GetOrdinal("end_time")),
+                        AppointmentInterval = reader.GetInt32(reader.GetOrdinal("appointment_interval"))
+                    };
+                }
 
-                        // Ejecutar el comando y leer los resultados
-                        using (var reader = await command.ExecuteReaderAsync())
+                // 🗂 Segundo result set: archivos (logo, certificado, etc.)
+                if (await reader.NextResultAsync() && reader.HasRows)
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        files.Add(new UserFileDto
                         {
-                            if (await reader.ReadAsync())
-                            {
-                                // Mapear los datos del usuario
-                                userDetails = new UserWithDetails
-                                {
-                                    UserId = reader.GetInt32(reader.GetOrdinal("users_id")),
-                                    DocumentNumber = reader.GetString(reader.GetOrdinal("users_document_number")),
-                                    Names = reader.GetString(reader.GetOrdinal("users_names")),
-                                    Surnames = reader.GetString(reader.GetOrdinal("users_surcenames")),
-                                    Phone = reader.GetString(reader.GetOrdinal("users_phone")),
-                                    Email = reader.GetString(reader.GetOrdinal("users_email")),
-                                    CreationDate = reader.GetDateTime(reader.GetOrdinal("users_creationdate")),
-                                    ModificationDate = reader.IsDBNull(reader.GetOrdinal("users_modificationdate"))
-                                                       ? (DateTime?)null
-                                                       : reader.GetDateTime(reader.GetOrdinal("users_modificationdate")),
-                                    Address = reader.GetString(reader.GetOrdinal("users_address")),
-                                    ProfilePhoto = reader["users_profilephoto"] != DBNull.Value ? (byte[])reader["users_profilephoto"] : null,
-                                    ProfilePhoto64 = reader["users_profilephoto"] != DBNull.Value
-                                        ? "data:image/png;base64," + Convert.ToBase64String((byte[])reader["users_profilephoto"])
-                                        : "assets/images/users/UsersIcon", // Ruta por defecto
-                                    SenecytCode = reader.IsDBNull(reader.GetOrdinal("users_senecytcode")) ? null : reader.GetString(reader.GetOrdinal("users_senecytcode")),
-                                    XKeyTaxo = reader.IsDBNull(reader.GetOrdinal("users_xkeytaxo")) ? null : reader.GetString(reader.GetOrdinal("users_xkeytaxo")),
-                                    XPassTaxo = reader.IsDBNull(reader.GetOrdinal("users_xpasstaxo")) ? null : reader.GetString(reader.GetOrdinal("users_xpasstaxo")),
-                                    Login = reader.GetString(reader.GetOrdinal("users_login")),
-                                    Status = reader.GetInt32(reader.GetOrdinal("users_status")),
-                                    ProfileId = reader.GetInt32(reader.GetOrdinal("users_profileid")),
-                                    UserCountryid = reader.GetInt32(reader.GetOrdinal("users_countryid")),
-                                    UserDescription = reader.GetString(reader.GetOrdinal("users_description")) ?? "Sin especificar",
-                                    ProfileName = reader.GetString(reader.GetOrdinal("profile_name")),
-                                    UserEstablishmentid = reader.GetInt32(reader.GetOrdinal("user_establishment_id")),
-                                  
-                                    SpecialtyName = reader.GetString(reader.GetOrdinal("speciality_name")),
-                                    CountryName = reader.GetString(reader.GetOrdinal("country_name")),
-                                    StartTime = reader.GetTimeSpan(reader.GetOrdinal("start_time")),
-                                    EndTime = reader.GetTimeSpan(reader.GetOrdinal("end_time")),
-                                    AppointmentInterval = reader.GetInt32(reader.GetOrdinal("appointment_interval")),
-                                    Doctors = doctors
-                                };
-                            }
+                            FileType = reader.GetString(reader.GetOrdinal("file_type")),
+                            FileName = reader.GetString(reader.GetOrdinal("file_name")),
+                            FileContent = reader["file_content"] as byte[],
+                            ContentType = reader.GetString(reader.GetOrdinal("content_type"))
+                        });
+                    }
+                }
 
-                            // Si es un asistente (profile_id = 3), obtener los médicos relacionados
-                            if (userDetails != null && userDetails.ProfileName == "Asistente")
+                // 🏥 Tercer result set: consultorios
+                if (await reader.NextResultAsync() && reader.HasRows)
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        consultorios.Add(new MedicalOfficeDto
+                        {
+                            OfficeId = reader.GetInt32(reader.GetOrdinal("medicaloffice_id")),
+                            OfficeName = reader.IsDBNull(reader.GetOrdinal("medicaloffice_name"))
+                                ? "Sin nombre"
+                                : reader.GetString(reader.GetOrdinal("medicaloffice_name")),
+                            OfficeLocation = reader.IsDBNull(reader.GetOrdinal("medicaloffice_location"))
+                                ? "Sin ubicación"
+                                : reader.GetString(reader.GetOrdinal("medicaloffice_location"))
+                        });
+                    }
+                }
+
+                // 👨‍⚕️ Cuarto result set: médicos asociados
+                if (userDetails != null && userDetails.ProfileName.Equals("Asistente", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (await reader.NextResultAsync() && reader.HasRows)
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            doctors.Add(new DoctorDto
                             {
-                                // Reabrir el lector para obtener los médicos relacionados
-                                if (await reader.NextResultAsync())
-                                {
-                                    while (await reader.ReadAsync())
-                                    {
-                                        doctors.Add(new DoctorDto
-                                        {
-                                            DoctorId = reader.GetInt32(reader.GetOrdinal("doctor_id")),
-                                            DoctorNames = reader.GetString(reader.GetOrdinal("doctor_names")),
-                                            DoctorSurnames = reader.GetString(reader.GetOrdinal("doctor_surnames")),
-                                            DoctorSpecialtyId = reader.GetInt32(reader.GetOrdinal("doctor_specialtyid")),
-                                            DoctorSpecialtyName = reader.GetString(reader.GetOrdinal("doctor_specialty_name"))
-                                        });
-                                    }
-                                }
-                            }
+                                DoctorId = reader.GetInt32(reader.GetOrdinal("doctor_id")),
+                                DoctorNames = reader.GetString(reader.GetOrdinal("doctor_names")),
+                                DoctorSurnames = reader.GetString(reader.GetOrdinal("doctor_surnames")),
+                                DoctorSpecialtyId = reader.GetInt32(reader.GetOrdinal("doctor_specialtyid")),
+                                DoctorSpecialtyName = reader.GetString(reader.GetOrdinal("doctor_specialty_name"))
+                            });
                         }
                     }
                 }
-                catch (Exception ex)
+
+                // 🧩 Asignar listas completadas
+                if (userDetails != null)
                 {
-                    // Manejo de errores, loguear el error si es necesario
-                    throw new Exception("Error al obtener los detalles del usuario", ex);
+                    userDetails.Doctors = doctors;
+                    userDetails.MedicalOffices = consultorios;
+                    userDetails.UserFiles = files;
                 }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error al obtener los detalles del usuario", ex);
             }
 
             return userDetails;
@@ -346,108 +386,113 @@ namespace ExpertMed.Services
 
         public async Task UpdateUserAsync(int userId, UserViewModel usuario, List<int>? associatedDoctorIds = null)
         {
-            using (var connection = new SqlConnection(_dbContext.Database.GetDbConnection().ConnectionString))
+            using var connection = new SqlConnection(_dbContext.Database.GetDbConnection().ConnectionString);
+            using var command = new SqlCommand("SP_UpdateUser", connection)
             {
-                using (var command = new SqlCommand("SP_UpdateUser", connection))
+                CommandType = CommandType.StoredProcedure
+            };
+
+            // Parámetro obligatorio
+            command.Parameters.AddWithValue("@UserId", userId);
+
+            // Datos personales
+            command.Parameters.Add(new SqlParameter("@ProfilePhoto", SqlDbType.VarBinary) { Value = usuario.UserProfilephoto ?? (object)DBNull.Value });
+            command.Parameters.AddWithValue("@ProfileId", usuario.UserProfileid);
+            command.Parameters.AddWithValue("@DocumentNumber", usuario.UserDocumentNumber);
+            command.Parameters.AddWithValue("@Names", usuario.UserNames);
+            command.Parameters.AddWithValue("@Surnames", usuario.UserSurnames);
+            command.Parameters.AddWithValue("@Address", usuario.UserAddress);
+            command.Parameters.AddWithValue("@SenecytCode", usuario.UserSenecytcode ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@Phone", usuario.UserPhone);
+            command.Parameters.AddWithValue("@Email", usuario.UserEmail);
+            command.Parameters.AddWithValue("@SpecialtyId", usuario.UserSpecialtyid ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@CountryId", usuario.UserCountryid ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@Login", usuario.UserLogin);
+            command.Parameters.AddWithValue("@Password", usuario.UserPassword);
+
+            // Datos fiscales (Taxo)
+            command.Parameters.AddWithValue("@EstablishmentId", usuario.UserEstablishmentId ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@VatPercentageId", usuario.UserVatpercentageid ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@XKeyTaxo", usuario.UserXkeytaxo ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@XPassTaxo", usuario.UserXpasstaxo ?? (object)DBNull.Value);
+
+            // Horario y descripción
+            command.Parameters.AddWithValue("@StartTime", usuario.StartTime == TimeOnly.MinValue ? (object)DBNull.Value : DateTime.Today.Add(usuario.StartTime.ToTimeSpan()));
+            command.Parameters.AddWithValue("@EndTime", usuario.EndTime == TimeOnly.MinValue ? (object)DBNull.Value : DateTime.Today.Add(usuario.EndTime.ToTimeSpan()));
+            command.Parameters.AddWithValue("@AppointmentInterval", usuario.AppointmentInterval);
+            command.Parameters.AddWithValue("@Description", usuario.UserDescription ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@WorkingDays", usuario.WorksDays ?? (object)DBNull.Value);
+
+            // Relación asistente-médico
+            command.Parameters.AddWithValue("@DoctorIds", associatedDoctorIds != null && associatedDoctorIds.Any()
+                ? string.Join(",", associatedDoctorIds)
+                : (object)DBNull.Value);
+
+            // Archivos
+            command.Parameters.AddWithValue("@CompanyLogo", usuario.CompanyLogoBytes ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@CompanyLogoFileName", usuario.CompanyLogoFileName ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@CompanyLogoContentType", usuario.CompanyLogoContentType ?? (object)DBNull.Value);
+
+            command.Parameters.AddWithValue("@CertificateP12", usuario.CertificateP12Bytes ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@CertificateP12FileName", usuario.CertificateP12FileName ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@CertificateP12ContentType", usuario.CertificateP12ContentType ?? (object)DBNull.Value);
+
+            // TVP: consultorios
+            var table = new DataTable();
+            table.Columns.Add("Id", typeof(int));
+
+            if (usuario.SelectedOfficeIds != null)
+            {
+                foreach (var id in usuario.SelectedOfficeIds)
+                    table.Rows.Add(id);
+            }
+
+            var consultoriosParam = new SqlParameter("@ConsultoriosIds", SqlDbType.Structured)
+            {
+                TypeName = "dbo.IdList",
+                Value = table
+            };
+            command.Parameters.Add(consultoriosParam);
+
+            // Usuario que asigna
+            command.Parameters.AddWithValue("@AssignedBy", usuario.AssignedBy);
+
+            try
+            {
+                await connection.OpenAsync();
+
+                string jsonResult = null;
+                using (var reader = await command.ExecuteReaderAsync())
                 {
-                    command.CommandType = CommandType.StoredProcedure;
-
-                    // Agregar el parámetro del ID del usuario
-                    command.Parameters.AddWithValue("@UserId", userId);
-
-                    // Agregar los parámetros de datos personales
-                    command.Parameters.Add(new SqlParameter("@ProfilePhoto", SqlDbType.VarBinary)
-                    {
-                        Value = usuario.UserProfilephoto ?? (object)DBNull.Value
-                    });
-                    command.Parameters.AddWithValue("@ProfileId", usuario.UserProfileid);
-                    command.Parameters.AddWithValue("@DocumentNumber", usuario.UserDocumentNumber);
-                    command.Parameters.AddWithValue("@Names", usuario.UserNames);
-                    command.Parameters.AddWithValue("@Surnames", usuario.UserSurnames);
-                    command.Parameters.AddWithValue("@Address", usuario.UserAddress);
-                    command.Parameters.AddWithValue("@SenecytCode", usuario.UserSenecytcode ?? (object)DBNull.Value);
-                    command.Parameters.AddWithValue("@Phone", usuario.UserPhone);
-                    command.Parameters.AddWithValue("@Email", usuario.UserEmail);
-                    command.Parameters.AddWithValue("@SpecialtyId", usuario.UserSpecialtyid ?? (object)DBNull.Value);
-                    command.Parameters.AddWithValue("@CountryId", usuario.UserCountryid ?? (object)DBNull.Value);
-                    command.Parameters.AddWithValue("@Login", usuario.UserLogin);
-                    command.Parameters.AddWithValue("@Password", usuario.UserPassword);
-
-                    // Parámetros para Taxo
-                    command.Parameters.AddWithValue("@EstablishmentId ", usuario.UserEstablishmentId ?? (object)DBNull.Value);
-
-
-                    command.Parameters.AddWithValue("@VatPercentageId", usuario.UserVatpercentageid ?? (object)DBNull.Value);
-                    command.Parameters.AddWithValue("@XKeyTaxo", usuario.UserXkeytaxo ?? (object)DBNull.Value);
-                    command.Parameters.AddWithValue("@XPassTaxo", usuario.UserXpasstaxo ?? (object)DBNull.Value);
-
-                    // Agregar los médicos asociados
-                    if (associatedDoctorIds != null && associatedDoctorIds.Any())
-                    {
-                        string doctorIds = string.Join(",", associatedDoctorIds);
-                        command.Parameters.AddWithValue("@DoctorIds", doctorIds);
-                    }
-                    else
-                    {
-                        command.Parameters.AddWithValue("@DoctorIds", DBNull.Value);
-                    }
-
-               
-                    // Otros parámetros
-                    command.Parameters.AddWithValue("@StartTime", usuario.StartTime == TimeOnly.MinValue ? DBNull.Value : DateTime.Today.Add(usuario.StartTime.ToTimeSpan()));
-                    command.Parameters.AddWithValue("@EndTime", usuario.EndTime == TimeOnly.MinValue ? DBNull.Value : DateTime.Today.Add(usuario.EndTime.ToTimeSpan()));
-                    command.Parameters.AddWithValue("@AppointmentInterval", usuario.AppointmentInterval);
-                    command.Parameters.AddWithValue("@Description", usuario.UserDescription ?? (object)DBNull.Value);
-
-                    try
-                    {
-                        await connection.OpenAsync();
-
-                        // Ejecutar y leer el resultado JSON
-                        string jsonResult = null;
-                        using (var reader = await command.ExecuteReaderAsync())
-                        {
-                            if (await reader.ReadAsync())
-                            {
-                                jsonResult = reader.GetString(0);
-                            }
-                        }
-
-                        if (string.IsNullOrEmpty(jsonResult))
-                        {
-                            throw new Exception("Error inesperado: No se obtuvo ningún resultado del procedimiento almacenado.");
-                        }
-
-                        // Deserializar el resultado JSON
-                        using (JsonDocument document = JsonDocument.Parse(jsonResult))
-                        {
-                            var root = document.RootElement;
-
-                            // Validar el resultado
-                            if (root.TryGetProperty("success", out var success) && success.GetInt32() == 1)
-                            {
-                                // Actualización exitosa
-                                return;
-                            }
-                            else
-                            {
-                                string errorMessage = root.TryGetProperty("message", out var message)
-                                    ? message.GetString()
-                                    : "Error al actualizar el usuario.";
-                                throw new Exception(errorMessage);
-                            }
-                        }
-                    }
-                    finally
-                    {
-                        if (connection.State == ConnectionState.Open)
-                        {
-                            await connection.CloseAsync();
-                        }
-                    }
+                    if (await reader.ReadAsync())
+                        jsonResult = reader.GetString(0);
                 }
+
+                if (string.IsNullOrEmpty(jsonResult))
+                    throw new Exception("No se obtuvo ningún resultado del procedimiento almacenado.");
+
+                using var document = JsonDocument.Parse(jsonResult);
+                var root = document.RootElement;
+
+                if (root.TryGetProperty("success", out var success) && success.GetInt32() == 1)
+                {
+                    // Todo bien
+                    return;
+                }
+
+                var errorMessage = root.TryGetProperty("message", out var message)
+                    ? message.GetString()
+                    : "Error al actualizar el usuario.";
+                throw new Exception(errorMessage);
+            }
+            finally
+            {
+                if (connection.State == ConnectionState.Open)
+                    await connection.CloseAsync();
             }
         }
+
+
 
     }
 }

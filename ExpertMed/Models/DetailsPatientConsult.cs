@@ -39,6 +39,8 @@ namespace ExpertMed.Models
         public int? PatientHealthInsurance { get; set; }
         public string PatientHealthInsuranceName { get; set; } // Nuevo campo
         public string PatientCode { get; set; }
+        public string? PatientInsuranceAuthorizationCode { get; set; }
+
         public int PatientStatus { get; set; }
 
         public decimal? Temperature { get; set; }

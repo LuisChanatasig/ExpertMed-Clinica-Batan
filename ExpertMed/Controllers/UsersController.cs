@@ -209,6 +209,7 @@ namespace ExpertMed.Controllers
             var percentage = await _selectsService.GetAllVatPercentageAsync();
             var establishments = await _selectsService.GetAllEstablishmentAsync(perfilId, usuarioId);
             var medics = await _selectsService.GetAllMedicsAsync(perfilId, usuarioId);
+            var consultorios = await _clinicaService.GetMedicalOfficesAsync(perfilId, usuarioId);
 
             var viewModel = new NewUserViewModel
             {
@@ -219,11 +220,15 @@ namespace ExpertMed.Controllers
                 VatBillings = percentage,
                 Establishments = establishments,
                 Users = medics,
-                AssociatedDoctors = user.Doctors
+                AssociatedDoctors = user.Doctors,
+                MedicalOfficeListDtos = consultorios
+
             };
 
             return View(viewModel);
         }
+
+
 
         [HttpGet("Actualizar_Datos_Personales")]
         public async Task<IActionResult> UpdateUserP(int id)
@@ -257,12 +262,45 @@ namespace ExpertMed.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> UpdateUserMethod(UserViewModel usuario, IFormFile? ProfilePhoto, string? selectedDoctorIds, int id)
+        public async Task<IActionResult> UpdateUserMethod(UserViewModel usuario, IFormFile? ProfilePhoto, string? selectedDoctorIds, IFormFile? CompanyLogo, IFormFile? CertificateP12, int id)
         {
-            if (!ModelState.IsValid) return await ReloadUserEditView(id);
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorMessage"] = "Datos inválidos. Por favor, revisa los campos e intenta de nuevo.";
+                return await ReloadUserEditView(id);
+            }
 
+            // Asignar usuario modificador
+            usuario.AssignedBy = HttpContext.Session.GetInt32("UsuarioId") ?? 0;
+
+            // Convertir foto de perfil
             usuario.UserProfilephoto = await ConvertFileToByteArray(ProfilePhoto);
-            List<int>? associatedDoctorIds = selectedDoctorIds?.Split(',').Where(id => int.TryParse(id, out _)).Select(int.Parse).ToList();
+
+            // Cargar logotipo si se proporciona
+            if (CompanyLogo is { Length: > 0 })
+            {
+                using var msLogo = new MemoryStream();
+                await CompanyLogo.CopyToAsync(msLogo);
+                usuario.CompanyLogoBytes = msLogo.ToArray();
+                usuario.CompanyLogoFileName = Path.GetFileName(CompanyLogo.FileName);
+                usuario.CompanyLogoContentType = CompanyLogo.ContentType;
+            }
+
+            // Cargar certificado .p12 si se proporciona
+            if (CertificateP12 is { Length: > 0 })
+            {
+                using var msCert = new MemoryStream();
+                await CertificateP12.CopyToAsync(msCert);
+                usuario.CertificateP12Bytes = msCert.ToArray();
+                usuario.CertificateP12FileName = Path.GetFileName(CertificateP12.FileName);
+                usuario.CertificateP12ContentType = CertificateP12.ContentType;
+            }
+
+            // Parsear doctores asignados
+            List<int>? associatedDoctorIds = selectedDoctorIds?
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(int.Parse)
+                .ToList();
 
             try
             {
@@ -272,14 +310,10 @@ namespace ExpertMed.Controllers
             }
             catch (Exception ex)
             {
-                if (ex.Message.Contains("El usuario no existe."))
-                    TempData["ErrorMessage"] = "El usuario no existe.";
-                else if (ex.Message.Contains("El número de documento ya existe."))
-                    TempData["ErrorMessage"] = "El número de documento ya existe.";
-                else if (ex.Message.Contains("El nombre de usuario ya está registrado."))
-                    TempData["ErrorMessage"] = "El nombre de usuario ya está registrado.";
-                else
-                    TempData["ErrorMessage"] = "Error inesperado: " + ex.Message;
+                TempData["ErrorMessage"] = ex.Message.Contains("El usuario no existe.") ? "El usuario no existe."
+                                         : ex.Message.Contains("documento ya existe") ? "El número de documento ya existe."
+                                         : ex.Message.Contains("usuario ya está registrado") ? "El nombre de usuario ya está registrado."
+                                         : "Error inesperado: " + ex.Message;
 
                 return await ReloadUserEditView(id);
             }

@@ -127,6 +127,7 @@
                             }
                             <th>Fecha / Hora</th>
                             <th>Paciente</th>
+                            <th>Tipo de paciente</th>
                             <th>Consultorio</th>
                             <th>Estado</th>
                             <th>Acciones</th>
@@ -147,6 +148,7 @@
                                     @appt.AppointmentHour.ToString("hh\\:mm")
                                 </td>
                                 <td>@appt.PatientName</td>
+                                <td>@appt.PatientInsuranceName</td>
                                 <td>
                                     @if (!string.IsNullOrEmpty(appt.MedicalOfficeName))
                                     {

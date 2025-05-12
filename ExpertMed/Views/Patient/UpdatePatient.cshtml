@@ -314,12 +314,23 @@
                                     </div>
                                 </div>
 
+                                <div class="col-lg-3">
+                                    <div class="mb-3">
+                                        <label for="lastnameInput" class="form-label">Número de aseguradora *</label>
+                                        <input type="text" class="form-control" id="documentnumber" name="patient.PatientInsuranceAuthorizationCode" value="@Model.Patient.PatientInsuranceAuthorizationCode" placeholder="Ingrese el número de seguro" required>
+                                        <div class="invalid-feedback">
+                                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <input type="hidden" name="patient.PatientStatus" value="1" />
                             </div>
 
                         </div>
 
                     </div>
-
+                   
                     <div class="col-lg-12" style="padding-top: 3px">
                         <div class="hstack gap-2 justify-content-end">
 

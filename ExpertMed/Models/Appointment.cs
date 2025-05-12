@@ -40,6 +40,7 @@ namespace ExpertMed.Models
 
         // Propiedades añadidas para los nombres completos
         public string? PatientName { get; set; }  // Nombre completo del paciente
+        public string? PatientInsuranceName { get; set; }  // Nombre completo del paciente
         public string? DoctorName { get; set; }   // Nombre completo del doctor
         [NotMapped]
         public string? DoctorName2 { get; set; }   // Nombre completo del doctor

@@ -56,6 +56,7 @@
                             <th>Número de documento</th>
                             <th>Email</th>
                             <th>Nacionalidad</th>
+                            <th>Tipo de paciente</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -82,7 +83,7 @@
                                 <td>@patient.PatientDocumentNumber</td>
                                 <td>@patient.PatientEmail</td>
                                 <td>@patient.NationalityName</td>
-
+                                <td>@patient.PatientInsuranceName</td>
                                 <td>
 
                                     @if (patient.PatientStatus == 1)

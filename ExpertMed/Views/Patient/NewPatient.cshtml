@@ -313,7 +313,15 @@
                                         </div>
                                     </div>
                                 </div>
-
+                                <div class="col-lg-3">
+                                    <div class="mb-3">
+                                        <label for="lastnameInput" class="form-label">Número de aseguradora *</label>
+                                        <input type="text" class="form-control" id="documentnumber" name="PatientInsuranceAuthorizationCode" placeholder="Ingrese el número de seguro" required>
+                                        <div class="invalid-feedback">
+                                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                         </div>
@@ -350,6 +358,7 @@
     <script src="~/assets/js/pages/select2.init.js"></script>
     <script src="~/assets/libs/flatpickr/flatpickr.min.js"></script>
     <script src="~/assets/libs/choices.js/public/assets/scripts/choices.min.js"></script>
+
     <script>
         document.getElementById('birhdate').addEventListener('input', function () {
             const birthDate = new Date(this.value);

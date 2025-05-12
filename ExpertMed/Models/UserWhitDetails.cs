@@ -39,8 +39,23 @@
         public TimeSpan EndTime { get; set; }
         public int AppointmentInterval { get; set; }
 
-        public List<DoctorDto> Doctors { get; set; }
+        // 🔗 Asociaciones
+        public List<DoctorDto> Doctors { get; set; } = new();
+        public List<MedicalOfficeDto> MedicalOffices { get; set; } = new();
+        public List<UserFileDto> UserFiles { get; set; } = new();
+
+        // 🖼️ Imágenes y certificados extraídos de archivos
+        public string? CompanyLogoBase64 =>
+            UserFiles?.FirstOrDefault(f => f.FileType == "logotipo")?.FileContent is byte[] logo
+                ? $"data:image/png;base64,{Convert.ToBase64String(logo)}"
+                : null;
+
+        public string? CertificateP12Base64 =>
+            UserFiles?.FirstOrDefault(f => f.FileType == "certificado_p12")?.FileContent is byte[] cert
+                ? $"data:application/x-pkcs12;base64,{Convert.ToBase64String(cert)}"
+                : null;
     }
+
     public class DoctorDto
     {
         public int DoctorId { get; set; }
@@ -48,5 +63,20 @@
         public string DoctorSurnames { get; set; }
         public int DoctorSpecialtyId { get; set; }
         public string DoctorSpecialtyName { get; set; }
+    }
+
+    public class MedicalOfficeDto
+    {
+        public int OfficeId { get; set; }
+        public string OfficeName { get; set; }
+        public string OfficeLocation { get; set; }
+    }
+
+    public class UserFileDto
+    {
+        public string FileType { get; set; }
+        public string FileName { get; set; }
+        public byte[] FileContent { get; set; }
+        public string ContentType { get; set; }
     }
 }

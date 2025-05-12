@@ -30,6 +30,7 @@
         public string? PatientOcupation { get; set; }
         public string? PatientCompany { get; set; }
         public int? PatientHealtInsurance { get; set; }
+        public string? PatientInsuranceName { get; set; }
         public string? PatientCode { get; set; }
         public int PatientStatus { get; set; }
         public string? DoctorFullname { get; set; }
