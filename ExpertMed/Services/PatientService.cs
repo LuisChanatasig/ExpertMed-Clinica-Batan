@@ -560,7 +560,9 @@ namespace ExpertMed.Services
                                         ? (int?)null
                                         : reader.GetInt32(reader.GetOrdinal("patient_healt_insurance")),
                                     PatientCode = reader.GetString(reader.GetOrdinal("patient_code")),
-                                    PatientInsuranceAuthorizationCode = reader.GetString(reader.GetOrdinal("patient_insurance_authorization_code")),
+                                    PatientInsuranceAuthorizationCode = reader.IsDBNull(reader.GetOrdinal("patient_insurance_authorization_code"))
+    ? null
+    : reader.GetString(reader.GetOrdinal("patient_insurance_authorization_code")),
                                     PatientStatus = reader.GetInt32(reader.GetOrdinal("patient_status"))
                                 };
                             }

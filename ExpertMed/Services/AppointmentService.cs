@@ -151,7 +151,8 @@ namespace ExpertMed.Services
         /// <param name="doctorUserId"></param>
         /// <returns></returns>
         /// <exception cref="ApplicationException"></exception>
-        public async Task CreateAppointmentAsync(Appointment appointmentDto, int? doctorUserId = null)
+
+        public async Task<(bool Success, string Message, int? AppointmentId, bool IsEmergency)> CreateAppointmentAsync(Appointment appointmentDto, int? doctorUserId = null)
         {
             using (var connection = new SqlConnection(_dbContext.Database.GetConnectionString()))
             {
@@ -161,50 +162,32 @@ namespace ExpertMed.Services
                 {
                     command.CommandType = CommandType.StoredProcedure;
 
-                    // Parámetros requeridos
                     command.Parameters.AddWithValue("@appointment_createdate", DateTime.Now);
                     command.Parameters.AddWithValue("@appointment_modifydate", DateTime.Now);
                     command.Parameters.AddWithValue("@appointment_createuser", appointmentDto.AppointmentCreateuser);
                     command.Parameters.AddWithValue("@appointment_modifyuser", appointmentDto.AppointmentModifyuser);
-                    command.Parameters.AddWithValue("@appointment_date", appointmentDto.AppointmentDate);
+                    command.Parameters.AddWithValue("@appointment_date", appointmentDto.AppointmentDate.Date);
                     command.Parameters.AddWithValue("@appointment_hour", appointmentDto.AppointmentHour);
                     command.Parameters.AddWithValue("@appointment_patientid", appointmentDto.AppointmentPatientid);
                     command.Parameters.AddWithValue("@appointment_status", appointmentDto.AppointmentStatus);
-
-                    // Nuevo parámetro: consultorio
-                    if (appointmentDto.AppointmentMedicalofficeid.HasValue)
-                        command.Parameters.AddWithValue("@appointment_medicalofficeid", appointmentDto.AppointmentMedicalofficeid.Value);
-                    else
-                        command.Parameters.AddWithValue("@appointment_medicalofficeid", DBNull.Value);
-
-                    // Parámetro opcional: doctor_userid
-                    if (doctorUserId.HasValue)
-                        command.Parameters.AddWithValue("@doctor_userid", doctorUserId.Value);
-                    else
-                        command.Parameters.AddWithValue("@doctor_userid", DBNull.Value);
+                    command.Parameters.AddWithValue("@appointment_medicalofficeid", (object?)appointmentDto.AppointmentMedicalofficeid ?? DBNull.Value);
+                    command.Parameters.AddWithValue("@doctor_userid", (object?)doctorUserId ?? DBNull.Value);
 
                     try
                     {
-                        // Ejecutar el procedimiento y leer el JSON retornado
                         var result = await command.ExecuteScalarAsync();
                         var jsonResponse = JsonConvert.DeserializeObject<dynamic>(result?.ToString() ?? "{}");
 
-                        var success = jsonResponse?.success;
-                        var message = jsonResponse?.message;
-                        var appointmentId = jsonResponse?.appointmentId;
+                        bool success = jsonResponse?.success == 1;  
+                        string message = jsonResponse?.message;
+                        int? appointmentId = jsonResponse?.appointmentId;
+                        bool isEmergency = jsonResponse?.esEmergencia == 1;
 
-                        if (success == 1)
-                        {
-                            Console.WriteLine($"Cita creada exitosamente con ID: {appointmentId}");
-                        }
-                        else
-                        {
-                            Console.WriteLine($"Error al crear la cita: {message}");
-                        }
+                        return (success, message, appointmentId, isEmergency);
                     }
                     catch (SqlException ex)
                     {
-                        throw new ApplicationException("Error al crear la cita: " + ex.Message, ex);
+                        throw new ApplicationException("Error al ejecutar el SP de cita: " + ex.Message, ex);
                     }
                 }
             }

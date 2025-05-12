@@ -109,6 +109,11 @@
                                     onclick="filterAppointments(4)">
                                 Finalizadas
                             </button>
+
+                            <button class="bg-danger text-white fw-bold text-uppercase @(ViewBag.CurrentStatus == 5 ? "active" : "")"
+                                    onclick="filterAppointments(5)">
+                                EMERGENCIAS
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -145,7 +150,7 @@
                                 }
                                 <td>
                                     @appt.AppointmentDate.ToString("dd/MM/yyyy")
-                                    @appt.AppointmentHour.ToString("hh\\:mm")
+                                    @appt.AppointmentHour.ToString("hh\\:mm tt", System.Globalization.CultureInfo.InvariantCulture)
                                 </td>
                                 <td>@appt.PatientName</td>
                                 <td>@appt.PatientInsuranceName</td>
@@ -171,9 +176,11 @@
                                             2 => ("bg-danger", "Canceladas"),
                                             3 => ("bg-info", "Seguimiento"),
                                             4 => ("bg-dark", "Finalizadas"),
+                                            5 => ("bg-danger text-white fw-bold text-uppercase", "Emergencia"),
                                             _ => ("bg-secondary", "Desconocido")
                                         };
                                     }
+
                                     <span class="badge @cls">@txt</span>
                                 </td>
                                 <td>

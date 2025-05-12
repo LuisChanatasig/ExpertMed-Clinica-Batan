@@ -21,6 +21,7 @@ namespace ExpertMed.Services
             _logger = logger;
         }
 
+
         public List<Users> GetAllUsers(int usuarioId, int perfilId)
         {
             var users = new List<Users>();
@@ -31,7 +32,6 @@ namespace ExpertMed.Services
                 {
                     command.CommandType = CommandType.StoredProcedure;
 
-                    // Agregar los parámetros al SP
                     command.Parameters.AddWithValue("@usuarioId", usuarioId);
                     command.Parameters.AddWithValue("@perfilId", perfilId);
 
@@ -50,27 +50,77 @@ namespace ExpertMed.Services
                                 Phone = reader.GetString(reader.GetOrdinal("users_phone")),
                                 Email = reader.GetString(reader.GetOrdinal("users_email")),
                                 CreationDate = reader.GetDateTime(reader.GetOrdinal("users_creationdate")),
-                                ModificationDate = reader.GetDateTime(reader.GetOrdinal("users_modificationdate")),
+
+                                ModificationDate = reader.IsDBNull(reader.GetOrdinal("users_modificationdate"))
+                                    ? DateTime.MinValue
+                                    : reader.GetDateTime(reader.GetOrdinal("users_modificationdate")),
+
                                 Address = reader.GetString(reader.GetOrdinal("users_address")),
-                                ProfilePhoto = reader["users_profilephoto"] as string,
-                                ProfilePhoto64 = reader["users_profilephoto64"] as string,
-                                SenecytCode = reader["users_senecytcode"] as string,
-                                XKeyTaxo = reader["users_xkeytaxo"] as string,
-                                XPassTaxo = reader["users_xpasstaxo"] as string,
+
+                                ProfilePhoto = reader.IsDBNull(reader.GetOrdinal("users_profilephoto"))
+                                    ? string.Empty
+                                    : reader["users_profilephoto"] as string,
+
+                                ProfilePhoto64 = reader.IsDBNull(reader.GetOrdinal("users_profilephoto64"))
+                                    ? string.Empty
+                                    : reader["users_profilephoto64"] as string,
+
+                                SenecytCode = reader.IsDBNull(reader.GetOrdinal("users_senecytcode"))
+                                    ? string.Empty
+                                    : reader.GetString(reader.GetOrdinal("users_senecytcode")),
+
+                                XKeyTaxo = reader.IsDBNull(reader.GetOrdinal("users_xkeytaxo"))
+                                    ? string.Empty
+                                    : reader.GetString(reader.GetOrdinal("users_xkeytaxo")),
+
+                                XPassTaxo = reader.IsDBNull(reader.GetOrdinal("users_xpasstaxo"))
+                                    ? string.Empty
+                                    : reader.GetString(reader.GetOrdinal("users_xpasstaxo")),
+
                                 Login = reader.GetString(reader.GetOrdinal("users_login")),
                                 Password = reader.GetString(reader.GetOrdinal("users_password")),
                                 Status = reader.GetInt32(reader.GetOrdinal("users_status")),
                                 ProfileId = reader.GetInt32(reader.GetOrdinal("users_profileid")),
-                                EstablishmentName = reader.GetString(reader.GetOrdinal("establishment_name")),
-                                EstablishmentAddress = reader.GetString(reader.GetOrdinal("establishment_address")),
-                                VatPercentageId = reader.GetInt32(reader.GetOrdinal("users_vatpercentageid")),
-                                SpecialityId = reader.GetInt32(reader.GetOrdinal("users_specialityid")),
-                                CountryId = reader.GetInt32(reader.GetOrdinal("users_countryid")),
-                                Description = reader.GetString(reader.GetOrdinal("users_description")),
-                                ProfileName = reader.GetString(reader.GetOrdinal("profile_name")),
-                                SpecialityName = reader.GetString(reader.GetOrdinal("speciality_name")),
-                                CountryName = reader.GetString(reader.GetOrdinal("country_name")),
-                                VatBillingPercentage = reader.GetString(reader.GetOrdinal("vatbilling_percentage"))
+
+                                EstablishmentName = reader.IsDBNull(reader.GetOrdinal("establishment_name"))
+                                    ? "Sin establecimiento"
+                                    : reader.GetString(reader.GetOrdinal("establishment_name")),
+
+                                EstablishmentAddress = reader.IsDBNull(reader.GetOrdinal("establishment_address"))
+                                    ? "Sin dirección"
+                                    : reader.GetString(reader.GetOrdinal("establishment_address")),
+
+                                VatPercentageId = reader.IsDBNull(reader.GetOrdinal("users_vatpercentageid"))
+                                    ? 0
+                                    : reader.GetInt32(reader.GetOrdinal("users_vatpercentageid")),
+
+                                SpecialityId = reader.IsDBNull(reader.GetOrdinal("users_specialityid"))
+                                    ? 0
+                                    : reader.GetInt32(reader.GetOrdinal("users_specialityid")),
+
+                                CountryId = reader.IsDBNull(reader.GetOrdinal("users_countryid"))
+                                    ? 0
+                                    : reader.GetInt32(reader.GetOrdinal("users_countryid")),
+
+                                Description = reader.IsDBNull(reader.GetOrdinal("users_description"))
+                                    ? string.Empty
+                                    : reader.GetString(reader.GetOrdinal("users_description")),
+
+                                ProfileName = reader.IsDBNull(reader.GetOrdinal("profile_name"))
+                                    ? "Sin perfil"
+                                    : reader.GetString(reader.GetOrdinal("profile_name")),
+
+                                SpecialityName = reader.IsDBNull(reader.GetOrdinal("speciality_name"))
+                                    ? "Sin especialidad"
+                                    : reader.GetString(reader.GetOrdinal("speciality_name")),
+
+                                CountryName = reader.IsDBNull(reader.GetOrdinal("country_name"))
+                                    ? "Sin país"
+                                    : reader.GetString(reader.GetOrdinal("country_name")),
+
+                                VatBillingPercentage = reader.IsDBNull(reader.GetOrdinal("vatbilling_percentage"))
+                                    ? "0%"
+                                    : reader.GetString(reader.GetOrdinal("vatbilling_percentage"))
                             };
 
                             users.Add(user);

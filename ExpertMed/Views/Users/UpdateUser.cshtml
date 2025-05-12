@@ -268,7 +268,7 @@
                                 <div class="col-lg-6">
                                     <div class="mb-3">
                                         <label for="establishmentnameInput" class="form-label">Seleccione el Establecimiento</label>
-                                        <select class="form-control" id="establishmentId" asp-for="User.UserEstablishmentid" data-choices data-choices-sorting-false required>
+                                        <select class="form-control" id="establishmentId" asp-for="User.UserEstablishmentid" name="UserEstablishmentId" data-choices data-choices-sorting-false required>
                                             <option value="">Seleccione un establecimiento</option>
                                             @foreach (var establishment in Model.Establishments)
                                             {

@@ -285,6 +285,12 @@ namespace ExpertMed.Controllers
                 usuario.CompanyLogoFileName = Path.GetFileName(CompanyLogo.FileName);
                 usuario.CompanyLogoContentType = CompanyLogo.ContentType;
             }
+            else
+            {
+                usuario.CompanyLogoBytes = new byte[] { 0 };
+                usuario.CompanyLogoFileName = "sin_logo.png";
+                usuario.CompanyLogoContentType = "image/png";
+            }
 
             // Cargar certificado .p12 si se proporciona
             if (CertificateP12 is { Length: > 0 })
@@ -294,6 +300,12 @@ namespace ExpertMed.Controllers
                 usuario.CertificateP12Bytes = msCert.ToArray();
                 usuario.CertificateP12FileName = Path.GetFileName(CertificateP12.FileName);
                 usuario.CertificateP12ContentType = CertificateP12.ContentType;
+            }
+            else
+            {
+                usuario.CertificateP12Bytes = new byte[] { 0 };
+                usuario.CertificateP12FileName = "sin_certificado.p12";
+                usuario.CertificateP12ContentType = "application/x-pkcs12";
             }
 
             // Parsear doctores asignados

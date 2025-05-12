@@ -399,9 +399,10 @@
                             <label for="appointmentTime" class="form-label">Hora seleccionada</label>
                             <input type="time" class="form-control" id="appointmentTime" readonly required>
                         </div>
-                        <button type="button" class="btn btn-soft-info mt-auto" id="viewHoursButton" style="height: 40px;">
+                        <button type="button" class="btn btn-soft-info mt-auto" id="modalViewHoursButton" style="height: 40px;">
                             <i class="ri-eye-fill"></i> Ver horas
                         </button>
+
                     </div>
 
                     <!-- Consultorios -->
@@ -493,8 +494,8 @@
             }
 
             // Ver horas disponibles
-            $('#viewHoursButton').click(function () {
-                const userId = @usuarioId;
+        $('#modalViewHoursButton').click(function () {
+                        const userId = @usuarioId;
                 const selectedDate = $('#selectedDate').val();
                 const doctorUserId = $('#doctorUserId').val();
 

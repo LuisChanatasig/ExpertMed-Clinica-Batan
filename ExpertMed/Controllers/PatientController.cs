@@ -87,7 +87,10 @@ namespace ExpertMed.Controllers
         public async Task<IActionResult> NewPatient() => await LoadPatientFormAsync();
 
         [HttpGet]
-        public async Task<IActionResult> RegistroPaciente() => await LoadPatientFormAsync();
+        public async Task<IActionResult> RegistroPaciente(int? est = null)
+        {
+            return await LoadPatientFormAsync(null, est);
+        }
 
         [HttpPost]
         public async Task<IActionResult> NewPatient(Patient patient, int? doctorUserId = null)
@@ -137,24 +140,23 @@ namespace ExpertMed.Controllers
 
                 int patientId;
 
-                // Verificamos si el paciente ya existe utilizando el número de documento (string)
+                // Verificamos si el paciente ya existe utilizando el número de documento
                 var existingPatient = await _patientService.GetPatientDataByDocumentNumberAsync(patient.PatientDocumentnumber);
                 if (existingPatient != null)
                 {
-                    // ¡Paciente ya registrado! Simplemente usamos el ID existente para la cita
                     patientId = existingPatient.PatientId;
-                    TempData["SuccessMessage"] = "El paciente ya existe, se registrado para agendar la cita.";
+                    TempData["SuccessMessage"] = "El paciente ya existe, se registrará una cita de emergencia.";
                 }
                 else
                 {
-                    // Si no existe, creamos el nuevo paciente
                     patientId = await _patientService.CreatePatientAsync(patient, doctorUserId);
-                    TempData["SuccessMessage"] = "Paciente creado exitosamente.";
+                    TempData["SuccessMessage"] = "Paciente creado exitosamente. Se registrará una cita de emergencia.";
                 }
 
-                // Pasamos el doctorUserId y patientId a TempData para usarlos en el siguiente paso (agenda la cita)
+                // Indicamos que debe dispararse automáticamente una cita de emergencia
                 TempData["DoctorUserId"] = doctorUserId;
                 TempData["PatientId"] = patientId;
+                TempData["ForceEmergency"] = true;
 
                 return RedirectToAction("RegistroPaciente");
             }
@@ -164,6 +166,7 @@ namespace ExpertMed.Controllers
                 return await RegistroPaciente();
             }
         }
+
 
 
 
@@ -193,7 +196,7 @@ namespace ExpertMed.Controllers
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message;
+                TempData["ErrorMessage"] = ex.Message;  
                 return await LoadPatientFormAsync(patient);
             }
         }
@@ -203,10 +206,11 @@ namespace ExpertMed.Controllers
         /// </summary>
         /// <param name="patient"></param>
         /// <returns></returns>
-        private async Task<IActionResult> LoadPatientFormAsync(Patient patient = null)
+        private async Task<IActionResult> LoadPatientFormAsync(Patient patient = null, int? establishmentId = null)
         {
             var usuarioId = HttpContext.Session.GetInt32("UsuarioId") ?? 0;
-            var perfilId = HttpContext.Session.GetInt32("PerfilId")??0;
+            var perfilId = HttpContext.Session.GetInt32("PerfilId") ?? 0;
+
             var viewModel = new NewPatientViewModel
             {
                 Patient = patient,
@@ -218,12 +222,15 @@ namespace ExpertMed.Controllers
                 SureHealthTypes = await _selectService.GetSureHealtTypeAsync(),
                 Countries = await _selectService.GetAllCountriesAsync(),
                 Provinces = await _selectService.GetAllProvinceAsync(),
-                Users = await _patientService.GetDoctorsByAssistantAsync(usuarioId,perfilId),
-                UsersP = await _selectService.GetAllMedicsDetailsAsync()
+                Users = await _patientService.GetDoctorsByAssistantAsync(usuarioId, perfilId),
+                UsersP = establishmentId.HasValue
+                    ? await _selectService.GetAllMedicsDetailsAsync(establishmentId.Value)
+                    : new List<MedicDetails>() // o retornar todos, según tu lógica
             };
-            return View(viewModel);
+
+            return View("RegistroPaciente", viewModel);
         }
-    
-    
+
+
     }
 }

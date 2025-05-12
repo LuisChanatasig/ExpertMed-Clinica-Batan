@@ -85,21 +85,29 @@
                                 <td>@patient.NationalityName</td>
                                 <td>@patient.PatientInsuranceName</td>
                                 <td>
-
                                     @if (patient.PatientStatus == 1)
                                     {
+                                        <!-- Botón: Crear cita de emergencia -->
+                                        <button class="btn btn-sm btn-danger mt-1"
+                                                data-url="@Url.Action("CreateAppointment", "Appointment")"
+                                                onclick="crearCitaEmergencia(this, @patient.PatientId, @patient.PatientCreationUser ?? 0)">
+                                            <i class="ri-alert-line"></i> Emergencia
+                                        </button>
+
+
+                                        <!-- Botón: cambiar estado -->
                                         <form method="post" action="@Url.Action("ChangePatientStatus", "Patient")">
                                             <input type="hidden" name="patientId" value="@patient.PatientId" />
                                             <input type="hidden" name="status" value="0" />
-                                            <button class="btn btn-sm btn-soft-danger"><i class=" ri-arrow-left-right-line"></i>Cambiar estado</button>
+                                            <button class="btn btn-sm btn-soft-danger mt-1"><i class="ri-arrow-left-right-line"></i> Cambiar estado</button>
                                         </form>
                                         <div style="padding-top: 7px"></div>
-                                        <a href="@Url.Action("UpdatePatient", "Patient", new { id = patient.PatientId })" class="btn btn-sm btn-soft-info">
+                                        <a href="@Url.Action("UpdatePatient", "Patient", new { id = patient.PatientId })" class="btn btn-sm btn-soft-info mt-1">
                                             <i class="ri-edit-line"></i> Modificar o Agendar Cita
                                         </a>
-                                        <div style="padding-top: 7px"></div>
-
                                     }
+
+
                                     else
                                     {
                                         <form method="post" action="@Url.Action("ChangePatientStatus", "Patient")">
@@ -145,6 +153,58 @@
 
     <script src="~/assets/js/pages/datatables.init.js"></script>
 
+    <script>
+        function crearCitaEmergencia(el, patientId, doctorUserId) {
+            const now = new Date();
+            const fecha = now.toISOString().split('T')[0];
+
+            // Asegura formato "HH:mm"
+         const pad = num => String(num).padStart(2, '0');
+        const hora = `${pad(now.getHours())}:${pad(now.getMinutes())}`;  // sin segundos
+
+            const requestData = {
+                appointmentDate: fecha,
+                appointmentHour: hora,
+                appointmentPatientid: patientId,
+                appointmentStatus: 5,
+                appointmentMedicalofficeid: null
+            };
+
+            const url = `${el.dataset.url}?doctorUserId=${doctorUserId}`;
+
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    let msg = data.isEmergency
+                        ? 'Cita de emergencia creada. El paciente debe ser atendido de inmediato.'
+                        : 'Cita creada exitosamente.';
+
+                    Swal.fire({
+                        title: 'Éxito',
+                        text: msg,
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    });
+
+                    if (data.whatsappUrl) {
+                        window.open(data.whatsappUrl, '_blank');
+                    }
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            })
+            .catch(error => {
+                Swal.fire('Error', 'Error en la solicitud: ' + error.message, 'error');
+            });
+        }
+
+
+    </script>
 
 
     @if (!string.IsNullOrEmpty(successMessage))

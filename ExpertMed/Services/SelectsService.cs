@@ -136,7 +136,7 @@ namespace ExpertMed.Services
         }
 
         // Método para obtener todos los Medicos y sus caractaristicas
-        public async Task<List<MedicDetails>> GetAllMedicsDetailsAsync()
+        public async Task<List<MedicDetails>> GetAllMedicsDetailsAsync(int establecimientoId)
         {
             var results = new List<MedicDetails>();
 
@@ -149,6 +149,12 @@ namespace ExpertMed.Services
                 cmd.CommandText = "sp_ListAllMedicsAndDetails";
                 cmd.CommandType = CommandType.StoredProcedure;
 
+                var param = cmd.CreateParameter();
+                param.ParameterName = "@establecimientoId";
+                param.Value = establecimientoId;
+                param.DbType = DbType.Int32;
+                cmd.Parameters.Add(param);
+
                 using var reader = await cmd.ExecuteReaderAsync();
 
                 while (await reader.ReadAsync())
@@ -158,8 +164,9 @@ namespace ExpertMed.Services
                         UsersId = reader.GetInt32(reader.GetOrdinal("users_id")),
                         UsersNames = reader.GetString(reader.GetOrdinal("users_names")),
                         UsersSurcenames = reader.GetString(reader.GetOrdinal("users_surcenames")),
-                        SpecialityName = reader.GetString(reader.GetOrdinal("SpecialityName"))
-                        // Mapea el resto de columnas ...
+                        SpecialityName = reader.GetString(reader.GetOrdinal("SpecialityName")),
+                        UsersEstablishmentId = reader.GetInt32(reader.GetOrdinal("establishment_id")),
+                        UsersEstablishmentName = reader.GetString(reader.GetOrdinal("establishment_name"))
                     };
 
                     results.Add(dto);
@@ -173,6 +180,7 @@ namespace ExpertMed.Services
 
             return results;
         }
+
 
         public async Task<List<Province>> GetAllProvinceAsync()
         {

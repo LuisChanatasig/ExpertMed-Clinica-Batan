@@ -28,7 +28,7 @@ namespace ExpertMed.Controllers
         /// <param name="appointmentStatus"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<IActionResult> AppointmentList(int appointmentStatus = 1)
+        public async Task<IActionResult> AppointmentList(int appointmentStatus = 5)
         {
             try
             {
@@ -158,10 +158,16 @@ namespace ExpertMed.Controllers
                 }
 
                 // Validar formato de hora
-                if (!TimeOnly.TryParse(request.AppointmentHour.ToString(), out TimeOnly appointmentHour))
+                TimeOnly appointmentHour;
+                try
+                {
+                    appointmentHour = TimeOnly.Parse(request.AppointmentHour.ToString());
+                }
+                catch
                 {
                     return BadRequest(new { success = false, message = "Formato de hora inválido." });
                 }
+
 
                 // Crear objeto de cita incluyendo consultorio
                 var appointment = new Appointment
@@ -209,27 +215,30 @@ namespace ExpertMed.Controllers
         public async Task<IActionResult> CreateAppointmentA([FromBody] Appointment request, [FromQuery] int? doctorUserId = null)
         {
             if (request == null)
-            {
                 return BadRequest(new { success = false, message = "El cuerpo de la solicitud está vacío." });
-            }
 
             try
             {
                 var usuarioId = request.AppointmentModifyuser;
-                var perfilId = 2;
-
                 if (usuarioId == null)
+                    return Unauthorized(new { success = false, message = "Usuario no autenticado o sesión inválida." });
+
+                // Validar y convertir la hora
+                TimeOnly appointmentHour;
+                if (request.AppointmentHour == default)
                 {
-                    return Unauthorized(new { success = false, message = "Usuario no autenticado o la sesión expiró." });
+                    // Si viene como string (por ejemplo "16:00"), intentar convertir
+                    if (!TimeOnly.TryParse(request.AppointmentHour.ToString(), out appointmentHour))
+                        return BadRequest(new { success = false, message = "Formato de hora inválido." });
+                }
+                else
+                {
+                    appointmentHour = request.AppointmentHour;
                 }
 
-                // Convertir la hora desde string (por ejemplo "16:00") a TimeOnly
-                if (!TimeOnly.TryParse(request.AppointmentHour.ToString(), out TimeOnly appointmentHour))
-                {
-                    return BadRequest(new { success = false, message = "Formato de hora inválido." });
-                }
+                // Asignar status real (por ejemplo: 5 = emergencia)
+                var appointmentStatus = request.AppointmentStatus;
 
-                // Crear el objeto de la cita
                 var appointment = new Appointment
                 {
                     AppointmentCreatedate = DateTime.Now,
@@ -237,33 +246,40 @@ namespace ExpertMed.Controllers
                     AppointmentCreateuser = usuarioId.Value,
                     AppointmentModifyuser = usuarioId.Value,
                     AppointmentDate = request.AppointmentDate,
-                    AppointmentHour = appointmentHour,  // Asignar la hora convertida
+                    AppointmentHour = appointmentHour,
                     AppointmentPatientid = request.AppointmentPatientid,
-                    AppointmentStatus = 1,
+                    AppointmentStatus = appointmentStatus,
+                    AppointmentMedicalofficeid = request.AppointmentMedicalofficeid
                 };
 
-                // Llamar al servicio para crear la cita
-                await _appointmentService.CreateAppointmentAsync(appointment, doctorUserId);
+                // Llamar al SP mediante el servicio
+                var (success, message, appointmentId, isEmergency) = await _appointmentService.CreateAppointmentAsync(appointment, doctorUserId);
 
-                // Lógica adicional para generar la URL de recordatorio vía WhatsApp
+                if (!success)
+                    return BadRequest(new { success = false, message });
+
+                // Generar mensaje por WhatsApp si aplica
                 string whatsappUrl = null;
                 var patient = await _patientService.GetPatientDetailsAsync(appointment.AppointmentPatientid ?? 0);
                 if (patient != null && !string.IsNullOrEmpty(patient.PatientCellularPhone))
                 {
-                    // Construir el mensaje de recordatorio de forma amigable
-                    var message = $"¡Hola {patient.PatientFirstname.Trim()}! Te recordamos que tienes una cita programada para el {appointment.AppointmentDate:dd/MM/yyyy} a las {appointment.AppointmentHour:HH:mm}. ¡Será un gusto atenderte!";
-                    // Codificar el mensaje para incluirlo en la URL
-                    var encodedMessage = WebUtility.UrlEncode(message);
-                    // Usar la URL de la API de WhatsApp para una redirección más fluida
-                    whatsappUrl = $"https://api.whatsapp.com/send?phone={patient.PatientCellularPhone}&text={encodedMessage}";
+                    var msg = $"¡Hola {patient.PatientFirstname.Trim()}! Te recordamos que tienes una cita {(isEmergency ? "de emergencia " : "")}el {appointment.AppointmentDate:dd/MM/yyyy} a las {appointment.AppointmentHour:hh\\:mm tt}. ¡Será un gusto atenderte!";
+                    var encodedMsg = WebUtility.UrlEncode(msg);
+                    whatsappUrl = $"https://api.whatsapp.com/send?phone={patient.PatientCellularPhone}&text={encodedMsg}";
                 }
 
-                // Devolver la respuesta con la URL de WhatsApp (si se pudo generar)
-                return Ok(new { success = true, message = "CITA CREADA CON ÉXITO", whatsappUrl });
+                return Ok(new
+                {
+                    success = true,
+                    message = "CITA CREADA CON ÉXITO",
+                    appointmentId,
+                    isEmergency,
+                    whatsappUrl
+                });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { success = false, message = ex.Message });
+                return BadRequest(new { success = false, message = "Error: " + ex.Message });
             }
         }
 
