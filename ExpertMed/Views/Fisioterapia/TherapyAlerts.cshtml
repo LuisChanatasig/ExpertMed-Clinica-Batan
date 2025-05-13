@@ -1,0 +1,36 @@
+﻿@{
+    ViewBag.Title = "Alertas de Tratamiento";
+    Layout = "_Layout";
+}
+
+<h4 class="mb-3 text-danger">Alertas de Continuidad de Tratamientos</h4>
+
+<div class="alert alert-warning">
+    Estos pacientes no han asistido a sus últimas sesiones programadas o tienen tratamiento interrumpido.
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead class="table-light">
+            <tr>
+                <th>Paciente</th>
+                <th>Última Sesión</th>
+                <th>Sesiones Perdidas</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @* Llenar dinámicamente desde backend *@
+            <tr>
+                <td>Carlos León</td>
+                <td>2025-04-30</td>
+                <td>2</td>
+                <td><span class="badge bg-danger">Interrumpido</span></td>
+                <td>
+                    <a href="#" class="btn btn-sm btn-outline-primary">Reagendar</a>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>

@@ -1,0 +1,183 @@
+﻿@model List<TherapyHistoryDTO>
+
+@{
+    ViewBag.Title = "Historial de Terapias";
+    Layout = "_Layout";
+}
+
+<h4 class="mb-3">Historial de Terapias Físicas</h4>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">
+            <i class="mdi mdi-clipboard-text-clock-outline"></i> Agrupado por paciente
+        </h5>
+        <input type="text" id="globalSearch" class="form-control form-control-sm w-50" placeholder="🔍 Buscar paciente, terapeuta o nota..." />
+    </div>
+
+    <div class="card-body">
+        @if (Model != null && Model.Any())
+        {
+            foreach (var paciente in Model)
+            {
+                var pacienteId = paciente.CedulaPaciente.Replace(" ", "").Replace("-", "");
+                <div class="grupo-historial border rounded mb-3">
+                    <div class="bg-light px-3 py-2 d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong><i class="mdi mdi-account-circle-outline"></i> @paciente.NombrePaciente</strong> —
+                            <i class="mdi mdi-card-account-details-outline"></i> @paciente.CedulaPaciente<br />
+                            <i class="mdi mdi-shield-account-outline"></i> Seguro: @paciente.NombreSeguro
+                        </div>
+                        <div>
+                            <a class="btn btn-sm btn-soft-info" data-bs-toggle="collapse" href="#paciente_@pacienteId" role="button">
+                                <i class="mdi mdi-folder-multiple-outline"></i> Ver sesiones
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="collapse" id="paciente_@pacienteId">
+                        @foreach (var solicitud in paciente.Solicitudes)
+                        {
+                            <div class="border rounded mt-2">
+                                <div class="bg-white px-3 py-2 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="mdi mdi-doctor"></i> <strong>Terapeuta:</strong> @solicitud.TerapeutaNombre<br />
+                                        <i class="mdi mdi-calendar-range-outline"></i> <strong>Inicio:</strong> @solicitud.FechaSolicitud.ToString("dd/MM/yyyy")
+                                    </div>
+                                </div>
+
+                                <div class="px-3 py-2">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-bordered align-middle mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>Fecha</th>
+                                                    <th>Hora</th>
+                                                    <th>Tipo</th>
+                                                    <th>Observaciones</th>
+                                                    <th>Avance</th>
+                                                    <th>Acción</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @for (int i = 0; i < solicitud.Sesiones.Count; i++)
+                                                {
+                                                    var sesion = solicitud.Sesiones[i];
+                                                    <tr>
+                                                        <td>@(i + 1)</td>
+                                                        <td>@sesion.Fecha.ToString("dd/MM/yyyy")</td>
+                                                        <td>@sesion.Hora.ToString(@"hh\:mm")</td>
+                                                        <td>@sesion.Tipo</td>
+                                                        <td>@sesion.Observaciones</td>
+                                                        <td>@sesion.AvancePorcentaje %</td>
+                                                        <td>
+                                                            <button class="btn btn-sm btn-soft-primary"
+                                                                    data-bs-toggle="offcanvas"
+                                                                    data-bs-target="#avanceSesion_@sesion.SessionId">
+                                                                <i class="mdi mdi-progress-pencil"></i> Avance
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+
+                                                    <!-- Offcanvas -->
+                                                    <div class="offcanvas offcanvas-end" tabindex="-1" id="avanceSesion_@sesion.SessionId">
+                                                        <div class="offcanvas-header">
+                                                            <h5 class="offcanvas-title">Registrar avance — Sesión @sesion.SessionId</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+                                                        </div>
+                                                        <div class="offcanvas-body">
+                                                            <form asp-action="UpdateAvance" asp-controller="Fisioterapia" method="post">
+                                                                <input type="hidden" name="sessionId" value="@sesion.SessionId" />
+                                                                <label class="form-label">Avance %</label>
+                                                                <input type="number" name="avance" class="form-control mb-2" min="0" max="100" value="@sesion.AvancePorcentaje" />
+
+                                                                <label class="form-label">Notas</label>
+                                                                <textarea name="comentarios" class="form-control mb-2">@sesion.AvanceNotas</textarea>
+
+                                                                <button type="submit" class="btn btn-success"><i class="mdi mdi-check"></i> Guardar</button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="text-center text-muted">No hay datos disponibles.</div>
+        }
+    </div>
+</div>
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        $(document).ready(function () {
+            const searchInput = $('#globalSearch');
+
+            $('[data-bs-toggle="collapse"]').each(function () {
+                const target = $(this).attr('href');
+                if (localStorage.getItem(target) === 'true') {
+                    $(target).addClass('show');
+                }
+            });
+
+            $('[data-bs-toggle="collapse"]').on('click', function () {
+                const target = $(this).attr('href');
+                setTimeout(() => {
+                    const isOpen = $(target).hasClass('show');
+                    localStorage.setItem(target, isOpen);
+                }, 300);
+            });
+
+            searchInput.on('keyup', function () {
+                const filtro = $(this).val().toLowerCase();
+                $('.grupo-historial').each(function () {
+                    const texto = $(this).text().toLowerCase();
+                    const match = texto.includes(filtro);
+                    $(this).toggle(match);
+                    if (match) {
+                        $(this).find('.collapse').addClass('show');
+                    } else {
+                        $(this).find('.collapse').removeClass('show');
+                    }
+                });
+            });
+        });
+    </script>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <script>
+            Swal.fire({
+                title: '✅ ¡Hecho!',
+                text: '@TempData["SuccessMessage"]',
+                icon: 'success',
+                confirmButtonText: 'Aceptar',
+                timer: 3000
+            });
+        </script>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <script>
+            Swal.fire({
+                title: '❌ Error',
+                text: '@TempData["ErrorMessage"]',
+                icon: 'error',
+                confirmButtonText: 'Cerrar'
+            });
+        </script>
+    }
+
+}

@@ -1,0 +1,262 @@
+﻿@{
+    ViewBag.Title = "Agenda de Terapias";
+    Layout = "_Layout";
+    var urlGetAvailableHours = Url.Action("GetAvailableHours", "Appointment");
+    var urlSubmitAll = Url.Action("SubmitTherapySessions", "Fisioterapia");
+}
+
+<h4 class="mb-4">Agendar Terapia Física</h4>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form id="therapyScheduleForm" onsubmit="return false">
+
+            <h5 class="mb-3 border-bottom pb-2 text-primary">
+                <i class="mdi mdi-account-outline me-1"></i> Información del paciente y terapeuta
+            </h5>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="patientId" class="form-label">
+                        <i class="mdi mdi-account-circle-outline text-primary me-1"></i> Paciente
+                    </label>
+                    <select class="form-select" id="patientId" required>
+                        <option value="">Seleccione paciente...</option>
+                        @foreach (var paciente in ViewBag.Pacientes as List<PatientDTO>)
+                        {
+                            <option value="@paciente.PatientId">@paciente.PatientFirstname @paciente.PatientMiddlename @paciente.PatientFirstsurname @paciente.PatientSecondlastname</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-5">
+                    <label for="therapistId" class="form-label">
+                        <i class="mdi mdi-account-heart-outline text-primary me-1"></i> Terapeuta
+                    </label>
+                    <select class="form-select" id="therapistId" required>
+                        <option value="">Seleccione terapeuta...</option>
+                        @foreach (var terapeuta in ViewBag.Terapeutas as List<SelectDTO>)
+                        {
+                            <option value="@terapeuta.Value">@terapeuta.Text</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="button" class="btn btn-outline-info w-100" onclick="cargarHoras()">
+                        <i class="mdi mdi-magnify"></i>
+                    </button>
+                </div>
+            </div>
+
+            <h5 class="mt-4 mb-3 border-bottom pb-2 text-primary">
+                <i class="mdi mdi-clipboard-text-outline me-1"></i> Detalles de la terapia
+            </h5>
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="therapyType" class="form-label">Tipo de terapia</label>
+                    <select class="form-select" id="therapyType" required>
+                        <option value="">Seleccione tipo...</option>
+                        <option value="Electroterapia">Electroterapia</option>
+                        <option value="Kinesioterapia">Kinesioterapia</option>
+                        <option value="Terapia manual">Terapia manual</option>
+                        <option value="Reeducación postural">Reeducación postural</option>
+                        <option value="Otra">Otra</option>
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <label for="date" class="form-label">Fecha de inicio</label>
+                    <input type="text" class="form-control" id="date" required />
+                </div>
+
+                <div class="col-md-4">
+                    <label for="hour" class="form-label">Hora</label>
+                    <select class="form-select" id="hour" required>
+                        <option value="">Seleccione hora...</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label for="sessionCount" class="form-label">Nº sesiones</label>
+                    <input type="number" class="form-control" id="sessionCount" min="1" max="50" required />
+                </div>
+
+                <div class="col-md-10">
+                    <label for="observations" class="form-label">Observaciones</label>
+                    <textarea class="form-control" id="observations" rows="3" placeholder="Notas importantes sobre el tratamiento..."></textarea>
+                </div>
+            </div>
+
+            <div class="mt-4 text-end">
+                <button type="button" class="btn btn-primary" onclick="agregarTerapia()">
+                    <i class="mdi mdi-plus-box-outline"></i> Agregar a lista
+                </button>
+            </div>
+
+            <hr class="my-4" />
+
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle" id="tablaTerapias">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Tipo</th>
+                            <th>Fecha</th>
+                            <th>Hora</th>
+                            <th>Sesiones</th>
+                            <th>Observaciones</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div class="mt-3 text-end">
+                <button type="button" class="btn btn-success" onclick="enviarTerapias()">
+                    <i class="mdi mdi-content-save-outline"></i> Guardar todas
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        flatpickr("#date", {
+            minDate: "today",
+            dateFormat: "Y-m-d",
+            locale: "es"
+        });
+
+        let sesiones = [];
+
+        function cargarHoras() {
+            const therapistId = document.getElementById('therapistId').value;
+            const date = document.getElementById('date').value;
+
+            if (!therapistId || !date) {
+                Swal.fire('Faltan datos', 'Debe seleccionar un terapeuta y una fecha.', 'warning');
+                return;
+            }
+
+            const url = `@Url.Action("GetAvailableHours", "Appointment")?userId=${therapistId}&date=${date}`;
+            fetch(url)
+                .then(res => res.ok ? res.json() : [])
+                .then(data => {
+                    const hourSelect = document.getElementById('hour');
+                    hourSelect.innerHTML = '<option value="">Seleccione hora...</option>';
+                    data.forEach(h => {
+                        hourSelect.innerHTML += `<option value="${h}">${h}</option>`;
+                    });
+                });
+        }
+
+        function agregarTerapia() {
+            const tipo = document.getElementById('therapyType').value;
+            const fecha = document.getElementById('date').value; // string: "2025-05-13"
+            const hora = document.getElementById('hour').value;  // string: "09:00"
+            const sesionesCont = parseInt(document.getElementById('sessionCount').value);
+            const observaciones = document.getElementById('observations').value;
+
+            if (!tipo || !fecha || !hora || !sesionesCont) {
+                Swal.fire('Faltan campos', 'Complete todos los campos requeridos.', 'warning');
+                return;
+            }
+
+            // asegúrate de que los valores son válidos y formateados
+            sesiones.push({
+                tipo,
+                fecha, // ISO: "2025-05-13"
+                hora,  // "09:00:00" preferible para TimeSpan
+                sesionesCont,
+                observaciones
+            });
+
+            actualizarTabla();
+            limpiarCampos();
+        }
+
+
+        function actualizarTabla() {
+            const tbody = document.querySelector("#tablaTerapias tbody");
+            tbody.innerHTML = "";
+
+            sesiones.forEach((s, i) => {
+                const row = `<tr>
+                    <td>${s.tipo}</td>
+                    <td>${s.fecha}</td>
+                    <td>${s.hora}</td>
+                    <td>${s.sesionesCont}</td>
+                    <td>${s.observaciones}</td>
+                    <td><button class='btn btn-sm btn-danger' onclick='eliminarTerapia(${i})'> <i class="mdi mdi-trash-can"></i> Eliminar</button></td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+        }
+
+        function eliminarTerapia(index) {
+            sesiones.splice(index, 1);
+            actualizarTabla();
+        }
+
+        function limpiarCampos() {
+            document.getElementById('therapyType').value = "";
+            document.getElementById('date').value = "";
+            document.getElementById('hour').innerHTML = '<option value="">Seleccione hora...</option>';
+            document.getElementById('sessionCount').value = "";
+            document.getElementById('observations').value = "";
+        }
+
+                function enviarTerapias() {
+            const pacienteId = document.getElementById('patientId').value;
+            const terapeutaId = document.getElementById('therapistId').value;
+
+            if (!pacienteId || !terapeutaId || sesiones.length === 0) {
+                Swal.fire('Verifique los datos', 'Debe seleccionar paciente, terapeuta y al menos una sesión.', 'warning');
+                return;
+            }
+
+            const payload = {
+                PacienteId: pacienteId,
+                TerapeutaId: terapeutaId,
+                Sesiones: sesiones
+            };
+
+            console.log("🔍 Datos que se enviarán al backend:");
+            console.log(JSON.stringify(payload, null, 2));
+
+            fetch("@urlSubmitAll", {
+                method: "POST",
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(async res => {
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    console.error("❌ Respuesta con error:", res.status, errorText);
+                    throw new Error("Error HTTP");
+                }
+                return res.json();
+            })
+            .then(res => {
+                console.log("✅ Respuesta del servidor:");
+                console.log(res);
+
+                Swal.fire('Éxito', res.message || 'Terapias guardadas correctamente.', 'success');
+                sesiones = [];
+                actualizarTabla();
+                document.getElementById('patientId').value = "";
+                document.getElementById('therapistId').value = "";
+                limpiarCampos();
+            })
+            .catch(err => {
+                console.error("❌ Error en fetch:", err);
+                Swal.fire('Error', 'Ocurrió un problema al guardar.', 'error');
+            });
+        }
+
+    </script>
+}

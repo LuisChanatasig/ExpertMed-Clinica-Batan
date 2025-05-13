@@ -63,14 +63,14 @@ namespace ExpertMed.Controllers
             catch (SqlException sqlEx)
             {
                 _logger.LogError(sqlEx, "Error SQL al obtener la lista de pacientes.");
-                TempData["ErrorMessage"] = "Hubo un problema de conexión a la base de datos.";
-                return View("Error");
+                TempData["ErrorMessage"] = "Hubo un problema de conexión a la base de datos."+sqlEx;
+                return View("PatientList");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error inesperado al obtener la lista de pacientes.");
-                TempData["ErrorMessage"] = "Ocurrió un error inesperado al cargar los pacientes.";
-                return View("Error");
+                TempData["ErrorMessage"] = "Ocurrió un error inesperado al cargar los pacientes."+ex;
+                return View("PatientList");
             }
         }
 

@@ -274,6 +274,33 @@
                         </div>
                     </li>
 
+
+                    <li class="menu-title"><span>Fisioterapia</span></li>
+
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarFisioterapia" data-bs-toggle="collapse" role="button">
+                            <i class="mdi mdi-run"></i> <span>Terapias</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarFisioterapia">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("TherapySchedule", "Fisioterapia")" class="nav-link">
+                                        <i class="mdi mdi-calendar-clock"></i> Agenda de terapias
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("TherapyHistory", "Fisioterapia")" class="nav-link">
+                                        <i class="mdi mdi-history"></i> Historial de tratamientos
+                                    </a>
+                                </li>
+                               @*  <li class="nav-item">
+                                    <a href="@Url.Action("TherapyAlerts", "Fisioterapia")" class="nav-link">
+                                        <i class="mdi mdi-bell-alert-outline"></i> Alertas de continuidad
+                                    </a>
+                                </li> *@
+                            </ul>
+                        </div>
+                    </li>
                 }
 
 
@@ -414,16 +441,39 @@
                         </a>
                         <div class="collapse menu-dropdown" id="sidebarResultadosImagen">
                             <ul class="nav nav-sm flex-column">
-                                <li class="nav-item">
-                                    <a href="@Url.Action("RecordResult", "Images")" class="nav-link">
-                                        <i class="mdi mdi-pencil-box-outline"></i> Registrar resultados
-                                    </a>
-                                </li>
+                       
                                 <li class="nav-item">
                                     <a href="@Url.Action("DownloadResults", "Images")" class="nav-link">
                                         <i class="mdi mdi-download"></i> Descargar resultados
                                     </a>
                                 </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <li class="menu-title"><span>Fisioterapia</span></li>
+
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarFisioterapia" data-bs-toggle="collapse" role="button">
+                            <i class="mdi mdi-run"></i> <span>Terapias</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarFisioterapia">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("TherapySchedule", "Fisioterapia")" class="nav-link">
+                                        <i class="mdi mdi-calendar-clock"></i> Agenda de terapias
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("TherapyHistory", "Fisioterapia")" class="nav-link">
+                                        <i class="mdi mdi-history"></i> Historial de tratamientos
+                                    </a>
+                                </li>
+                                @*  <li class="nav-item">
+                                    <a href="@Url.Action("TherapyAlerts", "Fisioterapia")" class="nav-link">
+                                        <i class="mdi mdi-bell-alert-outline"></i> Alertas de continuidad
+                                    </a>
+                                </li> *@
                             </ul>
                         </div>
                     </li>
@@ -601,6 +651,36 @@
 
 
                 }
+                @if (perfilId == 7) // O el perfil correspondiente a fisioterapia
+                {
+                    <li class="menu-title"><span>Fisioterapia</span></li>
+
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarFisioterapia" data-bs-toggle="collapse" role="button">
+                            <i class="mdi mdi-run"></i> <span>Terapias</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarFisioterapia">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("TherapySchedule", "Fisioterapia")" class="nav-link">
+                                        <i class="mdi mdi-calendar-clock"></i> Agenda de terapias
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("TherapyHistory", "Fisioterapia")" class="nav-link">
+                                        <i class="mdi mdi-history"></i> Historial de tratamientos
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("TherapyAlerts", "Fisioterapia")" class="nav-link">
+                                        <i class="mdi mdi-bell-alert-outline"></i> Alertas de continuidad
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                }
+
 
             </ul>
         </div>

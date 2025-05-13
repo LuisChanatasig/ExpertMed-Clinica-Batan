@@ -405,6 +405,10 @@
 
     <script src="~/assets/js/pages/datatables.init.js"></script>
 
+    <script>
+        const perfilId = @perfilId;
+
+    </script>
 
     <script>
         $(document).ready(function () {
@@ -432,7 +436,7 @@
                  $('#startConsultCol, #startFollowupCol').hide();
 
                  // Mostrar “Empezar Consulta” si está pagada(0) o activa(1) y NO hay consulta
-                 if ((data.status === 0 || data.status === 1) && data.hasConsultation === false) {
+                 if ((data.status === 0 || data.status === 1 || data.status === 5) && data.hasConsultation === false) {
                      $('#startConsultCol').show();
                  }
 
@@ -634,16 +638,19 @@
             });
         }
 
-        function startConsultation() {
+                function startConsultation() {
             const id = $('#appointmentIdInput').val();
-            fetch(`@Url.Action("AppointmentGetById", "Appointment")?id=${id}`)
+            fetch(`@Url.Action("AppointmentGetById", "Appointment")?id=${id}&userProfile=${perfilId}`)
                 .then(res => res.json())
                 .then(data => {
-                    if (!data.patient) return alert('Paciente no encontrado.');
-                    window.location.href = `@Url.Action("NewConsultation", "Consultation")?patientId=${data.patient}`;
+                        console.log(data);
+
+                    if (!data.patientId) return alert('Paciente no encontrado.');
+                    window.location.href = `@Url.Action("NewConsultation", "Consultation")?patientId=${data.patientId}`;
                 })
                 .catch(() => alert('Error al iniciar consulta'));
         }
+
 
         function startFollowupConsultation() {
             const pid = $('#appointmentPatientId').val();

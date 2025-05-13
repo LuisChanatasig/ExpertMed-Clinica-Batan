@@ -17,6 +17,7 @@
     <!-- FilePond styles -->
     <link href="https://unpkg.com/filepond/dist/filepond.min.css" rel="stylesheet" />
     <link href="https://unpkg.com/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
 
 }
 
@@ -275,7 +276,7 @@
                                 <div class="col-lg-6">
                                     <div class="mb-3">
                                         <label for="medicalOfficesSelect" class="form-label">Seleccione los consultorios médicos</label>
-                                        <select class="form-control" id="medicalOfficesSelect" name="SelectedOfficeIds" data-choices data-choices-removeItem multiple>
+                                        <select class="form-control" id="medicalOfficesSelect" name="SelectedOfficeIds" multiple required>
                                             @foreach (var consultorios in Model.MedicalOfficeListDtos)
                                             {
                                                 <option value="@consultorios.MedicalOfficeId">@consultorios.Name -(@consultorios.EstablishmentName)</option>
@@ -442,9 +443,31 @@
     <script src="https://unpkg.com/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.js"></script>
     <script src="https://unpkg.com/filepond/dist/filepond.min.js"></script>
 
-   
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 
+    <script>
 
+        document.addEventListener('DOMContentLoaded', function () {
+            editConsultorioChoices = new Choices('#medicalOfficesSelect', {
+                removeItemButton: true,
+                placeholder: true,
+                shouldSort: false
+            });
+
+            new Choices('#selectConsultorios', {
+                removeItemButton: true,
+                placeholder: true,
+                shouldSort: false
+            });
+
+            $('#tablaAsignaciones').DataTable({
+                responsive: true,
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/es_es.json'
+                }
+            });
+        });
+    </script>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const profileSelect = document.getElementById("profileSelect");
