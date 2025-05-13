@@ -145,6 +145,10 @@
                                                     </div>
                                                 </div>
                                             </div>
+
+                                            <input type="hidden" name="PatientInsuranceAuthorizationCode" value="0" />
+
+
                                             <div class="col-lg-3">
                                                 <div class="mb-3">
                                                     <label for="documentnumber" class="form-label">Número de documento *</label>
@@ -335,6 +339,11 @@
                                 </div> <!-- tab-content end -->
                                 <div class="col-lg-12" style="padding-top: 3px">
                                     <div class="hstack gap-2 justify-content-end">
+                                       
+                                    </div> <div class="hstack gap-2 justify-content-end">
+                                        <button type="button" id="btnEmergencia" class="btn btn-danger">
+                                            <i class="ri-alert-line"></i> Crear Cita de Emergencia
+                                        </button>
                                         <button type="submit" id="btnCrearUsuario" class="btn btn-primary">
                                             <i class="ri-user-add-line"></i> Crear
                                         </button>
@@ -397,7 +406,13 @@
                                     </div>
                                 </div>
                                 <div class="col-lg-12" style="padding-top: 3px">
+                                   
                                     <div class="hstack gap-2 justify-content-end">
+                                       
+                                    </div>  <div class="hstack gap-2 justify-content-end">
+                                        <button type="button" id="btnEmergenciaSimplificado" class="btn btn-danger">
+                                            <i class="ri-alert-line"></i> Crear Cita de Emergencia
+                                        </button>
                                         <button type="submit" class="btn btn-primary">
                                             <i class="ri-user-add-line"></i> Continuar
                                         </button>
@@ -409,6 +424,7 @@
                 </div>
             </div>
         </div>
+  
     </div>
 
     <!-- Modal de Autoagendamiento (Horas Disponibles) -->
@@ -439,9 +455,7 @@
             </div>
         </div>
     </div>
-    <button type="button" id="btnEmergencia" class="btn btn-danger">
-        <i class="ri-alert-line"></i> Crear Cita de Emergencia
-    </button>
+ 
 
     @await Html.PartialAsync("_vendor_scripts")
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"
@@ -739,64 +753,199 @@
 
     <script>
         $(document).ready(function () {
-            // Botón personalizado para cita de emergencia (puedes colocarlo al final del formulario con un id como #btnEmergencia)
-            $('#btnEmergencia').on('click', function () {
-                const patientId = $('#patientId').val();
-                const doctorUserId = $('#doctorUserId').val();
+            // Botón de emergencia - maneja tanto creación de paciente como cita de emergencia
+        $('#btnEmergencia, #btnEmergenciaSimplificado').on('click', function () {
+                        // Determinar qué formulario está visible (completo o simplificado)
+                var isSimplifiedForm = $('#simplifiedForm').is(':visible');
+                var $form = isSimplifiedForm ? $('#simplifiedForm form') : $('#fullForm form');
 
-                if (!patientId || !doctorUserId) {
-                    Swal.fire('Faltan datos', 'Debe registrar primero al paciente y seleccionar un médico.', 'warning');
+                // Validar campos obligatorios
+                var isValid = true;
+                $form.find('[required]').each(function() {
+                    if (!$(this).val()) {
+                        isValid = false;
+                        $(this).addClass('is-invalid');
+                    } else {
+                        $(this).removeClass('is-invalid');
+                    }
+                });
+
+                if (!isValid) {
+                    Swal.fire('Error', 'Por favor complete todos los campos obligatorios', 'error');
                     return;
                 }
 
+                // Crear FormData para enviar archivos también si es necesario
+                var formData = new FormData($form[0]);
+                formData.append('ForceEmergency', 'true');
+
+                // Mostrar confirmación
                 Swal.fire({
-                    title: 'Confirmar Cita de Emergencia',
-                    text: 'Se creará una cita de emergencia automáticamente. ¿Desea continuar?',
+                    title: 'Confirmar Emergencia',
+                    text: 'Se registrarán los datos del paciente y se creará una cita de emergencia inmediata. ¿Desea continuar?',
                     icon: 'warning',
                     showCancelButton: true,
-                    confirmButtonText: 'Sí, confirmar',
+                    confirmButtonText: 'Sí, continuar',
                     cancelButtonText: 'Cancelar'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        const emergencyAppointment = {
-                            AppointmentDate: new Date().toISOString().split('T')[0],
-                            AppointmentHour: new Date().toTimeString().split(' ')[0],
-                            AppointmentPatientid: patientId,
-                            AppointmentStatus: 5, // Emergencia
-                            AppointmentModifyuser: doctorUserId
-                        };
-
-                        fetch('@Url.Action("CreateAppointmentA", "Appointment")?doctorUserId=' + doctorUserId, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify(emergencyAppointment)
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                Swal.fire({
-                                    title: 'Cita de Emergencia Confirmada!',
-                                    text: data.message,
-                                    icon: 'success',
-                                    confirmButtonText: 'OK'
-                                }).then(() => {
-                                    if (data.whatsappUrl) {
-                                        window.open(data.whatsappUrl, '_blank');
-                                    }
-                                    window.location.href = '@Url.Action("RegistroPaciente", "Patient")';
-                                });
-                            } else {
-                                Swal.fire('Error', data.message || 'No se pudo crear la cita.', 'error');
+                        // Mostrar carga mientras se procesa
+                        Swal.fire({
+                            title: 'Procesando emergencia...',
+                            html: 'Registrando paciente y creando cita de emergencia',
+                            allowOutsideClick: false,
+                            didOpen: () => {
+                                Swal.showLoading();
                             }
-                        })
-                        .catch(error => {
-                            Swal.fire('Error', 'Hubo un problema creando la cita de emergencia.', 'error');
+                        });
+
+                        // Enviar datos al servidor
+                        $.ajax({
+                            url: $form.attr('action'),
+                            type: 'POST',
+                            data: formData,
+                            processData: false,
+                            contentType: false,
+                            success: function (response) {
+                                Swal.close();
+                                if (response.success) {
+                                    // Si el paciente se creó correctamente, crear la cita de emergencia
+                                    createEmergencyAppointment(response.patientId, response.doctorUserId);
+                                } else if (response.patientExists) {
+                                    // Si el paciente ya existe, crear cita de emergencia con el ID existente
+                                    createEmergencyAppointment(response.existingPatientId, response.doctorUserId);
+                                } else {
+                                    Swal.fire('Error', response.message || 'Error al registrar el paciente', 'error');
+                                }
+                            },
+                            error: function (xhr, status, error) {
+                                Swal.close();
+                                Swal.fire('Error', 'Ocurrió un error al procesar la solicitud: ' + error, 'error');
+                            }
                         });
                     }
                 });
             });
+
+            // Función para crear cita de emergencia
+            function createEmergencyAppointment(patientId, doctorUserId) {
+                if (!patientId || !doctorUserId) {
+                    Swal.fire('Error', 'Faltan datos necesarios para crear la cita de emergencia', 'error');
+                    return;
+                }
+
+                // Obtener fecha y hora actual en formato correcto
+                var now = new Date();
+                var currentDate = now.toISOString().split('T')[0];
+                var currentTime = now.getHours().toString().padStart(2, '0') + ':' +
+                                now.getMinutes().toString().padStart(2, '0');
+
+                // Mostrar carga mientras se crea la cita
+                Swal.fire({
+                    title: 'Creando cita de emergencia...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // Primero validar si ya tiene una cita de emergencia hoy
+                $.ajax({
+                    url: '@Url.Action("ValidateEmergencyAppointment", "Appointment")',
+                    type: 'GET',
+                    data: {
+                        date: currentDate,
+                        patientId: patientId,
+                        isEmergency: true
+                    },
+                    success: function(validationResponse) {
+                        if (validationResponse.exists) {
+                            // Si ya tiene una emergencia hoy, preguntar qué hacer
+                            Swal.fire({
+                                title: 'Emergencia existente',
+                                text: 'Ya tiene una cita de emergencia registrada hoy. ¿Desea crear una nueva o mantener la existente?',
+                                icon: 'info',
+                                showDenyButton: true,
+                                showCancelButton: true,
+                                confirmButtonText: 'Crear nueva',
+                                denyButtonText: 'Mantener existente',
+                                cancelButtonText: 'Cancelar'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    // Crear nueva emergencia
+                                    createNewEmergencyAppointment(patientId, doctorUserId, currentDate, currentTime);
+                                } else if (result.isDenied) {
+                                    // Mantener la existente
+                                    Swal.fire({
+                                        title: 'Emergencia existente',
+                                        text: 'Se mantendrá la cita de emergencia ya registrada.',
+                                        icon: 'info',
+                                        confirmButtonText: 'OK'
+                                    }).then(() => {
+                                        window.location.href = '@Url.Action("RegistroPaciente", "Patient")';
+                                    });
+                                }
+                            });
+                        } else {
+                            // No tiene emergencia hoy, crear nueva
+                            createNewEmergencyAppointment(patientId, doctorUserId, currentDate, currentTime);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        Swal.fire('Error', 'Ocurrió un error al validar la emergencia: ' + error, 'error');
+                    }
+                });
+            }
+
+            // Función auxiliar para crear nueva cita de emergencia
+            function createNewEmergencyAppointment(patientId, doctorUserId, date, time) {
+                var emergencyAppointment = {
+                    AppointmentDate: date,
+                    AppointmentHour: time,
+                    AppointmentPatientid: patientId,
+                    AppointmentStatus: 5, // Código para emergencia
+                    AppointmentModifyuser: doctorUserId,
+                    AppointmentDescription: "Cita de emergencia automática",
+                    IsEmergency: true
+                };
+
+                fetch('@Url.Action("CreateEmergencyAppointment", "Appointment")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(emergencyAppointment)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error en la respuesta del servidor');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    Swal.close();
+                    if (data.success) {
+                        Swal.fire({
+                            title: '¡Emergencia Registrada!',
+                            html: 'Cita de emergencia creada exitosamente.<br><br>' +
+                                  '<strong>Fecha:</strong> ' + date + '<br>' +
+                                  '<strong>Hora:</strong> ' + time + '<br>' +
+                                  '<strong>Código:</strong> ' + data.appointmentCode,
+                            icon: 'success',
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            // Redirigir o realizar otras acciones necesarias
+                            window.location.href = '@Url.Action("RegistroPaciente", "Patient")';
+                        });
+                    } else {
+                        Swal.fire('Error', data.message || 'No se pudo crear la cita de emergencia.', 'error');
+                    }
+                })
+                .catch(error => {
+                    Swal.close();
+                    Swal.fire('Error', 'Hubo un problema creando la cita de emergencia: ' + error.message, 'error');
+                });
+            }
         });
     </script>
 
@@ -822,63 +971,90 @@
 
     <script>
         $(document).ready(function () {
+            // Botón de emergencia - maneja tanto creación de paciente como cita de emergencia
             $('#btnEmergencia').on('click', function () {
-                const patientId = $('#patientId').val();
-                const doctorUserId = $('#doctorUserId').val();
+                // Determinar qué formulario está visible (completo o simplificado)
+                const isSimplifiedForm = $('#simplifiedForm').is(':visible');
 
-                if (!patientId || !doctorUserId) {
-                    Swal.fire('Faltan datos', 'Debe registrar primero al paciente y seleccionar un médico.', 'warning');
-                    return;
-                }
+                // Obtener los datos del formulario correspondiente
+                const formData = isSimplifiedForm ?
+                    $('#simplifiedForm form').serialize() :
+                    $('#fullForm form').serialize();
 
+                // Agregar el flag de emergencia
+                formData += '&ForceEmergency=true';
+
+                // Mostrar confirmación
                 Swal.fire({
-                    title: 'Confirmar Cita de Emergencia',
-                    text: 'Se creará una cita de emergencia automáticamente. ¿Desea continuar?',
+                    title: 'Confirmar Emergencia',
+                    text: 'Se registrarán los datos del paciente y se creará una cita de emergencia inmediata. ¿Desea continuar?',
                     icon: 'warning',
                     showCancelButton: true,
-                    confirmButtonText: 'Sí, confirmar',
+                    confirmButtonText: 'Sí, continuar',
                     cancelButtonText: 'Cancelar'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        const emergencyAppointment = {
-                            AppointmentDate: new Date().toISOString().split('T')[0],
-                            AppointmentHour: new Date().toTimeString().split(' ')[0],
-                            AppointmentPatientid: patientId,
-                            AppointmentStatus: 5,
-                            AppointmentModifyuser: doctorUserId
-                        };
-
-                        fetch('@Url.Action("CreateAppointmentA", "Appointment")?doctorUserId=' + doctorUserId, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
+                        // Enviar datos al servidor
+                        $.ajax({
+                            url: '@Url.Action("NewPatientA", "Patient")',
+                            type: 'POST',
+                            data: formData,
+                            success: function (response) {
+                                if (response.success) {
+                                    // Si el paciente se creó correctamente, crear la cita de emergencia
+                                    createEmergencyAppointment(response.patientId, response.doctorUserId);
+                                } else if (response.patientExists) {
+                                    // Si el paciente ya existe, crear cita de emergencia con el ID existente
+                                    createEmergencyAppointment(response.existingPatientId, response.doctorUserId);
+                                } else {
+                                    Swal.fire('Error', response.message || 'Error al registrar el paciente', 'error');
+                                }
                             },
-                            body: JSON.stringify(emergencyAppointment)
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                Swal.fire({
-                                    title: 'Cita de Emergencia Confirmada!',
-                                    text: data.message,
-                                    icon: 'success',
-                                    confirmButtonText: 'OK'
-                                }).then(() => {
-                                    if (data.whatsappUrl) {
-                                        window.open(data.whatsappUrl, '_blank');
-                                    }
-                                    window.location.href = '@Url.Action("RegistroPaciente", "Patient")';
-                                });
-                            } else {
-                                Swal.fire('Error', data.message || 'No se pudo crear la cita.', 'error');
+                            error: function (xhr, status, error) {
+                                Swal.fire('Error', 'Ocurrió un error al procesar la solicitud: ' + error, 'error');
                             }
-                        })
-                        .catch(error => {
-                            Swal.fire('Error', 'Hubo un problema creando la cita de emergencia.', 'error');
                         });
                     }
                 });
             });
+
+            // Función para crear cita de emergencia
+            function createEmergencyAppointment(patientId, doctorUserId) {
+                const emergencyAppointment = {
+                    AppointmentDate: new Date().toISOString().split('T')[0], // Fecha actual
+                    AppointmentHour: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }), // Hora actual
+                    AppointmentPatientid: patientId,
+                    AppointmentStatus: 5, // Código para emergencia
+                    AppointmentModifyuser: doctorUserId
+                };
+
+                fetch('@Url.Action("CreateAppointmentA", "Appointment")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(emergencyAppointment)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            title: 'Emergencia Registrada!',
+                            text: 'Paciente registrado y cita de emergencia creada exitosamente.',
+                            icon: 'success',
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            // Redirigir o realizar otras acciones necesarias
+                            window.location.href = '@Url.Action("RegistroPaciente", "Patient")';
+                        });
+                    } else {
+                        Swal.fire('Error', data.message || 'No se pudo crear la cita de emergencia.', 'error');
+                    }
+                })
+                .catch(error => {
+                    Swal.fire('Error', 'Hubo un problema creando la cita de emergencia.', 'error');
+                });
+            }
         });
     </script>
 

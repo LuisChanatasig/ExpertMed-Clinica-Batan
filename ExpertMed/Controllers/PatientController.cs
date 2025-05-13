@@ -228,7 +228,7 @@ namespace ExpertMed.Controllers
                     : new List<MedicDetails>() // o retornar todos, según tu lógica
             };
 
-            return View("RegistroPaciente", viewModel);
+            return View(viewModel);
         }
 
 

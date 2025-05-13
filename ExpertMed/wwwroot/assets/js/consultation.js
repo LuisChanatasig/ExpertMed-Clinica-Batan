@@ -60,64 +60,63 @@ function removeDiagnosisRow(button) {
   const row = button.closest("tr");
   row.remove();
 }
+
 document
-  .getElementById("selectMedications")
-  .addEventListener("click", function () {
-    const select = document.getElementById("MedicationsConsultation");
-    const selectedOption = select.options[select.selectedIndex];
+    .getElementById("selectMedications")
+    .addEventListener("click", function () {
+        const select = document.getElementById("MedicationsConsultation");
+        const selectedOption = select.options[select.selectedIndex];
 
-    // Verificar que se haya seleccionado un medicamento
-    if (selectedOption.value !== "") {
-      const medicationsId = selectedOption.value;
-      const medicationsName =
-        selectedOption.getAttribute("data-name") || selectedOption.innerText; // Fallback al texto visible
+        if (selectedOption.value !== "") {
+            const medicationsId = selectedOption.value;
+            const medicationsName =
+                selectedOption.getAttribute("data-name") || selectedOption.innerText;
 
-      // Verificar si el data-name se obtiene correctamente
-      console.log("Medications ID:", medicationsId);
-      console.log("Medications Name:", medicationsName); // Verifica si el nombre se está recuperando correctamente
+            const tableBody = document.querySelector(
+                "#selectedMedicationsTable tbody"
+            );
+            const row = document.createElement("tr");
+            row.setAttribute("data-medication-id", medicationsId);
 
-      // Crear una nueva fila en la tabla
-      const tableBody = document.querySelector(
-        "#selectedMedicationsTable tbody"
-      );
-      const row = document.createElement("tr");
+            // ID oculto
+            const medicationsIdCell = document.createElement("td");
+            medicationsIdCell.textContent = medicationsId;
+            medicationsIdCell.hidden = true;
 
-      // Crear las celdas de la fila
-      const medicationsIdCell = document.createElement("td");
-      medicationsIdCell.textContent = medicationsId; // Mostrar el ID del medicamento
-      medicationsIdCell.hidden = true; // Ocultar la celda
+            const medicationsNameCell = document.createElement("td");
+            medicationsNameCell.textContent = medicationsName;
 
-      const medicationsNameCell = document.createElement("td");
-      medicationsNameCell.textContent = medicationsName; // Mostrar el nombre del medicamento
+            const amountCell = document.createElement("td");
+            amountCell.innerHTML = `
+        <input type="number" name="amount_${medicationsId}" id="amount_${medicationsId}" class="form-control medication-amount" min="1">
+      `;
 
-      const amountCell = document.createElement("td");
-      amountCell.innerHTML = `
-            <input type="number" name="amount_${medicationsId}" id="amount_${medicationsId}" class="form-control" min="1">
-        `; // Campo para la cantidad
+            const observationCell = document.createElement("td");
+            observationCell.innerHTML = `
+        <input type="text" name="observation_${medicationsId}" id="observation_${medicationsId}" class="form-control medication-observation">
+      `;
 
-      const observationCell = document.createElement("td");
-      observationCell.innerHTML = `
-            <input type="text" name="observation_${medicationsId}" id="observation_${medicationsId}" class="form-control">
-        `; // Campo para observaciones
+            const actionsCell = document.createElement("td");
+            actionsCell.innerHTML = `
+        <button type="button" class="btn btn-outline-warning btn-sm add-favorite" title="Guardar como favorito">
+          <i class="mdi mdi-star-outline"></i>
+        </button>
+        <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeMedicationsRow(this)">
+          <i class="ri-delete-bin-5-line"></i>
+        </button>
+      `;
 
-      const actionsCell = document.createElement("td");
-      actionsCell.innerHTML = `
-            <button type="button" class="btn btn-outline-danger btn-icon waves-effect waves-light" onclick="removeMedicationsRow(this)">
-                <i class="ri-delete-bin-5-line"></i>
-            </button>
-        `; // Botón para eliminar la fila
+            row.appendChild(medicationsIdCell);
+            row.appendChild(medicationsNameCell);
+            row.appendChild(amountCell);
+            row.appendChild(observationCell);
+            row.appendChild(actionsCell);
 
-      // Añadir las celdas a la fila
-      row.appendChild(medicationsIdCell);
-      row.appendChild(medicationsNameCell);
-      row.appendChild(amountCell);
-      row.appendChild(observationCell);
-      row.appendChild(actionsCell);
+            tableBody.appendChild(row);
+        }
+    });
 
-      // Añadir la fila al cuerpo de la tabla
-      tableBody.appendChild(row);
-    }
-  });
+
 
 // Función para eliminar la fila
 function removeMedicationsRow(button) {
