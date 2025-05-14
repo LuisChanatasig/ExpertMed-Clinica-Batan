@@ -61,68 +61,206 @@ function removeDiagnosisRow(button) {
   row.remove();
 }
 
-document
-    .getElementById("selectMedications")
-    .addEventListener("click", function () {
-        const select = document.getElementById("MedicationsConsultation");
-        const selectedOption = select.options[select.selectedIndex];
+// Selección de medicamento desde dropdown
+document.getElementById("selectMedications").addEventListener("click", function () {
+    const select = document.getElementById("MedicationsConsultation");
+    const selectedOption = select.options[select.selectedIndex];
 
-        if (selectedOption.value !== "") {
-            const medicationsId = selectedOption.value;
-            const medicationsName =
-                selectedOption.getAttribute("data-name") || selectedOption.innerText;
+    if (!selectedOption || selectedOption.value === "") return;
 
-            const tableBody = document.querySelector(
-                "#selectedMedicationsTable tbody"
-            );
-            const row = document.createElement("tr");
-            row.setAttribute("data-medication-id", medicationsId);
+    const medicationsId = selectedOption.value;
+    const medicationsName = selectedOption.getAttribute("data-name") || selectedOption.innerText;
 
-            // ID oculto
-            const medicationsIdCell = document.createElement("td");
-            medicationsIdCell.textContent = medicationsId;
-            medicationsIdCell.hidden = true;
+    const tableBody = document.querySelector("#selectedMedicationsTable tbody");
+    const row = document.createElement("tr");
+    row.setAttribute("data-medication-id", medicationsId);
 
-            const medicationsNameCell = document.createElement("td");
-            medicationsNameCell.textContent = medicationsName;
+    row.innerHTML = `
+        <td hidden>${medicationsId}</td>
+        <td>${medicationsName}</td>
+        <td><input type="number" name="amount_${medicationsId}" id="amount_${medicationsId}" class="form-control medication-amount" min="1"></td>
+        <td><input type="text" name="observation_${medicationsId}" id="observation_${medicationsId}" class="form-control medication-observation"></td>
+        <td>
+            <button type="button" class="btn btn-outline-warning btn-sm add-favorite" title="Guardar como favorito">
+                <i class="mdi mdi-star-outline"></i>
+            </button>
+            <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeMedicationsRow(this)">
+                <i class="ri-delete-bin-5-line"></i>
+            </button>
+        </td>
+    `;
 
-            const amountCell = document.createElement("td");
-            amountCell.innerHTML = `
-        <input type="number" name="amount_${medicationsId}" id="amount_${medicationsId}" class="form-control medication-amount" min="1">
-      `;
+    tableBody.appendChild(row);
+});
 
-            const observationCell = document.createElement("td");
-            observationCell.innerHTML = `
-        <input type="text" name="observation_${medicationsId}" id="observation_${medicationsId}" class="form-control medication-observation">
-      `;
+// Guardar medicamento como favorito
+document.addEventListener("click", function (event) {
+    if (!event.target.closest(".add-favorite")) return;
 
-            const actionsCell = document.createElement("td");
-            actionsCell.innerHTML = `
-        <button type="button" class="btn btn-outline-warning btn-sm add-favorite" title="Guardar como favorito">
-          <i class="mdi mdi-star-outline"></i>
-        </button>
-        <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeMedicationsRow(this)">
-          <i class="ri-delete-bin-5-line"></i>
-        </button>
-      `;
+    const button = event.target.closest(".add-favorite");
+    const row = button.closest("tr");
+    const medicationsId = row.getAttribute("data-medication-id");
+    const amount = row.querySelector(".medication-amount").value;
+    const observation = row.querySelector(".medication-observation").value;
 
-            row.appendChild(medicationsIdCell);
-            row.appendChild(medicationsNameCell);
-            row.appendChild(amountCell);
-            row.appendChild(observationCell);
-            row.appendChild(actionsCell);
+    const medicoInput = document.getElementById("medicoId");
+    if (!medicoInput || !medicoInput.value || !medicationsId) {
+        Swal.fire("Error", "Faltan datos para guardar el favorito.", "error");
+        return;
+    }
 
-            tableBody.appendChild(row);
+    const usersId = parseInt(medicoInput.value);
+
+    fetch(addFavoriteUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            usersId,
+            medicationsId: parseInt(medicationsId),
+            cantidad: amount || null,
+            observacion: observation || null
+        })
+    })
+        .then(res => res.ok ? res.json() : Promise.reject(res))
+        .then(res => {
+            Swal.fire("Guardado", res.message || "Medicamento agregado a favoritos.", "success");
+            button.classList.remove("btn-outline-warning");
+            button.classList.add("btn-warning");
+            button.innerHTML = `<i class="mdi mdi-star"></i>`;
+            button.disabled = true;
+        })
+        .catch(err => {
+            console.error(err);
+            Swal.fire("Error", "No se pudo guardar el favorito.", "error");
+        });
+});
+
+// Cargar favoritos en el offcanvas
+document.addEventListener("DOMContentLoaded", function () {
+    const medicoId = document.getElementById("medicoId").value;
+
+    fetch(`${getFavoritesUrl}?userId=${medicoId}`)
+        .then(res => res.ok ? res.json() : Promise.reject(res))
+        .then(data => {
+            const list = document.getElementById("favoritosList");
+            list.innerHTML = "";
+
+            if (data.length === 0) {
+                list.innerHTML = '<li class="list-group-item text-muted">Sin favoritos</li>';
+                return;
+            }
+
+            data.forEach(fav => {
+                const li = document.createElement("li");
+                li.className = "list-group-item";
+                li.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center w-100">
+                        <div class="me-2">
+                            <strong>${fav.medicationName}</strong><br>
+                            <small><strong>Cantidad:</strong> ${fav.cantidad || "-"} | <strong>Obs:</strong> ${fav.observacion || "-"}</small>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-success me-1" onclick="insertarFavorito(${fav.medicationId}, '${fav.medicationName}', '${fav.cantidad || ""}', '${fav.observacion || ""}')">
+                                <i class="mdi mdi-plus"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="eliminarFavorito(${fav.medicationId})">
+                                <i class="mdi mdi-trash-can-outline"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(li);
+            });
+        })
+        .catch(err => {
+            console.error(err);
+            Swal.fire("Error", "No se pudieron cargar los favoritos.", "error");
+        });
+});
+
+// Buscador de favoritos
+document.getElementById("buscarFavorito").addEventListener("input", function () {
+    const filtro = this.value.toLowerCase();
+    const items = document.querySelectorAll("#favoritosList li");
+
+    items.forEach(item => {
+        const texto = item.innerText.toLowerCase();
+        item.style.display = texto.includes(filtro) ? "" : "none";
+    });
+});
+
+// Insertar favorito desde el offcanvas
+function insertarFavorito(medicationsId, medicationsName, cantidad, observacion) {
+    const tableBody = document.querySelector("#selectedMedicationsTable tbody");
+
+    if (document.querySelector(`[data-medication-id="${medicationsId}"]`)) {
+        Swal.fire("Aviso", "El medicamento ya está en la tabla.", "info");
+        return;
+    }
+
+    const row = document.createElement("tr");
+    row.setAttribute("data-medication-id", medicationsId);
+
+    row.innerHTML = `
+        <td hidden>${medicationsId}</td>
+        <td>${medicationsName}</td>
+        <td><input type="number" value="${cantidad}" class="form-control medication-amount" min="1"></td>
+        <td><input type="text" value="${observacion}" class="form-control medication-observation"></td>
+        <td>
+            <button type="button" class="btn btn-warning btn-sm" disabled title="Ya es favorito">
+                <i class="mdi mdi-star"></i>
+            </button>
+            <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeMedicationsRow(this)">
+                <i class="ri-delete-bin-5-line"></i>
+            </button>
+        </td>
+    `;
+
+    tableBody.appendChild(row);
+
+    const canvas = bootstrap.Offcanvas.getInstance(document.getElementById('offcanvasFavoritos'));
+    if (canvas) canvas.hide();
+}
+
+// Eliminar favorito
+function eliminarFavorito(medicationsId) {
+    const medicoId = document.getElementById("medicoId").value;
+    if (!medicoId || !medicationsId) return;
+
+    Swal.fire({
+        title: "¿Eliminar favorito?",
+        text: "Esta acción no se puede deshacer.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Sí, eliminar",
+        cancelButtonText: "Cancelar"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`${deleteFavoriteUrl}?userId=${medicoId}&medicationId=${medicationsId}`, {
+                method: "DELETE"
+            })
+                .then(res => res.ok ? res.json() : Promise.reject(res))
+                .then(res => {
+                    Swal.fire("Eliminado", res.message || "Favorito eliminado", "success");
+                    const li = document.querySelector(`#favoritosList li button[onclick*='${medicationsId}']`)?.closest("li");
+                    if (li) li.remove();
+                })
+                .catch(err => {
+                    console.error(err);
+                    Swal.fire("Error", "No se pudo eliminar el favorito.", "error");
+                });
         }
     });
-
-
-
-// Función para eliminar la fila
-function removeMedicationsRow(button) {
-  const row = button.closest("tr");
-  row.remove();
 }
+
+// Eliminar fila de la tabla principal
+function removeMedicationsRow(button) {
+    const row = button.closest("tr");
+    row.remove();
+}
+
+
+
 
 document.getElementById("selectImages").addEventListener("click", function () {
   const select = document.getElementById("ImagesConsultation");

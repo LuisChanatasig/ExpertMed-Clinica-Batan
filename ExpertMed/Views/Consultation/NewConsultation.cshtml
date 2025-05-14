@@ -630,9 +630,9 @@
                                     <select class="form-control" id="allergiesSelect"
                                             name="allergiesSelect" data-choices data-choices-removeItem
                                             multiple required>
-                                            <option value="">En caso de no tener, escriba ninguno</option>
+                                        <option value="">En caso de no tener, escriba ninguno</option>
                                         @foreach (var allergies in Model.AllergiesTypes)
-                                        { 
+                                        {
                                             <option value="@allergies.CatalogId">
                                                 @allergies.CatalogName
                                             </option>
@@ -670,9 +670,9 @@
                                     <input type="hidden" id="selectSurgeriesId"
                                            name="selectSurgeriesId">
                                 </div>
-                                   <div class="invalid-feedback">
-                                            POR FAVOR ESTE CAMPO ES REQUERIDO SI NO TIENE CIRUGIAS COLOCAR NINGUNA
-                                        </div>
+                                <div class="invalid-feedback">
+                                    POR FAVOR ESTE CAMPO ES REQUERIDO SI NO TIENE CIRUGIAS COLOCAR NINGUNA
+                                </div>
                             </div>
                             <!-- #endregion Cirugias-->
                             <!-- #region Antecedentes familiares-->
@@ -1690,11 +1690,38 @@
                                                 </div>
                                             </div>
 
-                                            <div class="col-lg-2">
-                                                <button type="button" class="btn btn-soft-success waves-effect waves-light" id="selectMedications">Seleccionar</button>
+                                            <div class="col-lg-3 d-flex gap-2 align-items-start mb-3">
+                                                <button type="button" class="btn btn-soft-success waves-effect waves-light" id="selectMedications">Seleccionar
+                                                <i class="mdi mdi-plus-box-outline"></i> Agregar medicamento
+                                                </button>
+                                                <button type="button" class="btn btn-warning" data-bs-toggle="offcanvas" data-bs-target="#offcanvasFavoritos">
+                                                    <i class="mdi mdi-star-outline"></i> Ver favoritos
+                                                </button>
                                             </div>
+
                                         </div>
 
+                                        <input type="hidden" id="medicoId" value="@ViewContext.HttpContext.Session.GetInt32("UsuarioId")" />
+
+
+                                        <!--inicio offcanvas de la los medicamentos-->
+                                   
+
+                                        <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasFavoritos" aria-labelledby="offcanvasFavoritosLabel">
+                                            <div class="offcanvas-header">
+                                                <h5 id="offcanvasFavoritosLabel">Medicamentos Favoritos</h5>
+                                                <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+                                            </div>
+                                            <div class="offcanvas-body">
+                                                <input type="text" class="form-control mb-3" id="buscarFavorito" placeholder="Buscar medicamento favorito...">
+                                                <ul class="list-group" id="favoritosList">
+                                                    <!-- Los favoritos se insertan aquí -->
+                                                </ul>
+                                            </div>
+
+                                        </div>
+
+                                        <!--fin offcanvas de la los medicamentos-->
 
                                         <table class="table table-nowrap" id="selectedMedicationsTable">
                                             <thead>
@@ -1959,7 +1986,13 @@
     <script>
         const consultaUrl = '@Url.Action("CrearConsulta", "Consultation")';
         const redirectUrl = '@Url.Action("ConsultationList", "Consultation")';
+        const addFavoriteUrl = '@Url.Action("AddOrUpdate", "FavoriteMedication")';
+        const getFavoritesUrl = '@Url.Action("List", "FavoriteMedication")';
+        const deleteFavoriteUrl = '@Url.Action("Delete", "FavoriteMedication")';
+
+
     </script>
+
 
     <script>
 

@@ -16,42 +16,74 @@ namespace ExpertMed.Services
             _logger = logger;
         }
 
-        public async Task<(bool isSuccess, string message)> AddFavoriteMedicationAsync(
-        int doctorUserId,
-        int medicationId,
-        string amount,
-        string observation = null)
+        /// <summary>
+        /// Save or update a favorite medication for a user
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <param name="medicationId"></param>
+        /// <param name="cantidad"></param>
+        /// <param name="observacion"></param>
+        /// <returns></returns>
+        public async Task AddOrUpdateFavoriteAsync(int userId, int medicationId, string cantidad, string observacion)
         {
-            using (var connection = new SqlConnection(_connectionString.Database.GetConnectionString()))
-            using (var command = new SqlCommand("sp_AddFavoriteMedication", connection))
+            using var conn = new SqlConnection(_connectionString.Database.GetConnectionString());
+            using var cmd = new SqlCommand("sp_AddOrUpdateFavoriteMedication", conn);
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@users_id", userId);
+            cmd.Parameters.AddWithValue("@medications_id", medicationId);
+            cmd.Parameters.AddWithValue("@cantidad", cantidad ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@observacion", observacion ?? (object)DBNull.Value);
+            await conn.OpenAsync();
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        /// <summary>
+        /// Remove a favorite medication for a user
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <param name="medicationId"></param>
+        /// <returns></returns>
+        public async Task RemoveFavoriteAsync(int userId, int medicationId)
+        {
+            using var conn = new SqlConnection(_connectionString.Database.GetConnectionString());
+            using var cmd = new SqlCommand("sp_RemoveFavoriteMedication", conn);
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@users_id", userId);
+            cmd.Parameters.AddWithValue("@medications_id", medicationId);
+            await conn.OpenAsync();
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        /// <summary>
+        /// Get a list of favorite medications for a user
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns></returns>
+        public async Task<List<FavoriteMedicationViewModel>> GetFavoritesAsync(int userId)
+        {
+            var list = new List<FavoriteMedicationViewModel>();
+
+            using var conn = new SqlConnection(_connectionString.Database.GetConnectionString());
+            using var cmd = new SqlCommand("sp_GetFavoriteMedications", conn);
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@users_id", userId);
+            await conn.OpenAsync();
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
             {
-                command.CommandType = CommandType.StoredProcedure;
-
-                command.Parameters.AddWithValue("@doctor_userid", doctorUserId);
-                command.Parameters.AddWithValue("@medications_medicationsid", medicationId);
-                command.Parameters.AddWithValue("@medications_amount", amount);
-                command.Parameters.AddWithValue("@medications_observation", (object?)observation ?? DBNull.Value);
-
-                var messageParam = new SqlParameter("@message", SqlDbType.NVarChar, 255)
+                list.Add(new FavoriteMedicationViewModel
                 {
-                    Direction = ParameterDirection.Output
-                };
-                command.Parameters.Add(messageParam);
-
-                var returnParam = new SqlParameter
-                {
-                    Direction = ParameterDirection.ReturnValue
-                };
-                command.Parameters.Add(returnParam);
-
-                await connection.OpenAsync();
-                await command.ExecuteNonQueryAsync();
-
-                var isSuccess = (int)returnParam.Value == 0;
-                var message = messageParam.Value.ToString();
-
-                return (isSuccess, message);
+                    FavoriteId = reader.GetInt32(reader.GetOrdinal("favorite_id")),
+                    MedicationId = reader.GetInt32(reader.GetOrdinal("medications_id")),
+                    MedicationName = reader.GetString(reader.GetOrdinal("medications_name")),
+                    Cantidad = reader.IsDBNull(reader.GetOrdinal("cantidad")) ? null : reader.GetString(reader.GetOrdinal("cantidad")),
+                    Observacion = reader.IsDBNull(reader.GetOrdinal("observacion")) ? null : reader.GetString(reader.GetOrdinal("observacion")),
+                    CreationDate = reader.GetDateTime(reader.GetOrdinal("creation_date"))
+                });
             }
+
+            return list;
         }
     }
 }
