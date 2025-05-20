@@ -10,7 +10,16 @@
 
     var successMessage = TempData["SuccessMessage"] as string;
     var errorMessage = TempData["ErrorMessage"] as string;
+
+    var consultasAgrupadasPorPaciente = Model
+     .OrderBy(c => c.ConsultationPatientNavigation.PatientFirstname)
+     .ThenBy(c => c.ConsultationCreationdate)
+     .GroupBy(c => c.ConsultationPatientNavigation.PatientFirstname + " " +
+                    c.ConsultationPatientNavigation.PatientMiddlename + " " +
+                    c.ConsultationPatientNavigation.PatientFirstsurname + " " +
+                    c.ConsultationPatientNavigation.PatientSecondlastname);
 }
+
 
 @section styles {
     <!--datatable css-->
@@ -20,90 +29,124 @@
 
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.dataTables.min.css">
 }
+
 <div class="row">
     <div class="col-lg-12">
         <div class="card">
-            <a href="@Url.Action("AppointmentList", "Appointment")" class="btn btn-sm btn-info">
-                <i class="bx bx-user-plus"></i> Crear una nueva consulta
-            </a>
-            <div class="card-header">
-                <h5 class="card-title mb-0">Listado de consultas</h5>
+
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="mdi mdi-clipboard-text-multiple-outline"></i> Listado de Consultas Médicas
+                </h5>
+                <input type="text" id="consultaSearch" class="form-control form-control-sm w-50" placeholder="🔍 Buscar paciente, médico o especialidad..." />
             </div>
 
             <div class="card-body">
-                <table id="alternative-pagination"
-                class="table nowrap dt-responsive align-middle table-hover table-bordered" style="width:100%">
+                @if (consultasAgrupadasPorPaciente != null && consultasAgrupadasPorPaciente.Any())
+                {
+                    int grupoId = 1;
+                    foreach (var grupo in consultasAgrupadasPorPaciente)
+                    {
+                        var consultas = grupo.ToList();
+                        var pacienteNombre = grupo.Key;
+                        var firstConsulta = consultas.First();
+                        var collapseId = $"collapseConsulta{grupoId}";
 
-                    <thead>
-                        <tr>
-                            @if(perfilId ==1)
-                            {
-                                <th>Secuencial Consulta</th>
-                                <th>Medico Consulta</th>
-                            }
-                        
-                            <th>Historia Clinica</th>
-                            <th>Fecha de la consulta</th>
-                            <th>Paciente de la consulta</th>
-                            <th>Especialidad </th>
-                            <th>Motivo</th>
-                            <th>Tipos de consulta</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var consultation in Model)
-                        {
-                            <tr>
-                                @if (perfilId == 1)
-                                {
-                                    <td>@consultation.ConsultationId</td>
-                                    <td>
-                                        <div class="d-flex align-items-center fw-medium">
-                                            <img src="~/assets/images/svg/medicUsers.svg" alt="" class="avatar-xxs me-2">
-                                            <a href="javascript:void(0);" class="currency_name">@consultation.ConsultationUsercreateNavigation.UsersNames @consultation.ConsultationUsercreateNavigation.UsersSurcenames</a>
-                                        </div>
-                                    </td>
-                                }
-
-
-                              
-                                <td>@consultation.ConsultationHistoryclinic</td>
-                                <td>
-                                    @(consultation.ConsultationCreationdate.HasValue
-                                        ? consultation.ConsultationCreationdate.Value.ToString("dd/MM/yyyy")
-                                        : "")
-                                </td>
-                                <td>@consultation.ConsultationPatientNavigation.PatientFirstname @consultation.ConsultationPatientNavigation.PatientMiddlename @consultation.ConsultationPatientNavigation.PatientFirstsurname @consultation.ConsultationPatientNavigation.PatientSecondlastname</td>
-                                <td>@consultation.ConsultationSpecialityNavigation.SpecialityName</td>
-                                <td>@consultation.ConsultationReason</td>
-                                <td style="color: @(consultation.ConsultationType == 1 ? "green" : consultation.ConsultationType == 2 ? "blue" : "black")">
-                                    @(consultation.ConsultationType == 1
-                                        ? "Consulta Principal"
-                                        : consultation.ConsultationType == 2
-                                        ? "Seguimiento"
-                                        : "Otro")
-                                </td>
-
-                                <td>
-                                    <a href="#" class="btn btn-sm btn-soft-info"
-                                       data-bs-toggle="modal" data-bs-target="#optionModal"
-                                       onclick="openOptionModal(@consultation.ConsultationId)">
-                                        <i class="ri-edit-line"></i> Revisar
+                        <div class="mb-3 border rounded grupo-consulta">
+                            <div class="bg-light px-3 py-2 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong><i class="mdi mdi-account"></i> @pacienteNombre</strong>
+                                    <br />
+                                    <span class="text-muted">
+                                        <i class="mdi mdi-stethoscope"></i>
+                                        Médico: @firstConsulta.ConsultationUsercreateNavigation.UsersNames @firstConsulta.ConsultationUsercreateNavigation.UsersSurcenames
+                                    </span>
+                                    <br />
+                                    <span class="text-muted">
+                                        <i class="mdi mdi-calendar-clock"></i> Última consulta:
+                                        @(firstConsulta.ConsultationCreationdate?.ToString("dd/MM/yyyy") ?? "—")
+                                    </span>
+                                </div>
+                                <div>
+                                    <a class="btn btn-sm btn-soft-info" data-bs-toggle="collapse" href="#@collapseId" role="button" aria-expanded="false" aria-controls="@collapseId">
+                                        <i class="mdi mdi-eye-outline"></i> Ver detalles
                                     </a>
+                                    <a href="@Url.Action("AppointmentList", "Appointment")" class="btn btn-sm btn-soft-primary">
+                                        <i class="bx bx-user-plus"></i> Nueva consulta
+                                    </a>
+                                </div>
+                            </div>
 
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
+                            <div class="collapse px-2 py-2" id="@collapseId">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                @if (perfilId == 1)
+                                                {
+                                                    <th>Secuencial</th>
+                                                    <th>Médico</th>
+                                                }
+                                                <th>Historia Clínica</th>
+                                                <th>Fecha</th>
+                                                <th>Especialidad</th>
+                                                <th>Motivo</th>
+                                                <th>Tipo de Consulta</th>
+                                                <th>Acción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var consulta in consultas)
+                                            {
+                                                <tr>
+                                                    @if (perfilId == 1)
+                                                    {
+                                                        <td>@consulta.ConsultationId</td>
+                                                        <td>
+                                                            <div class="d-flex align-items-center fw-medium">
+                                                                <img src="~/assets/images/svg/medicUsers.svg" alt="" class="avatar-xxs me-2" />
+                                                                @consulta.ConsultationUsercreateNavigation.UsersNames @consulta.ConsultationUsercreateNavigation.UsersSurcenames
+                                                            </div>
+                                                        </td>
+                                                    }
 
-                </table>
+                                                    <td>@consulta.ConsultationHistoryclinic</td>
+                                                    <td>@(consulta.ConsultationCreationdate?.ToString("dd/MM/yyyy") ?? "")</td>
+                                                    <td>@consulta.ConsultationSpecialityNavigation.SpecialityName</td>
+                                                    <td>@consulta.ConsultationReason</td>
+                                                    <td style="color: @(consulta.ConsultationType == 1 ? "green" : consulta.ConsultationType == 2 ? "blue" : "black")">
+                                                        @(consulta.ConsultationType == 1 ? "Consulta Principal"
+                                                            : consulta.ConsultationType == 2 ? "Seguimiento"
+                                                            : "Otro")
+                                                    </td>
+                                                    <td>
+                                                        <a href="#" class="btn btn-sm btn-soft-info"
+                                                           data-bs-toggle="modal"
+                                                           data-bs-target="#optionModal"
+                                                           onclick="openOptionModal(@consulta.ConsultationId)">
+                                                            <i class="ri-edit-line"></i> Revisar
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        grupoId++;
+                    }
+                }
+                else
+                {
+                    <div class="text-center text-muted">No hay consultas registradas.</div>
+                }
             </div>
-
-
         </div>
     </div>
 </div>
+
 
 <!--Modal opciones consulta-->
 <div class="modal flip" id="optionModal" tabindex="-1" aria-labelledby="exampleModalgridLabel" aria-modal="true">
@@ -137,7 +180,7 @@
                         </button>
                     </div>
 
-                   
+
 
                 </div><!--end row-->
             </div>
@@ -207,103 +250,127 @@
     <script src="~/assets/js/pages/datatables.init.js"></script>
 
     <script>
-                function openOptionModal(consultationId) {
-            // Establecer el consultationId en el input oculto
-            document.getElementById('consultationId').value = consultationId;
-        }
+                        function openOptionModal(consultationId) {
+                    // Establecer el consultationId en el input oculto
+                    document.getElementById('consultationId').value = consultationId;
+                }
 
-        // Abrir modal de documentos
-        function openModalDocument() {
-            var modalElement = document.getElementById('optionsDocuments');
-            if (!modalElement) {
-                console.error("El modal 'optionsDocuments' no fue encontrado.");
-                return;
-            }
-            var myModal = new bootstrap.Modal(modalElement, { keyboard: false });
-            myModal.show();
-        }
+                // Abrir modal de documentos
+                function openModalDocument() {
+                    var modalElement = document.getElementById('optionsDocuments');
+                    if (!modalElement) {
+                        console.error("El modal 'optionsDocuments' no fue encontrado.");
+                        return;
+                    }
+                    var myModal = new bootstrap.Modal(modalElement, { keyboard: false });
+                    myModal.show();
+                }
 
-            function openReviewConsulta() {
-            // Obtener el consultationId desde el input oculto
-            var consultationId = document.getElementById('consultationId').value;
-            if (!consultationId) {
-                alert("No se encontró un ID de consulta válido.");
-                return;
-            }
+                    function openReviewConsulta() {
+                    // Obtener el consultationId desde el input oculto
+                    var consultationId = document.getElementById('consultationId').value;
+                    if (!consultationId) {
+                        alert("No se encontró un ID de consulta válido.");
+                        return;
+                    }
 
-            // Ahora puedes hacer lo que necesites con el consultationId, por ejemplo:
-window.location.href = '@Url.Action("ConsultationDetails", "Consultation")' + '?consultationId=' + consultationId;
-        }
-
-
-        // Habilitar/deshabilitar el botón de descarga según selección
-        function enableDownloadButton() {
-            const selectedValue = document.getElementById('documentType').value;
-            const downloadButton = document.getElementById('downloadButton');
-
-            if (!downloadButton) {
-                console.error("Botón de descarga no encontrado.");
-                return;
-            }
-
-            downloadButton.disabled = (selectedValue === "Seleccione un documento");
-        }
-
-        // Descargar documento según la opción seleccionada
-             // Descargar documento según la opción seleccionada
-        function downloadDocument() {
-            const selectedValue = document.getElementById('documentType').value;
-            const downloadButton = document.getElementById('downloadButton');
-            const downloadText = document.getElementById('downloadText');
-            const downloadSpinner = document.getElementById('downloadSpinner');
-
-            // Obtener el consultationId desde el input oculto
-            const consultationId = document.getElementById('consultationId').value;
-            if (!consultationId) {
-                alert("No se encontró un ID de consulta válido.");
-                return;
-            }
-
-            if (!downloadButton || !downloadText || !downloadSpinner) {
-                console.error("Elementos del botón de descarga no encontrados.");
-                return;
-            }
-
-            // Mostrar el spinner y deshabilitar el botón
-            downloadText.textContent = "Generando...";
-            downloadSpinner.classList.remove('d-none');
-            downloadButton.disabled = true;
-
-            // Mapear opción seleccionada a URL correspondiente
-            const actions = {
-    
-    justificante: '@Url.Action("MedicalCertificate", "Documents")',
-    formulario: '@Url.Action("MedicalForm", "Documents")',
-    receta: '@Url.Action("MedicationRecipe", "Documents")',
-    laboratorio: '@Url.Action("LaboratoryDoc", "Documents")',
-    imagen: '@Url.Action("ImageDoc", "Documents")'
+                    // Ahora puedes hacer lo que necesites con el consultationId, por ejemplo:
+        window.location.href = '@Url.Action("ConsultationDetails", "Consultation")' + '?consultationId=' + consultationId;
+                }
 
 
-            };
+                // Habilitar/deshabilitar el botón de descarga según selección
+                function enableDownloadButton() {
+                    const selectedValue = document.getElementById('documentType').value;
+                    const downloadButton = document.getElementById('downloadButton');
 
-            // Si la opción es válida, agregar el consultationId como query parameter
-            if (actions[selectedValue]) {
-                const url = actions[selectedValue] + "?consultationId=" + encodeURIComponent(consultationId);
-                window.open(url, '_blank');
-            } else {
-                alert("Opción no válida.");
-            }
+                    if (!downloadButton) {
+                        console.error("Botón de descarga no encontrado.");
+                        return;
+                    }
 
-            // Restaurar el botón después de 2 segundos
-            setTimeout(() => {
-                downloadText.textContent = "Descargar";
-                downloadSpinner.classList.add('d-none');
-                downloadButton.disabled = false;
-            }, 2000);
-        }
+                    downloadButton.disabled = (selectedValue === "Seleccione un documento");
+                }
+
+                // Descargar documento según la opción seleccionada
+                     // Descargar documento según la opción seleccionada
+                function downloadDocument() {
+                    const selectedValue = document.getElementById('documentType').value;
+                    const downloadButton = document.getElementById('downloadButton');
+                    const downloadText = document.getElementById('downloadText');
+                    const downloadSpinner = document.getElementById('downloadSpinner');
+
+                    // Obtener el consultationId desde el input oculto
+                    const consultationId = document.getElementById('consultationId').value;
+                    if (!consultationId) {
+                        alert("No se encontró un ID de consulta válido.");
+                        return;
+                    }
+
+                    if (!downloadButton || !downloadText || !downloadSpinner) {
+                        console.error("Elementos del botón de descarga no encontrados.");
+                        return;
+                    }
+
+                    // Mostrar el spinner y deshabilitar el botón
+                    downloadText.textContent = "Generando...";
+                    downloadSpinner.classList.remove('d-none');
+                    downloadButton.disabled = true;
+
+                    // Mapear opción seleccionada a URL correspondiente
+                    const actions = {
+
+            justificante: '@Url.Action("MedicalCertificate", "Documents")',
+            formulario: '@Url.Action("MedicalForm", "Documents")',
+            receta: '@Url.Action("MedicationRecipe", "Documents")',
+            laboratorio: '@Url.Action("LaboratoryDoc", "Documents")',
+            imagen: '@Url.Action("ImageDoc", "Documents")'
+
+
+                    };
+
+                    // Si la opción es válida, agregar el consultationId como query parameter
+                    if (actions[selectedValue]) {
+                        const url = actions[selectedValue] + "?consultationId=" + encodeURIComponent(consultationId);
+                        window.open(url, '_blank');
+                    } else {
+                        alert("Opción no válida.");
+                    }
+
+                    // Restaurar el botón después de 2 segundos
+                    setTimeout(() => {
+                        downloadText.textContent = "Descargar";
+                        downloadSpinner.classList.add('d-none');
+                        downloadButton.disabled = false;
+                    }, 2000);
+                }
 
     </script>
 
+
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#consultaSearch').on('keyup', function () {
+                var filtro = $(this).val().toLowerCase();
+                $('.grupo-consulta').each(function () {
+                    var textoGrupo = $(this).text().toLowerCase();
+                    var match = textoGrupo.indexOf(filtro) > -1;
+                    $(this).toggle(match);
+
+                    var collapse = $(this).find('.collapse');
+                    if (match) {
+                        collapse.addClass('show');
+                    } else {
+                        collapse.removeClass('show');
+                    }
+                });
+            });
+        });
+
+
+    </script>
 
     @if (!string.IsNullOrEmpty(successMessage))
     {
