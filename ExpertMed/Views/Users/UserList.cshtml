@@ -34,11 +34,11 @@
                         <tr>
                            
                             <th>Id del usuario.</th>
-                             
                             <th>Nombre der usuario</th>
                             <th>Número de documento</th>
                             <th>Email</th>
                             <th>Establecimiento</th>
+                            <th>Rol del Usuario</th>
                             <th>Estado del usuario</th>
                             <th>Acción</th>
                         </tr>
@@ -59,7 +59,7 @@
                                 <td>@user.DocumentNumber</td>
                                 <td>@user.Email</td>
                                 <td>@user.EstablishmentName</td>
-
+                                <td>@user.ProfileName</td>
                                 <td>
                                     @if (user.Status == 1)
                                     {

@@ -83,7 +83,7 @@ namespace ExpertMed.Controllers
             try
             {
                 var newMedicalOfficeId = await _clinicaService.CreateMedicalOfficeAsync(model, usuarioId, establecimientoId);
-                TempData["SuccessMessage"] = "¡Consultorio creado exitosamente!";
+                TempData["SuccessMessage"] = "Consultorio creado exitosamente!";
                 return RedirectToAction("ListaConsultorios");
             }
             catch (Exception ex)
