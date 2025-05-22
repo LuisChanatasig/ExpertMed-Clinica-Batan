@@ -1,0 +1,81 @@
+﻿
+@{
+    ViewData["Title"] = "ListEstablishment";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h4 class="card-title">Establecimientos Registrados</h4>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table align-middle table-striped table-bordered" id="establishmentTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Nombre</th>
+                        <th>Dirección</th>
+                        <th>P. Emisión</th>
+                        <th>P. Venta</th>
+                        <th>Secuencial</th>
+                        <th>Logo</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="7">Cargando...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            fetch('@Url.Action("ListEstablishments", "Establishment")')
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = $("#tableBody");
+                    tableBody.empty();
+
+                    if (data.length === 0) {
+                        tableBody.append(`<tr><td colspan="7" class="text-center">No hay registros</td></tr>`);
+                        return;
+                    }
+
+                    data.forEach((item, index) => {
+                        let logoImg = item.logo && item.logo.length > 0
+                            ? `<img src="data:image/png;base64,${arrayBufferToBase64(item.logo)}" alt="Logo" width="50" height="50" class="rounded shadow-sm"/>`
+                            : `<span class="text-muted">Sin logo</span>`;
+
+                        tableBody.append(`
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td>${item.name}</td>
+                                <td>${item.address ?? '-'}</td>
+                                <td>${item.emissionPoint ?? '-'}</td>
+                                <td>${item.pointOfSale ?? '-'}</td>
+                                <td>${item.sequentialBilling ?? '-'}</td>
+                                <td>${logoImg}</td>
+                            </tr>
+                        `);
+                    });
+                })
+                .catch(err => {
+                    $("#tableBody").html(`<tr><td colspan="7" class="text-danger text-center">Error al cargar datos.</td></tr>`);
+                    console.error("Error:", err);
+                });
+
+            function arrayBufferToBase64(buffer) {
+                const bytes = new Uint8Array(buffer);
+                let binary = '';
+                for (let b of bytes) {
+                    binary += String.fromCharCode(b);
+                }
+                return window.btoa(binary);
+            }
+        });
+    </script>
+}
+

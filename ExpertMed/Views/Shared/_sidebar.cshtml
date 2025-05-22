@@ -36,7 +36,7 @@
 
         </a>
         <button type="button" class="btn btn-sm p-0 fs-20 header-item float-end btn-vertical-sm-hover"
-                id="vertical-hover">
+        id="vertical-hover">
             <i class="ri-record-circle-line"></i>
         </button>
     </div>
@@ -57,6 +57,25 @@
                     </a>
                 </li>
 
+                @if(perfilId == 4)
+                {
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarConsultorios" data-bs-toggle="collapse" role="button">
+                            <i class="mdi mdi-hospital-building"></i> <span>Gestion de Establecimientos</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarConsultorios">
+                            <ul class="nav nav-sm flex-column">
+                              
+                                <li class="nav-item">
+                                    <a href="@Url.Action("ListaConsultorios", "MedicalOffice")" class="nav-link">
+                                        <i class="mdi mdi-clipboard-list-outline"></i> Editar Establecimiento
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                }
+
                 @if (perfilId == 1 || perfilId == 4)
                 {
 
@@ -76,6 +95,30 @@
                                 </li>
                                 <li class="nav-item">
                                     <a href="@Url.Action("ListaConsultorios", "MedicalOffice")" class="nav-link">
+                                        <i class="mdi mdi-clipboard-list-outline"></i> Listado Consultorios
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("OfficeAssignment", "MedicalOffice")" class="nav-link">
+                                        <i class="mdi mdi-account-arrow-right-outline"></i> Asignar a Médico
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarConsultorios" data-bs-toggle="collapse" role="button">
+                            <i class="mdi mdi-hospital-building"></i> <span>Gestion de Establecimientos</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarConsultorios">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("CreateEstablishment", "Establisment")" class="nav-link">
+                                        <i class="mdi mdi-plus-box-outline"></i> Crear Establecimiento
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("ListEstablishments", "Establisment")" class="nav-link">
                                         <i class="mdi mdi-clipboard-list-outline"></i> Listado Consultorios
                                     </a>
                                 </li>
