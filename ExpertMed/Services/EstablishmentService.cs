@@ -129,6 +129,108 @@ namespace ExpertMed.Services
             return result;
         }
 
+        /// <summary>
+        /// Servicio para obtener el establecimiento por el id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        /// <exception cref="ApplicationException"></exception>
+        public async Task<EstablishmentDto> GetEstablishmentByIdAsync(int id)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_dbContext.Database.GetConnectionString());
+                using var command = new SqlCommand("sp_GetEstablishmentById", connection)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                command.Parameters.AddWithValue("@EstablishmentId", id);
+
+                await connection.OpenAsync();
+                using var reader = await command.ExecuteReaderAsync();
+
+                if (!reader.HasRows)
+                    return null; // También podrías lanzar una excepción si prefieres
+
+                EstablishmentDto establishment = null;
+
+                if (await reader.ReadAsync())
+                {
+                    establishment = new EstablishmentDto
+                    {
+                        Id = reader.GetInt32(reader.GetOrdinal("establishment_id")),
+                        Name = reader.GetString(reader.GetOrdinal("establishment_name")),
+                        Address = reader.IsDBNull(reader.GetOrdinal("establishment_address")) ? null : reader.GetString(reader.GetOrdinal("establishment_address")),
+                        EmissionPoint = reader.IsDBNull(reader.GetOrdinal("establishment_emissionpoint")) ? null : reader.GetString(reader.GetOrdinal("establishment_emissionpoint")),
+                        PointOfSale = reader.IsDBNull(reader.GetOrdinal("establishment_pointofsale")) ? null : reader.GetString(reader.GetOrdinal("establishment_pointofsale")),
+                        CreationDate = reader.IsDBNull(reader.GetOrdinal("establishment_creationdate")) ? null : reader.GetDateTime(reader.GetOrdinal("establishment_creationdate")),
+                        ModificationDate = reader.IsDBNull(reader.GetOrdinal("establishment_modificationdate")) ? null : reader.GetDateTime(reader.GetOrdinal("establishment_modificationdate")),
+                        SequentialBilling = reader.IsDBNull(reader.GetOrdinal("establishment_sequential_billing")) ? null : reader.GetInt32(reader.GetOrdinal("establishment_sequential_billing")),
+                        Logo = reader.IsDBNull(reader.GetOrdinal("establishment_logo")) ? null : (byte[])reader["establishment_logo"]
+                    };
+                }
+
+                return establishment;
+            }
+            catch (SqlException ex)
+            {
+                // Captura errores lanzados con RAISERROR en el SP
+                throw new ApplicationException($"Error de base de datos: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                // Otros errores generales
+                throw new ApplicationException("Ocurrió un error al obtener el establecimiento.", ex);
+            }
+        }
+
+        /// <summary>
+        /// Servicio para actualizar el establecimiento
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
+        /// <exception cref="ApplicationException"></exception>
+        public async Task<string> UpdateEstablishmentAsync(EstablishmentDto dto)
+        {
+            using var connection = new SqlConnection(_dbContext.Database.GetConnectionString());
+            using var command = new SqlCommand("sp_UpdateEstablishment", connection)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+
+            command.Parameters.AddWithValue("@EstablishmentId", dto.Id);
+            command.Parameters.AddWithValue("@Name", dto.Name ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@Address", (object?)dto.Address ?? DBNull.Value);
+            command.Parameters.AddWithValue("@EmissionPoint", (object?)dto.EmissionPoint ?? DBNull.Value);
+            command.Parameters.AddWithValue("@PointOfSale", (object?)dto.PointOfSale ?? DBNull.Value);
+            command.Parameters.AddWithValue("@SequentialBilling", (object?)dto.SequentialBilling ?? DBNull.Value);
+
+            if (dto.Logo != null && dto.Logo.Length > 0)
+                command.Parameters.AddWithValue("@Logo", dto.Logo);
+            else
+                command.Parameters.AddWithValue("@Logo", DBNull.Value);
+
+            await connection.OpenAsync();
+
+            try
+            {
+                using var reader = await command.ExecuteReaderAsync();
+                if (reader.Read())
+                {
+                    // Recupera el mensaje del SP
+                    return reader["Message"]?.ToString() ?? "Actualización completada.";
+                }
+
+                return "Actualización completada sin mensaje.";
+            }
+            catch (SqlException ex)
+            {
+                // Loggear si querés
+                throw new ApplicationException($"Error al actualizar el establecimiento: {ex.Message}", ex);
+            }
+        }
+
 
     }
 }

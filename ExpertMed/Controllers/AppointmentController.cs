@@ -168,8 +168,26 @@ namespace ExpertMed.Controllers
                     return BadRequest(new { success = false, message = "Formato de hora inválido." });
                 }
 
+                // Convertir TimeOnly a TimeSpan para el servicio
+                TimeSpan hourSpan = appointmentHour.ToTimeSpan();
 
-                // Crear objeto de cita incluyendo consultorio
+                // Obtener oficinas disponibles automáticamente (sin mostrar)
+                var availableOffices = await _appointmentService.GetAvailableOfficesAsync(
+                    usuarioId.Value,                // userId
+                    request.AppointmentDate.Date,   // date (solo fecha)
+                    hourSpan,                      // hora en TimeSpan
+                    doctorUserId                   // doctorUserId opcional
+                );
+
+                if (availableOffices == null || !availableOffices.Any())
+                {
+                    return BadRequest(new { success = false, message = "No hay consultorios disponibles para la fecha y hora seleccionadas." });
+                }
+
+                // Seleccionar automáticamente el primer consultorio disponible
+                int selectedOfficeId = availableOffices.First().MedicalOfficeId;
+
+                // Crear objeto de cita incluyendo consultorio seleccionado
                 var appointment = new Appointment
                 {
                     AppointmentCreatedate = DateTime.Now,
@@ -180,13 +198,13 @@ namespace ExpertMed.Controllers
                     AppointmentHour = appointmentHour,
                     AppointmentPatientid = request.AppointmentPatientid,
                     AppointmentStatus = request.AppointmentStatus,
-                    AppointmentMedicalofficeid = request.AppointmentMedicalofficeid  // <- NUEVO
+                    AppointmentMedicalofficeid = selectedOfficeId  // <- Consultorio seleccionado automáticamente
                 };
 
-                // Llamar al servicio
+                // Guardar cita
                 await _appointmentService.CreateAppointmentAsync(appointment, doctorUserId);
 
-                // WhatsApp reminder
+                // Generar URL de WhatsApp para recordatorio
                 string whatsappUrl = null;
                 var patient = await _patientService.GetPatientDetailsAsync(appointment.AppointmentPatientid ?? 0);
                 if (patient != null && !string.IsNullOrEmpty(patient.PatientCellularPhone))

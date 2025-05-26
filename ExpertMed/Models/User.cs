@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ExpertMed.Models;
 
@@ -42,6 +43,8 @@ public partial class User
     public int? UsersProfileid { get; set; }
 
     public int? UsersSpecialityid { get; set; }
+    [NotMapped]
+    public string? SpecialityName { get; set; }
 
     public int? UsersCountryid { get; set; }
 

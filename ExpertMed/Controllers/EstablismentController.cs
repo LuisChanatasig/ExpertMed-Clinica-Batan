@@ -56,20 +56,93 @@ namespace ExpertMed.Controllers
         }
 
 
-     
 
+        /// <summary>
+        /// Metodo para listar los establecimientos
+        /// </summary>
+        /// <returns></returns>
         [HttpGet]
-        public async Task<ActionResult<List<EstablishmentDto>>> ListEstablishments()
+        public async Task<IActionResult> ListEstablishment()
         {
             try
             {
                 var result = await _service.ListEstablishmentsAsync();
-                return Ok(result);
+                return View(result); // <- aquí devolvés la vista y le pasás el modelo
             }
             catch (Exception ex)
             {
+                // Podés hacer logging, o redirigir a una vista de error más bonita
                 return StatusCode(500, $"Error interno: {ex.Message}");
             }
+        }
+
+
+        /// <summary>
+        /// Metodo para traer los datos a la vista del establecimineto.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<IActionResult> UpdateEstablishment(int id)
+        {
+            try
+            {
+                var result = await _service.GetEstablishmentByIdAsync(id);
+                if (result == null)
+                    return NotFound($"No se encontró el establecimiento con ID {id}");
+
+                return View(result); // O return Ok(result); si es API
+            }
+            catch (ApplicationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="model"></param>
+        /// <param name="Logo"></param>
+        /// <returns></returns>
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateEstablishment(EstablishmentDto model, IFormFile? Logo)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorMessage"] = "Verifica los datos del formulario.";
+                return RedirectToAction("UpdateEstablishment", new { id = model.Id });
+            }
+
+            try
+            {
+                // Si no se sube un nuevo logo, obtenemos el logo actual
+                if (Logo == null || Logo.Length == 0)
+                {
+                    var existing = await _service.GetEstablishmentByIdAsync(model.Id);
+                    if (existing?.Logo != null)
+                        model.Logo = existing.Logo;
+                }
+                else
+                {
+                    using var memoryStream = new MemoryStream();
+                    await Logo.CopyToAsync(memoryStream);
+                    model.Logo = memoryStream.ToArray();
+                }
+
+                var resultMessage = await _service.UpdateEstablishmentAsync(model);
+                TempData["SuccessMessage"] = resultMessage;
+            }
+            catch (ApplicationException ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+            }
+            catch (Exception)
+            {
+                TempData["ErrorMessage"] = "Ocurrió un error inesperado al actualizar el establecimiento.";
+            }
+
+            return RedirectToAction("ListEstablishment", new { id = model.Id });
         }
 
     }

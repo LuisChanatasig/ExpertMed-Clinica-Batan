@@ -52,10 +52,7 @@ namespace ExpertMed.Services
                                 UsersId = reader.GetInt32(reader.GetOrdinal("users_id")),
                                 UsersNames = reader.IsDBNull(reader.GetOrdinal("users_names")) ? null : reader.GetString(reader.GetOrdinal("users_names")),
                                 UsersSurcenames = reader.IsDBNull(reader.GetOrdinal("users_surcenames")) ? null : reader.GetString(reader.GetOrdinal("users_surcenames")),
-
-                                // Agrega aquí los campos adicionales que quieras mapear
-                                // Ejemplo:
-                                // UserEmail = reader.IsDBNull(reader.GetOrdinal("user_email")) ? null : reader.GetString(reader.GetOrdinal("user_email")),
+                                SpecialityName = reader.IsDBNull(reader.GetOrdinal("speciality_name")) ? null : reader.GetString(reader.GetOrdinal("speciality_name"))
                             };
 
                             doctors.Add(doctor);

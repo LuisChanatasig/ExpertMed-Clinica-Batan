@@ -1,7 +1,10 @@
-﻿
+﻿@model List<ExpertMed.Models.EstablishmentDto>
+
 @{
     ViewData["Title"] = "ListEstablishment";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var successMessage = TempData["SuccessMessage"] as string;
+    var errorMessage = TempData["ErrorMessage"] as string;
 }
 
 <div class="card">
@@ -10,7 +13,7 @@
     </div>
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table align-middle table-striped table-bordered" id="establishmentTable">
+            <table class="table align-middle table-striped table-bordered">
                 <thead class="table-light">
                     <tr>
                         <th>#</th>
@@ -20,10 +23,48 @@
                         <th>P. Venta</th>
                         <th>Secuencial</th>
                         <th>Logo</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
-                    <tr><td colspan="7">Cargando...</td></tr>
+                    @if (Model != null && Model.Any())
+                    {
+                        int i = 1;
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@i</td>
+                                <td>@item.Name</td>
+                                <td>@(item.Address ?? "-")</td>
+                                <td>@(item.EmissionPoint ?? "-")</td>
+                                <td>@(item.PointOfSale ?? "-")</td>
+                                <td>@(item.SequentialBilling?.ToString() ?? "-")</td>
+                                <td>
+                                    @if (item.Logo != null && item.Logo.Length > 0)
+                                    {
+                                        var base64Logo = Convert.ToBase64String(item.Logo);
+                                        <img src="data:image/png;base64,@base64Logo" alt="Logo" width="50" height="50" class="rounded shadow-sm" />
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Sin logo</span>
+                                    }
+                                </td>
+                                <td>
+                                    <a href="@Url.Action("UpdateEstablishment", "Establisment", new { id = item.Id })" class="btn btn-soft-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Revisar">
+                                        <i class="mdi mdi-eye"></i> Revisar
+                                    </a>
+                                </td>
+                            </tr>
+                            i++;
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center">No hay registros</td>
+                        </tr>
+                    }
                 </tbody>
             </table>
         </div>
@@ -32,50 +73,37 @@
 
 @section Scripts {
     <script>
-        $(document).ready(function () {
-            fetch('@Url.Action("ListEstablishments", "Establishment")')
-                .then(response => response.json())
-                .then(data => {
-                    const tableBody = $("#tableBody");
-                    tableBody.empty();
-
-                    if (data.length === 0) {
-                        tableBody.append(`<tr><td colspan="7" class="text-center">No hay registros</td></tr>`);
-                        return;
-                    }
-
-                    data.forEach((item, index) => {
-                        let logoImg = item.logo && item.logo.length > 0
-                            ? `<img src="data:image/png;base64,${arrayBufferToBase64(item.logo)}" alt="Logo" width="50" height="50" class="rounded shadow-sm"/>`
-                            : `<span class="text-muted">Sin logo</span>`;
-
-                        tableBody.append(`
-                            <tr>
-                                <td>${index + 1}</td>
-                                <td>${item.name}</td>
-                                <td>${item.address ?? '-'}</td>
-                                <td>${item.emissionPoint ?? '-'}</td>
-                                <td>${item.pointOfSale ?? '-'}</td>
-                                <td>${item.sequentialBilling ?? '-'}</td>
-                                <td>${logoImg}</td>
-                            </tr>
-                        `);
-                    });
-                })
-                .catch(err => {
-                    $("#tableBody").html(`<tr><td colspan="7" class="text-danger text-center">Error al cargar datos.</td></tr>`);
-                    console.error("Error:", err);
-                });
-
-            function arrayBufferToBase64(buffer) {
-                const bytes = new Uint8Array(buffer);
-                let binary = '';
-                for (let b of bytes) {
-                    binary += String.fromCharCode(b);
-                }
-                return window.btoa(binary);
-            }
+        // Activar tooltips de Bootstrap (Velzon depende de esto)
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
         });
     </script>
-}
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <script>
+            Swal.fire({
+                title: '¡Éxito!',
+                text: '@successMessage',
+                icon: 'success',
+                confirmButtonText: 'OK',
+                timer: 3000
+            });
+        </script>
+    }
 
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <script>
+            Swal.fire({
+                title: 'Error',
+                text: '@errorMessage',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        </script>
+    }
+
+
+
+}

@@ -365,7 +365,7 @@
             <div class="modal-body">
                 <form class="row g-3 needs-validation" novalidate name="formData">
 
-                    @if (perfilId == 3 || perfilId == 1)
+                    @if (perfilId == 3 || perfilId == 1 || perfilId == 4 )
                     {
                         <div class="col-xxl-6">
                             <div class="mb-3">
@@ -374,7 +374,7 @@
                                     <option value="">Seleccione</option>
                                     @foreach (var doctor in Model.Users)
                                     {
-                                        <option value="@doctor.UsersId">@doctor.UsersNames @doctor.UsersSurcenames</option>
+                                        <option value="@doctor.UsersId">@doctor.UsersNames @doctor.UsersSurcenames - @doctor.SpecialityName </option>
                                     }
                                 </select>
                             </div>
@@ -459,7 +459,6 @@
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <script src="~/assets/js/pages/select2.init.js"></script>
     <script src="~/assets/libs/flatpickr/flatpickr.min.js"></script>
     <script src="~/assets/libs/choices.js/public/assets/scripts/choices.min.js"></script>
 
@@ -486,16 +485,15 @@
     <script>
         $(document).ready(function () {
 
-            // Función para habilitar o deshabilitar el botón
+            // ✅ Solo habilita botón si hay hora seleccionada
             function toggleConfirmButton() {
                 const timeSelected = $('#appointmentTime').val();
-                const officeSelected = $('#AppointmentMedicalofficeid').val();
-                $('#confirmAppointmentBtn').prop('disabled', !(timeSelected && officeSelected));
+                $('#confirmAppointmentBtn').prop('disabled', !timeSelected);
             }
 
-            // Ver horas disponibles
-        $('#modalViewHoursButton').click(function () {
-                        const userId = @usuarioId;
+            // 🔍 Ver horas disponibles
+            $('#modalViewHoursButton').click(function () {
+                const userId = @usuarioId;
                 const selectedDate = $('#selectedDate').val();
                 const doctorUserId = $('#doctorUserId').val();
 
@@ -533,96 +531,28 @@
                 });
             });
 
-            // Selección de hora
+            // 🕒 Selección de hora
             $('#availableHoursContainer').on('click', 'button', function () {
                 const selectedHour = $(this).data('hour');
-                const selectedDate = $('#selectedDate').val();
-                const doctorUserId = $('#doctorUserId').val();
-
                 $('#appointmentTime').val(selectedHour);
-                toggleConfirmButton(); // Actualizar estado del botón
-
-                $('#hoursModalgrid').modal('hide'); // Cerrar modal de horas
-
-                Swal.fire({
-                    title: 'Buscando consultorios...',
-                    text: 'Por favor espera un momento.',
-                    allowOutsideClick: false,
-                    didOpen: () => Swal.showLoading()
-                });
-
-                $.ajax({
-                    url: '@Url.Action("GetAvailableOffices", "Appointment")',
-                    method: "GET",
-                    data: {
-                        date: selectedDate,
-                        hour: selectedHour,
-                        doctorUserId: doctorUserId
-                    },
-                    success: function (response) {
-                        Swal.close();
-
-                        Swal.fire({
-                            title: 'Consultorios disponibles',
-                            text: 'Selecciona uno para continuar',
-                            icon: 'info',
-                            timer: 2500,
-                            showConfirmButton: false
-                        });
-
-                        const container = $('#consultoriosContainer');
-                        container.empty();
-                        $('#AppointmentMedicalofficeid').val(''); // Limpiar si se cambió de hora
-
-                        if (response.success && response.offices.length > 0) {
-                            response.offices.forEach(o => {
-                                const card = `
-                                    <div class="col">
-                                        <div class="card consultorio-card shadow-sm h-100" data-id="${o.medicalOfficeId}">
-                                            <span class="checkmark"><i class="ri-check-line"></i></span>
-                                            <div class="card-body text-center">
-                                                <h5 class="card-title">${o.medicalOfficeName}</h5>
-                                                <p class="card-text"><i class="mdi mdi-hospital-building"></i> Consultorio #${o.medicalOfficeId}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                `;
-                                container.append(card);
-                            });
-
-                            $('.consultorio-card').on('click', function () {
-                                $('.consultorio-card').removeClass('border-primary selected');
-                                $(this).addClass('border-primary selected');
-                                $('#AppointmentMedicalofficeid').val($(this).data('id'));
-                                toggleConfirmButton(); // Activar botón
-                            });
-
-                        } else {
-                            container.append('<div class="col-12 text-center text-muted">No hay consultorios disponibles.</div>');
-                        }
-                    },
-                    error: function () {
-                        Swal.close();
-                        Swal.fire('Error', 'No se pudieron cargar los consultorios.', 'error');
-                    }
-                });
+                toggleConfirmButton(); // Activar botón
+                $('#hoursModalgrid').modal('hide'); // Cerrar modal
             });
 
-            // Confirmar cita
+            // ✅ Confirmar cita (sin consultorio)
             $('#confirmAppointmentBtn').on('click', function () {
                 const selectedHour = $('#appointmentTime').val();
                 const selectedDate = $('#selectedDate').val();
                 const patientId = $('#patientId').val();
                 const doctorUserId = $('#doctorUserId').val();
                 const appointmentStatus = $('#appointmentStatus').val();
-                const consultorioId = $('#AppointmentMedicalofficeid').val();
 
                 Swal.fire({
                     title: 'Resumen de Cita',
                     html: `
                         <p><strong>Fecha:</strong> ${selectedDate}</p>
                         <p><strong>Hora:</strong> ${selectedHour}</p>
-                        <p><strong>Consultorio ID:</strong> ${consultorioId}</p>
+                        <p><em>El consultorio será asignado automáticamente.</em></p>
                         <p>¿Deseas confirmar esta cita?</p>
                     `,
                     icon: 'question',
@@ -639,8 +569,8 @@
                                 AppointmentDate: selectedDate,
                                 AppointmentHour: selectedHour,
                                 AppointmentPatientid: patientId,
-                                AppointmentStatus: appointmentStatus,
-                                AppointmentMedicalofficeid: consultorioId
+                                AppointmentStatus: appointmentStatus
+                                // ❌ Sin consultorio
                             }),
                             success: function (response) {
                                 if (response.success) {
@@ -671,6 +601,7 @@
 
         });
     </script>
+
 
 
 

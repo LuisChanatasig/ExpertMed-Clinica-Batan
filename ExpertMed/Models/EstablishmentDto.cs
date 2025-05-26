@@ -10,6 +10,6 @@
         public DateTime? CreationDate { get; set; }
         public DateTime? ModificationDate { get; set; }
         public int? SequentialBilling { get; set; }
-        public byte[] Logo { get; set; }
+        public byte[] ? Logo { get; set; }
     }
 }
