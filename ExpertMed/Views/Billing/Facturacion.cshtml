@@ -80,6 +80,29 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label">Detalle de servicios</label>
+                            <table class="table table-bordered" id="invoice-items-table">
+                                <thead>
+                                    <tr>
+                                        <th>Descripción</th>
+                                        <th>Cantidad</th>
+                                        <th>Precio Unitario</th>
+                                        <th>Total</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="invoice-items-body">
+                                    <!-- Filas dinámicas se insertan aquí -->
+                                </tbody>
+                            </table>
+                            <button type="button" class="btn btn-outline-success" onclick="agregarItem()">+ Agregar ítem</button>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Total Factura</label>
+                            <input type="number" class="form-control" name="TotalFactura" id="totalFactura" readonly required>
+                        </div>
 
 
                         <div class="mb-3">
@@ -139,6 +162,24 @@
 
 
                         <div class="mb-3"><label class="form-label">Comprobante</label><input class="form-control" id="comprobantePagoFile" name="comprobantePagoFile" type="file" accept=".jpeg,.jpg,.png" required></div>
+                        <div class="mb-3">
+                            <label class="form-label">Detalle de servicios</label>
+                            <table class="table table-bordered" id="invoice-items-table">
+                                <thead>
+                                    <tr>
+                                        <th>Descripción</th>
+                                        <th>Cantidad</th>
+                                        <th>Precio Unitario</th>
+                                        <th>Total</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="invoice-items-body">
+                                    <!-- Filas dinámicas se insertan aquí -->
+                                </tbody>
+                            </table>
+                            <button type="button" class="btn btn-outline-success" onclick="agregarItem()">+ Agregar ítem</button>
+                        </div>
                         <div class="mb-3"><label class="form-label">Valor</label><input type="number" class="form-control" name="TotalFactura" placeholder="60" required></div>
                         <button type="submit" class="btn btn-success">Registrar Pago</button>
                     </form>
@@ -156,6 +197,7 @@
                             <div class="col"><button type="button" class="btn btn-outline-primary w-100" onclick="cargarDatosPaciente(this)"><i class="ri-user-line align-middle"></i> Mismos datos del paciente</button></div>
                             <div class="col"><button type="button" class="btn btn-outline-secondary w-100" data-bs-toggle="collapse" data-bs-target="#facturacion-tarjeta" onclick="limpiarFormulario(this)"><i class="ri-edit-box-line align-middle"></i> Otros datos</button></div>
                         </div>
+
 
                         <div class="collapse" id="facturacion-tarjeta">
                             <div class="card card-body mb-3">
@@ -191,10 +233,29 @@
 
 
                         <div class="mb-3"><label class="form-label">Comprobante</label><input class="form-control" id="comprobantePagoFile" name="comprobantePagoFile" type="file" accept=".jpeg,.jpg,.png" required></div>
+                        <div class="mb-3">
+                            <label class="form-label">Detalle de servicios</label>
+                            <table class="table table-bordered" id="invoice-items-table">
+                                <thead>
+                                    <tr>
+                                        <th>Descripción</th>
+                                        <th>Cantidad</th>
+                                        <th>Precio Unitario</th>
+                                        <th>Total</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="invoice-items-body">
+                                    <!-- Filas dinámicas se insertan aquí -->
+                                </tbody>
+                            </table>
+                            <button type="button" class="btn btn-outline-success" onclick="agregarItem()">+ Agregar ítem</button>
+                        </div>
                         <div class="mb-3"><label class="form-label">Valor</label><input type="number" class="form-control" name="TotalFactura" placeholder="60" required></div>
                         <button type="submit" class="btn btn-success">Registrar Pago</button>
                     </form>
                 </div>
+
             </div>
         </div>
     </div>
@@ -250,6 +311,41 @@
         }
         function limpiarFormulario(btn) {
             btn.closest('form').querySelectorAll('.fact-input').forEach(input => input.value = '');
+        }
+    </script>
+    <script>
+        let contador = 0;
+
+        function agregarItem() {
+            const tbody = document.getElementById('invoice-items-body');
+            const row = document.createElement('tr');
+            const index = contador++;
+
+            row.innerHTML = `
+                <td><input type="text" class="form-control" name="Items[${index}].Descripcion" required></td>
+                <td><input type="number" class="form-control cantidad" name="Items[${index}].Cantidad" min="1" value="1" onchange="recalcularTotal()" required></td>
+                <td><input type="number" class="form-control precio" name="Items[${index}].PrecioUnitario" min="0.01" step="0.01" value="0.00" onchange="recalcularTotal()" required></td>
+                <td><input type="text" class="form-control total-item" value="0.00" readonly></td>
+                <td><button type="button" class="btn btn-danger btn-sm" onclick="eliminarItem(this)">🗑</button></td>
+            `;
+            tbody.appendChild(row);
+        }
+
+        function eliminarItem(boton) {
+            boton.closest('tr').remove();
+            recalcularTotal();
+        }
+
+        function recalcularTotal() {
+            let total = 0;
+            document.querySelectorAll('#invoice-items-body tr').forEach(row => {
+                const cantidad = parseFloat(row.querySelector('.cantidad').value) || 0;
+                const precio = parseFloat(row.querySelector('.precio').value) || 0;
+                const subtotal = cantidad * precio;
+                row.querySelector('.total-item').value = subtotal.toFixed(2);
+                total += subtotal;
+            });
+            document.getElementById('totalFactura').value = total.toFixed(2);
         }
     </script>
 

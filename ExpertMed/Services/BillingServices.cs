@@ -21,9 +21,9 @@ namespace ExpertMed.Services
         }
 
         public async Task<string> CreateAndSendInvoiceAsync(
-    int citaId, DateTime fechaFacturacion, decimal totalFactura, string metodoPago, byte[] comprobantePagoFacturacion,
-    string billingDetailsNames, string billingDetailsCiNumber, string billingDetailsDocumentType,
-    string billingDetailsAddress, string billingDetailsPhone, string billingDetailsEmail)
+        int citaId, DateTime fechaFacturacion, decimal totalFactura, string metodoPago, byte[] comprobantePagoFacturacion,
+        string billingDetailsNames, string billingDetailsCiNumber, string billingDetailsDocumentType,
+        string billingDetailsAddress, string billingDetailsPhone, string billingDetailsEmail)
         {
             string jsonFactura = string.Empty;
             string xKey = string.Empty;
@@ -92,6 +92,8 @@ namespace ExpertMed.Services
                 throw;
             }
         }
+
+
 
     }
 }

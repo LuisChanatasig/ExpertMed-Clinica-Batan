@@ -623,11 +623,51 @@ BEGIN
       )
     ORDER BY mo.medicaloffice_name;
 END
+----===Mejoras y cambios en la base para el punto dos===----
 
-select * from appointment
+---====TABLA PARA ALMACENAR LOS ITEMS DE LA FACTURACION====---
+CREATE TABLE billing_items (
+    billing_item_id INT PRIMARY KEY IDENTITY,
+    billing_id INT NOT NULL, -- FK a 'billing'
+    codigo_procedimiento NVARCHAR(50) NOT NULL, -- Código interno o CPT
+    descripcion NVARCHAR(255) NOT NULL,
+    cantidad INT NOT NULL CHECK (cantidad > 0),
+    precio_unitario DECIMAL(10, 2) NOT NULL CHECK (precio_unitario >= 0),
 
-select * from assistant_doctor_appointment 
+    -- A quién se le factura esta parte
+    valor_aseguradora DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    valor_paciente DECIMAL(10, 2) NOT NULL DEFAULT 0,
 
-delete from assistant_doctor_appointment where assistant_userid = 43 
+    total_item AS (cantidad * precio_unitario) PERSISTED,
+    FOREIGN KEY (billing_id) REFERENCES billing(billing_id)
+);
 
-delete from appointment where appointment_createuser = 43
+---===Tarifario de de seguros	===---
+CREATE TABLE insurance_tariffs (
+    insurance_tariff_id INT PRIMARY KEY IDENTITY,
+    insurance_companies_id INT NOT NULL, -- FK a aseguradora
+    insurance_procedure_code NVARCHAR(50) NOT NULL, -- Código estándar del procedimiento
+    insurance_tariffs_descripcion NVARCHAR(255),
+    insurance_value DECIMAL(10, 2) NOT NULL, -- Total cubierto por aseguradora
+    insurance_tariffs_patient_value DECIMAL(10, 2) NOT NULL, -- Copago del paciente
+
+    CONSTRAINT FK_tariffs_company FOREIGN KEY (insurance_companies_id)
+        REFERENCES insurance_companies(insurance_companies_id)
+);
+
+---====COMPANIA DE SEGUROS====---
+CREATE TABLE insurance_companies (
+    insurance_companies_id INT PRIMARY KEY IDENTITY,
+    nombre NVARCHAR(100) NOT NULL,
+    insurance_companies_status INT NOT NULL DEFAULT 1 -- 1: activa, 0: inactiva
+);
+
+---===TABLA DE PROCEDIMIENTO===---
+CREATE TABLE medical_procedures (
+    procedure_code NVARCHAR(50) PRIMARY KEY,
+    producer_description NVARCHAR(255),
+    standard_price DECIMAL(10,2),
+	producer_status INT DEFAULT 1 NULL
+);
+
+---======---

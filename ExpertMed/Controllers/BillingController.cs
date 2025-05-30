@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ExpertMed.Models;
 using ExpertMed.Services;
+using Org.BouncyCastle.Crypto.Utilities;
 
 namespace ExpertMed.Controllers
 {
@@ -108,7 +109,7 @@ namespace ExpertMed.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error interno al procesar la facturación para la cita ID: {CitaId}", viewModel.CitaId);
-                TempData["ErrorMessage"] = "Ocurrió un error al generar la factura. Intente nuevamente.";
+                TempData["ErrorMessage"] = "Ocurrió un error al generar la factura. Intente nuevamente."+ex;
 
                 return StatusCode(500, "Error interno del servidor");
             }

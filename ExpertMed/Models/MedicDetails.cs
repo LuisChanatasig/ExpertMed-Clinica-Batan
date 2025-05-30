@@ -38,7 +38,6 @@
 
         public string? UsersDescription { get; set; }
         public string? SpecialityName { get; set; }
-
         public int? UsersEstablishmentId { get; set; }
         public string? UsersEstablishmentName { get; set; }
 

@@ -22,6 +22,7 @@ namespace ExpertMed.Controllers
             public string Message { get; set; }
         }
 
+
         /// <summary>
         /// Listado de citas vista
         /// </summary>
