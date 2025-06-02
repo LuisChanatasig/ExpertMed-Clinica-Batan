@@ -210,7 +210,7 @@ namespace ExpertMed.Controllers
         {
             var usuarioId = HttpContext.Session.GetInt32("UsuarioId") ?? 0;
             var perfilId = HttpContext.Session.GetInt32("PerfilId") ?? 0;
-
+            var estid = HttpContext.Session.GetInt32("UsuarioEstablecimientoId") ?? 0;
             var viewModel = new NewPatientViewModel
             {
                 Patient = patient,
@@ -225,7 +225,9 @@ namespace ExpertMed.Controllers
                 Users = await _patientService.GetDoctorsByAssistantAsync(usuarioId, perfilId),
                 UsersP = establishmentId.HasValue
                     ? await _selectService.GetAllMedicsDetailsAsync(establishmentId.Value)
-                    : new List<MedicDetails>() // o retornar todos, según tu lógica
+                    : new List<MedicDetails>(), // o retornar todos, según tu lógica
+                InsuranceCompanies =  await _selectService.GetInsuranceByEstablishmentAsync(estid)
+                  
             };
 
             return View(viewModel);

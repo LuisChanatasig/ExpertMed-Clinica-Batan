@@ -181,7 +181,10 @@ namespace ExpertMed.Services
             return results;
         }
 
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public async Task<List<Province>> GetAllProvinceAsync()
         {
             try
@@ -199,7 +202,10 @@ namespace ExpertMed.Services
                 throw; // O manejar el error de forma más específica si es necesario
             }
         }
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public async Task<List<Diagnosis>> GetAllDiagnosisAsync()
         {
             try
@@ -217,6 +223,11 @@ namespace ExpertMed.Services
                 throw; // O manejar el error de forma más específica si es necesario
             }
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public async Task<List<Medication>> GetAllMedicationsAsync()
         {
             try
@@ -234,6 +245,10 @@ namespace ExpertMed.Services
                 throw; // O manejar el error de forma más específica si es necesario
             }
         } 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public async Task<List<Image>> GetAllImagesAsync()
         {
             try
@@ -251,6 +266,10 @@ namespace ExpertMed.Services
                 throw; // O manejar el error de forma más específica si es necesario
             }
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public async Task<List<Laboratory>> GetAllLaboratoriesAsync()
         {
             try
@@ -268,6 +287,51 @@ namespace ExpertMed.Services
                 throw; // O manejar el error de forma más específica si es necesario
             }
         }
+
+
+        public async Task<List<InsuranceCompanyDto>> GetInsuranceByEstablishmentAsync(int estid)
+        {
+            try
+            {
+                var result = new List<InsuranceCompanyDto>();
+
+                var connection = _dbContext.Database.GetDbConnection();
+                await connection.OpenAsync();
+
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "sp_GetInsuranceByEstablishment";
+                    command.CommandType = CommandType.StoredProcedure;
+
+                    var param = command.CreateParameter();
+                    param.ParameterName = "@establishment_id";
+                    param.Value = estid;
+                    command.Parameters.Add(param);
+
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            result.Add(new InsuranceCompanyDto
+                            {
+                                InsuranceCompanyId = reader.GetInt32(0),
+                                InsuranceCompanyName = reader.GetString(1)
+                            });
+                        }
+                    }
+
+                    await connection.CloseAsync();
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener aseguradoras por establecimiento.");
+                throw;
+            }
+        }
+
 
 
         //Metodo para obtener los tipos de genero de la tabla catalogo

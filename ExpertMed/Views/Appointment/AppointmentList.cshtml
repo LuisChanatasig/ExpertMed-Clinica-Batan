@@ -1,4 +1,5 @@
 ﻿@using Microsoft.AspNetCore.Http
+@model List<ExpertMed.Models.AppointmentDTO>
 @{
     ViewData["Title"] = "Listado De citas";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -61,67 +62,45 @@
     </style>
 }
 
+
+
+
 <div class="row">
     <div class="col-lg-12">
-
         @if (TempData["Error"] != null)
         {
             <div class="alert alert-danger">@TempData["Error"]</div>
         }
-
         <div class="card">
-
             <div class="card-body">
-                <!-- Cabecera con título y botón de filtros -->
                 <div class="card-header d-flex justify-content-between align-items-start align-items-md-center">
                     <h5 class="card-title mb-0">Lista de citas</h5>
-                    <button class="btn btn-outline-primary"
-                            type="button"
-                            data-bs-toggle="collapse"
-                            data-bs-target="#filterCollapse"
-                            aria-expanded="false"
-                            aria-controls="filterCollapse">
+                    <button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
                         <i class="mdi mdi-filter-variant"></i> Filtros
                     </button>
                 </div>
 
-                <!-- Collapse de filtros -->
                 <div class="collapse mb-3" id="filterCollapse">
                     <div class="card card-body p-2">
                         <div class="btn-group flex-wrap w-100" role="group">
-                            <button class="btn btn-soft-success @(ViewBag.CurrentStatus == 0 ? "active" : "")"
-                                    onclick="filterAppointments(0)">
-                                Pagadas
-                            </button>
-                            <button class="btn btn-soft-warning @(ViewBag.CurrentStatus == 1 ? "active" : "")"
-                                    onclick="filterAppointments(1)">
-                                Activas
-                            </button>
-                            <button class="btn btn-soft-danger @(ViewBag.CurrentStatus == 2 ? "active" : "")"
-                                    onclick="filterAppointments(2)">
-                                Canceladas
-                            </button>
-                            <button class="btn btn-soft-info @(ViewBag.CurrentStatus == 3 ? "active" : "")"
-                                    onclick="filterAppointments(3)">
-                                Seguimiento
-                            </button>
-                            <button class="btn btn-soft-dark @(ViewBag.CurrentStatus == 4 ? "active" : "")"
-                                    onclick="filterAppointments(4)">
-                                Finalizadas
-                            </button>
-
-                            <button class="bg-danger text-white fw-bold text-uppercase @(ViewBag.CurrentStatus == 5 ? "active" : "")"
-                                    onclick="filterAppointments(5)">
-                                EMERGENCIAS
-                            </button>
+                            @foreach (var estado in new[] {
+                            (0, "Pagadas", "btn-soft-success"),
+                            (1, "Activas", "btn-soft-warning"),
+                            (2, "Canceladas", "btn-soft-danger"),
+                            (3, "Seguimiento", "btn-soft-info"),
+                            (4, "Finalizadas", "btn-soft-dark"),
+                            (5, "EMERGENCIAS", "bg-danger text-white fw-bold text-uppercase") })
+                            {
+                                <button class="btn @estado.Item3 @(ViewBag.CurrentStatus == estado.Item1 ? "active" : "")"
+                                        onclick="filterAppointments(@estado.Item1)">
+                                    @estado.Item2
+                                </button>
+                            }
                         </div>
                     </div>
                 </div>
 
-                <!-- Cuerpo con tabla -->
-
-                <table id="appointmentTable"
-                       class="table nowrap dt-responsive align-middle table-hover table-bordered" style="width:100%">
+                <table id="appointmentTable" class="table nowrap dt-responsive align-middle table-hover table-bordered" style="width:100%">
                     <thead>
                         <tr>
                             <th hidden>ID</th>
@@ -143,14 +122,14 @@
                         {
                             <tr>
                                 <td hidden>@appt.AppointmentId</td>
-                                <td hidden>@appt.AppointmentPatientid</td>
+                                <td hidden>@appt.AppointmentPatientId</td>
                                 @if (perfilId == 1 || perfilId == 3 || perfilId == 4)
                                 {
                                     <td>@(appt.DoctorName ?? appt.DoctorName2)</td>
                                 }
                                 <td>
                                     @appt.AppointmentDate.ToString("dd/MM/yyyy")
-                                    @appt.AppointmentHour.ToString("hh\\:mm tt", System.Globalization.CultureInfo.InvariantCulture)
+                                    @(DateTime.Today.Add(appt.AppointmentHour).ToString("hh:mm tt", System.Globalization.CultureInfo.InvariantCulture))
                                 </td>
                                 <td>@appt.PatientName</td>
                                 <td>@appt.PatientInsuranceName</td>
@@ -180,7 +159,6 @@
                                             _ => ("bg-secondary", "Desconocido")
                                         };
                                     }
-
                                     <span class="badge @cls">@txt</span>
                                 </td>
                                 <td>
@@ -193,10 +171,7 @@
                                     else
                                     {
                                         <button class="btn btn-sm btn-soft-info"
-                                                onclick="openOptionModal(
-                                                        @appt.AppointmentId,
-                                                        @appt.AppointmentStatus,
-                                                        @appt.AppointmentPatientid)">
+                                                onclick="openOptionModal(@appt.AppointmentId, @appt.AppointmentStatus, @appt.AppointmentPatientId)">
                                             <i class="ri-edit-line"></i> Revisar
                                         </button>
                                     }
@@ -205,9 +180,6 @@
                         }
                     </tbody>
                 </table>
-
-
-
             </div>
         </div>
     </div>
@@ -296,7 +268,8 @@
                 <form class="row g-3 needs-validation" novalidate id="formData">
                     <input type="hidden" name="AppointmentId" id="appointment" />
                     <input type="hidden" name="AppointmentPatientid" id="patientId" />
-                    <input type="hidden" id="doctorUserId" />
+                    <input type="text" id="doctorUserId" name="DoctorUserId" />
+
                     <input type="hidden" name="AppointmentMedicalofficeid" id="AppointmentMedicalofficeid" />
 
                     <div class="col-6">
@@ -390,9 +363,9 @@
 @section scripts {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"
             integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
-   
-            
-            <!--datatable js-->
+
+
+    <!--datatable js-->
     <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
@@ -454,10 +427,10 @@
              .fail(() => alert('Error al obtener datos de la cita.'));
         }
 
-        
 
 
-        
+
+
 
 
         // Abre el modal de reprogramación y limpia campos de hora/consultorio
@@ -484,7 +457,7 @@
 
                 .fail(() => alert('Error al obtener datos de la cita.'));
 
-                            
+
 
         }
 
@@ -503,29 +476,28 @@
             .done(resp => {
                 const $cnt = $('#consultoriosContainer').empty();
                 const officesList = Array.isArray(resp.offices) ? resp.offices : [];
-                if (resp.success && officesList.length > 0) {
-                    officesList.forEach(o => {
-                        $cnt.append(`
-                            <div class="col">
-                              <div class="card consultorio-card" data-id="${o.medicalOfficeId}">
-                                <span class="checkmark"><i class="ri-check-line"></i></span>
-                                <div class="card-body text-center">
-                                  <h5>${o.medicalOfficeName}</h5>
-                                  <p><i class="mdi mdi-hospital-building"></i> #${o.medicalOfficeId}</p>
-                                </div>
-                              </div>
-                            </div>
-                        `);
-                    });
-                    $('.consultorio-card').on('click', function () {
-                        $('.consultorio-card').removeClass('selected');
-                        $(this).addClass('selected');
-                        $('#AppointmentMedicalofficeid').val($(this).data('id'));
-                        $('#confirmAppointmentBtn').show().prop('disabled', false);
-                    });
-                } else {
-                    $cnt.append('<div class="col-12 text-center text-muted">No hay consultorios disponibles.</div>');
-                }
+                        if (resp.success && officesList.length > 0) {
+            // Autoasignar el primer consultorio disponible
+            const firstOffice = officesList[0];
+            $('#AppointmentMedicalofficeid').val(firstOffice.medicalOfficeId);
+            $('#confirmAppointmentBtn').show().prop('disabled', false);
+
+            // Si quieres mostrar visualmente cuál se asignó (opcional)
+            $cnt.append(`
+                <div class="col">
+                  <div class="card consultorio-card selected" data-id="${firstOffice.medicalOfficeId}">
+                    <span class="checkmark"><i class="ri-check-line"></i></span>
+                    <div class="card-body text-center">
+                      <h5>${firstOffice.medicalOfficeName}</h5>
+                      <p><i class="mdi mdi-hospital-building"></i> #${firstOffice.medicalOfficeId}</p>
+                    </div>
+                  </div>
+                </div>
+            `);
+        } else {
+            $cnt.append('<div class="col-12 text-center text-muted">No hay consultorios disponibles.</div>');
+        }
+
             })
             .fail(() => Swal.fire('Error', 'No cargó consultorios.', 'error'));
         }
@@ -556,56 +528,89 @@
                 .fail((_, __, e) => alert('Error al cargar horas: ' + e));
         });
 
-        // Selección de hora: cierra modal de horas y carga consultorios
-        $('#availableHoursContainer').on('click', 'button', function () {
+                // Selección de hora: asigna hora, consultorio y reprograma automáticamente
+             $('#availableHoursContainer').on('click', 'button', function () {
             const selectedHour = $(this).data('hour');
             $('#appointmentTime').val(selectedHour);
             $('#hoursModalgrid').modal('hide');
-            loadAvailableOffices();
-        });
 
-        // Confirmar reprogramación
-             $('#confirmAppointmentBtn').click(function() {
-            const payload = {
-                AppointmentId:              $('#appointment').val(),
-                AppointmentPatientid:       $('#patientId').val(),
-                AppointmentDate:            $('#selectedDate').val(),
-                AppointmentHour:            $('#appointmentTime').val(),
-                AppointmentMedicalofficeid: $('#AppointmentMedicalofficeid').val()
-            };
+            const date = $('#selectedDate').val();
+            const doctorUserId = $('#doctorUserId').val();
 
-            console.log('Enviando JSON:', payload);
-
-            $.ajax({
-                url: '@Url.Action("ModifyAppointment", "Appointment")',
-                type: 'POST',
-                contentType: 'application/json; charset=utf-8',  // ⚠️ IMPORTANTE
-                dataType: 'json',
-                data: JSON.stringify(payload)                    // ⚠️ enviamos JSON
+            $.get('@Url.Action("GetAvailableOffices", "Appointment")', {
+                date: date,
+                hour: selectedHour,
+                doctorUserId: doctorUserId
             })
             .done(resp => {
-                if (resp.success) {
+                const officesList = Array.isArray(resp.offices) ? resp.offices : [];
+                if (resp.success && officesList.length > 0) {
+                    const firstOffice = officesList[0];
+                    $('#AppointmentMedicalofficeid').val(firstOffice.medicalOfficeId);
+
+                    // Mostramos resumen al usuario antes de enviar
                     Swal.fire({
-                        title: '¡Actualizada!',
-                        text: resp.message,
-                        icon: 'success',
-                        showCancelButton: !!resp.whatsappUrl,
-                        confirmButtonText: resp.whatsappUrl ? 'Enviar recordatorio' : 'OK',
-                        cancelButtonText: 'Omitir'
-                    }).then(r => {
-                        if (r.isConfirmed && resp.whatsappUrl) window.open(resp.whatsappUrl, '_blank');
-                        location.href = '@Url.Action("AppointmentList", "Appointment")';
+                        title: '¿Confirmar reprogramación?',
+                        html: `
+                            <p><strong>Fecha:</strong> ${date}</p>
+                            <p><strong>Hora:</strong> ${selectedHour}</p>
+                            <p><strong>Consultorio:</strong> # ${firstOffice.medicalOfficeName}</p>
+                        `,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, reprogramar',
+                        cancelButtonText: 'Cancelar'
+                    }).then(result => {
+                        if (result.isConfirmed) {
+                            const payload = {
+                                AppointmentId:              $('#appointment').val(),
+                                AppointmentPatientid:       $('#patientId').val(),
+                                AppointmentDate:            date,
+                                AppointmentHour:            selectedHour,
+                                AppointmentMedicalofficeid: firstOffice.medicalOfficeId
+                            };
+
+                            console.log('Confirmado. Enviando JSON:', payload);
+
+                            $.ajax({
+                                url: '@Url.Action("ModifyAppointment", "Appointment")',
+                                type: 'POST',
+                                contentType: 'application/json; charset=utf-8',
+                                dataType: 'json',
+                                data: JSON.stringify(payload)
+                            })
+                            .done(resp => {
+                                if (resp.success) {
+                                    Swal.fire({
+                                        title: '¡Cita reprogramada!',
+                                        text: resp.message,
+                                        icon: 'success',
+                                        showCancelButton: !!resp.whatsappUrl,
+                                        confirmButtonText: resp.whatsappUrl ? 'Enviar recordatorio' : 'OK',
+                                        cancelButtonText: 'Omitir'
+                                    }).then(r => {
+                                        if (r.isConfirmed && resp.whatsappUrl) window.open(resp.whatsappUrl, '_blank');
+                                        location.href = '@Url.Action("AppointmentList", "Appointment")';
+                                    });
+                                } else {
+                                    Swal.fire('Error', resp.message || 'Fallo al reprogramar.', 'error');
+                                }
+                            })
+                            .fail((jq, status, err) => {
+                                console.error(status, err, jq.responseText);
+                                Swal.fire('Error', 'Solicitud falló', 'error');
+                            });
+                        }
                     });
+
                 } else {
-                    Swal.fire('Error', resp.message || 'Fallo al actualizar.', 'error');
+                    Swal.fire('Sin consultorio', 'No hay consultorios disponibles para esa hora.', 'warning');
                 }
             })
-            .fail((jq, status, err) => {
-                console.error(status, err, jq.responseText);
-                Swal.fire('Error', 'Solicitud falló', 'error');
-            });
+            .fail(() => Swal.fire('Error', 'No cargó consultorios.', 'error'));
         });
 
+    
 
 
 

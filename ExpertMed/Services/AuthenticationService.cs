@@ -93,6 +93,8 @@ namespace ExpertMed.Services
                         session.SetString("UsuarioApellido", user.UsersSurcenames);
                         session.SetString("UsuarioDescripcion", user.UsersDescription ?? "No description");
                         session.SetInt32("UsuarioEspecialidadId", user.UsersSpecialityid ?? 0);
+
+                        session.SetInt32("UsuarioEstablecimientoId", user.UserEstablishment?.EstablishmentId ?? 0);
                         session.SetString("UsuarioEspecialidad", user.UsersSpeciality?.SpecialityName ?? "No specialty");
                         session.SetString("UsuarioEstablecimiento", user.UserEstablishment.EstablishmentName ?? "No establish");
                         session.SetString("UsuarioEstablecimientoDireccion", user.UserEstablishment.EstablishmentAddress ?? "No Address");

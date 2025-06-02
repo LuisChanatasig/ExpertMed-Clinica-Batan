@@ -15,8 +15,10 @@ public partial class DbExpertmedContext : DbContext
     {
     }
     // Dentro de tu DbContext
-    public DbSet<AppointmentViewModel> AppointmentViewModels { get; set; }
+    public DbSet<InsuranceCompany> InsuranceCompanies { get; set; }
 
+    public DbSet<AppointmentViewModel> AppointmentViewModels { get; set; }
+    public DbSet<AppointmentDTO> AppointmentDTOs { get; set; }
     public virtual DbSet<AllergiesConsultation> AllergiesConsultations { get; set; }
 
     public virtual DbSet<Appointment> Appointments { get; set; }
@@ -97,6 +99,7 @@ public partial class DbExpertmedContext : DbContext
         modelBuilder.Entity<PatientDTO>().HasNoKey(); // sin PK porque no es una entidad real
 
         modelBuilder.Entity<AppointmentViewModel>().HasNoKey();        // Configurar AppointmentViewModel como entidad sin clave
+        modelBuilder.Entity<AppointmentDTO>().HasNoKey();        // Configurar AppointmentViewModel como entidad sin clave
 
         modelBuilder.Entity<AllergiesConsultation>(entity =>
         {

@@ -31,19 +31,23 @@ namespace ExpertMed.Models
         public int? AppointmentConsultationid { get; set; }
 
         public int? AppointmentStatus { get; set; }
-
+        [NotMapped]
         public int? AppointmentMedicalofficeid { get; set; }
-       
+        [NotMapped]
         public string? MedicalOfficeName { get; set; }
 
 
 
         // Propiedades añadidas para los nombres completos
+        [NotMapped]
         public string? PatientName { get; set; }  // Nombre completo del paciente
+        [NotMapped]
         public string? PatientInsuranceName { get; set; }  // Nombre completo del paciente
+        [NotMapped]
         public string? DoctorName { get; set; }   // Nombre completo del doctor
         [NotMapped]
         public string? DoctorName2 { get; set; }   // Nombre completo del doctor
+        [NotMapped]
         public int DoctorUserId { get; set; }   // Nombre completo del doctor
 
 

@@ -147,15 +147,9 @@ namespace ExpertMed.Services
                 command.Parameters.AddWithValue("@patient_address", patient.PatientAddress);
                 command.Parameters.AddWithValue("@patient_ocupation", patient.PatientOcupation ?? (object)DBNull.Value);
                 command.Parameters.AddWithValue("@patient_company", patient.PatientCompany ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@patient_healt_insurance", patient.PatientHealtInsurance);
-                command.Parameters.AddWithValue("@patient_status", patient.PatientStatus);
+                command.Parameters.AddWithValue("@patient_status", 1);
 
-                // ✅ Nuevo parámetro: código de autorización
-                command.Parameters.AddWithValue("@patient_insurance_authorization_code",
-                    string.IsNullOrWhiteSpace(patient.PatientInsuranceAuthorizationCode)
-                        ? (object)DBNull.Value
-                        : patient.PatientInsuranceAuthorizationCode);
-
+             
                 // Parámetro opcional: doctor_userid
                 command.Parameters.AddWithValue("@doctor_userid", doctorUserId.HasValue ? doctorUserId.Value : (object)DBNull.Value);
 
@@ -269,105 +263,80 @@ namespace ExpertMed.Services
         public async Task<int> UpdatePatientAsync(Patient patient, int? doctorUserId = null)
         {
             using (var connection = new SqlConnection(_dbContext.Database.GetDbConnection().ConnectionString))
+            using (var command = new SqlCommand("sp_UpdatePatient", connection))
             {
-                using (var command = new SqlCommand("sp_UpdatePatient", connection))
+                command.CommandType = CommandType.StoredProcedure;
+
+                command.Parameters.AddWithValue("@patient_id", patient.PatientId);
+                command.Parameters.AddWithValue("@patient_modificationuser", patient.PatientModificationuser);
+                command.Parameters.AddWithValue("@patient_documenttype", patient.PatientDocumenttype);
+                command.Parameters.AddWithValue("@patient_documentnumber", patient.PatientDocumentnumber);
+                command.Parameters.AddWithValue("@patient_firstname", patient.PatientFirstname);
+                command.Parameters.AddWithValue("@patient_middlename", patient.PatientMiddlename ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@patient_firstsurname", patient.PatientFirstsurname);
+                command.Parameters.AddWithValue("@patient_secondlastname", patient.PatientSecondlastname ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@patient_gender", patient.PatientGender);
+                command.Parameters.AddWithValue("@patient_birthdate", patient.PatientBirthdate);
+                command.Parameters.AddWithValue("@patient_age", patient.PatientAge);
+                command.Parameters.AddWithValue("@patient_bloodtype", patient.PatientBloodtype);
+                command.Parameters.AddWithValue("@patient_donor", patient.PatientDonor ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@patient_maritalstatus", patient.PatientMaritalstatus);
+                command.Parameters.AddWithValue("@patient_vocational_training", patient.PatientVocationalTraining);
+                command.Parameters.AddWithValue("@patient_landline_phone", patient.PatientLandlinePhone ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@patient_cellular_phone", patient.PatientCellularPhone ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@patient_email", patient.PatientEmail ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@patient_nationality", patient.PatientNationality);
+                command.Parameters.AddWithValue("@patient_province", patient.PatientProvince);
+                command.Parameters.AddWithValue("@patient_address", patient.PatientAddress);
+                command.Parameters.AddWithValue("@patient_ocupation", patient.PatientOcupation ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@patient_company", patient.PatientCompany ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@patient_status", patient.PatientStatus);
+
+                // Ya no se usa aseguradora ni código en esta etapa
+                command.Parameters.AddWithValue("@doctor_userid", doctorUserId ?? (object)DBNull.Value);
+
+                try
                 {
-                    command.CommandType = CommandType.StoredProcedure;
+                    await connection.OpenAsync();
 
-                    // Adding parameters from Patient object
-                    command.Parameters.AddWithValue("@patient_id", patient.PatientId);
-                    command.Parameters.AddWithValue("@patient_modificationuser", patient.PatientModificationuser);
-                    command.Parameters.AddWithValue("@patient_documenttype", patient.PatientDocumenttype);
-                    command.Parameters.AddWithValue("@patient_documentnumber", patient.PatientDocumentnumber);
-                    command.Parameters.AddWithValue("@patient_firstname", patient.PatientFirstname);
-                    command.Parameters.AddWithValue("@patient_middlename", patient.PatientMiddlename ?? (object)DBNull.Value);
-                    command.Parameters.AddWithValue("@patient_firstsurname", patient.PatientFirstsurname);
-                    command.Parameters.AddWithValue("@patient_secondlastname", patient.PatientSecondlastname ?? (object)DBNull.Value);
-                    command.Parameters.AddWithValue("@patient_gender", patient.PatientGender);
-                    command.Parameters.AddWithValue("@patient_birthdate", patient.PatientBirthdate);
-                    command.Parameters.AddWithValue("@patient_age", patient.PatientAge);
-                    command.Parameters.AddWithValue("@patient_bloodtype", patient.PatientBloodtype);
-                    command.Parameters.AddWithValue("@patient_donor", patient.PatientDonor ?? (object)DBNull.Value);
-                    command.Parameters.AddWithValue("@patient_maritalstatus", patient.PatientMaritalstatus);
-                    command.Parameters.AddWithValue("@patient_vocational_training", patient.PatientVocationalTraining);
-                    command.Parameters.AddWithValue("@patient_landline_phone", patient.PatientLandlinePhone ?? (object)DBNull.Value);
-                    command.Parameters.AddWithValue("@patient_cellular_phone", patient.PatientCellularPhone ?? (object)DBNull.Value);
-                    command.Parameters.AddWithValue("@patient_email", patient.PatientEmail ?? (object)DBNull.Value);
-                    command.Parameters.AddWithValue("@patient_nationality", patient.PatientNationality);
-                    command.Parameters.AddWithValue("@patient_province", patient.PatientProvince);
-                    command.Parameters.AddWithValue("@patient_address", patient.PatientAddress);
-                    command.Parameters.AddWithValue("@patient_ocupation", patient.PatientOcupation ?? (object)DBNull.Value);
-                    command.Parameters.AddWithValue("@patient_company", patient.PatientCompany ?? (object)DBNull.Value);
-                    command.Parameters.AddWithValue("@patient_health_insurance", patient.PatientHealtInsurance);
-                    //command.Parameters.AddWithValue("@patient_code", patient.PatientCode ?? (object)DBNull.Value);
-                    command.Parameters.AddWithValue("@patient_insurance_authorization_code", patient.PatientInsuranceAuthorizationCode ?? (object)DBNull.Value);
-                    command.Parameters.AddWithValue("@patient_status", patient.PatientStatus);
-
-                    // Si doctor_userid está presente, agregar el parámetro
-                    if (doctorUserId.HasValue)
+                    string jsonResult = null;
+                    using (var reader = await command.ExecuteReaderAsync())
                     {
-                        command.Parameters.AddWithValue("@doctor_userid", doctorUserId.Value);
+                        if (await reader.ReadAsync())
+                        {
+                            jsonResult = reader.GetString(0);
+                        }
+                    }
+
+                    if (string.IsNullOrEmpty(jsonResult))
+                        throw new Exception("Error inesperado: No se obtuvo ningún resultado del procedimiento almacenado.");
+
+                    using var document = JsonDocument.Parse(jsonResult);
+                    var root = document.RootElement;
+
+                    if (root.TryGetProperty("success", out var success) && success.GetInt32() == 1)
+                    {
+                        if (root.TryGetProperty("patientId", out var patientId))
+                            return patientId.GetInt32();
+                        else
+                            throw new Exception("El campo 'patientId' no se encuentra en el resultado.");
                     }
                     else
                     {
-                        command.Parameters.AddWithValue("@doctor_userid", DBNull.Value);
+                        string errorMessage = root.TryGetProperty("message", out var message)
+                            ? message.GetString()
+                            : "Error al actualizar el paciente.";
+                        throw new Exception(errorMessage);
                     }
-
-                    try
-                    {
-                        await connection.OpenAsync();
-
-                        // Execute the stored procedure
-                        string jsonResult = null;
-                        using (var reader = await command.ExecuteReaderAsync())
-                        {
-                            if (await reader.ReadAsync())
-                            {
-                                jsonResult = reader.GetString(0);
-                            }
-                        }
-
-                        if (string.IsNullOrEmpty(jsonResult))
-                        {
-                            throw new Exception("Error inesperado: No se obtuvo ningún resultado del procedimiento almacenado.");
-                        }
-
-                        // Deserialize the JSON result
-                        using (JsonDocument document = JsonDocument.Parse(jsonResult))
-                        {
-                            var root = document.RootElement;
-
-                            // Validate the result
-                            if (root.TryGetProperty("success", out var success) && success.GetInt32() == 1)
-                            {
-                                if (root.TryGetProperty("patientId", out var patientId))
-                                {
-                                    return patientId.GetInt32();
-                                }
-                                else
-                                {
-                                    throw new Exception("El campo 'patientId' no se encuentra en el resultado.");
-                                }
-                            }
-                            else
-                            {
-                                string errorMessage = root.TryGetProperty("message", out var message)
-                                    ? message.GetString()
-                                    : "Error al actualizar el paciente.";
-                                throw new Exception(errorMessage);
-                            }
-                        }
-                    }
-                    finally
-                    {
-                        if (connection.State == ConnectionState.Open)
-                        {
-                            await connection.CloseAsync();
-                        }
-                    }
+                }
+                finally
+                {
+                    if (connection.State == ConnectionState.Open)
+                        await connection.CloseAsync();
                 }
             }
         }
+
 
 
         public async Task<DetailsPatientConsult> GetPatientDataByIdAsync(int patientId)

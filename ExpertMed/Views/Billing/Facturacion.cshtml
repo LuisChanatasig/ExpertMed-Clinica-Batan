@@ -1,11 +1,13 @@
-﻿
-@{
+﻿@{
     ViewData["Title"] = "Facturacion";
     Layout = "~/Views/Shared/_Layout.cshtml";
     var successMessage = TempData["SuccessMessage"] as string;
     var errorMessage = TempData["ErrorMessage"] as string;
 }
 
+<input type="hidden" id="hasInsurance" value="@ViewBag.HasInsurance.ToString().ToLower()" />
+<input type="hidden" id="insuranceCompanyId" value="@ViewBag.InsuranceCompanyId" />
+<input type="hidden" id="AppointmentPatientId" value="@ViewBag.AppointmentPatientId" />
 
 <div class="col-xl-12">
     <div class="card">
@@ -13,7 +15,6 @@
             <h4 class="card-title mb-0">Generación de pago</h4>
         </div>
         <div class="card-body">
-            <!-- Contenedor de pestañas -->
             <div class="step-arrow-nav mb-4">
                 <ul class="nav nav-pills custom-nav nav-justified" role="tablist">
                     <li class="nav-item" role="presentation">
@@ -28,352 +29,251 @@
                 </ul>
             </div>
 
-            <!-- Contenido de las pestañas -->
             <div class="tab-content">
-                <!-- Plantilla para cada tipo de pago -->
-                <div class="tab-pane fade show active" id="efectivo" role="tabpanel">
-                    <form asp-action="Billing" asp-controller="Billing" method="post">
-                        <input class="form-control" type="hidden" id="CitaId" name="CitaId" value="@ViewBag.AppointmentId" />
-                        <input class="form-control" type="hidden" id="AppointmentPatientId" name="AppointmentPatientId" value="@ViewBag.AppointmentPatientId" />
-                        <input class="form-control" type="hidden" id="MetodoPago" name="MetodoPago" value="efectivo" />
-                        <input hidden id="comprobantePagoFile" name="comprobantePagoFile" type="file" accept=".jpeg,.jpg,.png" />
-                        <div class="row mb-3">
-                            <div class="col">
-                                <button type="button" class="btn btn-outline-primary w-100" onclick="cargarDatosPaciente(this)">
-                                    <i class="ri-user-line align-middle"></i> Mismos datos del paciente
-                                </button>
-                            </div>
-                            <div class="col">
-                                <button type="button" class="btn btn-outline-secondary w-100" data-bs-toggle="collapse" data-bs-target="#facturacion-efectivo" onclick="limpiarFormulario(this)">
-                                    <i class="ri-edit-box-line align-middle"></i> Otros datos
-                                </button>
-                            </div>
-                        </div>
+                @foreach (var metodo in new[] { "efectivo", "transferencia", "tarjeta_credito" })
+                {
+                    var tabId = metodo == "efectivo" ? "efectivo" : metodo == "transferencia" ? "transferencia" : "tarjeta";
+                    <div class="tab-pane fade show @(metodo == "efectivo" ? "active" : "")" id="@tabId" role="tabpanel">
+                        <form asp-action="Billing" asp-controller="Billing" method="post" enctype="multipart/form-data">
+                            <input type="hidden" name="CitaId" value="@ViewBag.AppointmentId" />
+                            <input type="hidden" name="AppointmentPatientId" value="@ViewBag.AppointmentPatientId" />
+                            <input type="hidden" name="MetodoPago" value="@metodo" />
 
-                        <div class="collapse" id="facturacion-efectivo">
-                            <div class="card card-body mb-3">
-                                <h5 class="card-title mb-3">Datos de Facturación</h5>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <input type="text" class="form-control fact-input" name="BillingDetailsNames" id="billing_details_names" placeholder="Nombre completo">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <input type="text" class="form-control fact-input" name="BillingDetailsCiNumber" id="billing_details_cinumber" placeholder="Identificación">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <select class="form-control fact-input" name="BillingDetailsDocumentType" id="billing_details_documenttype">
-                                            <option value="">Seleccione un tipo de documento</option>
-                                            <option value="05">Cédula</option>
-                                            <option value="04">RUC</option>
-                                            <option value="06">Pasaporte</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <input type="email" class="form-control fact-input" name="BillingDetailsEmail" id="billing_details_email" placeholder="Correo electrónico">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <input type="text" class="form-control fact-input" name="BillingDetailsAddress" id="billing_details_address" placeholder="Dirección">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <input type="tel" class="form-control fact-input" name="BillingDetailsPhone" id="billing_details_phone" placeholder="Teléfono">
+                            @if (metodo != "efectivo")
+                            {
+                                <div class="mb-3">
+                                    <label for="comprobantePagoFile-@tabId" class="form-label">Comprobante de Pago</label>
+                                    <input type="file" id="comprobantePagoFile-@tabId" name="comprobantePagoFile" accept=".jpeg,.jpg,.png" class="form-control" required />
+                                </div>
+                            }
+
+                            <div class="row mb-3">
+                                <div class="col">
+                                    <button type="button" class="btn btn-outline-primary w-100" onclick="cargarDatosPaciente(this)">
+                                        <i class="ri-user-line align-middle"></i> Mismos datos del paciente
+                                    </button>
+                                </div>
+                                <div class="col">
+                                    <button type="button" class="btn btn-outline-secondary w-100" data-bs-toggle="collapse" data-bs-target="#facturacion-extra-@metodo" onclick="limpiarFormulario(this)">
+                                        <i class="ri-edit-box-line align-middle"></i> Otros datos
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="collapse" id="facturacion-extra-@metodo">
+                                <div class="card card-body mb-3">
+                                    <h5 class="card-title mb-3">Datos de Facturación</h5>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <input type="text" class="form-control fact-input" name="BillingDetailsNames" placeholder="Nombre completo">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <input type="text" class="form-control fact-input" name="BillingDetailsCiNumber" placeholder="Identificación">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <select class="form-control fact-input" name="BillingDetailsDocumentType">
+                                                <option value="">Seleccione un tipo de documento</option>
+                                                <option value="05">Cédula</option>
+                                                <option value="04">RUC</option>
+                                                <option value="06">Pasaporte</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <input type="email" class="form-control fact-input" name="BillingDetailsEmail" placeholder="Correo electrónico">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <input type="text" class="form-control fact-input" name="BillingDetailsAddress" placeholder="Dirección">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <input type="tel" class="form-control fact-input" name="BillingDetailsPhone" placeholder="Teléfono">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Detalle de servicios</label>
-                            <table class="table table-bordered" id="invoice-items-table">
-                                <thead>
-                                    <tr>
-                                        <th>Descripción</th>
-                                        <th>Cantidad</th>
-                                        <th>Precio Unitario</th>
-                                        <th>Total</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="invoice-items-body">
-                                    <!-- Filas dinámicas se insertan aquí -->
-                                </tbody>
-                            </table>
-                            <button type="button" class="btn btn-outline-success" onclick="agregarItem()">+ Agregar ítem</button>
-                        </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Total Factura</label>
-                            <input type="number" class="form-control" name="TotalFactura" id="totalFactura" readonly required>
-                        </div>
-
-
-                        <div class="mb-3">
-                            <label class="form-label">Valor de la consulta</label>
-                            <input type="number" class="form-control" name="TotalFactura" placeholder="60" required>
-                        </div>
-                        <button type="submit" class="btn btn-success">Registrar Pago</button>
-                    </form>
-                </div>
-
-                <!-- Transferencia -->
-                <div class="tab-pane fade" id="transferencia" role="tabpanel">
-                    <form asp-action="Billing" asp-controller="Billing" method="post">
-                        <input class="form-control" type="hidden" id="CitaId" name="CitaId" value="@ViewBag.AppointmentId" />
-                        <input class="form-control" type="hidden" id="AppointmentPatientId" name="AppointmentPatientId" value="@ViewBag.AppointmentPatientId" />
-
-                        <input class="form-control" type="hidden" id="MetodoPago" name="MetodoPago" value="transferencia" />
-                    
-
-                        <div class="row mb-3">
-                            <div class="col"><button type="button" class="btn btn-outline-primary w-100" onclick="cargarDatosPaciente(this)"><i class="ri-user-line align-middle"></i> Mismos datos del paciente</button></div>
-                            <div class="col"><button type="button" class="btn btn-outline-secondary w-100" data-bs-toggle="collapse" data-bs-target="#facturacion-transferencia" onclick="limpiarFormulario(this)"><i class="ri-edit-box-line align-middle"></i> Otros datos</button></div>
-                        </div>
-
-
-                        <div class="collapse" id="facturacion-transferencia">
-                            <div class="card card-body mb-3">
-                                <h5 class="card-title mb-3">Datos de Facturación</h5>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <input type="text" class="form-control fact-input" name="BillingDetailsNames" id="billing_details_names" placeholder="Nombre completo">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <input type="text" class="form-control fact-input" name="BillingDetailsCiNumber" id="billing_details_cinumber" placeholder="Identificación">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <select class="form-control fact-input" name="BillingDetailsDocumentType" id="billing_details_documenttype">
-                                            <option value="">Seleccione un tipo de documento</option>
-                                            <option value="05">Cédula</option>
-                                            <option value="04">RUC</option>
-                                            <option value="06">Pasaporte</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <input type="email" class="form-control fact-input" name="BillingDetailsEmail" id="billing_details_email" placeholder="Correo electrónico">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <input type="text" class="form-control fact-input" name="BillingDetailsAddress" id="billing_details_address" placeholder="Dirección">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <input type="tel" class="form-control fact-input" name="BillingDetailsPhone" id="billing_details_phone" placeholder="Teléfono">
-                                    </div>
-                                </div>
+                            <div class="mb-3">
+                                <label class="form-label">Detalle de servicios</label>
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Descripción</th>
+                                            <th>Cantidad</th>
+                                            <th>Precio Unitario</th>
+                                            <th class="col-insurance d-none">Valor Aseguradora</th>
+                                            <th class="col-insurance d-none">Copago</th>
+                                            <th>Total</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="invoice-items-body-@tabId"></tbody>
+                                </table>
+                                <button type="button" class="btn btn-outline-success" onclick="agregarItem(this)">+ Agregar ítem</button>
                             </div>
-                        </div>
 
-
-
-                        <div class="mb-3"><label class="form-label">Comprobante</label><input class="form-control" id="comprobantePagoFile" name="comprobantePagoFile" type="file" accept=".jpeg,.jpg,.png" required></div>
-                        <div class="mb-3">
-                            <label class="form-label">Detalle de servicios</label>
-                            <table class="table table-bordered" id="invoice-items-table">
-                                <thead>
-                                    <tr>
-                                        <th>Descripción</th>
-                                        <th>Cantidad</th>
-                                        <th>Precio Unitario</th>
-                                        <th>Total</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="invoice-items-body">
-                                    <!-- Filas dinámicas se insertan aquí -->
-                                </tbody>
-                            </table>
-                            <button type="button" class="btn btn-outline-success" onclick="agregarItem()">+ Agregar ítem</button>
-                        </div>
-                        <div class="mb-3"><label class="form-label">Valor</label><input type="number" class="form-control" name="TotalFactura" placeholder="60" required></div>
-                        <button type="submit" class="btn btn-success">Registrar Pago</button>
-                    </form>
-                </div>
-
-                <!-- Tarjeta -->
-                <div class="tab-pane fade" id="tarjeta" role="tabpanel">
-                    <form asp-action="Billing" asp-controller="Billing" method="post">
-                        <input class="form-control" type="hidden" id="CitaId" name="CitaId" value="@ViewBag.AppointmentId" />
-                        <input class="form-control" type="hidden" id="AppointmentPatientId" name="AppointmentPatientId" value="@ViewBag.AppointmentPatientId" />
-
-                        <input class="form-control" type="hidden" id="MetodoPago" name="MetodoPago" value="tarjeta_credito" />
-
-                        <div class="row mb-3">
-                            <div class="col"><button type="button" class="btn btn-outline-primary w-100" onclick="cargarDatosPaciente(this)"><i class="ri-user-line align-middle"></i> Mismos datos del paciente</button></div>
-                            <div class="col"><button type="button" class="btn btn-outline-secondary w-100" data-bs-toggle="collapse" data-bs-target="#facturacion-tarjeta" onclick="limpiarFormulario(this)"><i class="ri-edit-box-line align-middle"></i> Otros datos</button></div>
-                        </div>
-
-
-                        <div class="collapse" id="facturacion-tarjeta">
-                            <div class="card card-body mb-3">
-                                <h5 class="card-title mb-3">Datos de Facturación</h5>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <input type="text" class="form-control fact-input" name="BillingDetailsNames" id="billing_details_names" placeholder="Nombre completo">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <input type="text" class="form-control fact-input" name="BillingDetailsCiNumber" id="billing_details_cinumber" placeholder="Identificación">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <select class="form-control fact-input" name="BillingDetailsDocumentType" id="billing_details_documenttype">
-                                            <option value="">Seleccione un tipo de documento</option>
-                                            <option value="05">Cédula</option>
-                                            <option value="04">RUC</option>
-                                            <option value="06">Pasaporte</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <input type="email" class="form-control fact-input" name="BillingDetailsEmail" id="billing_details_email" placeholder="Correo electrónico">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <input type="text" class="form-control fact-input" name="BillingDetailsAddress" id="billing_details_address" placeholder="Dirección">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <input type="tel" class="form-control fact-input" name="BillingDetailsPhone" id="billing_details_phone" placeholder="Teléfono">
-                                    </div>
-                                </div>
+                            <div class="mb-3">
+                                <label class="form-label">Total Factura</label>
+                                <input type="number" class="form-control" name="TotalFactura" id="totalFactura-@tabId" readonly required>
                             </div>
-                        </div>
 
-
-
-                        <div class="mb-3"><label class="form-label">Comprobante</label><input class="form-control" id="comprobantePagoFile" name="comprobantePagoFile" type="file" accept=".jpeg,.jpg,.png" required></div>
-                        <div class="mb-3">
-                            <label class="form-label">Detalle de servicios</label>
-                            <table class="table table-bordered" id="invoice-items-table">
-                                <thead>
-                                    <tr>
-                                        <th>Descripción</th>
-                                        <th>Cantidad</th>
-                                        <th>Precio Unitario</th>
-                                        <th>Total</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="invoice-items-body">
-                                    <!-- Filas dinámicas se insertan aquí -->
-                                </tbody>
-                            </table>
-                            <button type="button" class="btn btn-outline-success" onclick="agregarItem()">+ Agregar ítem</button>
-                        </div>
-                        <div class="mb-3"><label class="form-label">Valor</label><input type="number" class="form-control" name="TotalFactura" placeholder="60" required></div>
-                        <button type="submit" class="btn btn-success">Registrar Pago</button>
-                    </form>
-                </div>
-
+                            <button type="submit" class="btn btn-success">Registrar Pago</button>
+                        </form>
+                    </div>
+                }
             </div>
         </div>
     </div>
 </div>
 
+
 @section Scripts {
     <script>
-        function cargarDatosPaciente(btn) {
-            const patientId = parseInt(document.getElementById("AppointmentPatientId").value, 10);
-            const form = btn.closest('form');
-            if (!patientId) {
-                alert("No se encontró el ID del paciente.");
-                return;
-            }
+        const tieneSeguro = document.getElementById("hasInsurance").value === "true";
+        const insuranceCompanyId = document.getElementById("insuranceCompanyId").value;
 
-            const url = '@Url.Action("GetPatientDetails", "Patient")' + '?patientId=' + patientId;
-            fetch(url)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Error al cargar los datos del paciente.');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    // Find the specific billing details collapse for this form
-                    const collapseDiv = form.querySelector('.collapse[id^="facturacion-"]');
-
-                    const nameField = form.querySelector('#billing_details_names');
-                    const cinumberField = form.querySelector('#billing_details_cinumber');
-                    const documentTypeField = form.querySelector('#billing_details_documenttype');
-                    const emailField = form.querySelector('#billing_details_email');
-                    const addressField = form.querySelector('#billing_details_address');
-                    const phoneField = form.querySelector('#billing_details_phone');
-
-                    nameField.value = data.patientFirstname + ' ' + data.patientFirstsurname;
-                    cinumberField.value = data.patientDocumentnumber;
-                    documentTypeField.value = data.patientDocumentType;
-                    emailField.value = data.patientEmail;
-                    addressField.value = data.patientAddress;
-                    phoneField.value = data.patientCellularPhone;
-
-                    // Open the collapse div
-                    if (collapseDiv) {
-                        const bsCollapse = new bootstrap.Collapse(collapseDiv, {
-                            toggle: true
-                        });
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Hubo un problema al cargar los datos del paciente.');
-                });
-        }
-        function limpiarFormulario(btn) {
-            btn.closest('form').querySelectorAll('.fact-input').forEach(input => input.value = '');
-        }
-    </script>
-    <script>
         let contador = 0;
 
-        function agregarItem() {
-            const tbody = document.getElementById('invoice-items-body');
+        document.addEventListener("DOMContentLoaded", () => {
+            if (tieneSeguro) {
+                document.querySelectorAll(".col-insurance").forEach(el => el.classList.remove("d-none"));
+            }
+
+            // Validación al enviar formularios
+            document.querySelectorAll("form").forEach(form => {
+                form.addEventListener("submit", function (e) {
+                    const filas = form.querySelectorAll("#invoice-items-body tr");
+                    if (filas.length === 0) {
+                        e.preventDefault();
+                        Swal.fire('Error', 'Debes agregar al menos un ítem a la factura.', 'warning');
+                        return;
+                    }
+
+                    let valido = true;
+
+                    filas.forEach(fila => {
+                        const desc = fila.querySelector(".descripcion").value.trim();
+                        const cant = parseFloat(fila.querySelector(".cantidad").value);
+                        const precio = parseFloat(fila.querySelector(".precio").value);
+
+                        if (!desc || isNaN(cant) || cant <= 0 || isNaN(precio) || precio <= 0) {
+                            valido = false;
+                        }
+                    });
+
+                    if (!valido) {
+                        e.preventDefault();
+                        Swal.fire('Error', 'Verifica que todos los ítems tengan descripción, cantidad y precio válidos.', 'warning');
+                    }
+                });
+            });
+        });
+
+               function agregarItem(btn) {
+            const tabContent = btn.closest('.tab-pane');
+            const tbody = tabContent.querySelector('tbody');
+            const tabId = tabContent.id;
+            const totalInput = document.getElementById(`totalFactura-${tabId}`);
             const row = document.createElement('tr');
             const index = contador++;
 
             row.innerHTML = `
-                <td><input type="text" class="form-control" name="Items[${index}].Descripcion" required></td>
-                <td><input type="number" class="form-control cantidad" name="Items[${index}].Cantidad" min="1" value="1" onchange="recalcularTotal()" required></td>
-                <td><input type="number" class="form-control precio" name="Items[${index}].PrecioUnitario" min="0.01" step="0.01" value="0.00" onchange="recalcularTotal()" required></td>
+                <td><input type="text" class="form-control descripcion" name="Items[${index}].Descripcion" onchange="recalcularItem(this)" required></td>
+                <td><input type="number" class="form-control cantidad" name="Items[${index}].Cantidad" min="1" value="1" onchange="recalcularItem(this)" required></td>
+                <td><input type="number" class="form-control precio" name="Items[${index}].PrecioUnitario" min="0.01" step="0.01" value="0.00" onchange="recalcularItem(this)" required></td>
+                <td class="col-insurance d-none"><input type="text" class="form-control precio-seguro" readonly></td>
+                <td class="col-insurance d-none"><input type="text" class="form-control copago" readonly></td>
                 <td><input type="text" class="form-control total-item" value="0.00" readonly></td>
                 <td><button type="button" class="btn btn-danger btn-sm" onclick="eliminarItem(this)">🗑</button></td>
             `;
+
             tbody.appendChild(row);
         }
 
-        function eliminarItem(boton) {
-            boton.closest('tr').remove();
+
+        function eliminarItem(btn) {
+            btn.closest('tr').remove();
+            recalcularTotal();
+        }
+
+        function recalcularItem(elemento) {
+            const fila = elemento.closest('tr');
+            const descripcion = fila.querySelector('.descripcion').value;
+            const cantidad = parseFloat(fila.querySelector('.cantidad').value) || 0;
+            const precioInput = fila.querySelector('.precio');
+            let precioUnitario = parseFloat(precioInput.value) || 0;
+
+            if (tieneSeguro && descripcion.trim() !== "") {
+                fetch('@Url.Action("GetByDescripcion", "Tarifario")' + `?descripcion=${encodeURIComponent(descripcion)}&insuranceCompanyId=${insuranceCompanyId}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data && data.precio > 0) {
+                            precioUnitario = parseFloat(data.precio);
+                            precioInput.value = precioUnitario.toFixed(2);
+                            const precioSeguro = fila.querySelector('.precio-seguro');
+                            const copago = fila.querySelector('.copago');
+
+                            const valorSeguro = parseFloat(data.precio_aseguradora || 0);
+                            const valorCopago = precioUnitario - valorSeguro;
+
+                            precioSeguro.value = valorSeguro.toFixed(2);
+                            copago.value = valorCopago.toFixed(2);
+                        }
+                        calcularSubtotalFila(fila, precioUnitario, cantidad);
+                    });
+            } else {
+                calcularSubtotalFila(fila, precioUnitario, cantidad);
+            }
+        }
+
+        function calcularSubtotalFila(fila, precio, cantidad) {
+            const subtotal = precio * cantidad;
+            fila.querySelector('.total-item').value = subtotal.toFixed(2);
             recalcularTotal();
         }
 
         function recalcularTotal() {
             let total = 0;
-            document.querySelectorAll('#invoice-items-body tr').forEach(row => {
-                const cantidad = parseFloat(row.querySelector('.cantidad').value) || 0;
-                const precio = parseFloat(row.querySelector('.precio').value) || 0;
-                const subtotal = cantidad * precio;
-                row.querySelector('.total-item').value = subtotal.toFixed(2);
-                total += subtotal;
+            document.querySelectorAll('.total-item').forEach(input => {
+                total += parseFloat(input.value) || 0;
             });
             document.getElementById('totalFactura').value = total.toFixed(2);
         }
+
+        function cargarDatosPaciente(btn) {
+            const patientId = parseInt(document.getElementById("AppointmentPatientId").value, 10);
+            const form = btn.closest('form');
+
+            if (!patientId) {
+                alert("No se encontró el ID del paciente.");
+                return;
+            }
+
+            fetch('@Url.Action("GetPatientDetails", "Patient")' + `?patientId=${patientId}`)
+                .then(r => r.json())
+                .then(data => {
+                    const campos = {
+                        BillingDetailsNames: data.patientFirstname + ' ' + data.patientFirstsurname,
+                        BillingDetailsCiNumber: data.patientDocumentnumber,
+                        BillingDetailsDocumentType: data.patientDocumentType,
+                        BillingDetailsEmail: data.patientEmail,
+                        BillingDetailsAddress: data.patientAddress,
+                        BillingDetailsPhone: data.patientCellularPhone
+                    };
+
+                    for (const name in campos) {
+                        const input = form.querySelector(`[name="${name}"]`);
+                        if (input) input.value = campos[name];
+                    }
+
+                    const collapseDiv = form.querySelector('.collapse');
+                    if (collapseDiv) new bootstrap.Collapse(collapseDiv, { toggle: true });
+                })
+                .catch(() => alert('Hubo un error al obtener los datos del paciente.'));
+        }
+
+        function limpiarFormulario(btn) {
+            const form = btn.closest('form');
+            form.querySelectorAll('.fact-input').forEach(i => i.value = '');
+        }
     </script>
-
-    @if (!string.IsNullOrEmpty(successMessage))
-    {
-        <script>
-            Swal.fire({
-                title: '¡Éxito!',
-                text: '@successMessage',
-                icon: 'success',
-                confirmButtonText: 'OK',
-                timer: 3000
-            });
-        </script>
-    }
-
-    @if (!string.IsNullOrEmpty(errorMessage))
-    {
-        <script>
-            Swal.fire({
-                title: 'Error',
-                text: '@errorMessage',
-                icon: 'error',
-                confirmButtonText: 'OK',
-                timer: 3000
-            });
-        </script>
-    }
-
 
 }

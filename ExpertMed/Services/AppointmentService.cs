@@ -27,8 +27,7 @@ namespace ExpertMed.Services
             public TimeSpan AvailableTime { get; set; }
         }
 
-
-        public async Task<List<Appointment>> GetAllAppointmentAsync(int userProfile, int appointmentStatus, int? userId = null)
+        public async Task<List<AppointmentDTO>> GetAllAppointmentAsync(int userProfile, int appointmentStatus, int? userId = null)
         {
             try
             {
@@ -39,11 +38,12 @@ namespace ExpertMed.Services
             new SqlParameter("@AppointmentStatus", appointmentStatus)
         };
 
-                var appointments = await _dbContext.Appointments
+                var result = await _dbContext
+                    .Set<AppointmentDTO>()  // <- Usamos el DTO aquí
                     .FromSqlRaw("EXEC sp_ListAllAppointment @UserProfile, @UserID, @AppointmentStatus", parameters)
                     .ToListAsync();
 
-                return appointments;
+                return result;
             }
             catch (SqlException sqlEx)
             {
@@ -56,6 +56,7 @@ namespace ExpertMed.Services
                 throw;
             }
         }
+
 
 
         /// <summary>
@@ -223,7 +224,8 @@ namespace ExpertMed.Services
                             AppointmentId = reader.GetInt32(reader.GetOrdinal("appointment_id")),
                             AppointmentPatientid = reader.GetInt32(reader.GetOrdinal("appointment_patientid")),
                             AppointmentStatus = reader.GetInt32(reader.GetOrdinal("appointment_status")),
-                            /* … tus otros campos … */
+                            AppointmentDate = reader.GetDateTime(reader.GetOrdinal("appointment_date")),
+                            AppointmentHour = TimeOnly.FromTimeSpan(reader.GetTimeSpan(reader.GetOrdinal("appointment_hour"))),
                             AppointmentConsultationid = !reader.IsDBNull(reader.GetOrdinal("appointment_consultationid"))
                                 ? reader.GetInt32(reader.GetOrdinal("appointment_consultationid"))
                                 : (int?)null,
@@ -232,7 +234,7 @@ namespace ExpertMed.Services
                                 : (int?)null
                         };
 
-                        if (userProfile == 3 && !reader.IsDBNull(reader.GetOrdinal("DoctorUserId")))
+                        if (userProfile == 3 || userProfile == 4 && !reader.IsDBNull(reader.GetOrdinal("DoctorUserId")))
                             appointment.DoctorUserId = reader.GetInt32(reader.GetOrdinal("DoctorUserId"));
                     }
                 }

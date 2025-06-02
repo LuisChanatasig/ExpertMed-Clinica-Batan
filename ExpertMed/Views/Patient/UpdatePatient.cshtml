@@ -299,7 +299,7 @@
                                     </div>
                                 </div>
 
-                                <div class="col-lg-3">
+                              @*   <div class="col-lg-3">
                                     <div class="mb-3">
                                         <label for="specialtySelect" class="form-label">Seleccione su seguro médico</label>
                                         <select class="form-control" id="healtInsurancetyoeId" name="patient.PatientHealtInsurance" asp-for="Patient.PatientHealtInsurance" data-choices data-choices-sorting-false required>
@@ -312,9 +312,9 @@
                                             POR FAVOR ESTE CAMPO ES REQUERIDO
                                         </div>
                                     </div>
-                                </div>
+                                </div> *@
 
-                                <div class="col-lg-3">
+                              @*   <div class="col-lg-3">
                                     <div class="mb-3">
                                         <label for="lastnameInput" class="form-label">Número de aseguradora *</label>
                                         <input type="text" class="form-control" id="documentnumber" name="patient.PatientInsuranceAuthorizationCode" value="@Model.Patient.PatientInsuranceAuthorizationCode" placeholder="Ingrese el número de seguro" required>
@@ -322,7 +322,7 @@
                                             POR FAVOR ESTE CAMPO ES REQUERIDO
                                         </div>
                                     </div>
-                                </div>
+                                </div> *@
 
                                 <input type="hidden" name="patient.PatientStatus" value="1" />
                             </div>
@@ -406,13 +406,31 @@
                     </div>
 
                     <!-- Consultorios -->
-                    <div class="col-xxl-12 mt-3">
+                    <div class="col-xxl-12 mt-3" hidden>
                         <label class="form-label">Consultorios disponibles</label>
                         <div id="consultoriosContainer" class="row row-cols-1 row-cols-md-2 g-3">
                             <!-- Tarjetas de consultorios se insertan aquí -->
                         </div>
                         <input type="hidden" id="AppointmentMedicalofficeid" />
                     </div>
+                    <!-- Motivo de la cita -->
+                    <div class="col-xxl-12">
+                        <label for="appointmentReason" class="form-label">Motivo de la cita</label>
+                        <textarea class="form-control" id="appointmentReason" name="appointmentReason" rows="2" placeholder="Describa el motivo de la cita..."></textarea>
+                    </div>
+
+                    <!-- Seleccionar aseguradora -->
+                    <div class="col-xxl-12">
+                        <label for="appointmentInsuranceCompanyId" class="form-label">Aseguradora</label>
+                        <select class="form-control" id="appointmentInsuranceCompanyId" name="appointmentInsuranceCompanyId">
+                            <option value="">Seleccione aseguradora (si aplica)</option>
+                            @foreach (var aseguradora in Model.InsuranceCompanies)
+                            {
+                                <option value="@aseguradora.InsuranceCompanyId">@aseguradora.InsuranceCompanyName</option>
+                            }
+                        </select>
+                    </div>
+
 
                     <!-- Confirmar -->
                     <button type="button" class="btn btn-primary" id="confirmAppointmentBtn" disabled>

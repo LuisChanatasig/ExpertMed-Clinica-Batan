@@ -19,6 +19,8 @@
         public List<Medication> Medications { get; set; }
         public List<Image> Images { get; set; }
         public List<Laboratory> Laboratories { get; set; }
+        public List<InsuranceCompanyDto> InsuranceCompanies { get; set; }
+
 
         public Patient Patient { get; set; }  // For user details
 

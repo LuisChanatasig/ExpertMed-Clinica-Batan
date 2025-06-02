@@ -2,6 +2,7 @@
 using ExpertMed.Models;
 using ExpertMed.Services;
 using Org.BouncyCastle.Crypto.Utilities;
+using Microsoft.EntityFrameworkCore;
 
 namespace ExpertMed.Controllers
 {
@@ -17,22 +18,32 @@ namespace ExpertMed.Controllers
             _logger = logger;
             _context = context;
         }
-        public IActionResult Facturacion(int? appointmentId, int? patientId)
+
+        public IActionResult Facturacion(int? appointmentId)
         {
             if (!appointmentId.HasValue)
-            {
-                return BadRequest("No appointment ID provided.");
-            }
+                return BadRequest("Appointment ID is missing.");
 
-              if (!patientId.HasValue)
-            {
-                return BadRequest("No appointment ID provided.");
-            }
+            var cita = _context.Appointments
+                .Include(a => a.AppointmentPatient)
+                .FirstOrDefault(a => a.AppointmentId == appointmentId.Value);
 
-            ViewBag.AppointmentId = appointmentId.Value; // Pasarlo a la vista si es necesario
-            ViewBag.AppointmentPatientId = patientId.Value; // Pasarlo a la vista si es necesario
+            if (cita == null)
+                return NotFound("Cita no encontrada.");
+
+            var paciente = cita.AppointmentPatient;
+
+            ViewBag.AppointmentId = cita.AppointmentId;
+            ViewBag.AppointmentPatientId = paciente?.PatientId;
+
+            ViewBag.HasInsurance = paciente?.PatientHealtInsurance != null;
+            ViewBag.InsuranceCompanyId = paciente?.PatientHealtInsurance ?? 0;
+            ViewBag.InsuranceCompanyName = paciente?.PatientCompany ?? "";
+            ViewBag.AuthorizationCode = paciente?.PatientInsuranceAuthorizationCode ?? "";
+
             return View();
         }
+
 
 
         [HttpPost("Vista")]

@@ -37,6 +37,7 @@ namespace ExpertMed.Controllers
                 session.SetString("UsuarioNombre", user.UsersNames ?? "No Name");
                 session.SetInt32("UsuarioId", user.UsersId);
                 session.SetInt32("UsuarioEspecialidadId", user.UsersSpecialityid ?? 0);
+                session.SetInt32("UsuarioEstablecimientoId", user.UserEstablishment?.EstablishmentId ?? 0);
                 session.SetString("UsuarioApellido", user.UsersSurcenames ?? "No Surname");
                 session.SetString("UsuarioEmail", user.UsersEmail ?? "No Email");
                 session.SetString("UsuarioPerfil", user.UsersProfile?.ProfileDescription ?? "No Profile");

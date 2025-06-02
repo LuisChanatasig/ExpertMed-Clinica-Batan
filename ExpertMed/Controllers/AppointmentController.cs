@@ -33,45 +33,38 @@ namespace ExpertMed.Controllers
         {
             try
             {
-                // Obtener información del usuario desde la sesión
                 var userId = HttpContext.Session.GetInt32("UsuarioId");
                 var userProfile = HttpContext.Session.GetInt32("PerfilId");
 
-                // Verificar si los valores necesarios están presentes
                 if (!userId.HasValue || !userProfile.HasValue)
                 {
                     TempData["Error"] = "Por favor, inicie sesión para continuar.";
                     return RedirectToAction("SignIn", "Authentication");
                 }
 
-                // Establecer valores en ViewBag para usarlos en la vista
                 ViewBag.CurrentStatus = appointmentStatus;
                 ViewBag.UserProfile = userProfile.Value;
                 ViewBag.UserId = userId.Value;
 
-                // Obtener citas a través del servicio
                 var appointments = await _appointmentService.GetAllAppointmentAsync(
                     userProfile.Value,
                     appointmentStatus,
                     userId
                 );
 
-                // Verificar si no se obtuvieron citas
                 if (appointments == null || !appointments.Any())
                 {
                     TempData["Info"] = "No se encontraron citas para los parámetros especificados.";
-                    return View(new List<Appointment>());
+                    return View(new List<AppointmentDTO>()); //  CAMBIO
                 }
 
-                // Retornar la vista con las citas obtenidas
-                return View(appointments);
+                return View(appointments); //  Ya es List<AppointmentDTO>
             }
             catch (Exception ex)
             {
-                // Registrar error y retornar una vista vacía con mensaje de error
                 _logger.LogError($"Unhandled exception in AppointmentList: {ex.Message}");
                 TempData["Error"] = "Ocurrió un error inesperado. Inténtalo de nuevo más tarde.";
-                return View(new List<Appointment>());
+                return View(new List<AppointmentDTO>()); //  CAMBIO
             }
         }
 
@@ -330,7 +323,7 @@ namespace ExpertMed.Controllers
                     patientId = appt.AppointmentPatientid,
                     date = appt.AppointmentDate.ToString("yyyy-MM-dd"),
                     time = hora,
-                    doctorUserId = (userProfile == 3) ? appt.DoctorUserId : (int?)null,
+                    doctorUserId = (userProfile == 3 || userProfile == 4) ? appt.DoctorUserId : (int?)null,
                     medicalOfficeId = appt.AppointmentMedicalofficeid,
                     status = appt.AppointmentStatus,
                     hasConsultation = appt.AppointmentConsultationid.HasValue && appt.AppointmentConsultationid.Value > 0
