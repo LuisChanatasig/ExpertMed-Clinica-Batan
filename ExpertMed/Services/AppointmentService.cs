@@ -174,12 +174,18 @@ namespace ExpertMed.Services
                     command.Parameters.AddWithValue("@appointment_medicalofficeid", (object?)appointmentDto.AppointmentMedicalofficeid ?? DBNull.Value);
                     command.Parameters.AddWithValue("@doctor_userid", (object?)doctorUserId ?? DBNull.Value);
 
+                    // 🔹 Nuevos campos:
+                    command.Parameters.AddWithValue("@appointment_insurance_company_id", (object?)appointmentDto.AppointmentInsuranceCompanyId ?? DBNull.Value);
+                    command.Parameters.AddWithValue("@appointment_reason", string.IsNullOrWhiteSpace(appointmentDto.AppointmentReason)
+                        ? DBNull.Value
+                        : appointmentDto.AppointmentReason);
+
                     try
                     {
                         var result = await command.ExecuteScalarAsync();
                         var jsonResponse = JsonConvert.DeserializeObject<dynamic>(result?.ToString() ?? "{}");
 
-                        bool success = jsonResponse?.success == 1;  
+                        bool success = jsonResponse?.success == 1;
                         string message = jsonResponse?.message;
                         int? appointmentId = jsonResponse?.appointmentId;
                         bool isEmergency = jsonResponse?.esEmergencia == 1;

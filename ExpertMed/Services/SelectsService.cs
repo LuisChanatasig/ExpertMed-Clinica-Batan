@@ -368,7 +368,11 @@ namespace ExpertMed.Services
                 .Where(c => c.CatalogCategory == "ESTADO CIVIL")
                 .ToListAsync();
         }
-        //Metodo para obtener los tipos de formacion de la tabla catalogo
+
+        /// <summary>
+        /// Metodo para obtener los tipos de formacion de la tabla catalogo
+        /// </summary>
+        /// <returns></returns>
         public async Task<List<Catalog>> GetProfessionaltrainingTypeAsync()
         {
             // Asumiendo que _dbContext es tu contexto de base de datos inyectado
@@ -376,15 +380,17 @@ namespace ExpertMed.Services
                 .Where(c => c.CatalogCategory == "FORMACION PROFESIONAL")
                 .ToListAsync();
         }
-        //Metodo para obtener los tipos de seguros de salud de la tabla catalogo
+
+        ///Metodo para obtener los tipos de seguros de salud de la tabla catalogo
         public async Task<List<Catalog>> GetSureHealtTypeAsync()
         {
-            // Asumiendo que _dbContext es tu contexto de base de datos inyectado
+            /// Asumiendo que _dbContext es tu contexto de base de datos inyectado
             return await _dbContext.Catalogs
                 .Where(c => c.CatalogCategory == "SEGUROS DE SALUD")
                 .ToListAsync();
         }
-        //Metodo para obtener los tipos de Parentesco de la tabla catalogo
+
+        ///Metodo para obtener los tipos de Parentesco de la tabla catalogo
         public async Task<List<Catalog>> GetRelationshipTypeAsync()
         {
             // Asumiendo que _dbContext es tu contexto de base de datos inyectado
@@ -392,7 +398,8 @@ namespace ExpertMed.Services
                 .Where(c => c.CatalogCategory == "PARENTESCO")
                 .ToListAsync();
         }
-        //Metodo para obtener los tipos de Antedecentes familiares de la tabla catalogo
+
+        ///Metodo para obtener los tipos de Antedecentes familiares de la tabla catalogo
         public async Task<List<Catalog>> GetFamiliarTypeAsync()
         {
             // Asumiendo que _dbContext es tu contexto de base de datos inyectado

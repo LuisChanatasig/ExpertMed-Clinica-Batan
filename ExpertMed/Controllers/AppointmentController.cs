@@ -215,7 +215,8 @@ namespace ExpertMed.Controllers
                 return BadRequest(new { success = false, message = ex.Message });
             }
         }
-
+        
+        
 
         /// <summary>
         /// Crerar una cita  por fuera

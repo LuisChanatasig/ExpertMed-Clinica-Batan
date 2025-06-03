@@ -36,6 +36,9 @@ namespace ExpertMed.Models
         [NotMapped]
         public string? MedicalOfficeName { get; set; }
 
+        public int? AppointmentInsuranceCompanyId { get; set; }
+        public string? AppointmentReason { get; set; }
+
 
 
         // Propiedades añadidas para los nombres completos
