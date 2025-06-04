@@ -174,11 +174,14 @@ namespace ExpertMed.Services
                     command.Parameters.AddWithValue("@appointment_medicalofficeid", (object?)appointmentDto.AppointmentMedicalofficeid ?? DBNull.Value);
                     command.Parameters.AddWithValue("@doctor_userid", (object?)doctorUserId ?? DBNull.Value);
 
-                    // 🔹 Nuevos campos:
+                    // Nuevos campos
                     command.Parameters.AddWithValue("@appointment_insurance_company_id", (object?)appointmentDto.AppointmentInsuranceCompanyId ?? DBNull.Value);
                     command.Parameters.AddWithValue("@appointment_reason", string.IsNullOrWhiteSpace(appointmentDto.AppointmentReason)
                         ? DBNull.Value
                         : appointmentDto.AppointmentReason);
+                    command.Parameters.AddWithValue("@appointment_insurance_auth_code", string.IsNullOrWhiteSpace(appointmentDto.AppointmentInsuranceAuthCode)
+                        ? DBNull.Value
+                        : appointmentDto.AppointmentInsuranceAuthCode);
 
                     try
                     {

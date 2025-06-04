@@ -38,6 +38,7 @@ namespace ExpertMed.Models
 
         public int? AppointmentInsuranceCompanyId { get; set; }
         public string? AppointmentReason { get; set; }
+        public string? AppointmentInsuranceAuthCode { get; set; }
 
 
 

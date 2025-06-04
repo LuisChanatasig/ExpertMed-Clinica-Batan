@@ -133,6 +133,7 @@ namespace ExpertMed.Controllers
         /// <param name="request"></param>
         /// <param name="doctorUserId"></param>
         /// <returns></returns>
+
         [HttpPost]
         public async Task<IActionResult> CreateAppointment([FromBody] Appointment request, [FromQuery] int? doctorUserId = null)
         {
@@ -167,10 +168,10 @@ namespace ExpertMed.Controllers
 
                 // Obtener oficinas disponibles automáticamente (sin mostrar)
                 var availableOffices = await _appointmentService.GetAvailableOfficesAsync(
-                    usuarioId.Value,                // userId
-                    request.AppointmentDate.Date,   // date (solo fecha)
-                    hourSpan,                      // hora en TimeSpan
-                    doctorUserId                   // doctorUserId opcional
+                    usuarioId.Value,
+                    request.AppointmentDate.Date,
+                    hourSpan,
+                    doctorUserId
                 );
 
                 if (availableOffices == null || !availableOffices.Any())
@@ -178,10 +179,8 @@ namespace ExpertMed.Controllers
                     return BadRequest(new { success = false, message = "No hay consultorios disponibles para la fecha y hora seleccionadas." });
                 }
 
-                // Seleccionar automáticamente el primer consultorio disponible
                 int selectedOfficeId = availableOffices.First().MedicalOfficeId;
 
-                // Crear objeto de cita incluyendo consultorio seleccionado
                 var appointment = new Appointment
                 {
                     AppointmentCreatedate = DateTime.Now,
@@ -192,31 +191,45 @@ namespace ExpertMed.Controllers
                     AppointmentHour = appointmentHour,
                     AppointmentPatientid = request.AppointmentPatientid,
                     AppointmentStatus = request.AppointmentStatus,
-                    AppointmentMedicalofficeid = selectedOfficeId  // <- Consultorio seleccionado automáticamente
+                    AppointmentMedicalofficeid = selectedOfficeId,
+                    AppointmentInsuranceCompanyId = request.AppointmentInsuranceCompanyId,
+                    AppointmentInsuranceAuthCode = request.AppointmentInsuranceAuthCode,
+                    AppointmentReason = request.AppointmentReason
                 };
 
-                // Guardar cita
-                await _appointmentService.CreateAppointmentAsync(appointment, doctorUserId);
+                var (success, message, appointmentId, isEmergency) = await _appointmentService.CreateAppointmentAsync(appointment, doctorUserId);
+
+                if (!success)
+                {
+                    return BadRequest(new { success = false, message });
+                }
 
                 // Generar URL de WhatsApp para recordatorio
                 string whatsappUrl = null;
                 var patient = await _patientService.GetPatientDetailsAsync(appointment.AppointmentPatientid ?? 0);
                 if (patient != null && !string.IsNullOrEmpty(patient.PatientCellularPhone))
                 {
-                    var message = $"¡Hola {patient.PatientFirstname.Trim()}! Te recordamos que tienes una cita programada para el {appointment.AppointmentDate:dd/MM/yyyy} a las {appointment.AppointmentHour:HH:mm}. ¡Será un gusto atenderte!";
-                    var encodedMessage = WebUtility.UrlEncode(message);
+                    var reminderMessage = $"¡Hola {patient.PatientFirstname.Trim()}! Te recordamos que tienes una cita programada para el {appointment.AppointmentDate:dd/MM/yyyy} a las {appointment.AppointmentHour:HH\\:mm}. ¡Será un gusto atenderte!";
+                    var encodedMessage = WebUtility.UrlEncode(reminderMessage);
                     whatsappUrl = $"https://api.whatsapp.com/send?phone={patient.PatientCellularPhone}&text={encodedMessage}";
                 }
 
-                return Ok(new { success = true, message = "CITA CREADA CON ÉXITO", whatsappUrl });
+                return Ok(new
+                {
+                    success = true,
+                    message = "CITA CREADA CON ÉXITO",
+                    appointmentId,
+                    isEmergency,
+                    whatsappUrl
+                });
             }
             catch (Exception ex)
             {
                 return BadRequest(new { success = false, message = ex.Message });
             }
         }
-        
-        
+
+
 
         /// <summary>
         /// Crerar una cita  por fuera

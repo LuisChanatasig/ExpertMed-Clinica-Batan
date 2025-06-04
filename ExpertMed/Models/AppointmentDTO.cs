@@ -21,7 +21,10 @@
 
         public string DoctorName { get; set; }
         public string DoctorName2 { get; set; }
-        public int? DoctorUserId { get; set; } 
+        public int? DoctorUserId { get; set; }
+
+        public int? AppointmentInsuranceCompanyId { get; set; }
+        public string? AppointmentReason { get; set; }
     }
 
 }

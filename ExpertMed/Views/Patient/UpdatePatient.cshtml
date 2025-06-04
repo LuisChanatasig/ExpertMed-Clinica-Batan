@@ -416,22 +416,32 @@
                     <!-- Motivo de la cita -->
                     <div class="col-xxl-12">
                         <label for="appointmentReason" class="form-label">Motivo de la cita</label>
-                        <textarea class="form-control" id="appointmentReason" name="appointmentReason" rows="2" placeholder="Describa el motivo de la cita..."></textarea>
+                        <textarea class="form-control" id="appointmentReason" name="appointmentReason" rows="2" required placeholder="Describa el motivo de la cita..."></textarea>
+                        <div class="invalid-feedback">
+                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                        </div>
                     </div>
 
                     <!-- Seleccionar aseguradora -->
                     <div class="col-xxl-12">
                         <label for="appointmentInsuranceCompanyId" class="form-label">Aseguradora</label>
                         <select class="form-control" id="appointmentInsuranceCompanyId" name="appointmentInsuranceCompanyId">
-                            <option value="">Seleccione aseguradora (si aplica)</option>
+                            <option value="">Seleccione aseguradora (si aplica), en caso de que no coloque Ninguno</option>
                             @foreach (var aseguradora in Model.InsuranceCompanies)
                             {
                                 <option value="@aseguradora.InsuranceCompanyId">@aseguradora.InsuranceCompanyName</option>
                             }
                         </select>
                     </div>
-
-
+                    <!--Codigo autorizacion aseguradora-->
+                    <div class="col-xxl-12">
+                        <label for="appointmentReason" class="form-label">Motivo de la cita</label>
+                        <input class="form-control" id="appointmentInsuranceAuthCode" name="appointmentInsuranceAuthCode" required placeholder="Escriba el código de autorización"></input>
+                        <span>En caso de no tener colocar 0</span>
+                        <div class="invalid-feedback">
+                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                        </div>
+                    </div>
                     <!-- Confirmar -->
                     <button type="button" class="btn btn-primary" id="confirmAppointmentBtn" disabled>
                         <i class="ri-check-line"></i> Confirmar cita
@@ -564,6 +574,10 @@
                 const patientId = $('#patientId').val();
                 const doctorUserId = $('#doctorUserId').val();
                 const appointmentStatus = $('#appointmentStatus').val();
+                const appointmentReason = $('#appointmentReason').val();
+                const appointmentInsuranceCompanyId = $('#appointmentInsuranceCompanyId').val();
+                const appointmentInsuranceAuthCode = $('#appointmentInsuranceAuthCode').val();
+
 
                 Swal.fire({
                     title: 'Resumen de Cita',
@@ -583,13 +597,16 @@
                             url: '@Url.Action("CreateAppointment", "Appointment")?doctorUserId=' + parseInt(doctorUserId),
                             type: 'POST',
                             contentType: 'application/json',
-                            data: JSON.stringify({
-                                AppointmentDate: selectedDate,
-                                AppointmentHour: selectedHour,
-                                AppointmentPatientid: patientId,
-                                AppointmentStatus: appointmentStatus
-                                // ❌ Sin consultorio
-                            }),
+                                  data: JSON.stringify({
+                                  AppointmentDate: selectedDate,
+                                  AppointmentHour: selectedHour,
+                                  AppointmentPatientid: patientId,
+                                  AppointmentStatus: appointmentStatus,
+                                  AppointmentReason: appointmentReason,
+                                  AppointmentInsuranceAuthCode: appointmentInsuranceAuthCode,
+                                  AppointmentInsuranceCompanyId: appointmentInsuranceCompanyId ? parseInt(appointmentInsuranceCompanyId) : null
+                                    }),
+
                             success: function (response) {
                                 if (response.success) {
                                     Swal.fire({
