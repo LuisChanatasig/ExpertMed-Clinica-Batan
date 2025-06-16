@@ -24,7 +24,7 @@ namespace ExpertMed.Controllers
 
 
         /// <summary>
-        /// Listado de citas vista
+        /// Listado de citas vista, visualizar mediate estados y payments
         /// </summary>
         /// <param name="appointmentStatus"></param>
         /// <returns></returns>
@@ -55,7 +55,7 @@ namespace ExpertMed.Controllers
                 if (appointments == null || !appointments.Any())
                 {
                     TempData["Info"] = "No se encontraron citas para los parámetros especificados.";
-                    return View(new List<AppointmentDTO>()); //  CAMBIO
+                    return View(new List<AppointmentDTO>()); //  CAMBIO a DTO  
                 }
 
                 return View(appointments); //  Ya es List<AppointmentDTO>
@@ -64,7 +64,7 @@ namespace ExpertMed.Controllers
             {
                 _logger.LogError($"Unhandled exception in AppointmentList: {ex.Message}");
                 TempData["Error"] = "Ocurrió un error inesperado. Inténtalo de nuevo más tarde.";
-                return View(new List<AppointmentDTO>()); //  CAMBIO
+                return View(new List<AppointmentDTO>()); //  CAMBIO a DTO 
             }
         }
 
