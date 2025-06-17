@@ -316,6 +316,24 @@
                         </div>
                     </li>
 
+                    <li class="menu-title"><span>Facturación</span></li>
+
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarFacturacion" data-bs-toggle="collapse" role="button" aria-expanded="false">
+                            <i class="mdi mdi-receipt-text"></i> <span>Facturación</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarFacturacion">
+                            <ul class="nav nav-sm flex-column">
+                              
+                                <li class="nav-item">
+                                    <a href="@Url.Action("FacturasEmitidas", "Billing")" class="nav-link">
+                                        <i class="mdi mdi-file-document-outline"></i> Ver Facturas Emitidas
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
                 }
 
                 @if (perfilId == 1 )
@@ -762,7 +780,23 @@
                             </ul>
                         </div>
                     </li>
+                    <li class="menu-title"><span>Facturación</span></li>
 
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarFacturacion" data-bs-toggle="collapse" role="button" aria-expanded="false">
+                            <i class="mdi mdi-receipt-text"></i> <span>Facturación</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarFacturacion">
+                            <ul class="nav nav-sm flex-column">
+
+                                <li class="nav-item">
+                                    <a href="@Url.Action("FacturasEmitidas", "Billing")" class="nav-link">
+                                        <i class="mdi mdi-file-document-outline"></i> Ver Facturas Emitidas
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
                 }
 
 

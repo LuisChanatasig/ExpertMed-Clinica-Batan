@@ -27,7 +27,8 @@ namespace ExpertMed.Services
             public TimeSpan AvailableTime { get; set; }
         }
 
-        public async Task<List<AppointmentDTO>> GetAllAppointmentAsync(int userProfile, int appointmentStatus, int? userId = null)
+
+        public async Task<List<AppointmentDTO>> GetAllAppointmentAsync(int userProfile, int appointmentStatus, int? userId = null, bool isPaidOnly = false)
         {
             try
             {
@@ -35,12 +36,13 @@ namespace ExpertMed.Services
                 {
             new SqlParameter("@UserProfile", userProfile),
             new SqlParameter("@UserID", userId ?? (object)DBNull.Value),
-            new SqlParameter("@AppointmentStatus", appointmentStatus)
+            new SqlParameter("@AppointmentStatus", appointmentStatus),
+            new SqlParameter("@IsPaidOnly", isPaidOnly ? 1 : 0)
         };
 
                 var result = await _dbContext
-                    .Set<AppointmentDTO>()  // <- Usamos el DTO aquí
-                    .FromSqlRaw("EXEC sp_ListAllAppointment @UserProfile, @UserID, @AppointmentStatus", parameters)
+                    .Set<AppointmentDTO>()
+                    .FromSqlRaw("EXEC sp_ListAllAppointment @UserProfile, @UserID, @AppointmentStatus, @IsPaidOnly", parameters)
                     .ToListAsync();
 
                 return result;

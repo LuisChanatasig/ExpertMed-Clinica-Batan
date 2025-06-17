@@ -577,46 +577,48 @@ namespace ExpertMed.Services
                                     PatientCreationuser = reader.GetInt32(reader.GetOrdinal("patient_creationuser")),
                                     PatientModificationuser = reader.GetInt32(reader.GetOrdinal("patient_modificationuser")),
                                     PatientDocumenttype = reader.GetInt32(reader.GetOrdinal("patient_documenttype")),
-                                    PatientDocumentnumber = reader.IsDBNull(reader.GetOrdinal("patient_documentnumber")) ? null : reader.GetString(reader.GetOrdinal("patient_documentnumber")),
-                                    PatientFirstname = reader.IsDBNull(reader.GetOrdinal("patient_firstname")) ? null : reader.GetString(reader.GetOrdinal("patient_firstname")),
-                                    PatientMiddlename = reader.IsDBNull(reader.GetOrdinal("patient_middlename")) ? null : reader.GetString(reader.GetOrdinal("patient_middlename")),
-                                    PatientFirstsurname = reader.IsDBNull(reader.GetOrdinal("patient_firstsurname")) ? null : reader.GetString(reader.GetOrdinal("patient_firstsurname")),
-                                    PatientSecondlastname = reader.IsDBNull(reader.GetOrdinal("patient_secondlastname")) ? null : reader.GetString(reader.GetOrdinal("patient_secondlastname")),
-                                    PatientGender = reader.IsDBNull(reader.GetOrdinal("patient_gender")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("patient_gender")),
-                                    PatientGenderName = reader.IsDBNull(reader.GetOrdinal("patient_gender_name")) ? null : reader.GetString(reader.GetOrdinal("patient_gender_name")),
-                                    PatientBirthdate = reader.IsDBNull(reader.GetOrdinal("patient_birthdate")) ? (DateOnly?)null : DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("patient_birthdate"))),
-                                    PatientAge = reader.GetInt32(reader.GetOrdinal("patient_age")),
-                                    PatientBloodtype = reader.IsDBNull(reader.GetOrdinal("patient_bloodtype")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("patient_bloodtype")),
-                                    PatientBloodtypeName = reader.IsDBNull(reader.GetOrdinal("patient_bloodtype_name")) ? null : reader.GetString(reader.GetOrdinal("patient_bloodtype_name")),
-                                    PatientDonor = reader.IsDBNull(reader.GetOrdinal("patient_donor")) ? null : reader.GetString(reader.GetOrdinal("patient_donor")),
-                                    PatientMaritalstatus = reader.IsDBNull(reader.GetOrdinal("patient_maritalstatus")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("patient_maritalstatus")),
-                                    PatientMaritalstatusName = reader.IsDBNull(reader.GetOrdinal("patient_maritalstatus_name")) ? null : reader.GetString(reader.GetOrdinal("patient_maritalstatus_name")),
-                                    PatientVocationalTraining = reader.IsDBNull(reader.GetOrdinal("patient_vocational_training")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("patient_vocational_training")),
-                                    PatientVocationalTrainingName = reader.IsDBNull(reader.GetOrdinal("patient_vocational_training_name")) ? null : reader.GetString(reader.GetOrdinal("patient_vocational_training_name")),
-                                    PatientLandlinePhone = reader.IsDBNull(reader.GetOrdinal("patient_landline_phone")) ? null : reader.GetString(reader.GetOrdinal("patient_landline_phone")),
-                                    PatientCellularPhone = reader.IsDBNull(reader.GetOrdinal("patient_cellular_phone")) ? null : reader.GetString(reader.GetOrdinal("patient_cellular_phone")),
-                                    PatientEmail = reader.IsDBNull(reader.GetOrdinal("patient_email")) ? null : reader.GetString(reader.GetOrdinal("patient_email")),
-                                    PatientNationality = reader.IsDBNull(reader.GetOrdinal("patient_nationality")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("patient_nationality")),
-                                    PatientNationalityName = reader.IsDBNull(reader.GetOrdinal("patient_nationality_name")) ? null : reader.GetString(reader.GetOrdinal("patient_nationality_name")),
-                                    PatientProvince = reader.IsDBNull(reader.GetOrdinal("patient_province")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("patient_province")),
-                                    PatientProvinceName = reader.IsDBNull(reader.GetOrdinal("patient_province_name")) ? null : reader.GetString(reader.GetOrdinal("patient_province_name")),
-                                    PatientAddress = reader.IsDBNull(reader.GetOrdinal("patient_address")) ? null : reader.GetString(reader.GetOrdinal("patient_address")),
-                                    PatientOcupation = reader.IsDBNull(reader.GetOrdinal("patient_ocupation")) ? null : reader.GetString(reader.GetOrdinal("patient_ocupation")),
-                                    PatientCompany = reader.IsDBNull(reader.GetOrdinal("patient_company")) ? null : reader.GetString(reader.GetOrdinal("patient_company")),
-                                    PatientHealthInsurance = reader.IsDBNull(reader.GetOrdinal("patient_healt_insurance")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("patient_healt_insurance")),
-                                    PatientHealthInsuranceName = reader.GetString(reader.GetOrdinal("patient_health_insurance_name")),
-                                    PatientCode = reader.IsDBNull(reader.GetOrdinal("patient_code")) ? null : reader.GetString(reader.GetOrdinal("patient_code")),
+                                    PatientDocumentnumber = GetNullableString(reader, "patient_documentnumber"),
+                                    PatientFirstname = GetNullableString(reader, "patient_firstname"),
+                                    PatientMiddlename = GetNullableString(reader, "patient_middlename"),
+                                    PatientFirstsurname = GetNullableString(reader, "patient_firstsurname"),
+                                    PatientSecondlastname = GetNullableString(reader, "patient_secondlastname"),
+                                    PatientGender = GetNullable<int>(reader, "patient_gender"),
+                                    PatientGenderName = GetNullableString(reader, "patient_gender_name"),
+                                    PatientBirthdate = reader.IsDBNull(reader.GetOrdinal("patient_birthdate"))
+    ? (DateOnly?)null
+    : DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("patient_birthdate"))),
+                                    PatientAge = (int)GetNullable<int>(reader, "patient_age"),
+                                    PatientBloodtype = GetNullable<int>(reader, "patient_bloodtype"),
+                                    PatientBloodtypeName = GetNullableString(reader, "patient_bloodtype_name"),
+                                    PatientDonor = GetNullableString(reader, "patient_donor"),
+                                    PatientMaritalstatus = GetNullable<int>(reader, "patient_maritalstatus"),
+                                    PatientMaritalstatusName = GetNullableString(reader, "patient_maritalstatus_name"),
+                                    PatientVocationalTraining = GetNullable<int>(reader, "patient_vocational_training"),
+                                    PatientVocationalTrainingName = GetNullableString(reader, "patient_vocational_training_name"),
+                                    PatientLandlinePhone = GetNullableString(reader, "patient_landline_phone"),
+                                    PatientCellularPhone = GetNullableString(reader, "patient_cellular_phone"),
+                                    PatientEmail = GetNullableString(reader, "patient_email"),
+                                    PatientNationality = GetNullable<int>(reader, "patient_nationality"),
+                                    PatientNationalityName = GetNullableString(reader, "patient_nationality_name"),
+                                    PatientProvince = GetNullable<int>(reader, "patient_province"),
+                                    PatientProvinceName = GetNullableString(reader, "patient_province_name"),
+                                    PatientAddress = GetNullableString(reader, "patient_address"),
+                                    PatientOcupation = GetNullableString(reader, "patient_ocupation"),
+                                    PatientCompany = GetNullableString(reader, "patient_company"),
+                                    PatientHealthInsurance = GetNullable<int>(reader, "patient_healt_insurance"),
+                                    PatientHealthInsuranceName = GetNullableString(reader, "patient_health_insurance_name"),
+                                    PatientCode = GetNullableString(reader, "patient_code"),
                                     PatientStatus = reader.GetInt32(reader.GetOrdinal("patient_status")),
-                                    // Signos vitales (pueden ser null si no hay registro)
-                                    Temperature = reader.IsDBNull(reader.GetOrdinal("temperature")) ? (decimal?)null : reader.GetDecimal(reader.GetOrdinal("temperature")),
-                                    RespiratoryRate = reader.IsDBNull(reader.GetOrdinal("respiratory_rate")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("respiratory_rate")),
-                                    BloodPressureAS = reader.IsDBNull(reader.GetOrdinal("blood_pressureAS")) ? null : reader.GetString(reader.GetOrdinal("blood_pressureAS")),
-                                    BloodPressureDIS = reader.IsDBNull(reader.GetOrdinal("blood_pressureDIS")) ? null : reader.GetString(reader.GetOrdinal("blood_pressureDIS")),
-                                    Pulse = reader.IsDBNull(reader.GetOrdinal("pulse")) ? null : reader.GetString(reader.GetOrdinal("pulse")),
-                                    Weight = reader.IsDBNull(reader.GetOrdinal("weight")) ? null : reader.GetString(reader.GetOrdinal("weight")),
-                                    Size = reader.IsDBNull(reader.GetOrdinal("size")) ? null : reader.GetString(reader.GetOrdinal("size")),
-                                    VitalCreatedAt = reader.IsDBNull(reader.GetOrdinal("vital_created_at")) ? (DateTime?)null : reader.GetDateTime(reader.GetOrdinal("vital_created_at")),
-                                    VitalCreatedBy = reader.IsDBNull(reader.GetOrdinal("vital_created_by")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("vital_created_by")),
+
+                                    Temperature = GetNullable<decimal>(reader, "temperature"),
+                                    RespiratoryRate = GetNullable<int>(reader, "respiratory_rate"),
+                                    BloodPressureAS = GetNullableString(reader, "blood_pressureAS"),
+                                    BloodPressureDIS = GetNullableString(reader, "blood_pressureDIS"),
+                                    Pulse = GetNullableString(reader, "pulse"),
+                                    Weight = GetNullableString(reader, "weight"),
+                                    Size = GetNullableString(reader, "size"),
+                                    VitalCreatedAt = GetNullable<DateTime>(reader, "vital_created_at"),
+                                    VitalCreatedBy = GetNullable<int>(reader, "vital_created_by"),
 
                                 };
                             }
@@ -631,6 +633,17 @@ namespace ExpertMed.Services
             }
 
             return patient;
+        }
+        private static T? GetNullable<T>(SqlDataReader reader, string column) where T : struct
+        {
+            int index = reader.GetOrdinal(column);
+            return reader.IsDBNull(index) ? (T?)null : reader.GetFieldValue<T>(index);
+        }
+
+        private static string? GetNullableString(SqlDataReader reader, string column)
+        {
+            int index = reader.GetOrdinal(column);
+            return reader.IsDBNull(index) ? null : reader.GetString(index);
         }
 
         public async Task<Patient> GetPatientDataByDocumentNumberAsync(string documentNumber)

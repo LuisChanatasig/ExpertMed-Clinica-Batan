@@ -1,4 +1,6 @@
 ﻿using ExpertMed.Models;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 
 namespace ExpertMed.Services
 {
@@ -6,22 +8,23 @@ namespace ExpertMed.Services
     {
         private readonly DbExpertmedContext _context;
 
-        //public TarifarioDto ObtenerPorDescripcionYSeguro(string descripcion, int insuranceCompanyId)
-        //{
-        //    // Ajusta a tu tabla y columnas reales
-        //    var item = _context.Tarifarios
-        //        .FirstOrDefault(t =>
-        //            t.Descripcion.ToLower() == descripcion.ToLower() &&
-        //            t.InsuranceCompanyId == insuranceCompanyId);
+        public async Task<InsuranceTariffDTO?> GetTariffByDescriptionAsync(string descripcion, int insuranceCompanyId)
+        {
+            var parameters = new[]
+            {
+        new SqlParameter("@descripcion", descripcion),
+        new SqlParameter("@insurance_company_id", insuranceCompanyId)
+    };
 
-        //    if (item == null)
-        //        return null;
+            var result = await _context
+     .Set<InsuranceTariffDTO>()
+     .FromSqlRaw("EXEC sp_GetInsuranceTariffByDescription @descripcion, @insurance_company_id", parameters)
+     .ToListAsync();
 
-        //    return new TarifarioDto
-        //    {
-        //        PrecioUnitario = item.Precio, // El valor total
-        //        ValorAseguradora = item.ValorAseguradora // Lo que cubre el seguro
-        //    };
-        //}
+            return result.FirstOrDefault();
+
+
+        }
+
     }
 }

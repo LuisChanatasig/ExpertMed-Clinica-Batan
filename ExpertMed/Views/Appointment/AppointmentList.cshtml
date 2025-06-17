@@ -83,18 +83,23 @@
                     <div class="card card-body p-2">
                         <div class="btn-group flex-wrap w-100" role="group">
                             @foreach (var estado in new[] {
-                            (0, "Pagadas", "btn-soft-success"),
                             (1, "Activas", "btn-soft-warning"),
                             (2, "Canceladas", "btn-soft-danger"),
                             (3, "Seguimiento", "btn-soft-info"),
                             (4, "Finalizadas", "btn-soft-dark"),
                             (5, "EMERGENCIAS", "bg-danger text-white fw-bold text-uppercase") })
                             {
-                                <button class="btn @estado.Item3 @(ViewBag.CurrentStatus == estado.Item1 ? "active" : "")"
+                                <button class="btn @estado.Item3 @(ViewBag.CurrentStatus == estado.Item1 && ViewBag.IsPaidOnly != true ? "active" : "")"
                                         onclick="filterAppointments(@estado.Item1)">
                                     @estado.Item2
                                 </button>
                             }
+
+                            <!-- Botón para "Pagadas" -->
+                            <button class="btn btn-soft-success @(ViewBag.IsPaidOnly == true ? "active" : "")"
+                                    onclick="filterAppointments(-1, true)">
+                                <i class="mdi mdi-cash-check"></i> Pagadas
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -149,16 +154,20 @@
                                     @{
                                         var (cls, txt) = appt.AppointmentStatus switch
                                         {
-                                            0 => ("bg-success", "Pagadas"),
-                                            1 => ("bg-warning", "Activas"),
-                                            2 => ("bg-danger", "Canceladas"),
+                                            1 => ("bg-warning", "Activa"),
+                                            2 => ("bg-danger", "Cancelada"),
                                             3 => ("bg-info", "Seguimiento"),
-                                            4 => ("bg-dark", "Finalizadas"),
+                                            4 => ("bg-dark", "Finalizada"),
                                             5 => ("bg-danger text-white fw-bold text-uppercase", "Emergencia"),
                                             _ => ("bg-secondary", "Desconocido")
                                         };
+
+                                        // Estado de pago
+                                        var pago = appt.AppointmentPaymentStatus == 1 ? "Pagada" : "No pagada";
+                                        var badgeText = $"{txt} - {pago}";
                                     }
-                                    <span class="badge @cls">@txt</span>
+                                    <span class="badge @cls">@badgeText</span>
+
                                 </td>
                                 <td>
                                     @if (appt.AppointmentStatus == 2 || appt.AppointmentStatus == 4)
@@ -391,10 +400,15 @@
             });
         });
 
-        function filterAppointments(status) {
-            window.location.href = '@Url.Action("AppointmentList", "Appointment")?appointmentStatus=' + status;
+              function filterAppointments(status, isPaidOnly = false) {
+            const baseUrl = '@Url.Action("AppointmentList", "Appointment")';
+            const url = `${baseUrl}?appointmentStatus=${status}&isPaidOnly=${isPaidOnly}`;
+            window.location.href = url;
         }
-                   function openOptionModal(id, status, patientId) {
+
+              
+        
+        function openOptionModal(id, status, patientId) {
             $.get('@Url.Action("AppointmentGetById", "Appointment")', { id, userProfile: @perfilId })
              .done(data => {
                  console.log('Datos recibidos de AppointmentGetById:', data);

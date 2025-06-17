@@ -29,7 +29,7 @@ namespace ExpertMed.Controllers
         /// <param name="appointmentStatus"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<IActionResult> AppointmentList(int appointmentStatus = 5)
+        public async Task<IActionResult> AppointmentList(int appointmentStatus = 5, bool isPaidOnly = false)
         {
             try
             {
@@ -43,28 +43,30 @@ namespace ExpertMed.Controllers
                 }
 
                 ViewBag.CurrentStatus = appointmentStatus;
+                ViewBag.IsPaidOnly = isPaidOnly;
                 ViewBag.UserProfile = userProfile.Value;
                 ViewBag.UserId = userId.Value;
 
                 var appointments = await _appointmentService.GetAllAppointmentAsync(
                     userProfile.Value,
                     appointmentStatus,
-                    userId
+                    userId,
+                    isPaidOnly // ✅ aquí lo pasas al servicio
                 );
 
                 if (appointments == null || !appointments.Any())
                 {
                     TempData["Info"] = "No se encontraron citas para los parámetros especificados.";
-                    return View(new List<AppointmentDTO>()); //  CAMBIO a DTO  
+                    return View(new List<AppointmentDTO>());
                 }
 
-                return View(appointments); //  Ya es List<AppointmentDTO>
+                return View(appointments);
             }
             catch (Exception ex)
             {
                 _logger.LogError($"Unhandled exception in AppointmentList: {ex.Message}");
                 TempData["Error"] = "Ocurrió un error inesperado. Inténtalo de nuevo más tarde.";
-                return View(new List<AppointmentDTO>()); //  CAMBIO a DTO 
+                return View(new List<AppointmentDTO>());
             }
         }
 

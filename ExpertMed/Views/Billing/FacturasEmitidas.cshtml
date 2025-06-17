@@ -1,0 +1,86 @@
+﻿@model List<FacturaEmitidaDTO>
+
+@{
+    ViewData["Title"] = "Facturas Emitidas";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm border">
+            <div class="card-header bg-light">
+                <h4 class="card-title mb-0">
+                    <i class="mdi mdi-receipt-text-outline me-2"></i> Facturas Emitidas
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table id="facturas-table" class="table table-hover table-bordered align-middle table-striped w-100">
+                        <thead class="table-light">
+                            <tr>
+                                <th><i class="mdi mdi-pound"></i> N°</th>
+                                <th><i class="mdi mdi-calendar-clock-outline"></i> Fecha</th>
+                                <th><i class="mdi mdi-account-outline"></i> Paciente</th>
+                                <th><i class="mdi mdi-shield-account-outline"></i> Aseguradora</th>
+                                <th><i class="mdi mdi-cash-multiple"></i> Subtotal</th>
+                                <th><i class="mdi mdi-bank"></i> Aseguradora</th>
+                                <th><i class="mdi mdi-account-cash-outline"></i> Copago</th>
+                                <th><i class="mdi mdi-credit-card-outline"></i> Pago</th>
+                                <th><i class="mdi mdi-format-list-bulleted-type"></i> Ítems</th>
+                                <th><i class="mdi mdi-printer"></i> Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model != null && Model.Any())
+                            {
+                                foreach (var item in Model)
+                                {
+                                    <tr>
+                                        <td>@item.FacturaId</td>
+                                        <td>@item.Fecha.ToString("dd/MM/yyyy")</td>
+                                        <td>@item.Paciente</td>
+                                        <td>@(string.IsNullOrWhiteSpace(item.Aseguradora) ? "—" : item.Aseguradora)</td>
+                                        <td><span class="badge bg-primary-subtle text-primary">$@item.Subtotal.ToString("F2")</span></td>
+                                        <td><span class="badge bg-success-subtle text-success">$@item.TotalAseguradora.ToString("F2")</span></td>
+                                        <td><span class="badge bg-danger-subtle text-danger">$@item.TotalCopago.ToString("F2")</span></td>
+                                        <td><span class="text-uppercase">@item.MetodoPago</span></td>
+                                        <td>@item.TotalItems</td>
+                                        <td>
+                                            <a href="@Url.Action("NotaVenta", "Billing", new { facturaId = item.FacturaId })"
+                                               class="btn btn-sm btn-soft-primary" title="Imprimir Nota de Venta">
+                                                <i class="mdi mdi-printer"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="10" class="text-center text-muted">
+                                        <i class="mdi mdi-alert-outline me-1"></i> No se encontraron facturas emitidas.
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Si usas DataTables.js
+        document.addEventListener("DOMContentLoaded", () => {
+            $("#facturas-table").DataTable({
+                language: {
+                    url: "//cdn.datatables.net/plug-ins/1.13.1/i18n/es-ES.json"
+                },
+                order: [[1, "desc"]],
+                pageLength: 10
+            });
+        });
+    </script>
+}

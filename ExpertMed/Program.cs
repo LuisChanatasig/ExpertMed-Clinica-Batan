@@ -40,6 +40,7 @@ namespace ExpertMed
             builder.Services.AddScoped<ReportService>();
             builder.Services.AddScoped<FavoriteMedicationService>();
             builder.Services.AddScoped<TherapyService>();
+            builder.Services.AddScoped<TarifarioService>();
             builder.Services.AddScoped<EstablishmentService>();
 
             // Configuraci�n de controladores y vistas

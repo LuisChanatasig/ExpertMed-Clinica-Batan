@@ -120,6 +120,8 @@
             </div>
             <div class="modal-body text-center">
                 <div id="accionesPacienteContenido"></div>
+                <div id="timelineEstadoPaciente" class="mt-4 text-start"></div>
+
             </div>
         </div>
     </div>
@@ -153,6 +155,7 @@
             const modalBody = $('#accionesPacienteContenido');
             modalBody.empty();
 
+            // Acciones según estado
             if (status === 1) {
                 modalBody.append(`
                     <button class="btn btn-danger mb-2"
@@ -182,6 +185,48 @@
                     </form>
                 `);
             }
+
+            // Timeline del estado
+            const timeline = document.getElementById("timelineEstadoPaciente");
+            timeline.innerHTML = "";
+
+            let estadoTimeline = "";
+
+            if (status === 1) {
+                estadoTimeline = `
+                    <div class="vertical-timeline vertical-timeline-one-column">
+                        <div class="vertical-timeline-item vertical-timeline-element">
+                            <div>
+                                <span class="vertical-timeline-element-icon rounded-circle bg-success text-white">
+                                    <i class="mdi mdi-account-check"></i>
+                                </span>
+                                <div class="vertical-timeline-element-content">
+                                    <h6 class="fs-14 mb-1">Paciente Activo</h6>
+                                    <p class="text-muted mb-0">Puede agendar citas, acceder a resultados y registrar atenciones.</p>
+                                    <span class="vertical-timeline-element-date">Estado actual</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+            } else {
+                estadoTimeline = `
+                    <div class="vertical-timeline vertical-timeline-one-column">
+                        <div class="vertical-timeline-item vertical-timeline-element">
+                            <div>
+                                <span class="vertical-timeline-element-icon rounded-circle bg-secondary text-white">
+                                    <i class="mdi mdi-account-off"></i>
+                                </span>
+                                <div class="vertical-timeline-element-content">
+                                    <h6 class="fs-14 mb-1">Paciente Inactivo</h6>
+                                    <p class="text-muted mb-0">No puede agendar nuevas citas ni recibir atención.</p>
+                                    <span class="vertical-timeline-element-date">Estado actual</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+
+            timeline.innerHTML = estadoTimeline;
         });
     </script>
 

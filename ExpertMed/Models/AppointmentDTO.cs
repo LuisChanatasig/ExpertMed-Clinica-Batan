@@ -12,6 +12,7 @@
         public TimeSpan AppointmentHour { get; set; }
         public int? AppointmentPatientId { get; set; }
         public int? AppointmentStatus { get; set; }
+        public int? AppointmentPaymentStatus { get; set; }
 
         public int? AppointmentMedicalofficeid { get; set; }
         public string? MedicalOfficeName { get; set; }
