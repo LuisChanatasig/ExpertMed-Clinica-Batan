@@ -426,7 +426,7 @@ namespace ExpertMed.Controllers
                 {
                     AppointmentId = request.AppointmentId,                  // ID de la cita a modificar
                     AppointmentModifydate = DateTime.Now,                   // Fecha de modificación
-                    AppointmentModifyuser = request.AppointmentModifyuser ?? 0,                 // Usuario que realiza la modificación
+                    AppointmentModifyuser = request.AppointmentModifyuser ?? 0,  // Usuario que realiza la modificación
                     AppointmentDate = request.AppointmentDate,              // Nueva fecha de la cita
                     AppointmentHour = request.AppointmentHour,              // Nueva hora de la cita
                     AppointmentPatientid = request.AppointmentPatientid,    // ID del paciente
