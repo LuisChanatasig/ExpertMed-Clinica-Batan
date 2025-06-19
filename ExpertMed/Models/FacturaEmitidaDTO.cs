@@ -11,6 +11,9 @@
         public string MetodoPago { get; set; }
         public string Aseguradora { get; set; }
         public int TotalItems { get; set; }
+
+        public string Origen { get; set; } // "LOCAL" o "DATIL"
     }
+
 
 }

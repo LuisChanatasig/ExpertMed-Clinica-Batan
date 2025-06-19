@@ -46,7 +46,7 @@ namespace ExpertMed.Controllers
 
 
         [HttpPost("Vista")]
-        [RequestSizeLimit(52428800)] // 50MB limit
+        [RequestSizeLimit(52428800)] // 50MB
         public async Task<IActionResult> Billing([FromForm] Facturacions viewModel, IFormFile? comprobantePagoFile)
         {
             if (!ModelState.IsValid)
@@ -54,16 +54,14 @@ namespace ExpertMed.Controllers
                 _logger.LogWarning("Errores en la validación del modelo: {Errors}",
                     string.Join("; ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
 
-                return View(viewModel);
+                TempData["ErrorMessage"] = "Verifique los datos ingresados.";
+                return View("Facturacion", viewModel); // Ojo: Vista debe llamarse igual que la Razor asociada
             }
 
             try
             {
-                // Valor binario por defecto
-                byte[] comprobantePagoDummy = new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 };
-
-                // Procesar el archivo si se ha adjuntado
-                if (comprobantePagoFile?.Length > 0)
+                // Carga el comprobante (o dummy si no se subió)
+                if (comprobantePagoFile != null && comprobantePagoFile.Length > 0)
                 {
                     using var memoryStream = new MemoryStream();
                     await comprobantePagoFile.CopyToAsync(memoryStream);
@@ -71,10 +69,10 @@ namespace ExpertMed.Controllers
                 }
                 else
                 {
-                    viewModel.ComprobantePagoFacturacion = comprobantePagoDummy;
+                    viewModel.ComprobantePagoFacturacion = new byte[] { 0x01, 0x02, 0x03 }; // Dummy opcional
                 }
 
-                // Llamar al servicio para crear y enviar la factura
+                // Ejecutar servicio para crear y enviar la factura
                 string response = await _facturacion.CreateAndSendInvoiceAsync(
                     viewModel.CitaId ?? 0,
                     DateTime.UtcNow,
@@ -87,19 +85,19 @@ namespace ExpertMed.Controllers
                     viewModel.BillingDetailsAddress,
                     viewModel.BillingDetailsPhone,
                     viewModel.BillingDetailsEmail,
-                    viewModel.Items // 👈 Aquí se envía la lista de ítems de facturación
+                    viewModel.Items
                 );
 
                 _logger.LogInformation("Factura generada con éxito para la cita ID: {CitaId}", viewModel.CitaId);
-                TempData["SuccessMessage"] = "Su factura ha sido generada y enviada al correo proporcionado.";
+                TempData["SuccessMessage"] = "Factura generada y enviada correctamente.";
 
                 return RedirectToAction("AppointmentList", "Appointment");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error interno al procesar la facturación para la cita ID: {CitaId}", viewModel.CitaId);
-                TempData["ErrorMessage"] = "Ocurrió un error al generar la factura. Intente nuevamente. " + ex.Message;
-                return StatusCode(500, "Error interno del servidor");
+                _logger.LogError(ex, "Error al facturar cita ID: {CitaId}", viewModel.CitaId);
+                TempData["ErrorMessage"] = $"Error al generar la factura: {ex.Message}";
+                return View("Facturacion", viewModel); // Mismo nombre que en error de validación
             }
         }
 
@@ -110,6 +108,7 @@ namespace ExpertMed.Controllers
             var facturas = await _facturacion.ObtenerFacturasEmitidasAsync();
             return View(facturas);
         }
+
         [HttpGet]
         public async Task<IActionResult> NotaVenta(int facturaId)
         {

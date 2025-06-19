@@ -133,17 +133,17 @@
                             <div class="row">
                                 <div class="col-md-4">
                                     <label class="form-label">Total Aseguradora</label>
-                                    <input type="number" class="form-control" name="TotalAseguradora"
+                                    <input type="text" class="form-control" name="TotalAseguradora"
                                         id="totalAseguradora-@tabId" readonly>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Total Copago (Paciente)</label>
-                                    <input type="number" class="form-control" name="TotalCopago" id="totalCopago-@tabId"
+                                    <input type="text" class="form-control" name="TotalCopago" id="totalCopago-@tabId"
                                         readonly>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Total Factura</label>
-                                    <input type="number" class="form-control" name="TotalFactura" id="totalFactura-@tabId"
+                                    <input type="text" class="form-control" name="TotalFactura" id="totalFactura-@tabId"
                                         readonly required>
                                 </div>
                             </div>
@@ -165,6 +165,14 @@
         const insuranceCompanyId = document.getElementById("insuranceCompanyId").value;
         let contador = 0;
 
+        // Función auxiliar para normalizar los valores de entrada (reemplazar coma por punto)
+        function normalizeNumberInput(value) {
+            if (typeof value === 'string') {
+                return value.replace(",", ".");
+            }
+            return value;
+        }
+
         document.addEventListener("DOMContentLoaded", () => {
             if (tieneSeguro) {
                 document.querySelectorAll(".col-insurance").forEach(el => el.classList.remove("d-none"));
@@ -180,10 +188,30 @@
                     }
 
                     let valido = true;
-                    filas.forEach(fila => {
-                        const desc = fila.querySelector(".descripcion-select").value.trim();
-                        const cant = parseFloat(fila.querySelector(".cantidad").value);
-                        const precio = parseFloat(fila.querySelector(".precio").value);
+
+                    console.log("🧾 Detalle de ítems que se van a enviar:");
+                    filas.forEach((fila, idx) => {
+                        const desc = fila.querySelector(".descripcion-select")?.value.trim();
+                        const cantInput = fila.querySelector(".cantidad");
+                        const precioInput = fila.querySelector(".precio");
+                        const seguroInput = fila.querySelector(".precio-seguro");
+                        const copagoInput = fila.querySelector(".copago");
+                        const totalInput = fila.querySelector(".total-item");
+
+                        const cant = parseFloat(normalizeNumberInput(cantInput?.value));
+                        const precio = parseFloat(normalizeNumberInput(precioInput?.value));
+                        const seguro = parseFloat(normalizeNumberInput(seguroInput?.value));
+                        const copago = parseFloat(normalizeNumberInput(copagoInput?.value));
+                        const total = parseFloat(normalizeNumberInput(totalInput?.value));
+
+                        console.log(`Fila ${idx + 1}:`);
+                        console.log(`🟩 Descripción: ${desc}`);
+                        console.log(`📌 Cantidad: ${cant}`);
+                        console.log(`💲 Precio Unitario: ${precio}`);
+                        console.log(`🏥 Aseguradora: ${seguro}`);
+                        console.log(`🧾 Copago: ${copago}`);
+                        console.log(`📦 Total por ítem: ${total}`);
+
                         if (!desc || isNaN(cant) || cant <= 0 || isNaN(precio) || precio <= 0) {
                             valido = false;
                         }
@@ -192,6 +220,30 @@
                     if (!valido) {
                         e.preventDefault();
                         Swal.fire('Error', 'Verifica que todos los ítems tengan descripción, cantidad y precio válidos.', 'warning');
+                        return;
+                    }
+
+                    // Mostrar totales finales por pestaña
+                    console.log("📊 Totales por pestaña:");
+                    document.querySelectorAll(".tab-pane").forEach(tab => {
+                        const tabId = tab.id;
+                        const inputFactura = document.getElementById(`totalFactura-${tabId}`);
+                        const inputAseguradora = document.getElementById(`totalAseguradora-${tabId}`);
+                        const inputCopago = document.getElementById(`totalCopago-${tabId}`);
+
+                        if (inputFactura && inputAseguradora && inputCopago) {
+                            console.log(`🧾 Tab: ${tabId}`);
+                            console.log(`🔹 Total Factura: ${inputFactura.value}`);
+                            console.log(`🔹 Total Aseguradora: ${inputAseguradora.value}`);
+                            console.log(`🔹 Total Copago: ${inputCopago.value}`);
+                        }
+                    });
+
+                    // También podemos capturar el FormData si es envío tradicional
+                    const formData = new FormData(form);
+                    console.log("📤 Contenido exacto del FormData que se va al backend:");
+                    for (const [key, value] of formData.entries()) {
+                        console.log(`${key}: ${value}`);
                     }
                 });
             });
@@ -206,21 +258,26 @@
 
             row.innerHTML = `
                         <td>
-                            <select class="form-control descripcion-select" name="Items[${index}].Description" required style="width:100%">
-                                <option value="">Buscar procedimiento</option>
-                            </select>
+                            <select class="form-control descripcion-select"
+                                    name="Items[${index}].DescripcionVisible"
+                                    placeholder="Buscar procedimiento" required></select>
                         </td>
                         <td>
-                            <input type="number" class="form-control cantidad" name="Items[${index}].Quantity" min="1" value="1"
-                                onchange="recalcularItem(this)" required>
+                            <input type="text" class="form-control cantidad" name="Items[${index}].Quantity"
+                                   min="1" value="1" onchange="recalcularItem(this)" required>
                         </td>
                         <td>
-                            <input type="number" class="form-control precio" name="Items[${index}].UnitPrice" min="0.01" step="0.01"
-                                value="0.00" onchange="recalcularItem(this)" required>
+                            <input type="text" class="form-control precio" name="Items[${index}].UnitPrice"
+                                   min="0" step="0.01" value="8.00" onchange="recalcularItem(this)" required>
                         </td>
-                        <td class="col-insurance"><input type="text" class="form-control precio-seguro" readonly tabindex="-1"></td>
-                        <td class="col-insurance"><input type="text" class="form-control copago" readonly></td>
-                        <td><input type="text" class="form-control total-item" value="0.00" readonly></td>
+                        <td class="col-insurance">
+                            <input type="text" class="form-control precio-seguro" name="Items[${index}].Aseguradora"
+                                   min="0" step="0.01" value="8.00" onchange="recalcularItem(this)" />
+                        </td>
+                        <td class="col-insurance">
+                            <input type="text" class="form-control copago" readonly step="0.01" tabindex="-1" />
+                        </td>
+                        <td><input type="text" class="form-control total-item" value="0.00" step="0.01" readonly></td>
                         <td>
                             <button type="button" class="btn btn-danger btn-sm" onclick="eliminarItem(this)">🖑</button>
                         </td>
@@ -231,8 +288,62 @@
             if (tieneSeguro) {
                 row.querySelectorAll(".col-insurance").forEach(td => td.classList.remove("d-none"));
             }
-        }
 
+            const select = row.querySelector(".descripcion-select");
+            $(select).select2({
+                placeholder: "Buscar procedimiento",
+                minimumInputLength: 2,
+                width: '100%',
+                ajax: {
+                    url: '@Url.Action("BuscarProcedimientos", "Tarifario")',
+                    data: function (params) {
+                        return {
+                            termino: params.term,
+                            insuranceCompanyId: insuranceCompanyId
+                        };
+                    },
+                    processResults: function (data) {
+                        return {
+                            results: data
+                        };
+                    }
+                }
+            }).on('select2:select', function (e) {
+                const selected = e.params.data;
+                const fila = e.target.closest("tr");
+                const filaIndex = Array.from(fila.parentNode.children).indexOf(fila);
+
+                let hiddenCode = fila.querySelector(`input[name="Items[${filaIndex}].Code"]`);
+                if (!hiddenCode) {
+                    hiddenCode = document.createElement('input');
+                    hiddenCode.type = 'hidden';
+                    hiddenCode.name = `Items[${filaIndex}].Code`;
+                    fila.appendChild(hiddenCode);
+                }
+                hiddenCode.value = selected.id || "";
+
+                let hiddenDescription = fila.querySelector(`input[name="Items[${filaIndex}].Description"]`);
+                if (!hiddenDescription) {
+                    hiddenDescription = document.createElement('input');
+                    hiddenDescription.type = 'hidden';
+                    hiddenDescription.name = `Items[${filaIndex}].Description`;
+                    fila.appendChild(hiddenDescription);
+                }
+                hiddenDescription.value = selected.text || "";
+
+                // Aplicar normalización a selected.precio_aseguradora antes de parsear
+                let bruto = normalizeNumberInput(selected.precio_aseguradora?.toString() || "0");
+                const precioRef = parseFloat(bruto) || 0;
+
+                const precioInput = fila.querySelector(".precio");
+                const seguroInput = fila.querySelector(".precio-seguro");
+
+                if (precioInput) precioInput.value = precioRef.toFixed(2);
+                if (seguroInput) seguroInput.value = precioRef.toFixed(2);
+
+                recalcularItem(seguroInput);
+            });
+        }
 
         function eliminarItem(btn) {
             btn.closest('tr').remove();
@@ -241,19 +352,22 @@
 
         function recalcularItem(elemento) {
             const fila = elemento.closest('tr');
-            const cantidad = parseFloat(fila.querySelector('.cantidad')?.value || 0);
-            const precioUnitario = parseFloat(fila.querySelector('.precio')?.value || 0);
+            // Normalizar valores antes de parsear
+            const cantidad = parseFloat(normalizeNumberInput(fila.querySelector('.cantidad')?.value || 0));
+            const precioUnitario = parseFloat(normalizeNumberInput(fila.querySelector('.precio')?.value || 0));
+            const valorSeguroInput = fila.querySelector('.precio-seguro');
 
-            if (tieneSeguro) {
-                const valorSeguro = parseFloat(fila.dataset.valorSeguro || 0);
-                const copago = precioUnitario - valorSeguro;
-                const precioSeguroInput = fila.querySelector('.precio-seguro');
-                const copagoInput = fila.querySelector('.copago');
-                if (precioSeguroInput && copagoInput) {
-                    precioSeguroInput.value = valorSeguro.toFixed(2);
-                    copagoInput.value = copago.toFixed(2);
-                }
+            let valorSeguro = parseFloat(normalizeNumberInput(valorSeguroInput?.value || 0));
+
+            if (valorSeguro > precioUnitario) {
+                valorSeguro = precioUnitario;
+                if (valorSeguroInput) valorSeguroInput.value = valorSeguro.toFixed(2);
+                Swal.fire('Aviso', 'El valor aseguradora no puede ser mayor al precio unitario.', 'warning');
             }
+
+            const copago = precioUnitario - valorSeguro;
+            const copagoInput = fila.querySelector('.copago');
+            if (copagoInput) copagoInput.value = copago.toFixed(2);
 
             calcularSubtotalFila(fila, precioUnitario, cantidad);
         }
@@ -273,25 +387,35 @@
                 let totalCopago = 0;
 
                 tab.querySelectorAll("tbody tr").forEach(fila => {
-                    const cantidad = parseFloat(fila.querySelector(".cantidad")?.value || 0);
-                    const precioUnitario = parseFloat(fila.querySelector(".precio")?.value || 0);
-                    const valorSeguro = parseFloat(fila.querySelector(".precio-seguro")?.value || 0);
-                    const copago = parseFloat(fila.querySelector(".copago")?.value || 0);
+                    const cantidad = parseFloat(normalizeNumberInput(fila.querySelector(".cantidad")?.value || 0));
+                    const precioUnitario = parseFloat(normalizeNumberInput(fila.querySelector(".precio")?.value || 0));
+                    const valorSeguro = parseFloat(normalizeNumberInput(fila.querySelector(".precio-seguro")?.value || 0));
+                    const copago = parseFloat(normalizeNumberInput(fila.querySelector(".copago")?.value || 0));
 
-                    totalFactura += cantidad * precioUnitario;
+                    const parcial = cantidad * precioUnitario;
+                    totalFactura += parcial;
                     totalAseguradora += cantidad * valorSeguro;
                     totalCopago += cantidad * copago;
+
+                    console.log(`▶️ ${cantidad} x ${precioUnitario} = ${parcial}`);
                 });
+
+                console.log(`💰 [${tabId}] total calculado: ${totalFactura}`);
 
                 const inputFactura = document.getElementById(`totalFactura-${tabId}`);
                 const inputAseguradora = document.getElementById(`totalAseguradora-${tabId}`);
                 const inputCopago = document.getElementById(`totalCopago-${tabId}`);
 
-                if (inputFactura) inputFactura.value = totalFactura.toFixed(2);
+                if (inputFactura) {
+                    inputFactura.value = totalFactura.toFixed(2);
+                    console.log("🧾 Asignado al input:", inputFactura.value);
+                }
+
                 if (inputAseguradora) inputAseguradora.value = totalAseguradora.toFixed(2);
                 if (inputCopago) inputCopago.value = totalCopago.toFixed(2);
             });
         }
+
 
         document.addEventListener("focusin", function (e) {
             if (e.target.classList.contains("descripcion-select") && !e.target.dataset.select2initialized) {
@@ -315,11 +439,8 @@
                 }).on('select2:select', function (e) {
                     const fila = e.target.closest("tr");
                     const selected = e.params.data;
-
-                    // Obtener el índice de la fila dentro del tbody
                     const index = Array.from(fila.parentNode.children).indexOf(fila);
 
-                    // Crear campo oculto para el código si no existe
                     let hiddenInput = fila.querySelector(`input[name="Items[${index}].Code"]`);
                     if (!hiddenInput) {
                         hiddenInput = document.createElement('input');
@@ -327,41 +448,38 @@
                         hiddenInput.name = `Items[${index}].Code`;
                         fila.appendChild(hiddenInput);
                     }
-                    hiddenInput.value = selected.id || ""; // selected.id es el código
+                    hiddenInput.value = selected.id || "";
 
-                    // Actualizar nombre del ítem (por si se usa en server-side también)
                     e.target.name = `Items[${index}].Description`;
 
-                    // Lógica si hay seguro
-                    if (tieneSeguro) {
-                        const valorSeguro = parseFloat(selected.precio_aseguradora || 0);
-                        fila.dataset.valorSeguro = valorSeguro;
+                    // Aplicar normalización a selected.precio_aseguradora antes de parsear
+                    let bruto = normalizeNumberInput(selected.precio_aseguradora?.toString() || "0");
+                    const valorSeguro = parseFloat(bruto) || 0;
 
-                        const precioUnitario = parseFloat(fila.querySelector(".precio")?.value || 0);
-                        const copago = precioUnitario - valorSeguro;
+                    // Normalizar valor del input de precio antes de parsear
+                    const precioUnitario = parseFloat(normalizeNumberInput(fila.querySelector(".precio")?.value || 0));
+                    const copago = precioUnitario - valorSeguro;
 
-                        const precioSeguroInput = fila.querySelector(".precio-seguro");
-                        const copagoInput = fila.querySelector(".copago");
+                    const precioSeguroInput = fila.querySelector(".precio-seguro");
+                    const copagoInput = fila.querySelector(".copago");
 
-                        if (precioSeguroInput && copagoInput) {
-                            precioSeguroInput.value = valorSeguro.toFixed(2);
-                            copagoInput.value = copago.toFixed(2);
-                        }
+                    if (precioSeguroInput && copagoInput) {
+                        precioSeguroInput.value = valorSeguro.toFixed(2);
+                        copagoInput.value = copago.toFixed(2);
                     }
 
-                    // Recalcular subtotal
-                    const cantidad = parseFloat(fila.querySelector(".cantidad")?.value || 1);
-                    const precioActual = parseFloat(fila.querySelector(".precio")?.value || 0);
+                    // Normalizar valor del input de cantidad antes de parsear
+                    const cantidad = parseFloat(normalizeNumberInput(fila.querySelector(".cantidad")?.value || 1));
+                    const precioActual = parseFloat(normalizeNumberInput(fila.querySelector(".precio")?.value || 0)); // Volver a leer y normalizar
                     calcularSubtotalFila(fila, precioActual, cantidad);
                 });
 
                 e.target.dataset.select2initialized = "true";
             }
         });
-
     </script>
     <script>
-         function cargarDatosPaciente(btn) {
+        function cargarDatosPaciente(btn) {
             const patientId = parseInt(document.getElementById("AppointmentPatientId").value, 10);
             const form = btn.closest('form');
 
@@ -370,8 +488,8 @@
                 return;
             }
 
-        fetch(`@Url.Action("GetPatientDetails", "Patient")?patientId=${patientId}`)
-                        .then(r => r.json())
+            fetch(`@Url.Action("GetPatientDetails", "Patient")?patientId=${patientId}`)
+                .then(r => r.json())
                 .then(data => {
                     const campos = {
                         BillingDetailsNames: data.patientFirstname + ' ' + data.patientFirstsurname,
@@ -383,8 +501,8 @@
                     };
 
                     for (const name in campos) {
-        const input = form.querySelector(`[name="${name}"]`);
-                                if (input) input.value = campos[name];
+                        const input = form.querySelector(`[name="${name}"]`);
+                        if (input) input.value = campos[name];
                     }
 
                     const collapseDiv = form.querySelector('.collapse');

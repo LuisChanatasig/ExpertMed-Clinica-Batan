@@ -2,7 +2,9 @@
 using Microsoft.Data.SqlClient; // Asegúrate de tener este using
 using Microsoft.EntityFrameworkCore;
 using System.Data;
+using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json;
 namespace ExpertMed.Services
 {
     public class BillingServices
@@ -21,10 +23,18 @@ namespace ExpertMed.Services
         }
 
         public async Task<string> CreateAndSendInvoiceAsync(
-         int citaId, DateTime fechaFacturacion, decimal totalFactura, string metodoPago, byte[] comprobantePagoFacturacion,
-         string billingDetailsNames, string billingDetailsCiNumber, string billingDetailsDocumentType,
-         string billingDetailsAddress, string billingDetailsPhone, string billingDetailsEmail,
-         List<BillingItemDTO> items)
+    int citaId,
+    DateTime fechaFacturacion,
+    decimal totalFactura,
+    string metodoPago,
+    byte[] comprobantePagoFacturacion,
+    string billingDetailsNames,
+    string billingDetailsCiNumber,
+    string billingDetailsDocumentType,
+    string billingDetailsAddress,
+    string billingDetailsPhone,
+    string billingDetailsEmail,
+    List<BillingItemDTO> items)
         {
             string jsonFactura = string.Empty;
             string xKey = string.Empty;
@@ -36,9 +46,24 @@ namespace ExpertMed.Services
                 {
                     await connection.OpenAsync();
 
+                    // 1. Obtener tarifario para mapear descripciones
+                    var tarifario = new Dictionary<string, string>();
+                    using (var cmdTarifa = new SqlCommand("SELECT insurance_tariff_code, insurance_tariff_description FROM insurance_tariff", connection))
+                    {
+                        using var reader = await cmdTarifa.ExecuteReaderAsync();
+                        while (await reader.ReadAsync())
+                        {
+                            var code = reader.GetString(0);
+                            var description = reader.GetString(1);
+                            tarifario[code] = description;
+                        }
+                    }
+
+                    // 2. Ejecutar el SP
                     using (var command = new SqlCommand("sp_billing", connection))
                     {
                         command.CommandType = CommandType.StoredProcedure;
+                        command.CommandTimeout = 60;
 
                         command.Parameters.AddWithValue("@CitaId", citaId);
                         command.Parameters.AddWithValue("@FechaFacturacion", fechaFacturacion);
@@ -52,7 +77,6 @@ namespace ExpertMed.Services
                         command.Parameters.AddWithValue("@billing_details_phone", (object)billingDetailsPhone ?? DBNull.Value);
                         command.Parameters.AddWithValue("@billing_details_email", (object)billingDetailsEmail ?? DBNull.Value);
 
-                        // Crear DataTable para los items
                         var table = new DataTable();
                         table.Columns.Add("billing_item_code", typeof(string));
                         table.Columns.Add("billing_item_description", typeof(string));
@@ -61,7 +85,18 @@ namespace ExpertMed.Services
 
                         foreach (var item in items)
                         {
-                            table.Rows.Add(item.Code ?? string.Empty, item.Description ?? string.Empty, item.Quantity, item.UnitPrice);
+                            if (string.IsNullOrWhiteSpace(item.Code))
+                                throw new ArgumentException("Código de ítem faltante.");
+
+                            string descripcion = item.Description;
+
+                            if (tarifario.ContainsKey(item.Code))
+                                descripcion = tarifario[item.Code];
+
+                            if (string.IsNullOrWhiteSpace(descripcion))
+                                descripcion = $"Procedimiento {item.Code}";
+
+                            table.Rows.Add(item.Code, descripcion, item.Quantity, item.UnitPrice);
                         }
 
                         var itemsParam = new SqlParameter("@Items", SqlDbType.Structured)
@@ -69,13 +104,16 @@ namespace ExpertMed.Services
                             TypeName = "dbo.BillingItemsType",
                             Value = table
                         };
-
                         command.Parameters.Add(itemsParam);
 
                         jsonFactura = (string)await command.ExecuteScalarAsync();
                     }
 
-                    using (var command = new SqlCommand("SELECT users_xkeytaxo, users_xpasstaxo FROM users WHERE users_id = (SELECT appointment_createuser FROM appointment WHERE appointment_id = @CitaId)", connection))
+                    // 3. Obtener credenciales Dátil
+                    using (var command = new SqlCommand(@"
+                SELECT users_xkeytaxo, users_xpasstaxo 
+                FROM users 
+                WHERE users_id = (SELECT appointment_createuser FROM appointment WHERE appointment_id = @CitaId)", connection))
                     {
                         command.Parameters.AddWithValue("@CitaId", citaId);
                         using (var reader = await command.ExecuteReaderAsync())
@@ -89,6 +127,13 @@ namespace ExpertMed.Services
                     }
                 }
 
+                // Validación final JSON
+                if (string.IsNullOrWhiteSpace(jsonFactura) || !jsonFactura.Trim().StartsWith("{"))
+                    throw new Exception("El JSON generado por el SP es inválido o está vacío.");
+
+                _logger.LogDebug("Factura JSON para cita {CitaId}: {JsonFactura}", citaId, jsonFactura);
+
+                // 4. Envío a Dátil
                 using (var request = new HttpRequestMessage(HttpMethod.Post, "https://link.datil.co/invoices/issue"))
                 {
                     request.Content = new StringContent(jsonFactura, Encoding.UTF8, "application/json");
@@ -96,17 +141,20 @@ namespace ExpertMed.Services
                     request.Headers.Add("X-Password", xPassword);
 
                     var response = await _httpClient.SendAsync(request);
-                    response.EnsureSuccessStatusCode();
-                    return await response.Content.ReadAsStringAsync();
+                    var responseContent = await response.Content.ReadAsStringAsync();
+
+                    if (!response.IsSuccessStatusCode)
+                        throw new Exception($"Error Dátil: {response.StatusCode} - {responseContent}");
+
+                    return responseContent;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error en CreateAndSendInvoiceAsync: {ex.Message}");
+                _logger.LogError(ex, "Error en CreateAndSendInvoiceAsync para la cita ID: {CitaId}", citaId);
                 throw;
             }
         }
-
 
 
         public async Task<AppointmentBillingDTO?> GetAppointmentBillingDataAsync(int appointmentId)
@@ -130,10 +178,10 @@ namespace ExpertMed.Services
         {
             var facturas = new List<FacturaEmitidaDTO>();
 
+            // 1. Traer desde base de datos local (notas de venta)
             using (var connection = new SqlConnection(_context.Database.GetConnectionString()))
             {
                 await connection.OpenAsync();
-
                 using (var command = new SqlCommand("sp_ListarFacturasEmitidas", connection))
                 {
                     command.CommandType = CommandType.StoredProcedure;
@@ -152,14 +200,45 @@ namespace ExpertMed.Services
                                 TotalCopago = reader.GetDecimal(reader.GetOrdinal("TotalCopago")),
                                 MetodoPago = reader.GetString(reader.GetOrdinal("MetodoPago")),
                                 Aseguradora = reader.IsDBNull(reader.GetOrdinal("Aseguradora")) ? "Particular" : reader.GetString(reader.GetOrdinal("Aseguradora")),
-                                TotalItems = reader.GetInt32(reader.GetOrdinal("TotalItems"))
+                                TotalItems = reader.GetInt32(reader.GetOrdinal("TotalItems")),
+                                Origen = "LOCAL"
                             });
                         }
                     }
                 }
             }
 
-            return facturas;
+            // 2. Traer desde Dátil (facturas autorizadas)
+            var client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", "token=7278cc50a72640eea6384a075b8e8335");
+
+            var url = "https://link.datil.co/invoices?from=2025-06-01&to=2025-06-30";
+            var response = await client.GetAsync(url);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                var json = JsonDocument.Parse(content);
+
+                foreach (var f in json.RootElement.EnumerateArray())
+                {
+                    facturas.Add(new FacturaEmitidaDTO
+                    {
+                        FacturaId = 0,
+                        Fecha = f.GetProperty("issued_at").GetDateTime(),
+                        Paciente = f.GetProperty("client").GetProperty("name").GetString(),
+                        Subtotal = f.GetProperty("totals").GetProperty("subtotal_without_tax").GetDecimal(),
+                        TotalAseguradora = 0,
+                        TotalCopago = f.GetProperty("totals").GetProperty("total").GetDecimal(),
+                        MetodoPago = "-", // Dátil no da forma de pago
+                        Aseguradora = f.GetProperty("client").GetProperty("identification").GetString(),
+                        TotalItems = f.GetProperty("items").GetArrayLength(),
+                        Origen = "DATIL"
+                    });
+                }
+            }
+
+            return facturas.OrderByDescending(f => f.Fecha).ToList(); // para ordenarlos todos juntos
         }
 
 

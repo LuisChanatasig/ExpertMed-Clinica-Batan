@@ -26,6 +26,7 @@
                                 <th><i class="mdi mdi-bank"></i> Aseguradora</th>
                                 <th><i class="mdi mdi-account-cash-outline"></i> Copago</th>
                                 <th><i class="mdi mdi-credit-card-outline"></i> Pago</th>
+                                <th><i class="mdi mdi-database-marker-outline"></i> Origen</th>
                                 <th><i class="mdi mdi-format-list-bulleted-type"></i> Ítems</th>
                                 <th><i class="mdi mdi-printer"></i> Acción</th>
                             </tr>
@@ -36,7 +37,7 @@
                                 foreach (var item in Model)
                                 {
                                     <tr>
-                                        <td>@item.FacturaId</td>
+                                        <td>@(item.FacturaId > 0 ? item.FacturaId.ToString() : "—")</td>
                                         <td>@item.Fecha.ToString("dd/MM/yyyy")</td>
                                         <td>@item.Paciente</td>
                                         <td>@(string.IsNullOrWhiteSpace(item.Aseguradora) ? "—" : item.Aseguradora)</td>
@@ -44,12 +45,29 @@
                                         <td><span class="badge bg-success-subtle text-success">$@item.TotalAseguradora.ToString("F2")</span></td>
                                         <td><span class="badge bg-danger-subtle text-danger">$@item.TotalCopago.ToString("F2")</span></td>
                                         <td><span class="text-uppercase">@item.MetodoPago</span></td>
+                                        <td>
+                                            @if (item.Origen == "DATIL")
+                                            {
+                                                <span class="badge bg-info text-dark">Dátil</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">Local</span>
+                                            }
+                                        </td>
                                         <td>@item.TotalItems</td>
                                         <td>
-                                            <a href="@Url.Action("NotaVenta", "Billing", new { facturaId = item.FacturaId })"
-                                               class="btn btn-sm btn-soft-primary" title="Imprimir Nota de Venta">
-                                                <i class="mdi mdi-printer"></i>
-                                            </a>
+                                            @if (item.Origen == "LOCAL" && item.FacturaId > 0)
+                                            {
+                                                <a href="@Url.Action("NotaVenta", "Billing", new { facturaId = item.FacturaId })"
+                                                   class="btn btn-sm btn-soft-primary" title="Imprimir Nota de Venta">
+                                                    <i class="mdi mdi-printer"></i>
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">—</span>
+                                            }
                                         </td>
                                     </tr>
                                 }
@@ -57,7 +75,7 @@
                             else
                             {
                                 <tr>
-                                    <td colspan="10" class="text-center text-muted">
+                                    <td colspan="11" class="text-center text-muted">
                                         <i class="mdi mdi-alert-outline me-1"></i> No se encontraron facturas emitidas.
                                     </td>
                                 </tr>
@@ -72,7 +90,6 @@
 
 @section Scripts {
     <script>
-        // Si usas DataTables.js
         document.addEventListener("DOMContentLoaded", () => {
             $("#facturas-table").DataTable({
                 language: {

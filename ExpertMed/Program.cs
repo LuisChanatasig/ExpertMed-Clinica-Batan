@@ -2,6 +2,8 @@ using ExpertMed.Models;
 using ExpertMed.Services;
 using Microsoft.EntityFrameworkCore;
 using Rotativa.AspNetCore;
+using System.Globalization;
+using Microsoft.AspNetCore.Localization;
 
 namespace ExpertMed
 {
@@ -11,15 +13,26 @@ namespace ExpertMed
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // Establecer cultura por defecto a en-US para evitar errores con punto decimal
+            var defaultCulture = new CultureInfo("en-US");
+            CultureInfo.DefaultThreadCurrentCulture = defaultCulture;
+            CultureInfo.DefaultThreadCurrentUICulture = defaultCulture;
+
+            builder.Services.Configure<RequestLocalizationOptions>(options =>
+            {
+                options.DefaultRequestCulture = new RequestCulture(defaultCulture);
+                options.SupportedCultures = new List<CultureInfo> { defaultCulture };
+                options.SupportedUICultures = new List<CultureInfo> { defaultCulture };
+            });
 
             // Registrar IHttpClientFactory
             builder.Services.AddHttpClient();
 
-            // Configuraci�n de la base de datos
+            // Configuración de la base de datos
             builder.Services.AddDbContext<DbExpertmedContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("conexion")));
 
-            // Habilitar Razor Pages con recompilaci�n en tiempo de ejecuci�n
+            // Habilitar Razor Pages con recompilación en tiempo de ejecución
             builder.Services.AddRazorPages().AddRazorRuntimeCompilation();
 
             // Registrar IHttpContextAccessor
@@ -43,25 +56,25 @@ namespace ExpertMed
             builder.Services.AddScoped<TarifarioService>();
             builder.Services.AddScoped<EstablishmentService>();
 
-            // Configuraci�n de controladores y vistas
+            // Configuración de controladores y vistas
             builder.Services.AddControllersWithViews();
 
-            // Configuraci�n de la sesi�n
+            // Configuración de la sesión
             builder.Services.AddDistributedMemoryCache();
             builder.Services.AddSession(options =>
             {
-                options.IdleTimeout = TimeSpan.FromMinutes(30); // Tiempo de expiraci�n de la sesi�n
+                options.IdleTimeout = TimeSpan.FromMinutes(30); // Tiempo de expiración de la sesión
                 options.Cookie.HttpOnly = true;
                 options.Cookie.IsEssential = true;
             });
 
-
-
+            // Conversor personalizado para TimeOnly
             builder.Services.AddControllers().AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.Converters.Add(new JsonTimeOnlyConverter());
             });
 
+            // Licencia de QuestPDF
             QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
             var app = builder.Build();
@@ -69,7 +82,7 @@ namespace ExpertMed
             // Habilitar el uso de sesiones
             app.UseSession();
 
-            // Configuraci�n del pipeline HTTP
+            // Configuración del pipeline HTTP
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
@@ -81,10 +94,12 @@ namespace ExpertMed
 
             app.UseRouting();
 
+            // Habilitar cultura para interpretación de decimales (punto)
+            app.UseRequestLocalization();
 
             app.UseAuthorization();
 
-            // Configuraci�n de endpoints
+            // Configuración de endpoints
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllerRoute(
@@ -92,8 +107,10 @@ namespace ExpertMed
                     pattern: "{controller=Authentication}/{action=SignIn}/{id?}");
             });
 
+            // Configuración de Rotativa para PDFs
             IWebHostEnvironment env = app.Environment;
-            Rotativa.AspNetCore.RotativaConfiguration.Setup(env.WebRootPath, "Rotativa/Windows");
+            RotativaConfiguration.Setup(env.WebRootPath, "Rotativa/Windows");
+
             app.Run();
         }
     }
