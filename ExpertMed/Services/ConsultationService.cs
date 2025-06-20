@@ -386,6 +386,19 @@ namespace ExpertMed.Services
                             // La especialidad se encuentra en el índice 34
                             consulta.SpecialityName = reader.IsDBNull(34) ? null : reader.GetString(34);
                             consulta.EstablishmentName = reader.IsDBNull(35) ? null : reader.GetString(35);
+                            if (!reader.IsDBNull(36)) // Asegúrate de que este sea el índice correcto (ajústalo si agregas más columnas antes)
+                            {
+                                byte[] logoBytes = (byte[])reader[36];
+                                consulta.UsersEstablishmentLogo = logoBytes;
+                                consulta.UsersEstablishmentLogo64 = Convert.ToBase64String(logoBytes);
+                            }
+                            else
+                            {
+                                consulta.UsersEstablishmentLogo = null;
+                                consulta.UsersEstablishmentLogo64 = null;
+                            }
+                            consulta.UsersDocumentNumber = reader.IsDBNull(37) ? null : reader.GetString(37);
+                            consulta.EstablishmentAddress = reader.IsDBNull(38) ? null : reader.GetString(38);
 
                         }
 

@@ -45,7 +45,8 @@ public partial class User
     public int? UsersSpecialityid { get; set; }
     [NotMapped]
     public string? SpecialityName { get; set; }
-
+    [NotMapped]
+    public int? AssignedDoctorId { get; set; }
     public int? UsersCountryid { get; set; }
 
     public int? UsersVatpercentageid { get; set; }

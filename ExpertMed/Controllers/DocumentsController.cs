@@ -9,6 +9,7 @@ using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using iTextSharp.text.pdf;
 using Microsoft.AspNetCore.Hosting;
+using System.Globalization;
 
 
 namespace ExpertMed.Controllers
@@ -31,79 +32,219 @@ namespace ExpertMed.Controllers
             _consultationService = consultationService;
             _webHostEnvironment = webHostEnvironment;
         }
+        private string FormatearFechaLarga(DateTime fecha)
+        {
+            var cultura = new CultureInfo("es-ES");
 
+            string diaSemana = cultura.DateTimeFormat.GetDayName(fecha.DayOfWeek).ToUpper();
+            int dia = fecha.Day;
+
+            // Números en letras (hasta 31)
+            var diaEnLetras = new[] {
+        "", "UNO", "DOS", "TRES", "CUATRO", "CINCO", "SEIS", "SIETE", "OCHO", "NUEVE",
+        "DIEZ", "ONCE", "DOCE", "TRECE", "CATORCE", "QUINCE", "DIECISÉIS", "DIECISIETE",
+        "DIECIOCHO", "DIECINUEVE", "VEINTE", "VEINTIUNO", "VEINTIDÓS", "VEINTITRÉS",
+        "VEINTICUATRO", "VEINTICINCO", "VEINTISÉIS", "VEINTISIETE", "VEINTIOCHO", "VEINTINUEVE",
+        "TREINTA", "TREINTA Y UNO"
+    };
+
+            string mes = cultura.DateTimeFormat.GetMonthName(fecha.Month).ToUpper();
+            string anioTexto = ConvertirAnioALetras(fecha.Year);
+
+            return $"{diaSemana} {dia} ({diaEnLetras[dia]}) DE {mes} DE {anioTexto}";
+        }
+        private string ConvertirAnioALetras(int anio)
+        {
+            switch (anio)
+            {
+                case 2020: return "DOS MIL VEINTE";
+                case 2021: return "DOS MIL VEINTIUNO";
+                case 2022: return "DOS MIL VEINTIDÓS";
+                case 2023: return "DOS MIL VEINTITRÉS";
+                case 2024: return "DOS MIL VEINTICUATRO";
+                case 2025: return "DOS MIL VEINTE Y CINCO";
+                case 2026: return "DOS MIL VEINTE Y SEIS";
+                case 2027: return "DOS MIL VEINTE Y SIETE";
+                case 2028: return "DOS MIL VEINTE Y OCHO";
+                case 2029: return "DOS MIL VEINTE Y NUEVE";
+                case 2030: return "DOS MIL TREINTA";
+                default: return anio.ToString(); // fallback
+            }
+        }
+
+        void InsertImageFromField(PdfStamper stamper, AcroFields fields, string fieldName, byte[] imageBytes)
+        {
+            var fieldPosition = fields.GetFieldPositions(fieldName)?.FirstOrDefault();
+            if (fieldPosition != null && imageBytes != null && imageBytes.Length > 0)
+            {
+                var rect = fieldPosition.position;
+                var page = fieldPosition.page;
+
+                var image = iTextSharp.text.Image.GetInstance(imageBytes);
+                image.ScaleToFit(rect.Width, rect.Height); // Escala al tamaño exacto del campo
+                image.SetAbsolutePosition(rect.Left, rect.Bottom);
+
+                stamper.GetOverContent(page).AddImage(image);
+            }
+        }
 
         [HttpGet]
         public async Task<IActionResult> MedicalCertificate(int consultationId)
         {
-            // Obtener los detalles de la consulta
             var consultation = _consultationService.GetConsultationDetails(consultationId);
-
-            // Verificar si la consulta existe
             if (consultation == null)
             {
                 TempData["ErrorMessage"] = "Consulta no encontrada.";
                 return RedirectToAction("Index", "Home");
             }
 
-            // Obtener el patientId de la consulta
-            var patientId = consultation.ConsultationPatient;
-
-            // Obtener los detalles del paciente
-            var patient = await _patientService.GetPatientFullByIdAsync(patientId);
+            var patient = await _patientService.GetPatientFullByIdAsync(consultation.ConsultationPatient);
             if (patient == null)
             {
                 TempData["ErrorMessage"] = "Paciente no encontrado.";
                 return RedirectToAction("Index", "Home");
             }
 
-            // Obtener datos adicionales para la vista
-            var genderTypes = await _selectService.GetGenderTypeAsync();
-            var bloodTypes = await _selectService.GetBloodTypeAsync();
-            var documentTypes = await _selectService.GetDocumentTypeAsync();
-            var civilTypes = await _selectService.GetCivilTypeAsync();
-            var professionalTrainingTypes = await _selectService.GetProfessionaltrainingTypeAsync();
-            var sureHealthTypes = await _selectService.GetSureHealtTypeAsync();
-            var countries = await _selectService.GetAllCountriesAsync();
-            var provinces = await _selectService.GetAllProvinceAsync();
-            var parents = await _selectService.GetRelationshipTypeAsync();
-            var allergies = await _selectService.GetAllergiesTypeAsync();
-            var surgeries = await _selectService.GetSurgeriesTypeAsync();
-            var familyMember = await _selectService.GetFamiliarTypeAsync();
-            var diagnosis = await _selectService.GetAllDiagnosisAsync();
-            var medications = await _selectService.GetAllMedicationsAsync();
-            var images = await _selectService.GetAllImagesAsync();
-            var laboratories = await _selectService.GetAllLaboratoriesAsync();
+            var diagnosisList = await _selectService.GetAllDiagnosisAsync();
+            var definitiveDiagnosis = consultation.DiagnosisConsultations?
+                .FirstOrDefault(d => d.DiagnosisDefinitive == true) ??
+                consultation.DiagnosisConsultations?.FirstOrDefault(d => d.DiagnosisPresumptive == true);
 
-            // Crear el ViewModel
-            var viewModel = new NewPatientViewModel
+            var diagnosisName = definitiveDiagnosis != null
+                ? diagnosisList.FirstOrDefault(d => d.DiagnosisId == definitiveDiagnosis.DiagnosisDiagnosisid)?.DiagnosisName ?? "N/A"
+                : "N/A";
+
+            var fechaInicial = consultation.ConsultationCreationdate ?? DateTime.Today;
+            var diasReposo = consultation.ConsultationDisablilitydays ?? 1;
+            var fechaFinal = fechaInicial.AddDays(diasReposo);
+
+            string templatePath = Path.Combine(_webHostEnvironment.WebRootPath, "plantillas", "certificadoparaclinica.pdf");
+
+            using var memoryStream = new MemoryStream();
+            PdfReader pdfReader = new PdfReader(templatePath);
+            PdfStamper pdfStamper = new PdfStamper(pdfReader, memoryStream);
+            AcroFields formFields = pdfStamper.AcroFields;
+
+            // Rellenar campos
+            formFields.SetField("txt_nombre_paciente", $"{patient.PatientFirstname} {patient.PatientMiddlename} {patient.PatientFirstsurname} {patient.PatientSecondlastname}".ToUpper());
+            formFields.SetField("txt_apellidos", $"{patient.PatientFirstsurname} {patient.PatientSecondlastname}");
+            formFields.SetField("txt_cedula_paciente", patient.PatientDocumentnumber);
+            formFields.SetField("txt_direccion_paciente", patient.PatientAddress.ToUpper());
+            formFields.SetField("txt_numero_paciente", patient.PatientCellularPhone);
+            formFields.SetField("txt_empresa_paciente",
+                string.IsNullOrWhiteSpace(patient.PatientCompany)
+                    ? "NO ESPECIFICADO"
+                    : patient.PatientCompany.ToUpper());
+            formFields.SetField("txt_puesto_paciente",
+                string.IsNullOrWhiteSpace(patient.PatientOcupation)
+                    ? "NO ESPECIFICADO"
+                    : patient.PatientOcupation.ToUpper());
+            formFields.SetField("txt_codigo", patient.PatientId.ToString());
+
+            formFields.SetField("txt_fecha_emision", "Quito, " + fechaInicial.ToString("dd 'de' MMMM 'del' yyyy", new CultureInfo("es-ES")));
+
+            // FECHA INICIO
+            string fechaInicioCorta = fechaInicial.ToString("dd/MM/yyyy");
+            string fechaInicioLarga = FormatearFechaLarga(fechaInicial);
+            string fechaInicioCompleta = $"{fechaInicioCorta} - {fechaInicioLarga}";
+            formFields.SetField("txt_reposo_desde_paciente", fechaInicioCompleta);
+
+            // FECHA FIN
+            string fechaFinCorta = fechaFinal.ToString("dd/MM/yyyy");
+            string fechaFinLarga = FormatearFechaLarga(fechaFinal);
+            string fechaFinCompleta = $"{fechaFinCorta} - {fechaFinLarga}";
+            formFields.SetField("txt_reposo_hasta_paciente", fechaFinCompleta);
+
+
+            formFields.SetField("txt_dias", diasReposo.ToString());
+
+            var cultura = new CultureInfo("es-ES");
+            var diaNumero = fechaInicial.Day;
+            var diaTexto = cultura.DateTimeFormat.GetDayName(fechaInicial.DayOfWeek).ToUpper();
+            var mesTexto = cultura.DateTimeFormat.GetMonthName(fechaInicial.Month).ToUpper();
+
+            var diaEnLetras = diaNumero switch
             {
-                DetailsPatient = patient,
-                GenderTypes = genderTypes,
-                BloodTypes = bloodTypes,
-                DocumentTypes = documentTypes,
-                CivilTypes = civilTypes,
-                ProfessionalTrainingTypes = professionalTrainingTypes,
-                SureHealthTypes = sureHealthTypes,
-                Countries = countries,
-                Provinces = provinces,
-                Parents = parents,
-                AllergiesTypes = allergies,
-                SurgeriesTypes = surgeries,
-                FamilyMember = familyMember,
-                Diagnoses = diagnosis,
-                Medications = medications,
-                Images = images,
-                Laboratories = laboratories,
-                Consultation = consultation // Agregar los detalles de la consulta al ViewModel
+                1 => "UNO",
+                2 => "DOS",
+                3 => "TRES",
+                4 => "CUATRO",
+                5 => "CINCO",
+                6 => "SEIS",
+                7 => "SIETE",
+                8 => "OCHO",
+                9 => "NUEVE",
+                10 => "DIEZ",
+                11 => "ONCE",
+                12 => "DOCE",
+                13 => "TRECE",
+                14 => "CATORCE",
+                15 => "QUINCE",
+                16 => "DIECISÉIS",
+                17 => "DIECISIETE",
+                18 => "DIECIOCHO",
+                19 => "DIECINUEVE",
+                20 => "VEINTE",
+                21 => "VEINTIUNO",
+                22 => "VEINTIDÓS",
+                23 => "VEINTITRÉS",
+                24 => "VEINTICUATRO",
+                25 => "VEINTICINCO",
+                26 => "VEINTISÉIS",
+                27 => "VEINTISIETE",
+                28 => "VEINTIOCHO",
+                29 => "VEINTINUEVE",
+                30 => "TREINTA",
+                31 => "TREINTA Y UNO",
+                _ => diaNumero.ToString()
             };
 
-            return new ViewAsPdf("MedicalCertificate", viewModel)
-            {
-                PageSize = Rotativa.AspNetCore.Options.Size.A4,
-                PageOrientation = Rotativa.AspNetCore.Options.Orientation.Portrait
-            };
+            string fechaLarga = $"{diaTexto} {diaNumero} ({diaEnLetras}) DE {mesTexto} DE {fechaInicial:yyyy}";
+
+            // Rellenar en el PDF
+            formFields.SetField("txt_fecha_larga", fechaLarga);
+
+            formFields.SetField("txt_diagnosticos_paciente", diagnosisName);
+
+            formFields.SetField("txt_nombre_doctor", $"{consultation.UsersNames} {consultation.UsersSurcenames}".ToUpper());
+            formFields.SetField("txt_especialidad_doctor", consultation.SpecialityName.ToUpper());
+            formFields.SetField("txt_email_doctor", consultation.UsersEmail.ToUpper());
+            formFields.SetField("txt_cedula_doctor", consultation.UsersDocumentNumber.ToUpper());
+            formFields.SetField("txt_motivo_enfermedad_paciente", consultation.ConsultationReason.ToUpper());
+            formFields.SetField("txt_enfermedad_paciente", consultation.ConsultationDisease.ToUpper());
+
+            formFields.SetField("txt_footer_direccion",
+                string.IsNullOrWhiteSpace(consultation.UsersEstablishmentAddress)
+                    ? "NO ESPECIFICADO"
+                    : consultation.UsersEstablishmentAddress.ToUpper());
+            formFields.SetField("txt_footer_email",
+    string.IsNullOrWhiteSpace(consultation.UsersEmail)
+        ? "NO ESPECIFICADO"
+        : consultation.UsersEmail.ToUpper());
+
+            formFields.SetField("txt_footer_telefono",
+                string.IsNullOrWhiteSpace(consultation.UsersPhone)
+                    ? "NO ESPECIFICADO"
+                    : consultation.UsersPhone.ToUpper());
+
+
+            // Verifica que haya logo
+            InsertImageFromField(pdfStamper, formFields, "txt_imagen_logotipo", consultation.UsersEstablishmentLogo);
+
+
+
+
+
+
+
+            pdfStamper.FormFlattening = true;
+            pdfStamper.Close();
+            pdfReader.Close();
+
+            var random = new Random().Next(1000, 9999);
+            return File(memoryStream.ToArray(), "application/pdf", $"certificado_medico_{random}.pdf");
         }
+
 
         public async Task<IActionResult> MedicalForm(int consultationId)
         {
@@ -1902,6 +2043,9 @@ namespace ExpertMed.Controllers
 
             AcroFields formFields = pdfStamper.AcroFields;
 
+            InsertImageFromField(pdfStamper, formFields, "txt_imagen_logo", consultation.UsersEstablishmentLogo);
+
+
             // Asignar valores a campos de la plantilla PDF
             formFields.SetField("txt_nombre_doctor", consultation.UsersNames + " " + consultation.UsersSurcenames);
             formFields.SetField("txt_especialidad", consultation.SpecialityName);
@@ -1978,12 +2122,14 @@ namespace ExpertMed.Controllers
 
             formFields.SetField("txt_alergias", allergiesText);
 
+            var sequential = consultation.MedicationsConsultations.FirstOrDefault()?.MedicationsSequential ?? 0;
+            formFields.SetField("txt_secuencial", sequential.ToString());
 
 
             formFields.SetField("txt_rec_no_farma", consultation.ConsultationNonpharmacologycal ?? "N/A");
 
             formFields.SetField("txt_direccion", consultation.UsersEstablishmentAddress);
-
+            formFields.SetField("txt_direccion", consultation.EstablishmentAddress);
             // Finalizar la edición y cerrar el stamper
             pdfStamper.FormFlattening = true;
             pdfStamper.Close();
@@ -2021,6 +2167,7 @@ namespace ExpertMed.Controllers
             PdfStamper pdfStamper = new PdfStamper(pdfReader, memoryStream);
 
             AcroFields formFields = pdfStamper.AcroFields;
+            InsertImageFromField(pdfStamper, formFields, "txt_imagen_logo", consultation.UsersEstablishmentLogo);
 
             // Asignar valores a campos de la plantilla PDF
             formFields.SetField("txt_nombre_doctor", consultation.UsersNames + " " + consultation.UsersSurcenames);
@@ -2117,6 +2264,7 @@ namespace ExpertMed.Controllers
             PdfStamper pdfStamper = new PdfStamper(pdfReader, memoryStream);
 
             AcroFields formFields = pdfStamper.AcroFields;
+            InsertImageFromField(pdfStamper, formFields, "txt_imagen_logo", consultation.UsersEstablishmentLogo);
 
             // Asignar valores a campos de la plantilla PDF
             formFields.SetField("txt_nombre_doctor", consultation.UsersNames + " " + consultation.UsersSurcenames);

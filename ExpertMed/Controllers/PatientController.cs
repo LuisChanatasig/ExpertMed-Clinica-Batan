@@ -109,6 +109,9 @@ namespace ExpertMed.Controllers
 
             try
             {
+                // ✅ Aquí asignamos el perfil desde la sesión
+                patient.CreationUserProfileId = HttpContext.Session.GetInt32("PerfilId") ?? 0;
+
                 await _patientService.CreatePatientAsync(patient, doctorUserId);
                 TempData["SuccessMessage"] = "Paciente creado exitosamente.";
                 return RedirectToAction("PatientList");

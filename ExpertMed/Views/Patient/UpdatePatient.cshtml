@@ -46,17 +46,20 @@
                                     <i class="ri-user-fill" id="icons"></i>  <span> Datos Personales </span>
                                 </div>
 
-                                @if (perfilId == 3 || perfilId == 1)
+                                @if (perfilId == 3 || perfilId == 1 || perfilId == 4)
                                 {
-                                    <div class="col-lg-3" hidden>
+                                    <div class="col-lg-3">
                                         <div class="mb-3">
                                             <label for="doctorsSelect" class="form-label">Seleccionar médico asignado</label>
-                                            <select class="form-control" id="doctorsSelect" name="doctorsId" disabled data-choices data-choices-sorting-false>
+                                            <select class="form-control" name="doctorUserId" id="doctorsSelect" data-choices data-choices-sorting-false>
                                                 <option value="">Seleccione un médico</option>
-
-                                                <option value=""></option>
-
+                                                @foreach (var doctor in Model.Users)
+                                                {
+                                                    var selected = doctor.AssignedDoctorId == doctor.UsersId ? "selected" : "";
+                                                    <option value="@doctor.UsersId">@doctor.UsersNames @doctor.UsersSurcenames</option>
+                                                }
                                             </select>
+
                                         </div>
                                     </div>
                                 }
@@ -299,7 +302,7 @@
                                     </div>
                                 </div>
 
-                              @*   <div class="col-lg-3">
+                                @*   <div class="col-lg-3">
                                     <div class="mb-3">
                                         <label for="specialtySelect" class="form-label">Seleccione su seguro médico</label>
                                         <select class="form-control" id="healtInsurancetyoeId" name="patient.PatientHealtInsurance" asp-for="Patient.PatientHealtInsurance" data-choices data-choices-sorting-false required>
@@ -314,7 +317,7 @@
                                     </div>
                                 </div> *@
 
-                              @*   <div class="col-lg-3">
+                                @*   <div class="col-lg-3">
                                     <div class="mb-3">
                                         <label for="lastnameInput" class="form-label">Número de aseguradora *</label>
                                         <input type="text" class="form-control" id="documentnumber" name="patient.PatientInsuranceAuthorizationCode" value="@Model.Patient.PatientInsuranceAuthorizationCode" placeholder="Ingrese el número de seguro" required>
@@ -330,7 +333,7 @@
                         </div>
 
                     </div>
-                   
+
                     <div class="col-lg-12" style="padding-top: 3px">
                         <div class="hstack gap-2 justify-content-end">
 
@@ -366,7 +369,7 @@
             <div class="modal-body">
                 <form class="row g-3 needs-validation" novalidate name="formData">
 
-                    @if (perfilId == 3 || perfilId == 1 || perfilId == 4 )
+                    @if (perfilId == 3 || perfilId == 1 || perfilId == 4)
                     {
                         <div class="col-xxl-6">
                             <div class="mb-3">

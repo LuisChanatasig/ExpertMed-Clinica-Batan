@@ -1,202 +1,146 @@
-﻿@{
-    Layout = null;
-}
+﻿@model NewPatientViewModel
 @using System.Globalization
+@{
+    Layout = null;
 
-@model NewPatientViewModel
+    var consulta = Model.Consultation;
+    var paciente = Model.DetailsPatient;
+    var doctor = $"{consulta.UsersNames} {consulta.UsersSurcenames}";
+    var fechaInicial = consulta.ConsultationCreationdate ?? DateTime.Today;
+    var diasReposo = consulta.ConsultationDisablilitydays ?? 1;
+    var fechaFinal = fechaInicial.AddDays(diasReposo);
+
+    var diaTexto = fechaInicial.ToString("dddd dd", new CultureInfo("es-ES")).ToUpper();
+    var mesTexto = fechaInicial.ToString("MMMM", new CultureInfo("es-ES")).ToUpper();
+    var anioTexto = fechaInicial.ToString("yyyy");
+    var fechaLiteral = $"{diaTexto} DE {mesTexto} DE {anioTexto}";
+    var fechaFinalTexto = fechaFinal.ToString("dddd dd 'de' MMMM 'de' yyyy", new CultureInfo("es-ES"));
+
+    var diagnostico = consulta.DiagnosisConsultations?
+        .FirstOrDefault(d => d.DiagnosisDefinitive.HasValue && d.DiagnosisDefinitive.Value) ??
+        consulta.DiagnosisConsultations?
+        .FirstOrDefault(d => d.DiagnosisPresumptive.HasValue && d.DiagnosisPresumptive.Value);
+
+    var diagnosticoNombre = Model.Diagnoses
+        .FirstOrDefault(d => d.DiagnosisId == diagnostico?.DiagnosisDiagnosisid)?.DiagnosisName ?? "N/A";
+
+    
+
+}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Certificado Médico</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: Arial;
             margin: 40px;
+            font-size: 14px;
         }
 
-        .header {
+        h2 {
             text-align: center;
+            font-size: 22px;
             margin-bottom: 20px;
         }
 
-            .header h1 {
-                font-size: 20px;
-                font-weight: bold;
-                margin: 0;
-            }
-
-            .header p {
-                font-size: 9px;
-                margin: 2px 0;
-            }
-
-        .division {
-            border: 3px solid black
+        .section {
+            margin-bottom: 20px;
         }
 
-        .content {
-            margin-top: 40px;
+        .section-title {
+            font-weight: bold;
+            text-decoration: underline;
+            margin-bottom: 10px;
         }
 
-            .content h2 {
-                font-size: 30px;
-                font-weight: bold;
-                text-align: center;
-                margin-bottom: 15px;
-            }
-
-            .content p {
-                font-size: 23px;
-            }
+        .datos label {
+            font-weight: bold;
+            display: block;
+            margin-top: 5px;
+        }
 
         .footer {
+            margin-top: 40px;
             text-align: center;
-            margin-top: 20px;
             font-size: 12px;
-            color: #808080;
-            font-style: italic;
+            color: #555;
         }
 
         .signature {
-            margin-top: 20px;
-            padding-top: 150px;
-        }
-
-            .signature .left {
-                float: left;
-                font-size: 20px;
-                font-weight: lighter;
-            }
-
-            .signature .right {
-                float: right;
-                font-size: 20px;
-                font-weight: bold;
-            }
-
-            .signature p {
-                float: right;
-                font-size: 20px;
-                font-weight: bold;
-            }
-
-        .clear {
-            clear: both;
+            text-align: center;
+            margin-top: 50px;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <img src="data:image/jpeg;base64,@(Model.Consultation.UsersProfilephoto64)"
-             alt="Foto de perfil"
-             style="width: 100px; height: 100px; border-radius: 50%; border: 2px solid black; object-fit: cover;" />
-        <div class="division"></div>
+
+    <h2>CERTIFICADO MÉDICO</h2>
+
+    <div class="section">
+        <p><strong>Fecha de Emisión:</strong> Quito, @fechaInicial:dd/MM/yyyy</p>
+        <p>
+            Certifico que el paciente
+            <strong>@paciente.PatientFirstname @paciente.PatientMiddlename @paciente.PatientFirstsurname @paciente.PatientSecondlastname</strong>
+            con identificación: <strong>@paciente.PatientDocumentnumber</strong> fue atendido el día de hoy <strong>@fechaLiteral</strong>.
+        </p>
     </div>
 
+    <div class="section datos">
+        <div class="section-title">DATOS DEL PACIENTE</div>
+        <label>Nombres y Apellidos:</label> @paciente.PatientFirstname @paciente.PatientMiddlename @paciente.PatientFirstsurname @paciente.PatientSecondlastname
+        <label>Dirección:</label> @paciente.PatientAddress
+        <label>Teléfono:</label> @paciente.PatientCellularPhone
+        <label>Empresa:</label> @paciente.PatientCompany
+        <label>Ocupación:</label> @paciente.PatientOcupation
+        <label>N° Historia Clínica:</label> @paciente.PatientId
+    </div>
 
-    <div class="content">
-        <br />
-        <br />
+    <div class="section">
+        <div class="section-title">MOTIVO MÉDICO</div>
+        <p><strong>Diagnóstico:</strong> @diagnosticoNombre</p>
+        <p>Síntomas: <strong>( X ) Sí</strong> <strong>( ) No</strong></p>
+        <p>Enfermedad: <strong>( X ) Sí</strong> <strong>( ) No</strong> — Fiebre, malestar general, otros síntomas relacionados.</p>
+        <p>Contingencia: <strong>Enfermedad general</strong></p>
+    </div>
 
-        <h3 style="text-align: end; font-family: Arial;">
-            @{
-                // Obtener la fecha inicial (nullable)
-                var fechaInicial = Model.Consultation.ConsultationCreationdate;
-
-                // Obtener los días de descanso (nullable)
-                var diasDescanso = Model.Consultation.ConsultationDisablilitydays;
-
-                // Declarar variables para fechas formateadas
-                string fechaInicialFormateada = "";
-                string fechaFinalFormateada = "";
-
-                // Verificar si la fecha inicial y los días de descanso tienen valor
-                if (fechaInicial.HasValue && diasDescanso.HasValue)
-                {
-                    // Convertir días de descanso a double (no nullable)
-                    double diasDescansoDouble = diasDescanso.Value;
-
-                    // Calcular la fecha final sumando los días de descanso
-                    var fechaFinal = fechaInicial.Value.AddDays(diasDescansoDouble);
-
-                    // Formatear la fecha inicial
-                    fechaInicialFormateada = String.Format(CultureInfo.CreateSpecificCulture("es-ES"), "{0:dddd dd MMMM yyyy}", fechaInicial.Value);
-                    var fechaInicialCapitalizada = char.ToUpper(fechaInicialFormateada[0]) + fechaInicialFormateada.Substring(1);
-
-                    // Formatear la fecha final
-                    fechaFinalFormateada = String.Format(CultureInfo.CreateSpecificCulture("es-ES"), "{0:dddd dd MMMM yyyy}", fechaFinal);
-
-                    // Mostrar la fecha inicial
-                    <text>Quito, @fechaInicialCapitalizada</text>
-                }
-                else
-                {
-                    // Mostrar un mensaje alternativo si la fecha o los días de descanso son null
-                    <text>Quito, Fecha o días de descanso no disponibles</text>
-                }
-            }
-        </h3>
-        <br />
-        <br />
-        <h2>CERTIFICADO MÉDICO</h2>
-        <p style="text-align: justify; max-width: 880px; margin: 0 auto;">
-            @{
-                // Buscar primero el diagnóstico definitivo, si no existe, usar el presuntivo.
-                var ultimoDiagnostico = Model.Consultation.DiagnosisConsultations
-                    ?.OrderByDescending(d => d.DiagnosisDiagnosisid)
-                    .FirstOrDefault(d => d.DiagnosisDefinitive == true)
-                    ?? Model.Consultation.DiagnosisConsultations
-                    ?.OrderByDescending(d => d.DiagnosisDiagnosisid)
-                    .FirstOrDefault(d => d.DiagnosisPresumptive == true);
-
-                var nombreDiagnostico = ultimoDiagnostico != null
-                    ? Model.Diagnoses.FirstOrDefault(d => d.DiagnosisId == ultimoDiagnostico.DiagnosisDiagnosisid)?.DiagnosisName ?? "N/A"
-                    : "N/A";
-            }
-
-
-            @Html.Raw("Certifico que el sr(a) <strong>" +
-                              Model.DetailsPatient.PatientFirstsurname + " " +
-                              Model.DetailsPatient.PatientSecondlastname + " " +
-                              Model.DetailsPatient.PatientFirstname + " " +
-                              Model.DetailsPatient.PatientMiddlename + "</strong> con CI: " +
-                              Model.DetailsPatient.PatientDocumentnumber +
-                              " fue ingresado en este establecimiento, se recomienda reposo ABSOLUTO POR " +
-                              Model.Consultation.ConsultationDisablilitydays +
-                              " DIAS, conjuntamente con tratamiento prescrito, desde el día " +
-                              fechaInicialFormateada + " hasta el día " +
-                              fechaFinalFormateada + ", con un diagnóstico de <strong>" +
-                              nombreDiagnostico + "</strong>")
-                     <br />
-                     <br />
-            Esto es todo lo que puedo certificar en honor a la verdad.
-
-        </p>
-
-
+    <div class="section">
+        <div class="section-title">REPOSO MÉDICO</div>
+        <p>Se recomienda reposo médico domiciliario por <strong>@diasReposo</strong> día(s).</p>
+        <p><strong>Desde:</strong> @fechaInicial:dd/MM/yyyy - @fechaLiteral</p>
+        <p><strong>Hasta:</strong> @fechaFinal:dd/MM/yyyy - @fechaFinalTexto.ToUpper()</p>
     </div>
 
     <div class="signature">
-
-
-        <div class="left">
-            ATENTAMENTE,
-            <div style="padding-top: 100px">
-
-            </div>
-            <p>
-                Dr. @Model.Consultation.UsersNames @Model.Consultation.UsersSurcenames
-                <br />
-                @Model.Consultation.SpecialityName
-            </p>
-        </div>
-
-
-
+        <p>ATENTAMENTE,</p>
+        <br /><br /><br /><br />
+        <p>
+            <strong>Dr(a). @doctor</strong><br />
+            @consulta.SpecialityName<br />
+            Email: @consulta.UsersEmail
+        </p>
     </div>
 
+    <div class="footer">
+        @if (consulta != null)
+        {
+            <text>
+                <strong>@consulta.EstablishmentName</strong><br />
+                @consulta.UsersEstablishmentAddress<br />
+                Email: @consulta.UsersEmail
+            </text>
+        }
+        else
+        {
+            <text>
+                CONSULTORIOS INTEGRALES EL BATÁN<br />
+                Av. Tomás de Berlanga N43-14 y Av. 6 de Diciembre<br />
+                Teléfono: +593 2 2445008 / +593 98 053 5862<br />
+                Email: info@consultorioselbatan.com
+            </text>
+        }
+    </div>
 
 </body>
 </html>

@@ -276,7 +276,7 @@
                 <form class="row g-3 needs-validation" novalidate id="formData">
                     <input type="hidden" name="AppointmentId" id="appointment" />
                     <input type="hidden" name="AppointmentPatientid" id="patientId" />
-                    <input type="text" id="doctorUserId" name="DoctorUserId" />
+                    <input type="hidden" id="doctorUserId" name="DoctorUserId" />
 
                     <input type="hidden" name="AppointmentMedicalofficeid" id="AppointmentMedicalofficeid" />
 
@@ -705,11 +705,14 @@
                 respiratoryRate: parseInt($('#respiratoryRate').val()),
                 bloodPressureAS: parts[0],
                 bloodPressureDIS: parts[1],
-                pulse:             parseInt($('#heartRate').val()),
-                weight:            parseFloat($('#weight').val()),
-                size:              parseInt($('#height').val()),
+                pulse: $('#heartRate').val(),
+
+                weight:            $('#weight').val(),
+                size:              $('#height').val(),
                 createdBy:         @usuarioId
             };
+            console.log("Datos a enviar:", data);
+
             fetch('@Url.Action("InsertVitalSigns", "Appointment")', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

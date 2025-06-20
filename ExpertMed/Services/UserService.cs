@@ -452,86 +452,65 @@ namespace ExpertMed.Services
                 CommandType = CommandType.StoredProcedure
             };
 
-            // Parámetro obligatorio
-            command.Parameters.AddWithValue("@UserId", userId);
-
-            // Datos personales
+            command.Parameters.Add(new SqlParameter("@UserId", SqlDbType.Int) { Value = userId });
             command.Parameters.Add(new SqlParameter("@ProfilePhoto", SqlDbType.VarBinary) { Value = usuario.UserProfilephoto ?? (object)DBNull.Value });
-            command.Parameters.AddWithValue("@ProfileId", usuario.UserProfileid);
-            command.Parameters.AddWithValue("@DocumentNumber", usuario.UserDocumentNumber);
-            command.Parameters.AddWithValue("@Names", usuario.UserNames);
-            command.Parameters.AddWithValue("@Surnames", usuario.UserSurnames);
-            command.Parameters.AddWithValue("@Address", usuario.UserAddress);
-            command.Parameters.AddWithValue("@SenecytCode", usuario.UserSenecytcode ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@Phone", usuario.UserPhone);
-            command.Parameters.AddWithValue("@Email", usuario.UserEmail);
-            command.Parameters.AddWithValue("@SpecialtyId", usuario.UserSpecialtyid ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@CountryId", usuario.UserCountryid ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@Login", usuario.UserLogin);
-            command.Parameters.AddWithValue("@Password", usuario.UserPassword);
+            command.Parameters.Add(new SqlParameter("@ProfileId", SqlDbType.Int) { Value = usuario.UserProfileid });
+            command.Parameters.Add(new SqlParameter("@DocumentNumber", SqlDbType.NVarChar, 13) { Value = usuario.UserDocumentNumber });
+            command.Parameters.Add(new SqlParameter("@Names", SqlDbType.NVarChar, 250) { Value = usuario.UserNames });
+            command.Parameters.Add(new SqlParameter("@Surnames", SqlDbType.NVarChar, 250) { Value = usuario.UserSurnames });
+            command.Parameters.Add(new SqlParameter("@Address", SqlDbType.NVarChar, 255) { Value = usuario.UserAddress });
+            command.Parameters.Add(new SqlParameter("@SenecytCode", SqlDbType.NVarChar, 250) { Value = usuario.UserSenecytcode ?? (object)DBNull.Value });
+            command.Parameters.Add(new SqlParameter("@Phone", SqlDbType.NVarChar, 250) { Value = usuario.UserPhone });
+            command.Parameters.Add(new SqlParameter("@Email", SqlDbType.NVarChar, 250) { Value = usuario.UserEmail });
+            command.Parameters.Add(new SqlParameter("@SpecialtyId", SqlDbType.Int) { Value = usuario.UserSpecialtyid ?? (object)DBNull.Value });
+            command.Parameters.Add(new SqlParameter("@CountryId", SqlDbType.Int) { Value = usuario.UserCountryid ?? (object)DBNull.Value });
+            command.Parameters.Add(new SqlParameter("@Login", SqlDbType.NVarChar, 255) { Value = usuario.UserLogin });
+            command.Parameters.Add(new SqlParameter("@Password", SqlDbType.NVarChar, -1) { Value = usuario.UserPassword });
 
-            // Datos fiscales (Taxo)
-            command.Parameters.AddWithValue("@EstablishmentId", usuario.UserEstablishmentId ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@VatPercentageId", usuario.UserVatpercentageid ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@XKeyTaxo", usuario.UserXkeytaxo ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@XPassTaxo", usuario.UserXpasstaxo ?? (object)DBNull.Value);
+            command.Parameters.Add(new SqlParameter("@EstablishmentId", SqlDbType.Int) { Value = usuario.UserEstablishmentId ?? (object)DBNull.Value });
+            command.Parameters.Add(new SqlParameter("@VatPercentageId", SqlDbType.Int) { Value = usuario.UserVatpercentageid ?? (object)DBNull.Value });
+            command.Parameters.Add(new SqlParameter("@XKeyTaxo", SqlDbType.NVarChar, -1) { Value = usuario.UserXkeytaxo ?? (object)DBNull.Value });
+            command.Parameters.Add(new SqlParameter("@XPassTaxo", SqlDbType.NVarChar, -1) { Value = usuario.UserXpasstaxo ?? (object)DBNull.Value });
 
-            // Horario y descripción
-            command.Parameters.AddWithValue("@StartTime", usuario.StartTime == TimeOnly.MinValue ? (object)DBNull.Value : DateTime.Today.Add(usuario.StartTime.ToTimeSpan()));
-            command.Parameters.AddWithValue("@EndTime", usuario.EndTime == TimeOnly.MinValue ? (object)DBNull.Value : DateTime.Today.Add(usuario.EndTime.ToTimeSpan()));
-            command.Parameters.AddWithValue("@AppointmentInterval", usuario.AppointmentInterval);
-            command.Parameters.AddWithValue("@Description", usuario.UserDescription ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@WorkingDays", usuario.WorksDays ?? (object)DBNull.Value);
+            command.Parameters.Add(new SqlParameter("@StartTime", SqlDbType.Time) { Value = usuario.StartTime == TimeOnly.MinValue ? (object)DBNull.Value : usuario.StartTime.ToTimeSpan() });
+            command.Parameters.Add(new SqlParameter("@EndTime", SqlDbType.Time) { Value = usuario.EndTime == TimeOnly.MinValue ? (object)DBNull.Value : usuario.EndTime.ToTimeSpan() });
+            command.Parameters.Add(new SqlParameter("@AppointmentInterval", SqlDbType.Int) { Value = usuario.AppointmentInterval });
+            command.Parameters.Add(new SqlParameter("@Description", SqlDbType.NVarChar, -1) { Value = usuario.UserDescription ?? (object)DBNull.Value });
+            command.Parameters.Add(new SqlParameter("@WorkingDays", SqlDbType.NVarChar, -1) { Value = usuario.WorksDays ?? (object)DBNull.Value });
+            command.Parameters.Add(new SqlParameter("@DoctorIds", SqlDbType.NVarChar, -1) { Value = associatedDoctorIds != null && associatedDoctorIds.Any() ? string.Join(",", associatedDoctorIds) : (object)DBNull.Value });
 
-            // Relación asistente-médico
-            command.Parameters.AddWithValue("@DoctorIds", associatedDoctorIds != null && associatedDoctorIds.Any()
-                ? string.Join(",", associatedDoctorIds)
-                : (object)DBNull.Value);
+            command.Parameters.Add(new SqlParameter("@CompanyLogo", SqlDbType.VarBinary) { Value = (object?)usuario.CompanyLogoBytes ?? DBNull.Value });
+            command.Parameters.Add(new SqlParameter("@CompanyLogoFileName", SqlDbType.NVarChar, 255) { Value = (object?)usuario.CompanyLogoFileName ?? DBNull.Value });
+            command.Parameters.Add(new SqlParameter("@CompanyLogoContentType", SqlDbType.NVarChar, 100) { Value = (object?)usuario.CompanyLogoContentType ?? DBNull.Value });
 
-            // Archivos
-            command.Parameters.AddWithValue("@CompanyLogo", usuario.CompanyLogoBytes ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@CompanyLogoFileName", usuario.CompanyLogoFileName ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@CompanyLogoContentType", usuario.CompanyLogoContentType ?? (object)DBNull.Value);
+            command.Parameters.Add(new SqlParameter("@CertificateP12", SqlDbType.VarBinary) { Value = (object?)usuario.CertificateP12Bytes ?? DBNull.Value });
+            command.Parameters.Add(new SqlParameter("@CertificateP12FileName", SqlDbType.NVarChar, 255) { Value = (object?)usuario.CertificateP12FileName ?? DBNull.Value });
+            command.Parameters.Add(new SqlParameter("@CertificateP12ContentType", SqlDbType.NVarChar, 100) { Value = (object?)usuario.CertificateP12ContentType ?? DBNull.Value });
 
-            command.Parameters.AddWithValue("@CertificateP12", usuario.CertificateP12Bytes ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@CertificateP12FileName", usuario.CertificateP12FileName ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@CertificateP12ContentType", usuario.CertificateP12ContentType ?? (object)DBNull.Value);
+            command.Parameters.Add(new SqlParameter("@CompanySignature", SqlDbType.VarBinary) { Value = (object?)usuario.CompanySignatureBytes ?? DBNull.Value });
+            command.Parameters.Add(new SqlParameter("@CompanySignatureFileName", SqlDbType.NVarChar, 255) { Value = (object?)usuario.CompanySignatureFileName ?? DBNull.Value });
+            command.Parameters.Add(new SqlParameter("@CompanySignatureContentType", SqlDbType.NVarChar, 100) { Value = (object?)usuario.CompanySignatureContentType ?? DBNull.Value });
 
-            // Firma digital
-            command.Parameters.AddWithValue("@CompanySignature", usuario.CompanySignatureBytes ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@CompanySignatureFileName", usuario.CompanySignatureFileName ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@CompanySignatureContentType", usuario.CompanySignatureContentType ?? (object)DBNull.Value);
+            command.Parameters.Add(new SqlParameter("@CompanyStamp", SqlDbType.VarBinary) { Value = (object?)usuario.CompanyStampBytes ?? DBNull.Value });
+            command.Parameters.Add(new SqlParameter("@CompanyStampFileName", SqlDbType.NVarChar, 255) { Value = (object?)usuario.CompanyStampFileName ?? DBNull.Value });
+            command.Parameters.Add(new SqlParameter("@CompanyStampContentType", SqlDbType.NVarChar, 100) { Value = (object?)usuario.CompanyStampContentType ?? DBNull.Value });
 
-            // Sello
-            command.Parameters.AddWithValue("@CompanyStamp", usuario.CompanyStampBytes ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@CompanyStampFileName", usuario.CompanyStampFileName ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@CompanyStampContentType", usuario.CompanyStampContentType ?? (object)DBNull.Value);
-
-            // TVP: consultorios
             var table = new DataTable();
             table.Columns.Add("Id", typeof(int));
-
             if (usuario.SelectedOfficeIds != null)
             {
                 foreach (var id in usuario.SelectedOfficeIds)
                     table.Rows.Add(id);
             }
 
-            var consultoriosParam = new SqlParameter("@ConsultoriosIds", SqlDbType.Structured)
-            {
-                TypeName = "dbo.IdList",
-                Value = table
-            };
-            command.Parameters.Add(consultoriosParam);
-
-            // Usuario que asigna
-            command.Parameters.AddWithValue("@AssignedBy", usuario.AssignedBy);
+            command.Parameters.Add(new SqlParameter("@ConsultoriosIds", SqlDbType.Structured) { TypeName = "dbo.IdList", Value = table });
+            command.Parameters.Add(new SqlParameter("@AssignedBy", SqlDbType.Int) { Value = usuario.AssignedBy });
 
             try
             {
                 await connection.OpenAsync();
-
                 string jsonResult = null;
+
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     if (await reader.ReadAsync())
@@ -545,14 +524,12 @@ namespace ExpertMed.Services
                 var root = document.RootElement;
 
                 if (root.TryGetProperty("success", out var success) && success.GetInt32() == 1)
-                {
-                    // Todo bien
                     return;
-                }
 
                 var errorMessage = root.TryGetProperty("message", out var message)
                     ? message.GetString()
                     : "Error al actualizar el usuario.";
+
                 throw new Exception(errorMessage);
             }
             finally

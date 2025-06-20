@@ -53,6 +53,10 @@ public partial class Patient
     public string? PatientOcupation { get; set; }
     [NotMapped]
     public string? PatientInsuranceAuthorizationCode { get; set; }
+    [NotMapped]
+    public int CreationUserProfileId { get; set; } 
+   
+
 
     public string? PatientCompany { get; set; }
 

@@ -67,15 +67,25 @@ namespace ExpertMed.Models
         public string? UsersEmail { get; set; }
         public string? UsersPhone { get; set; }
         public string? UsersEstablishmentName { get; set; }
+        public string? EstablishmentAddress { get; set; }
 
         public string? UsersEstablishmentAddress { get; set; }
         public byte[]? UsersProfilephoto { get; set; }
         public string? UsersProfilephoto64 { get; set; }
-
+        public string? UsersDocumentNumber { get; set; }
+            
         public string? SpecialityName { get; set; }
 
         public string? EstablishmentName { get; set; }
+        public byte[]? UsersEstablishmentLogoBytes { get; set; }
 
+        // Puedes también tener el base64 si lo necesitas en vistas Razor:
+        public string? UsersEstablishmentLogoBase64 =>
+            UsersEstablishmentLogoBytes != null
+                ? $"data:image/png;base64,{Convert.ToBase64String(UsersEstablishmentLogoBytes)}"
+                : null;
+        public byte[]? UsersEstablishmentLogo { get; set; }
+        public string? UsersEstablishmentLogo64 { get; set; }  // base64 para imágenes en PDF
 
         // Relaciones con otras tablas
         public List<ConsultaAlergiaDTO> AllergiesConsultations { get; set; } // Lista de alergias asociadas a la consulta

@@ -44,6 +44,24 @@
         public List<MedicalOfficeDto> MedicalOffices { get; set; } = new();
         public List<UserFileDto> UserFiles { get; set; } = new();
 
+
+
+        public byte[]? CompanyLogoBytes { get; set; }
+        public string? CompanyLogoFileName { get; set; }
+        public string? CompanyLogoContentType { get; set; }
+
+        public byte[]? CertificateP12Bytes { get; set; }
+        public string? CertificateP12FileName { get; set; }
+        public string? CertificateP12ContentType { get; set; }
+
+        public byte[]? CompanySignatureBytes { get; set; }
+        public string? CompanySignatureFileName { get; set; }
+        public string? CompanySignatureContentType { get; set; }
+
+        public byte[]? CompanyStampBytes { get; set; }
+        public string? CompanyStampFileName { get; set; }
+        public string? CompanyStampContentType { get; set; }
+
         public string? CompanyLogoBase64 =>
     UserFiles?.FirstOrDefault(f => f.FileType == "logotipo")?.FileContent is byte[] logo
         ? $"data:image/png;base64,{Convert.ToBase64String(logo)}"

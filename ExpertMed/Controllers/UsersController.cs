@@ -282,6 +282,7 @@ namespace ExpertMed.Controllers
             var percentage = await _selectsService.GetAllVatPercentageAsync();
             var establishments = await _selectsService.GetAllEstablishmentAsync(perfilId, usuarioId);
             var medics = await _selectsService.GetAllMedicsAsync(perfilId, usuarioId);
+            var consultorios = await _clinicaService.GetMedicalOfficesAsync(perfilId, usuarioId);
 
             var viewModel = new NewUserViewModel
             {
@@ -292,7 +293,8 @@ namespace ExpertMed.Controllers
                 VatBillings = percentage,
                 Establishments = establishments,
                 Users = medics,
-                AssociatedDoctors = user.Doctors
+                AssociatedDoctors = user.Doctors,
+                MedicalOfficeListDtos = consultorios
             };
 
             return View(viewModel);
@@ -311,9 +313,17 @@ namespace ExpertMed.Controllers
         {
             if (!ModelState.IsValid)
             {
-                TempData["ErrorMessage"] = "Datos inválidos. Por favor, revisa los campos e intenta de nuevo.";
+                var errores = ModelState
+                    .Where(kvp => kvp.Value.Errors.Any())
+                    .Select(kvp =>
+                        $"Campo: {kvp.Key} - Error: {string.Join(", ", kvp.Value.Errors.Select(e => e.ErrorMessage))}")
+                    .ToList();
+
+                TempData["ErrorMessage"] = "Datos inválidos:\n" + string.Join("\n", errores);
+
                 return await ReloadUserEditView(id);
             }
+
 
             // Asignar usuario modificador
             usuario.AssignedBy = HttpContext.Session.GetInt32("UsuarioId") ?? 0;

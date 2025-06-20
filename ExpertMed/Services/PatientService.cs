@@ -125,6 +125,7 @@ namespace ExpertMed.Services
 
                 // Agregar parámetros desde el modelo Patient
                 command.Parameters.AddWithValue("@patient_creationuser", patient.PatientCreationuser);
+                command.Parameters.AddWithValue("@creationuser_profileid", patient.CreationUserProfileId);
                 command.Parameters.AddWithValue("@patient_modificationuser", patient.PatientModificationuser);
                 command.Parameters.AddWithValue("@patient_documenttype", patient.PatientDocumenttype);
                 command.Parameters.AddWithValue("@patient_documentnumber", patient.PatientDocumentnumber);

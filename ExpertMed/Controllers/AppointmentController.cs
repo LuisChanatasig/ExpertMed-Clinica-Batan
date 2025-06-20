@@ -556,7 +556,14 @@ namespace ExpertMed.Controllers
         public async Task<IActionResult> InsertVitalSigns([FromBody] VitalSignInputModel model)
         {
             if (!ModelState.IsValid)
-                return BadRequest(new { success = false, message = "Datos inválidos." });
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                return BadRequest(new { success = false, message = "Datos inválidos.", errors });
+            }
 
             var result = await _appointmentService.InsertVitalSignsAsync(model);
 

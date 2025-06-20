@@ -101,7 +101,7 @@
                                 <div class="col-lg-3" id="doctorSelectContainer" style="display: none;">
                                     <!-- Oculto por defecto -->
                                     <div class="mb-3">
-                                        <label for="doctorSelect" class="form-label">Seleccione el doctor al cual asignar el asistente</label>
+                                        <label for="doctorSelect" class="form-label">Seleccione el doctor al cual asignar el Enfermero/a o Asistente</label>
                                         <select class="form-control" id="doctorSelect" name="doctorSelect" data-choices data-choices-removeItem multiple>
                                             @foreach (var medic in Model.Users)
                                             {
@@ -497,11 +497,12 @@
                 const selectedValue = profileSelect.value;
 
                 // Mostrar u ocultar el contenedor del select de médicos
-                if (selectedValue === "3") { // Mostrar si el ProfileId es 3
-                    doctorSelectContainer.style.display = "block";
-                } else { // Ocultar en caso contrario
-                    doctorSelectContainer.style.display = "none";
-                }
+                       if (selectedValue === "3" || selectedValue === "8") {
+            doctorSelectContainer.style.display = "block";
+        } else {
+            doctorSelectContainer.style.display = "none";
+        }
+
             });
         });
 

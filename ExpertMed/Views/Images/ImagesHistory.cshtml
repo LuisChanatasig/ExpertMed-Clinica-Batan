@@ -117,7 +117,7 @@
                                                                     <td>@item.e.NombreExamen</td>
                                                                     <td>@item.e.ImagesObservation</td>
                                                                     <td><span class="badge @badge">@item.e.EstadoTexto</span></td>
-                                                                    @if (perfilId == 1 || perfilId == 4)
+                                                                    @if (perfilId == 1 || perfilId == 4 || perfilId == 5)
                                                                     {
                                                                         <td>
                                                                             <button type="button"
@@ -135,7 +135,7 @@
                                                                     }
                                                                 </tr>
 
-                                                                @if (perfilId == 1 || perfilId == 4)
+                                                                @if (perfilId == 1 || perfilId == 4 || perfilId == 5)
                                                                 {
                                                                     <div class="offcanvas offcanvas-end" tabindex="-1"
                                                                          id="cambiarEstado_@item.e.ImagesId"
