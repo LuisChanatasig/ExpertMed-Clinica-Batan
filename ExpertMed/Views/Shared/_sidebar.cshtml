@@ -6,6 +6,7 @@
     var usuarioApellido = ViewContext.HttpContext.Session.GetString("UsuarioApellido");
     var usuarioEspecialidad = ViewContext.HttpContext.Session.GetString("UsuarioEspecialidad");
     var especialidadId = ViewContext.HttpContext.Session.GetInt32("UsuarioIdEspecialidad");
+    var establecimientoId = ViewContext.HttpContext.Session.GetInt32("UsuarioEstablecimientoId");
 
     var fotoPerfilBase64 = ViewContext.HttpContext.Session.GetString("UsuarioFotoPerfil");
     var rutaImagenPorDefecto = Url.Content("~/assets/images/users/multi-user.jpg");
@@ -93,9 +94,9 @@
                         </a>
                         <div class="collapse menu-dropdown" id="sidebarEstablecimientos">
                             <ul class="nav nav-sm flex-column">
-                              
+
                                 <li class="nav-item">
-                                    <a href="@Url.Action("ListaConsultorios", "MedicalOffice")" class="nav-link">
+                                    <a href="@Url.Action("UpdateEstablishment", "Establisment", new { id = establecimientoId })" class="nav-link">
                                         <i class="mdi mdi-clipboard-list-outline"></i> Editar Establecimiento
                                     </a>
                                 </li>

@@ -44,16 +44,28 @@
         public List<MedicalOfficeDto> MedicalOffices { get; set; } = new();
         public List<UserFileDto> UserFiles { get; set; } = new();
 
-        // 🖼️ Imágenes y certificados extraídos de archivos
         public string? CompanyLogoBase64 =>
-            UserFiles?.FirstOrDefault(f => f.FileType == "logotipo")?.FileContent is byte[] logo
-                ? $"data:image/png;base64,{Convert.ToBase64String(logo)}"
+    UserFiles?.FirstOrDefault(f => f.FileType == "logotipo")?.FileContent is byte[] logo
+        ? $"data:image/png;base64,{Convert.ToBase64String(logo)}"
+        : null;
+
+        public string? CompanySignatureBase64 =>
+            UserFiles?.FirstOrDefault(f => f.FileType == "firma")?.FileContent is byte[] sig
+                ? $"data:image/png;base64,{Convert.ToBase64String(sig)}"
+                : null;
+
+        public string? CompanyStampBase64 =>
+            UserFiles?.FirstOrDefault(f => f.FileType == "sello")?.FileContent is byte[] stamp
+                ? $"data:image/png;base64,{Convert.ToBase64String(stamp)}"
                 : null;
 
         public string? CertificateP12Base64 =>
             UserFiles?.FirstOrDefault(f => f.FileType == "certificado_p12")?.FileContent is byte[] cert
                 ? $"data:application/x-pkcs12;base64,{Convert.ToBase64String(cert)}"
                 : null;
+
+
+
     }
 
     public class DoctorDto

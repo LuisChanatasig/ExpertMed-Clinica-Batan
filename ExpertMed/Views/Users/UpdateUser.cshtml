@@ -403,25 +403,47 @@
                             <div id="collapseDocs" class="accordion-collapse collapse" aria-labelledby="headingDocs" data-bs-parent="#accordionDocuments">
                                 <div class="accordion-body row g-3">
 
-                                    <!-- 🖼️ Vista previa logotipo -->
+                                    <!-- 🖼️ Logotipo -->
                                     <div class="col-lg-6">
                                         <label for="companyLogo" class="form-label">Logotipo de la empresa</label>
                                         <input type="file" name="CompanyLogo" id="companyLogo" class="form-control" />
-
-                                        @if (!string.IsNullOrEmpty(Model.User.CompanyLogoBase64))
-                                        {
-                                            <div class="mt-2">
-                                                <label class="form-label">Logotipo actual:</label><br />
-                                                <img src="@Model.User.CompanyLogoBase64" alt="Logotipo" style="max-height: 100px;" class="border rounded shadow-sm" />
-                                            </div>
-                                        }
+                                        <input type="hidden" name="CompanyLogoBase64Old" value="@Model.User.CompanyLogoBase64" />
+                                        <div class="mt-2">
+                                            <label class="form-label">Vista previa:</label><br />
+                                            <img id="previewLogo" class="border rounded shadow-sm" style="max-height: 100px; @(string.IsNullOrEmpty(Model.User.CompanyLogoBase64) ? "display:none;" : "")"
+                                                 src="@Model.User.CompanyLogoBase64" alt="Logotipo actual" />
+                                        </div>
                                     </div>
 
-                                    <!-- 🔐 Archivo P12 -->
-                                    <div class="col-lg-6" hidden>
-                                        <label for="certificateP12" class="form-label">Archivo de certificado (.p12)</label>
-                                        <input type="file"  name="CertificateP12" id="certificateP12" class="form-control" />
+                                    <!-- 🖋️ Firma Digital -->
+                                    <div class="col-lg-6">
+                                        <label for="companySignature" class="form-label">Firma digital</label>
+                                        <input type="file" name="CompanySignature" id="companySignature" class="form-control" />
+                                        <input type="hidden" name="CompanySignatureBase64Old" value="@Model.User.CompanySignatureBase64" />
+                                        <div class="mt-2">
+                                            <label class="form-label">Vista previa:</label><br />
+                                            <img id="previewSignature" class="border rounded shadow-sm" style="max-height: 100px; @(string.IsNullOrEmpty(Model.User.CompanySignatureBase64) ? "display:none;" : "")"
+                                                 src="@Model.User.CompanySignatureBase64" alt="Firma actual" />
+                                        </div>
+                                    </div>
 
+                                    <!-- 📦 Sello de la empresa -->
+                                    <div class="col-lg-6">
+                                        <label for="companyStamp" class="form-label">Sello de la empresa</label>
+                                        <input type="file" name="CompanyStamp" id="companyStamp" class="form-control" />
+                                        <input type="hidden" name="CompanyStampBase64Old" value="@Model.User.CompanyStampBase64" />
+                                        <div class="mt-2">
+                                            <label class="form-label">Vista previa:</label><br />
+                                            <img id="previewStamp" class="border rounded shadow-sm" style="max-height: 100px; @(string.IsNullOrEmpty(Model.User.CompanyStampBase64) ? "display:none;" : "")"
+                                                 src="@Model.User.CompanyStampBase64" alt="Sello actual" />
+                                        </div>
+                                    </div>
+
+                                    <!-- 🔐 Certificado P12 -->
+                                    <div class="col-lg-6">
+                                        <label for="certificateP12" class="form-label">Archivo de certificado (.p12)</label>
+                                        <input type="file" name="CertificateP12" id="certificateP12" class="form-control" />
+                                        <input type="hidden" name="CertificateP12Base64Old" value="@Model.User.CertificateP12Base64" />
                                         @if (!string.IsNullOrEmpty(Model.User.CertificateP12Base64))
                                         {
                                             <div class="mt-2">
@@ -435,6 +457,7 @@
 
                                 </div>
                             </div>
+
                         </div>
                     </div>
 
@@ -513,6 +536,43 @@
 
 
     </script>
+    <script>
+        function previewImage(input, previewId) {
+            const file = input.files[0];
+            const preview = document.getElementById(previewId);
+
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                preview.src = '';
+                preview.style.display = 'none';
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            // Conecta inputs con sus previews
+            const fileMappings = [
+                { inputId: "companyLogo", previewId: "previewLogo" },
+                { inputId: "companySignature", previewId: "previewSignature" },
+                { inputId: "companyStamp", previewId: "previewStamp" }
+            ];
+
+            fileMappings.forEach(mapping => {
+                const input = document.getElementById(mapping.inputId);
+                if (input) {
+                    input.addEventListener("change", function () {
+                        previewImage(input, mapping.previewId);
+                    });
+                }
+            });
+        });
+    </script>
+
 }
 
 

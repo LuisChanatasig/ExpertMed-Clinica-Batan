@@ -79,10 +79,15 @@ namespace ExpertMed.Controllers
                 return View("Error");
             }
         }
-
-
         [HttpPost]
-        public async Task<IActionResult> NewUser(UserViewModel usuario, IFormFile? ProfilePhoto, string? selectedDoctorIds, IFormFile? CompanyLogo, IFormFile? CertificateP12)
+        public async Task<IActionResult> NewUser(
+            UserViewModel usuario,
+            IFormFile? ProfilePhoto,
+            string? selectedDoctorIds,
+            IFormFile? CompanyLogo,
+            IFormFile? CertificateP12,
+            IFormFile? CompanySignature,
+            IFormFile? CompanyStamp)
         {
             if (!ModelState.IsValid)
             {
@@ -112,20 +117,19 @@ namespace ExpertMed.Controllers
 
                 return View(viewModel);
             }
+
             foreach (var file in Request.Form.Files)
             {
                 Console.WriteLine($"Archivo recibido: {file.Name} - {file.FileName} - {file.ContentType}");
             }
 
-            // Asignar usuario creador
             int usuarioCreadorId = HttpContext.Session.GetInt32("UsuarioId") ?? 0;
             usuario.AssignedBy = usuarioCreadorId;
 
             // Foto de perfil
             usuario.UserProfilephoto = await ConvertFileToByteArray(ProfilePhoto);
 
-
-            // Logotipo
+            // Logo
             if (CompanyLogo is { Length: > 0 })
             {
                 using var msLogo = new MemoryStream();
@@ -136,9 +140,41 @@ namespace ExpertMed.Controllers
             }
             else
             {
-                usuario.CompanyLogoBytes = new byte[] { 0 };
+                usuario.CompanyLogoBytes = new byte[] { 0 }; // Binario mínimo
                 usuario.CompanyLogoFileName = "default-logo.png";
                 usuario.CompanyLogoContentType = "image/png";
+            }
+
+            // Firma digital
+            if (CompanySignature is { Length: > 0 })
+            {
+                using var msSign = new MemoryStream();
+                await CompanySignature.CopyToAsync(msSign);
+                usuario.CompanySignatureBytes = msSign.ToArray();
+                usuario.CompanySignatureFileName = Path.GetFileName(CompanySignature.FileName);
+                usuario.CompanySignatureContentType = CompanySignature.ContentType;
+            }
+            else
+            {
+                usuario.CompanySignatureBytes = new byte[] { 0 };
+                usuario.CompanySignatureFileName = "default-signature.png";
+                usuario.CompanySignatureContentType = "image/png";
+            }
+
+            // Sello
+            if (CompanyStamp is { Length: > 0 })
+            {
+                using var msStamp = new MemoryStream();
+                await CompanyStamp.CopyToAsync(msStamp);
+                usuario.CompanyStampBytes = msStamp.ToArray();
+                usuario.CompanyStampFileName = Path.GetFileName(CompanyStamp.FileName);
+                usuario.CompanyStampContentType = CompanyStamp.ContentType;
+            }
+            else
+            {
+                usuario.CompanyStampBytes = new byte[] { 0 };
+                usuario.CompanyStampFileName = "default-stamp.png";
+                usuario.CompanyStampContentType = "image/png";
             }
 
             // Certificado .p12
@@ -157,7 +193,8 @@ namespace ExpertMed.Controllers
                 usuario.CertificateP12ContentType = "application/x-pkcs12";
             }
 
-            // Parsear doctores asignados
+
+            // Doctores asociados
             List<int>? associatedDoctorIds = selectedDoctorIds?
                 .Split(',', StringSplitOptions.RemoveEmptyEntries)
                 .Select(int.Parse)
@@ -262,7 +299,15 @@ namespace ExpertMed.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> UpdateUserMethod(UserViewModel usuario, IFormFile? ProfilePhoto, string? selectedDoctorIds, IFormFile? CompanyLogo, IFormFile? CertificateP12, int id)
+        public async Task<IActionResult> UpdateUserMethod(
+       UserViewModel usuario,
+       IFormFile? ProfilePhoto,
+       string? selectedDoctorIds,
+       IFormFile? CompanyLogo,
+       IFormFile? CompanySignature,
+       IFormFile? CompanyStamp,
+       IFormFile? CertificateP12,
+       int id)
         {
             if (!ModelState.IsValid)
             {
@@ -273,42 +318,100 @@ namespace ExpertMed.Controllers
             // Asignar usuario modificador
             usuario.AssignedBy = HttpContext.Session.GetInt32("UsuarioId") ?? 0;
 
-            // Convertir foto de perfil
+            // Foto de perfil
             usuario.UserProfilephoto = await ConvertFileToByteArray(ProfilePhoto);
 
-            // Cargar logotipo si se proporciona
-            if (CompanyLogo is { Length: > 0 })
-            {
-                using var msLogo = new MemoryStream();
-                await CompanyLogo.CopyToAsync(msLogo);
-                usuario.CompanyLogoBytes = msLogo.ToArray();
-                usuario.CompanyLogoFileName = Path.GetFileName(CompanyLogo.FileName);
-                usuario.CompanyLogoContentType = CompanyLogo.ContentType;
-            }
-            else
-            {
-                usuario.CompanyLogoBytes = new byte[] { 0 };
-                usuario.CompanyLogoFileName = "sin_logo.png";
-                usuario.CompanyLogoContentType = "image/png";
-            }
+            // LOGO
+if (CompanyLogo is { Length: > 0 })
+{
+    using var ms = new MemoryStream();
+    await CompanyLogo.CopyToAsync(ms);
+    usuario.CompanyLogoBytes = ms.ToArray();
+    usuario.CompanyLogoFileName = "logotipo.png";
+    usuario.CompanyLogoContentType = CompanyLogo.ContentType;
+}
+// No hay nuevo archivo, mantenemos el actual si existe
+else if (!string.IsNullOrEmpty(usuario.CompanyLogoBase64))
+{
+    usuario.CompanyLogoBytes = Convert.FromBase64String(usuario.CompanyLogoBase64.Replace("data:image/png;base64,", ""));
+    usuario.CompanyLogoFileName = "logotipo.png";
+    usuario.CompanyLogoContentType = "image/png";
+}
+else
+{
+    usuario.CompanyLogoBytes = null;
+    usuario.CompanyLogoFileName = null;
+    usuario.CompanyLogoContentType = null;
+}
 
-            // Cargar certificado .p12 si se proporciona
-            if (CertificateP12 is { Length: > 0 })
-            {
-                using var msCert = new MemoryStream();
-                await CertificateP12.CopyToAsync(msCert);
-                usuario.CertificateP12Bytes = msCert.ToArray();
-                usuario.CertificateP12FileName = Path.GetFileName(CertificateP12.FileName);
-                usuario.CertificateP12ContentType = CertificateP12.ContentType;
-            }
-            else
-            {
-                usuario.CertificateP12Bytes = new byte[] { 0 };
-                usuario.CertificateP12FileName = "sin_certificado.p12";
-                usuario.CertificateP12ContentType = "application/x-pkcs12";
-            }
+// FIRMA
+if (CompanySignature is { Length: > 0 })
+{
+    using var ms = new MemoryStream();
+    await CompanySignature.CopyToAsync(ms);
+    usuario.CompanySignatureBytes = ms.ToArray();
+    usuario.CompanySignatureFileName = "firma.png";
+    usuario.CompanySignatureContentType = CompanySignature.ContentType;
+}
+else if (!string.IsNullOrEmpty(usuario.CompanySignatureBase64))
+{
+    usuario.CompanySignatureBytes = Convert.FromBase64String(usuario.CompanySignatureBase64.Replace("data:image/png;base64,", ""));
+    usuario.CompanySignatureFileName = "firma.png";
+    usuario.CompanySignatureContentType = "image/png";
+}
+else
+{
+    usuario.CompanySignatureBytes = null;
+    usuario.CompanySignatureFileName = null;
+    usuario.CompanySignatureContentType = null;
+}
 
-            // Parsear doctores asignados
+// SELLO
+if (CompanyStamp is { Length: > 0 })
+{
+    using var ms = new MemoryStream();
+    await CompanyStamp.CopyToAsync(ms);
+    usuario.CompanyStampBytes = ms.ToArray();
+    usuario.CompanyStampFileName = "sello.png";
+    usuario.CompanyStampContentType = CompanyStamp.ContentType;
+}
+else if (!string.IsNullOrEmpty(usuario.CompanyStampBase64))
+{
+    usuario.CompanyStampBytes = Convert.FromBase64String(usuario.CompanyStampBase64.Replace("data:image/png;base64,", ""));
+    usuario.CompanyStampFileName = "sello.png";
+    usuario.CompanyStampContentType = "image/png";
+}
+else
+{
+    usuario.CompanyStampBytes = null;
+    usuario.CompanyStampFileName = null;
+    usuario.CompanyStampContentType = null;
+}
+
+// CERTIFICADO
+if (CertificateP12 is { Length: > 0 })
+{
+    using var ms = new MemoryStream();
+    await CertificateP12.CopyToAsync(ms);
+    usuario.CertificateP12Bytes = ms.ToArray();
+    usuario.CertificateP12FileName = "certificado.p12";
+    usuario.CertificateP12ContentType = CertificateP12.ContentType;
+}
+else if (!string.IsNullOrEmpty(usuario.CertificateP12Base64))
+{
+    usuario.CertificateP12Bytes = Convert.FromBase64String(usuario.CertificateP12Base64.Replace("data:application/x-pkcs12;base64,", ""));
+    usuario.CertificateP12FileName = "certificado.p12";
+    usuario.CertificateP12ContentType = "application/x-pkcs12";
+}
+else
+{
+    usuario.CertificateP12Bytes = null;
+    usuario.CertificateP12FileName = null;
+    usuario.CertificateP12ContentType = null;
+}
+
+
+            // Relación con médicos
             List<int>? associatedDoctorIds = selectedDoctorIds?
                 .Split(',', StringSplitOptions.RemoveEmptyEntries)
                 .Select(int.Parse)
@@ -322,14 +425,16 @@ namespace ExpertMed.Controllers
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message.Contains("El usuario no existe.") ? "El usuario no existe."
-                                         : ex.Message.Contains("documento ya existe") ? "El número de documento ya existe."
-                                         : ex.Message.Contains("usuario ya está registrado") ? "El nombre de usuario ya está registrado."
-                                         : "Error inesperado: " + ex.Message;
+                TempData["ErrorMessage"] =
+                    ex.Message.Contains("El usuario no existe.") ? "El usuario no existe." :
+                    ex.Message.Contains("documento ya existe") ? "El número de documento ya existe." :
+                    ex.Message.Contains("usuario ya está registrado") ? "El nombre de usuario ya está registrado." :
+                    "Error inesperado: " + ex.Message;
 
                 return await ReloadUserEditView(id);
             }
         }
+
 
         private async Task<IActionResult> ReloadUserEditView(int id)
         {

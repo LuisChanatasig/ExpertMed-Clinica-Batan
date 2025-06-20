@@ -5,7 +5,8 @@
     ViewBag.pageTitle = "Dashboards";
     Layout = "~/Views/Shared/_Layout.cshtml";
     var perfilId = Context.Session.GetInt32("PerfilId") ?? 0;
-
+    var successMessage = TempData["SuccessMessage"] as string;
+    var errorMessage = TempData["ErrorMessage"] as string;
     string mensajeBot = perfilId switch
     {
         1 => "Hola administrador, ¿qué área quieres revisar hoy?",
@@ -162,4 +163,29 @@
             micBtn.title = "Tu navegador no soporta reconocimiento de voz";
         }
     </script>
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <script>
+            Swal.fire({
+                title: '¡Éxito!',
+                text: '@successMessage',
+                icon: 'success',
+                confirmButtonText: 'OK',
+                timer: 3000
+            });
+        </script>
+    }
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <script>
+            Swal.fire({
+                title: 'Error',
+                text: '@errorMessage',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        </script>
+    }
 }

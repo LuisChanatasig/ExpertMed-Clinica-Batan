@@ -104,7 +104,6 @@ namespace ExpertMed.Controllers
         /// <param name="model"></param>
         /// <param name="Logo"></param>
         /// <returns></returns>
-
         [HttpPost]
         public async Task<IActionResult> UpdateEstablishment(EstablishmentDto model, IFormFile? Logo)
         {
@@ -142,7 +141,13 @@ namespace ExpertMed.Controllers
                 TempData["ErrorMessage"] = "Ocurrió un error inesperado al actualizar el establecimiento.";
             }
 
-            return RedirectToAction("ListEstablishment", new { id = model.Id });
+            // Obtener perfil desde la sesión
+            var perfilId = HttpContext.Session.GetInt32("PerfilId");
+
+            if (perfilId == 4)
+                return RedirectToAction("Index", "Home");
+            else
+                return RedirectToAction("ListEstablishment");
         }
 
     }

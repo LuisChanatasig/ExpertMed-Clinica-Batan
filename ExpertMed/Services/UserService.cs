@@ -237,6 +237,16 @@ namespace ExpertMed.Services
             command.Parameters.AddWithValue("@CertificateP12FileName", usuario.CertificateP12FileName ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@CertificateP12ContentType", usuario.CertificateP12ContentType ?? (object)DBNull.Value);
 
+            // Firma digital
+            command.Parameters.AddWithValue("@CompanySignature", usuario.CompanySignatureBytes ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@CompanySignatureFileName", usuario.CompanySignatureFileName ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@CompanySignatureContentType", usuario.CompanySignatureContentType ?? (object)DBNull.Value);
+
+            // Sello
+            command.Parameters.AddWithValue("@CompanyStamp", usuario.CompanyStampBytes ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@CompanyStampFileName", usuario.CompanyStampFileName ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@CompanyStampContentType", usuario.CompanyStampContentType ?? (object)DBNull.Value);
+
             // TVP de consultorios
             var table = new DataTable();
             table.Columns.Add("Id", typeof(int));
@@ -486,6 +496,16 @@ namespace ExpertMed.Services
             command.Parameters.AddWithValue("@CertificateP12", usuario.CertificateP12Bytes ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@CertificateP12FileName", usuario.CertificateP12FileName ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@CertificateP12ContentType", usuario.CertificateP12ContentType ?? (object)DBNull.Value);
+
+            // Firma digital
+            command.Parameters.AddWithValue("@CompanySignature", usuario.CompanySignatureBytes ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@CompanySignatureFileName", usuario.CompanySignatureFileName ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@CompanySignatureContentType", usuario.CompanySignatureContentType ?? (object)DBNull.Value);
+
+            // Sello
+            command.Parameters.AddWithValue("@CompanyStamp", usuario.CompanyStampBytes ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@CompanyStampFileName", usuario.CompanyStampFileName ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@CompanyStampContentType", usuario.CompanyStampContentType ?? (object)DBNull.Value);
 
             // TVP: consultorios
             var table = new DataTable();

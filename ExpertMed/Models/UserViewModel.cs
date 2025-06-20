@@ -86,7 +86,25 @@ namespace ExpertMed.Models
         public string? CertificateP12FileName { get; set; }
         public string? CertificateP12ContentType { get; set; }
 
+        public byte[]? CompanySignatureBytes { get; set; }
+        public string? CompanySignatureFileName { get; set; }
+        public string? CompanySignatureContentType { get; set; }
 
+        public byte[]? CompanyStampBytes { get; set; }
+        public string? CompanyStampFileName { get; set; }
+        public string? CompanyStampContentType { get; set; }
+
+        public string? CompanyLogoBase64 =>
+    CompanyLogoBytes != null ? $"data:image/png;base64,{Convert.ToBase64String(CompanyLogoBytes)}" : null;
+
+        public string? CompanySignatureBase64 =>
+            CompanySignatureBytes != null ? $"data:image/png;base64,{Convert.ToBase64String(CompanySignatureBytes)}" : null;
+
+        public string? CompanyStampBase64 =>
+            CompanyStampBytes != null ? $"data:image/png;base64,{Convert.ToBase64String(CompanyStampBytes)}" : null;
+
+        public string? CertificateP12Base64 =>
+            CertificateP12Bytes != null ? $"data:application/x-pkcs12;base64,{Convert.ToBase64String(CertificateP12Bytes)}" : null;
         public virtual ICollection<AssistantDoctorRelationship> AssistantDoctorRelationshipAssistantUsers { get; set; } = new List<AssistantDoctorRelationship>();
 
         public virtual ICollection<AssistantDoctorRelationship> AssistantDoctorRelationshipDoctorUsers { get; set; } = new List<AssistantDoctorRelationship>();
