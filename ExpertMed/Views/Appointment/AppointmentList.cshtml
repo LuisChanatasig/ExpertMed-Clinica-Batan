@@ -109,7 +109,7 @@
                         <tr>
                             <th hidden>ID</th>
                             <th hidden>ID PATIENT</th>
-                            @if (perfilId == 1 || perfilId == 3 || perfilId == 4)
+                            @if (perfilId == 1 || perfilId == 3 || perfilId == 4 || perfilId == 8)
                             {
                                 <th>Nombre del médico</th>
                             }
@@ -127,7 +127,7 @@
                             <tr>
                                 <td hidden>@appt.AppointmentId</td>
                                 <td hidden>@appt.AppointmentPatientId</td>
-                                @if (perfilId == 1 || perfilId == 3 || perfilId == 4)
+                                @if (perfilId == 1 || perfilId == 3 || perfilId == 4 || perfilId == 8)
                                 {
                                     <td>@(appt.DoctorName ?? appt.DoctorName2)</td>
                                 }

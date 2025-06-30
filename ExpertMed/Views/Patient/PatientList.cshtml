@@ -47,7 +47,7 @@
                         <tr>
                             <th hidden> Id.</th>
                             <th>Código del paciente.</th>
-                            @if (perfilId == 3 || perfilId == 1 )
+                            @if (perfilId == 3 || perfilId == 1 || perfilId == 8 || perfilId == 4)
                             {
                                 <th>Nombre del doctor</th>
 
@@ -67,7 +67,7 @@
 
                                 <td hidden>@patient.PatientId</td>
                                 <td>@patient.PatientCode</td>
-                                @if (perfilId == 3 || perfilId == 1)
+                                @if (perfilId == 3 || perfilId == 1 || perfilId == 8 || perfilId == 4)
                                 {
                                     <td>@patient.DoctorFullname</td>
 

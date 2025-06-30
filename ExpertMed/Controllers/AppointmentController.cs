@@ -339,7 +339,7 @@ namespace ExpertMed.Controllers
                     patientId = appt.AppointmentPatientid,
                     date = appt.AppointmentDate.ToString("yyyy-MM-dd"),
                     time = hora,
-                    doctorUserId = (userProfile == 3 || userProfile == 4) ? appt.DoctorUserId : (int?)null,
+                    doctorUserId = (userProfile == 3 || userProfile == 4 || userProfile == 8) ? appt.DoctorUserId : (int?)null,
                     medicalOfficeId = appt.AppointmentMedicalofficeid,
                     status = appt.AppointmentStatus,
                     hasConsultation = appt.AppointmentConsultationid.HasValue && appt.AppointmentConsultationid.Value > 0

@@ -2019,6 +2019,108 @@ namespace ExpertMed.Controllers
             return File(pdfBytes, "application/pdf", "Formulario_Consulta.pdf");
         }
 
+
+        public async Task<IActionResult> MedicalForm2(int consultationId)
+        {
+            var consultation = _consultationService.GetConsultationDetails(consultationId);
+            if (consultation == null)
+            {
+                TempData["ErrorMessage"] = "Consulta no encontrada.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            var patient = await _patientService.GetPatientFullByIdAsync(consultation.ConsultationPatient);
+            if (patient == null)
+            {
+                TempData["ErrorMessage"] = "Paciente no encontrado.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            string templatePath = Path.Combine(_webHostEnvironment.WebRootPath, "plantillas", "nuevo_formato_consulta.pdf");
+
+            using var memoryStream = new MemoryStream();
+            PdfReader pdfReader = new PdfReader(templatePath);
+            PdfStamper pdfStamper = new PdfStamper(pdfReader, memoryStream);
+            AcroFields formFields = pdfStamper.AcroFields;
+
+            // Insertar logo del establecimiento si existe
+            InsertImageFromField(pdfStamper, formFields, "txt_imagen_logo", consultation.UsersEstablishmentLogo);
+
+            // DATOS DEL PACIENTE
+            formFields.SetField("txt_primer_apellido_paciente", patient.PatientFirstsurname);
+            formFields.SetField("txt_segundo_apellido_paciente", patient.PatientSecondlastname);
+            formFields.SetField("txt_primer_nombre_paciente", patient.PatientFirstname);
+            formFields.SetField("txt_segundo_nombre_paciente", patient.PatientMiddlename);
+            formFields.SetField("txt_edad", patient.PatientAge.ToString());
+            formFields.SetField("txt_cedula", patient.PatientDocumentnumber);
+            formFields.SetField("txt_sexo", patient.PatientGenderName);
+
+            // MOTIVO Y ENFERMEDAD
+            formFields.SetField("txt_motivo_consulta", consultation.ConsultationReason ?? "N/A");
+            formFields.SetField("txt_enfermedad_problema", consultation.ConsultationDisease ?? "N/A");
+
+            // CONSTANTES VITALES
+            formFields.SetField("txt_temp_sig", consultation.ConsultationTemperature ?? "N/A");
+            formFields.SetField("txt_art_sis_sig", consultation.ConsultationBloodpressuredAs ?? "N/A");
+            formFields.SetField("txt_art_dis_sig", consultation.ConsultationBloodpresuredDis ?? "N/A");
+            formFields.SetField("txt_pulso_sig", consultation.ConsultationPulse ?? "N/A");
+            formFields.SetField("txt_frecuencia_sig", consultation.ConsultationRespirationrate ?? "N/A");
+            formFields.SetField("txt_peso_sig", consultation.ConsultationWeight ?? "N/A");
+            formFields.SetField("txt_talla_sig", consultation.ConsultationSize ?? "N/A");
+
+            // ANTECEDENTES PERSONALES
+            formFields.SetField("txt_antecedentes_personales", consultation.ConsultationPersonalbackground ?? "N/A");
+
+            // FAMILIARES
+            var fam = consultation.FamiliaryBackground;
+            formFields.SetField("txt_cardiopatia_familiar", fam?.FamiliaryBackgroundHeartdiseaseObservation ?? "N/A");
+            formFields.SetField("txt_hipertension_familiar", fam?.FamiliaryBackgroundHypertensionObservation ?? "N/A");
+            formFields.SetField("txt_cancer_familiar", fam?.FamiliaryBackgroundCancerObservation ?? "N/A");
+
+            // REVISIÓN DE ÓRGANOS Y SISTEMAS
+            var organs = consultation.OrgansSystem;
+            formFields.SetField("txt_respiratorio_organos_sistemas", organs?.OrganssystemsRespiratoryObs ?? "N/A");
+            formFields.SetField("txt_digestivo_organos_sistemas", organs?.OrganssystemsDigestiveObs ?? "N/A");
+            formFields.SetField("txt_nervioso_sistemas", organs?.OrganssystemsNervousObs ?? "N/A");
+
+            // EXAMEN FÍSICO
+            var ex = consultation.PhysicalExamination;
+            formFields.SetField("txt_cabeza_examenfisico", ex?.PhysicalexaminationHeadObs ?? "N/A");
+            formFields.SetField("txt_abdomen_examenfisico", ex?.PhysicalexaminationAbdomenObs ?? "N/A");
+            formFields.SetField("txt_torax_examenfisico", ex?.PhysicalexaminationChestObs ?? "N/A");
+
+            // DIAGNÓSTICOS (primeros 3)
+            for (int i = 0; i < Math.Min(3, consultation.DiagnosisConsultations?.Count ?? 0); i++)
+            {
+                var diag = consultation.DiagnosisConsultations[i];
+                formFields.SetField($"txt_diganostico_{i + 1}", diag.DiagnosisObservation ?? "N/A");
+                formFields.SetField($"txt_pre_{i + 1}", diag.DiagnosisPresumptive == true ? "X" : "");
+                formFields.SetField($"txt_def_{i + 1}", diag.DiagnosisDefinitive == true ? "X" : "");
+            }
+
+            // PLAN DE TRATAMIENTO
+            formFields.SetField("txt_plan_tratamiento", consultation.ConsultationTreatmentplan ?? "N/A");
+
+            // MÉDICO
+            formFields.SetField("txt_primer_nombre_medico", consultation.UsersNames ?? "N/A");
+            formFields.SetField("txt_primer_apellido_medico", consultation.UsersSurcenames ?? "N/A");
+            formFields.SetField("txt_email", consultation.UsersEmail ?? "");
+            formFields.SetField("txt_telefono", consultation.UsersPhone ?? "");
+            formFields.SetField("txt_direccion", consultation.EstablishmentAddress ?? "");
+
+            // FECHA Y HORA
+            formFields.SetField("txt_fecha_final", consultation.ConsultationCreationdate?.ToString("yyyy-MM-dd") ?? "N/A");
+            formFields.SetField("txt_horal_final", consultation.ConsultationCreationdate?.ToString("HH:mm") ?? "N/A");
+
+            pdfStamper.FormFlattening = true;
+            pdfStamper.Close();
+            pdfReader.Close();
+
+            var randomNumber = new Random().Next(1000, 9999);
+            return File(memoryStream.ToArray(), "application/pdf", $"formulario_consulta_{randomNumber}.pdf");
+        }
+
+
         public async Task<IActionResult> MedicationRecipe(int consultationId)
         {
             var consultation = _consultationService.GetConsultationDetails(consultationId);

@@ -245,15 +245,17 @@ namespace ExpertMed.Services
                                 : (int?)null
                         };
 
-                        if (userProfile == 3 || userProfile == 4 && !reader.IsDBNull(reader.GetOrdinal("DoctorUserId")))
+                        if ((userProfile == 3 || userProfile == 4 || userProfile == 8) && !reader.IsDBNull(reader.GetOrdinal("DoctorUserId")))
+                        {
                             appointment.DoctorUserId = reader.GetInt32(reader.GetOrdinal("DoctorUserId"));
+                        }
                     }
                 }
             }
 
             return appointment;
         }
-
+         
         /// <summary>
         /// MODIFICAR UNA CITA
         /// </summary>
