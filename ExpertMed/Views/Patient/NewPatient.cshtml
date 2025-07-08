@@ -54,7 +54,7 @@
                                                 <option value="">Seleccione un médico</option>
                                                 @foreach (var doctor in Model.Users)
                                                 {
-                                                    <option value="@doctor.UsersId">@doctor.UsersNames @doctor.UsersSurcenames</option>
+                                                    <option value="@doctor.UsersId">@doctor.UsersSurcenames  @doctor.UsersNames - @doctor.SpecialityName</option>
                                                 }
                                             </select>
                                         </div>

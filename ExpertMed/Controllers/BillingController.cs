@@ -128,19 +128,19 @@ namespace ExpertMed.Controllers
                 var boldFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 11);
 
                 // Encabezado centrado
-                var empresa = new Paragraph("EXPERTMED S.A.", titleFont);
+                var empresa = new Paragraph("CLÍNICA MÉDICA EL BATÁN", titleFont);
                 empresa.Alignment = Element.ALIGN_CENTER;
                 doc.Add(empresa);
 
-                var ruc = new Paragraph("RUC: 1234567890001", normalFont);
+                var ruc = new Paragraph("RUC: 1790012345001", normalFont);
                 ruc.Alignment = Element.ALIGN_CENTER;
                 doc.Add(ruc);
 
-                var direccion = new Paragraph("Dirección: Av. Salud y Vida 123, Quito", normalFont);
+                var direccion = new Paragraph("Dirección: Av. 6 de Diciembre y Bosmediano, Quito", normalFont);
                 direccion.Alignment = Element.ALIGN_CENTER;
                 doc.Add(direccion);
 
-                var telefono = new Paragraph("Teléfono: 0999999999", normalFont);
+                var telefono = new Paragraph("Teléfono: (02) 234-5678 / 099-876-5432", normalFont);
                 telefono.Alignment = Element.ALIGN_CENTER;
                 doc.Add(telefono);
 

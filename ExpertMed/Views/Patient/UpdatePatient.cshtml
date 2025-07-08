@@ -56,7 +56,7 @@
                                                 @foreach (var doctor in Model.Users)
                                                 {
                                                     var selected = doctor.AssignedDoctorId == doctor.UsersId ? "selected" : "";
-                                                    <option value="@doctor.UsersId">@doctor.UsersNames @doctor.UsersSurcenames</option>
+                                                    <option value="@doctor.UsersId">@doctor.UsersSurcenames @doctor.UsersNames - @doctor.SpecialityName</option>
                                                 }
                                             </select>
 
@@ -378,7 +378,7 @@
                                     <option value="">Seleccione</option>
                                     @foreach (var doctor in Model.Users)
                                     {
-                                        <option value="@doctor.UsersId">@doctor.UsersNames @doctor.UsersSurcenames - @doctor.SpecialityName </option>
+                                        <option value="@doctor.UsersId"> @doctor.UsersSurcenames @doctor.UsersNames - @doctor.SpecialityName </option>
                                     }
                                 </select>
                             </div>
@@ -515,7 +515,6 @@
     </script>
 
     <script>
-        $(document).ready(function () {
 
             // ✅ Solo habilita botón si hay hora seleccionada
             function toggleConfirmButton() {
@@ -570,75 +569,96 @@
                 toggleConfirmButton(); // Activar botón
                 $('#hoursModalgrid').modal('hide'); // Cerrar modal
             });
+        $('#confirmAppointmentBtn').on('click', function () {
+            const selectedHour = $('#appointmentTime').val();
+            const selectedDate = $('#selectedDate').val();
+            const patientId = $('#patientId').val();
+            const doctorUserId = $('#doctorUserId').val();
+            const appointmentStatus = $('#appointmentStatus').val();
+            const appointmentReason = $('#appointmentReason').val();
+            const appointmentInsuranceCompanyId = $('#appointmentInsuranceCompanyId').val();
+            const appointmentInsuranceAuthCode = $('#appointmentInsuranceAuthCode').val();
 
-            // ✅ Confirmar cita (sin consultorio)
-            $('#confirmAppointmentBtn').on('click', function () {
-                const selectedHour = $('#appointmentTime').val();
-                const selectedDate = $('#selectedDate').val();
-                const patientId = $('#patientId').val();
-                const doctorUserId = $('#doctorUserId').val();
-                const appointmentStatus = $('#appointmentStatus').val();
-                const appointmentReason = $('#appointmentReason').val();
-                const appointmentInsuranceCompanyId = $('#appointmentInsuranceCompanyId').val();
-                const appointmentInsuranceAuthCode = $('#appointmentInsuranceAuthCode').val();
+            // ✅ Validaciones frontend antes de enviar
+            if (!selectedDate || !selectedHour || !patientId || !appointmentStatus) {
+                Swal.fire('Faltan datos', 'Por favor completa todos los campos requeridos.', 'warning');
+                return;
+            }
 
+            if (appointmentInsuranceCompanyId && isNaN(parseInt(appointmentInsuranceCompanyId))) {
+                Swal.fire('Error', 'El ID de la compañía de seguros no es válido.', 'warning');
+                return;
+            }
 
-                Swal.fire({
-                    title: 'Resumen de Cita',
-                    html: `
-                        <p><strong>Fecha:</strong> ${selectedDate}</p>
-                        <p><strong>Hora:</strong> ${selectedHour}</p>
-                        <p><em>El consultorio será asignado automáticamente.</em></p>
-                        <p>¿Deseas confirmar esta cita?</p>
-                    `,
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonText: 'Sí, confirmar',
-                    cancelButtonText: 'Cancelar'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        $.ajax({
-                            url: '@Url.Action("CreateAppointment", "Appointment")?doctorUserId=' + parseInt(doctorUserId),
-                            type: 'POST',
-                            contentType: 'application/json',
-                                  data: JSON.stringify({
-                                  AppointmentDate: selectedDate,
-                                  AppointmentHour: selectedHour,
-                                  AppointmentPatientid: patientId,
-                                  AppointmentStatus: appointmentStatus,
-                                  AppointmentReason: appointmentReason,
-                                  AppointmentInsuranceAuthCode: appointmentInsuranceAuthCode,
-                                  AppointmentInsuranceCompanyId: appointmentInsuranceCompanyId ? parseInt(appointmentInsuranceCompanyId) : null
-                                    }),
+            Swal.fire({
+                title: 'Resumen de Cita',
+                html: `
+                    <p><strong>Fecha:</strong> ${selectedDate}</p>
+                    <p><strong>Hora:</strong> ${selectedHour}</p>
+                    <p><em>El consultorio será asignado automáticamente.</em></p>
+                    <p>¿Deseas confirmar esta cita?</p>
+                `,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, confirmar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '@Url.Action("CreateAppointment", "Appointment")?doctorUserId=' + parseInt(doctorUserId),
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            AppointmentDate: selectedDate,
+                            AppointmentHour: selectedHour,
+                            AppointmentPatientid: patientId,
+                            AppointmentStatus: appointmentStatus,
+                            AppointmentReason: appointmentReason,
+                            AppointmentInsuranceAuthCode: appointmentInsuranceAuthCode,
+                            AppointmentInsuranceCompanyId: appointmentInsuranceCompanyId ? parseInt(appointmentInsuranceCompanyId) : null
+                        }),
 
-                            success: function (response) {
-                                if (response.success) {
-                                    Swal.fire({
-                                        title: 'Cita Confirmada!',
-                                        text: response.message,
-                                        icon: 'success',
-                                        showCancelButton: response.whatsappUrl ? true : false,
-                                        confirmButtonText: response.whatsappUrl ? 'Enviar Recordatorio' : 'OK',
-                                        cancelButtonText: 'Omitir'
-                                    }).then((r) => {
-                                        if (r.isConfirmed && response.whatsappUrl) {
-                                            window.open(response.whatsappUrl, '_blank');
-                                        }
-                                        window.location.href = '@Url.Action("AppointmentList", "Appointment")';
-                                    });
-                                } else {
-                                    Swal.fire('Error', response.message || 'Hubo un error al guardar.', 'error');
-                                }
-                            },
-                            error: function () {
-                                Swal.fire('Error', 'No se pudo registrar la cita.', 'error');
+                        success: function (response) {
+                            if (response.success) {
+                                Swal.fire({
+                                    title: 'Cita Confirmada!',
+                                    text: response.message,
+                                    icon: 'success',
+                                    showCancelButton: response.whatsappUrl ? true : false,
+                                    confirmButtonText: response.whatsappUrl ? 'Enviar Recordatorio' : 'OK',
+                                    cancelButtonText: 'Omitir'
+                                }).then((r) => {
+                                    if (r.isConfirmed && response.whatsappUrl) {
+                                        window.open(response.whatsappUrl, '_blank');
+                                    }
+                                    window.location.href = '@Url.Action("AppointmentList", "Appointment")';
+                                });
+                            } else {
+                                Swal.fire('Error', response.message || 'Hubo un error al guardar.', 'error');
                             }
-                        });
-                    }
-                });
-            });
+                        },
+                        error: function (xhr) {
+                            // Manejo avanzado de errores devueltos desde el backend
+                            let errorMessage = 'No se pudo registrar la cita.';
 
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMessage = xhr.responseJSON.message;
+                            } else if (xhr.status === 0) {
+                                errorMessage = 'No se pudo conectar con el servidor.';
+                            } else if (xhr.status === 500) {
+                                errorMessage = 'Error interno del servidor.';
+                            }
+
+                            Swal.fire('Error', errorMessage, 'error');
+
+                            // Útil para debug
+                            console.error("Respuesta de error:", xhr);
+                        }
+                    });
+                }
+            });
         });
+
     </script>
 
 

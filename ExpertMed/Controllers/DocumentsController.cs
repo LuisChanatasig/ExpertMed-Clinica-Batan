@@ -10,6 +10,7 @@ using QuestPDF.Infrastructure;
 using iTextSharp.text.pdf;
 using Microsoft.AspNetCore.Hosting;
 using System.Globalization;
+using System.Text;
 
 
 namespace ExpertMed.Controllers
@@ -2020,6 +2021,16 @@ namespace ExpertMed.Controllers
         }
 
 
+        // Helper class for Family Conditions (can be placed inside your controller or as a private static nested class)
+        public class FamilyCondition
+        {
+            public bool? IsTrue { get; set; }
+            public string Observation { get; set; }
+            public string RelationshipName { get; set; }
+            public string FieldName { get; set; }
+            public string DisplayName { get; set; }
+        }
+
         public async Task<IActionResult> MedicalForm2(int consultationId)
         {
             var consultation = _consultationService.GetConsultationDetails(consultationId);
@@ -2044,7 +2055,17 @@ namespace ExpertMed.Controllers
             AcroFields formFields = pdfStamper.AcroFields;
 
             // Insertar logo del establecimiento si existe
-            InsertImageFromField(pdfStamper, formFields, "txt_imagen_logo", consultation.UsersEstablishmentLogo);
+            // Assuming InsertImageFromField is a method available in your context
+            // Example: private void InsertImageFromField(PdfStamper stamper, AcroFields fields, string fieldName, string imagePath) { /* ... */ }
+            // If not, you might need to provide its implementation or remove this line if not used.
+            // InsertImageFromField(pdfStamper, formFields, "txt_imagen_logo", consultation.UsersEstablishmentLogo); 
+            formFields.SetField("txt_establecimiento_salud", consultation.EstablishmentName);
+            formFields.SetField("txt_numero_historia_clinica", patient.PatientDocumentnumber);
+            formFields.SetField("txt_numero_hoja", "1");
+            int status = (int)consultation.ConsultationStatus;
+
+            formFields.SetField("txt_primera_consulta", status == 1 ? "X" : "");
+            formFields.SetField("txt_segunda_consulta", status == 2 ? "X" : "");
 
             // DATOS DEL PACIENTE
             formFields.SetField("txt_primer_apellido_paciente", patient.PatientFirstsurname);
@@ -2053,7 +2074,13 @@ namespace ExpertMed.Controllers
             formFields.SetField("txt_segundo_nombre_paciente", patient.PatientMiddlename);
             formFields.SetField("txt_edad", patient.PatientAge.ToString());
             formFields.SetField("txt_cedula", patient.PatientDocumentnumber);
-            formFields.SetField("txt_sexo", patient.PatientGenderName);
+            string sexo = patient.PatientGenderName switch
+            {
+                "Masculino" => "M",
+                "Femenino" => "F",
+                _ => ""
+            };
+            formFields.SetField("txt_sexo", sexo);
 
             // MOTIVO Y ENFERMEDAD
             formFields.SetField("txt_motivo_consulta", consultation.ConsultationReason ?? "N/A");
@@ -2069,13 +2096,112 @@ namespace ExpertMed.Controllers
             formFields.SetField("txt_talla_sig", consultation.ConsultationSize ?? "N/A");
 
             // ANTECEDENTES PERSONALES
+            formFields.SetField("txt_cardiopatia", consultation.ConsultationPersonalbackground ?? "N/A"); // Note: This field name "txt_cardiopatia" seems to reuse "ConsultationPersonalbackground" and might be redundant if the combined "txt_antecedentes_personales" is used.
             formFields.SetField("txt_antecedentes_personales", consultation.ConsultationPersonalbackground ?? "N/A");
 
-            // FAMILIARES
+            // ---
+            // FAMILIARES - Refactored for linearity
+            // ---
             var fam = consultation.FamiliaryBackground;
-            formFields.SetField("txt_cardiopatia_familiar", fam?.FamiliaryBackgroundHeartdiseaseObservation ?? "N/A");
-            formFields.SetField("txt_hipertension_familiar", fam?.FamiliaryBackgroundHypertensionObservation ?? "N/A");
-            formFields.SetField("txt_cancer_familiar", fam?.FamiliaryBackgroundCancerObservation ?? "N/A");
+            var antecedentesFamiliares = new StringBuilder(); // Use StringBuilder for efficient string concatenation
+
+            // Define all family conditions in a list for linear processing
+            var familyConditions = new List<FamilyCondition>
+        {
+            new FamilyCondition
+            {
+                IsTrue = fam?.FamiliaryBackgroundHeartdisease,
+                Observation = fam?.FamiliaryBackgroundHeartdiseaseObservation,
+                RelationshipName = fam?.FamiliaryBackgroundRelatshcatalogHeartdiseaseNavigation?.CatalogName,
+                FieldName = "txt_cardiopatia_familiar",
+                DisplayName = "Cardiopatía"
+            },
+            new FamilyCondition
+            {
+                IsTrue = fam?.FamiliaryBackgroundHypertension,
+                Observation = fam?.FamiliaryBackgroundHypertensionObservation,
+                RelationshipName = fam?.FamiliaryBackgroundRelatshcatalogHypertensionNavigation?.CatalogName,
+                FieldName = "txt_hipertension_familiar",
+                DisplayName = "Hipertensión"
+            },
+            new FamilyCondition
+            {
+                IsTrue = fam?.FamiliaryBackgroundDxcardiovascular,
+                Observation = fam?.FamiliaryBackgroundDxcardiovascularObservation,
+                RelationshipName = fam?.FamiliaryBackgroundRelatshcatalogDxcardiovascularNavigation?.CatalogName,
+                FieldName = "txt_enf_cardiovascular_familiar",
+                DisplayName = "Enfermedad Cardiovascular"
+            },
+            new FamilyCondition
+            {
+                IsTrue = fam?.FamiliaryBackgroundCancer,
+                Observation = fam?.FamiliaryBackgroundCancerObservation,
+                RelationshipName = fam?.FamiliaryBackgroundRelatshcatalogCancerNavigation?.CatalogName,
+                FieldName = "txt_cancer_familiar",
+                DisplayName = "Cáncer"
+            },
+            new FamilyCondition
+            {
+                IsTrue = fam?.FamiliaryBackgroundTuberculosis,
+                Observation = fam?.FamiliaryBackgroundTuberculosisObservation,
+                RelationshipName = fam?.FamiliaryBackgroundRelatshTuberculosisNavigation?.CatalogName, // Ensure this matches your model
+                FieldName = "txt_tuberculosis_familiar",
+                DisplayName = "Tuberculosis"
+            },
+            new FamilyCondition
+            {
+                IsTrue = fam?.FamiliaryBackgroundDxmental,
+                Observation = fam?.FamiliaryBackgroundDxmentalObservation,
+                RelationshipName = fam?.FamiliaryBackgroundRelatshcatalogDxmentalNavigation?.CatalogName,
+                FieldName = "txt_enf_mental_familiar",
+                DisplayName = "Enfermedad Mental"
+            },
+            new FamilyCondition
+            {
+                IsTrue = fam?.FamiliaryBackgroundDxinfectious,
+                Observation = fam?.FamiliaryBackgroundDxinfectiousObservation,
+                RelationshipName = fam?.FamiliaryBackgroundRelatshcatalogDxinfectiousNavigation?.CatalogName,
+                FieldName = "txt_enf_infecciosa_familiar",
+                DisplayName = "Enfermedad Infecciosa"
+            },
+            new FamilyCondition
+            {
+                IsTrue = fam?.FamiliaryBackgroundMalformation,
+                Observation = fam?.FamiliaryBackgroundMalformationObservation,
+                RelationshipName = fam?.FamiliaryBackgroundRelatshcatalogMalformationNavigation?.CatalogName,
+                FieldName = "txt_mal_formacion_familiar",
+                DisplayName = "Malformación"
+            },
+            new FamilyCondition
+            {
+                IsTrue = fam?.FamiliaryBackgroundOther,
+                Observation = fam?.FamiliaryBackgroundOtherObservation,
+                RelationshipName = fam?.FamiliaryBackgroundRelatshcatalogOtherNavigation?.CatalogName,
+                FieldName = "txt_otro_familiar",
+                DisplayName = "Otro"
+            }
+        };
+
+            // Loop through the defined conditions to process each one linearly.
+            foreach (var condition in familyConditions)
+            {
+                // Set "X" for the individual checkbox-like field
+                formFields.SetField(condition.FieldName, condition.IsTrue == true ? "X" : "");
+
+                // If the condition is true, append its details to the main antecedentesFamiliares field
+                if (condition.IsTrue == true)
+                {
+                    antecedentesFamiliares.AppendLine($"{condition.DisplayName}: {condition.RelationshipName ?? "N/A"} - {condition.Observation}");
+                }
+            }
+
+            // Set the accumulated text to the antecedentes_familiares field
+            formFields.SetField("txt_antecedentes_familiares", antecedentesFamiliares.ToString());
+            // formFields.SetField("txt_end_metabolico_familiar", fam?.FamiliaryBackgroundDxinfectious == true ? "X" : ""); // This line was commented out in your snippet, so it's kept out.
+
+            // ---
+            // End of Refactored FAMILIARES section
+            // ---
 
             // REVISIÓN DE ÓRGANOS Y SISTEMAS
             var organs = consultation.OrgansSystem;
@@ -2119,7 +2245,6 @@ namespace ExpertMed.Controllers
             var randomNumber = new Random().Next(1000, 9999);
             return File(memoryStream.ToArray(), "application/pdf", $"formulario_consulta_{randomNumber}.pdf");
         }
-
 
         public async Task<IActionResult> MedicationRecipe(int consultationId)
         {
@@ -2222,7 +2347,7 @@ namespace ExpertMed.Controllers
                 ? string.Join(", ", filteredAllergies.Select(a => a.CatalogName))
                 : "N/A";
 
-            formFields.SetField("txt_alergias", allergiesText);
+            formFields.SetField("txt_alergias_cirugias", allergiesText);
 
             var sequential = consultation.MedicationsConsultations.FirstOrDefault()?.MedicationsSequential ?? 0;
             formFields.SetField("txt_secuencial", sequential.ToString());

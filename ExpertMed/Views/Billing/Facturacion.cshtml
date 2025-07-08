@@ -85,8 +85,8 @@
                                                 placeholder="Identificación">
                                         </div>
                                         <div class="col-md-6">
+                                            <small>Seleccione un tipo de documento</small>
                                             <select class="form-control fact-input" name="BillingDetailsDocumentType">
-                                                <option value="">Seleccione un tipo de documento</option>
                                                 <option value="05">Cédula</option>
                                                 <option value="04">RUC</option>
                                                 <option value="06">Pasaporte</option>
@@ -118,6 +118,7 @@
                                             <th>Precio Unitario</th>
                                             <th class="col-insurance d-none">Valor Aseguradora</th>
                                             <th class="col-insurance d-none">Copago</th>
+                                            <th>Descuento (%)</th>
                                             <th>Total</th>
                                             <th>Acciones</th>
                                         </tr>
@@ -275,8 +276,15 @@
                                    min="0" step="0.01" value="8.00" onchange="recalcularItem(this)" />
                         </td>
                         <td class="col-insurance">
-                            <input type="text" class="form-control copago" readonly step="0.01" tabindex="-1" />
+                            <input type="text" class="form-control copago"  value="0.00" step="0.01" tabindex="-1" onchange="recalcularItem(this)" />
                         </td>
+                                <td>
+            <input type="number" class="form-control descuento-item"
+                   name="Items[${index}].DescuentoPorcentaje"
+                   value="0" min="0" max="100" step="0.01"
+                   onchange="recalcularItem(this)">
+        </td>
+
                         <td><input type="text" class="form-control total-item" value="0.00" step="0.01" readonly></td>
                         <td>
                             <button type="button" class="btn btn-danger btn-sm" onclick="eliminarItem(this)">🖑</button>
@@ -350,13 +358,11 @@
             recalcularTotal();
         }
 
-        function recalcularItem(elemento) {
+               function recalcularItem(elemento) {
             const fila = elemento.closest('tr');
-            // Normalizar valores antes de parsear
             const cantidad = parseFloat(normalizeNumberInput(fila.querySelector('.cantidad')?.value || 0));
             const precioUnitario = parseFloat(normalizeNumberInput(fila.querySelector('.precio')?.value || 0));
             const valorSeguroInput = fila.querySelector('.precio-seguro');
-
             let valorSeguro = parseFloat(normalizeNumberInput(valorSeguroInput?.value || 0));
 
             if (valorSeguro > precioUnitario) {
@@ -365,12 +371,20 @@
                 Swal.fire('Aviso', 'El valor aseguradora no puede ser mayor al precio unitario.', 'warning');
             }
 
-            const copago = precioUnitario - valorSeguro;
+            const descuentoInput = fila.querySelector('.descuento-item');
+            let descuentoPorcentaje = parseFloat(normalizeNumberInput(descuentoInput?.value || 0));
+            if (descuentoPorcentaje < 0) descuentoPorcentaje = 0;
+            if (descuentoPorcentaje > 100) descuentoPorcentaje = 100;
+
+            const precioConDescuento = precioUnitario - (precioUnitario * descuentoPorcentaje / 100);
+            const copago = precioConDescuento - valorSeguro;
+
             const copagoInput = fila.querySelector('.copago');
             if (copagoInput) copagoInput.value = copago.toFixed(2);
 
-            calcularSubtotalFila(fila, precioUnitario, cantidad);
+            calcularSubtotalFila(fila, precioConDescuento, cantidad);
         }
+
 
         function calcularSubtotalFila(fila, precio, cantidad) {
             const subtotal = precio * cantidad;
@@ -492,8 +506,13 @@
                 .then(r => r.json())
                 .then(data => {
                     const campos = {
-                        BillingDetailsNames: data.patientFirstname + ' ' + data.patientFirstsurname,
-                        BillingDetailsCiNumber: data.patientDocumentnumber,
+        BillingDetailsNames: (
+            (data.patientFirstsurname ?? '') + ' ' +
+            (data.patientSecondlastname ?? '') + ' ' +
+            (data.patientFirstname ?? '') + ' ' +
+            (data.patientMiddlename ?? '')
+        ).trim(),
+                                BillingDetailsCiNumber: data.patientDocumentnumber,
                         BillingDetailsDocumentType: data.patientDocumentType,
                         BillingDetailsEmail: data.patientEmail,
                         BillingDetailsAddress: data.patientAddress,

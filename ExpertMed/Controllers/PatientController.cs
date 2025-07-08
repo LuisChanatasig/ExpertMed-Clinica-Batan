@@ -182,7 +182,7 @@ namespace ExpertMed.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> UpdatePatient(Patient patient)
+        public async Task<IActionResult> UpdatePatient(Patient patient,int? doctorUserId = null)
         {
             if (!ModelState.IsValid)
                 return BadRequest(new { success = 0, message = "Datos inválidos." });
@@ -190,7 +190,8 @@ namespace ExpertMed.Controllers
             try
             {
                 if (patient.PatientId > 0)
-                    await _patientService.UpdatePatientAsync(patient);
+                    await _patientService.UpdatePatientAsync(patient, doctorUserId); // ✅ pasar el valor recibido
+
                 else
                     await _patientService.CreatePatientAsync(patient);
 
