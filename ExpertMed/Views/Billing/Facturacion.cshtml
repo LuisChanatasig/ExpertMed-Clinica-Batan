@@ -86,7 +86,7 @@
                                         </div>
                                         <div class="col-md-6">
                                             <small>Seleccione un tipo de documento</small>
-                                            <select class="form-control fact-input" name="BillingDetailsDocumentType">
+                                            <select class="form-control fact-input" name="BillingDetailsDocumentType" required>
                                                 <option value="05">Cédula</option>
                                                 <option value="04">RUC</option>
                                                 <option value="06">Pasaporte</option>
@@ -533,5 +533,29 @@
 
 
     </script>
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <script>
+            Swal.fire({
+                title: '¡Éxito!',
+                text: '@successMessage',
+                icon: 'success',
+                confirmButtonText: 'OK',
+                timer: 3000
+            });
+        </script>
+    }
 
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <script>
+            Swal.fire({
+                title: 'Error',
+                text: '@errorMessage',
+                icon: 'error',
+                confirmButtonText: 'OK',
+
+            });
+        </script>
+    }
 }

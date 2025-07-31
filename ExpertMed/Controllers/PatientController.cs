@@ -89,7 +89,7 @@ namespace ExpertMed.Controllers
         [HttpGet]
         public async Task<IActionResult> RegistroPaciente(int? est = null)
         {
-            return await LoadPatientFormAsync(null, est);
+            return await LoadPatientFormBAsync(null, est);
         }
 
         [HttpPost]
@@ -214,7 +214,7 @@ namespace ExpertMed.Controllers
         {
             var usuarioId = HttpContext.Session.GetInt32("UsuarioId") ?? 0;
             var perfilId = HttpContext.Session.GetInt32("PerfilId") ?? 0;
-            var estid = HttpContext.Session.GetInt32("UsuarioEstablecimientoId") ?? 0;
+            var estid = establishmentId ?? HttpContext.Session.GetInt32("UsuarioEstablecimientoId") ?? 0;
             var viewModel = new NewPatientViewModel
             {
                 Patient = patient,
@@ -232,6 +232,34 @@ namespace ExpertMed.Controllers
                     : new List<MedicDetails>(), // o retornar todos, según tu lógica
                 InsuranceCompanies =  await _selectService.GetInsuranceByEstablishmentAsync(estid)
                   
+            };
+
+            return View(viewModel);
+        }
+
+
+        private async Task<IActionResult> LoadPatientFormBAsync(Patient patient = null, int? establishmentId = null)
+        {
+            var usuarioId = HttpContext.Session.GetInt32("UsuarioId") ?? 0;
+            var perfilId = HttpContext.Session.GetInt32("PerfilId") ?? 0;
+            var estid = establishmentId ?? HttpContext.Session.GetInt32("UsuarioEstablecimientoId") ?? 0;
+            var viewModel = new NewPatientViewModel
+            {
+                Patient = patient,
+                GenderTypes = await _selectService.GetGenderTypeAsync(),
+                BloodTypes = await _selectService.GetBloodTypeAsync(),
+                DocumentTypes = await _selectService.GetDocumentTypeAsync(),
+                CivilTypes = await _selectService.GetCivilTypeAsync(),
+                ProfessionalTrainingTypes = await _selectService.GetProfessionaltrainingTypeAsync(),
+                SureHealthTypes = await _selectService.GetSureHealtTypeAsync(),
+                Countries = await _selectService.GetAllCountriesAsync(),
+                Provinces = await _selectService.GetAllProvinceAsync(),
+                Users = await _patientService.GetDoctorsByAssistantAsync(usuarioId, perfilId),
+                UsersP = establishmentId.HasValue
+                    ? await _selectService.GetAllMedicsDetailsAsync(establishmentId.Value)
+                    : new List<MedicDetails>()
+
+
             };
 
             return View(viewModel);

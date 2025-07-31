@@ -99,6 +99,11 @@ document.addEventListener("click", function (event) {
 
     const button = event.target.closest(".add-favorite");
     const row = button.closest("tr");
+    if (!row) {
+        console.warn("No se encontró la fila del medicamento (tr).");
+        return;
+    }
+
     const medicationsId = row.getAttribute("data-medication-id");
     const amount = row.querySelector(".medication-amount").value;
     const observation = row.querySelector(".medication-observation").value;
@@ -327,6 +332,8 @@ document
   .addEventListener("click", function () {
     const select = document.getElementById("LaboratoriesConsultation");
     const selectedOption = select.options[select.selectedIndex];
+      const observacionGeneral = document.getElementById("laboratoriesGeneralObservation")?.value?.trim() || null;
+
 
     // Verificar que se haya seleccionado un laboratorio
     if (selectedOption.value !== "") {
@@ -354,12 +361,12 @@ document
 
       const amountCell = document.createElement("td");
       amountCell.innerHTML = `
-            <input type="number" name="amount_${laboratoriesId}" id="amount_${laboratoriesId}" class="form-control" min="1">
+            <input type="number" name="amount_${laboratoriesId}" id="amount_${laboratoriesId}" value="1" class="form-control" min="1">
         `; // Campo para la cantidad
 
       const observationCell = document.createElement("td");
-      observationCell.innerHTML = `
-            <input type="text" name="observation_${laboratoriesId}" id="observation_${laboratoriesId}" class="form-control">
+        observationCell.innerHTML = `
+            <input type="text" name="observation_${laboratoriesId}" id="observation_${laboratoriesId}" value="${observacionGeneral}" class="form-control">
         `; // Campo para observaciones
 
       const actionsCell = document.createElement("td");

@@ -1828,22 +1828,20 @@ Clínica.
                                                     <th scope="col" hidden style="font-size: 12px;">Images ID</th>
                                                     <th scope="col" style="font-size: 12px;">Nombre de la imagen</th>
                                                     <th scope="col" style="font-size: 12px;">Cantidad</th>
-                                                    <th scope="col" style="font-size: 12px;">Observación</th>
                                                     <th scope="col" style="font-size: 12px;">Acciones</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                @if (Model.Consultation.ImagesConsultations != null)
+                                                @if (Model.Consultation.LaboratoriesConsultations != null)
                                                 {
-                                                    foreach (var img in Model.Consultation.ImagesConsultations)
+                                                    foreach (var labConsulta in Model.Consultation.LaboratoriesConsultations)
                                                     {
                                                         <tr>
-                                                            <td hidden>@img.ImagesImagesid</td>
+                                                            <td hidden>@labConsulta.LaboratoriesLaboratoriesid</td>
                                                             <td>
-                                                                @(Model.Images.FirstOrDefault(i => i.ImagesId == img.ImagesImagesid)?.ImagesDescription ?? "N/A")
+                                                                @(Model.Laboratories.FirstOrDefault(l => l.LaboratoriesId == labConsulta.LaboratoriesLaboratoriesid)?.LaboratoriesDescription ?? "N/A")
                                                             </td>
-                                                            <td>@img.ImagesAmount</td>
-                                                            <td>@img.ImagesObservation</td>
+                                                            <td>@labConsulta.LaboratoriesAmount</td>
                                                             <td>
                                                                 <button class="btn btn-danger btn-sm">Eliminar</button>
                                                             </td>

@@ -11,7 +11,7 @@ namespace ExpertMed.Controllers
         private readonly AppointmentService _appointmentService;
         private readonly PatientService _patientService;
 
-        public AppointmentController(ILogger<AppointmentController> logger, AppointmentService appointmentService,PatientService patientService)
+        public AppointmentController(ILogger<AppointmentController> logger, AppointmentService appointmentService, PatientService patientService)
         {
             _logger = logger;
             _appointmentService = appointmentService;
@@ -24,12 +24,17 @@ namespace ExpertMed.Controllers
 
 
         /// <summary>
-        /// Listado de citas vista, visualizar mediate estados y payments
+        /// 
         /// </summary>
         /// <param name="appointmentStatus"></param>
+        /// <param name="appointmentStatus2"></param>
+        /// <param name="isPaidOnly"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<IActionResult> AppointmentList(int appointmentStatus = 5, bool isPaidOnly = false)
+        public async Task<IActionResult> AppointmentList(
+      int appointmentStatus = 5, // Default for the first status
+      int? appointmentStatus2 = 1, // New optional parameter for the second status, defaults to null
+      bool isPaidOnly = false)
         {
             try
             {
@@ -43,6 +48,7 @@ namespace ExpertMed.Controllers
                 }
 
                 ViewBag.CurrentStatus = appointmentStatus;
+                ViewBag.CurrentStatus2 = appointmentStatus2; // Add to ViewBag if you need it in the view
                 ViewBag.IsPaidOnly = isPaidOnly;
                 ViewBag.UserProfile = userProfile.Value;
                 ViewBag.UserId = userId.Value;
@@ -51,7 +57,8 @@ namespace ExpertMed.Controllers
                     userProfile.Value,
                     appointmentStatus,
                     userId,
-                    isPaidOnly // ✅ aquí lo pasas al servicio
+                    isPaidOnly,
+                    appointmentStatus2 // ✅ Pass the new second status here
                 );
 
                 if (appointments == null || !appointments.Any())
@@ -69,7 +76,6 @@ namespace ExpertMed.Controllers
                 return View(new List<AppointmentDTO>());
             }
         }
-
         /// <summary>
         /// Obtiene las horas del medico
         /// </summary>
@@ -416,11 +422,11 @@ namespace ExpertMed.Controllers
         /// <returns></returns>
 
         [HttpPost("ModifyAppointmentA")]
-        public async Task<IActionResult> ModifyAppointmentA([FromBody] Appointment request )
+        public async Task<IActionResult> ModifyAppointmentA([FromBody] Appointment request)
         {
             try
             {
-               
+
                 // Lógica para modificar la cita
                 var appointment = new Appointment
                 {
@@ -508,7 +514,7 @@ namespace ExpertMed.Controllers
             // Redirigir directamente a la URL de WhatsApp
             return Redirect(whatsappUrl);
         }
-        
+
         /// <summary>
         /// 
         /// </summary>

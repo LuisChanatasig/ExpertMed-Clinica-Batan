@@ -353,6 +353,7 @@ namespace ExpertMed.Services
                         Login = reader.GetString(reader.GetOrdinal("users_login")),
                         Status = reader.GetInt32(reader.GetOrdinal("users_status")),
                         ProfileId = reader.GetInt32(reader.GetOrdinal("users_profileid")),
+                        UserSpecialtyid = reader.GetInt32(reader.GetOrdinal("users_specialityid")),
                         UserCountryid = reader.IsDBNull(reader.GetOrdinal("users_countryid")) ? null : reader.GetInt32(reader.GetOrdinal("users_countryid")),
                         UserDescription = reader.IsDBNull(reader.GetOrdinal("users_description"))
                             ? "Sin especificar"

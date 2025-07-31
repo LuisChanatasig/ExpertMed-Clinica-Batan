@@ -119,7 +119,7 @@ namespace ExpertMed.Controllers
             var diasReposo = consultation.ConsultationDisablilitydays ?? 1;
             var fechaFinal = fechaInicial.AddDays(diasReposo);
 
-            string templatePath = Path.Combine(_webHostEnvironment.WebRootPath, "plantillas", "certificadoparaclinica.pdf");
+            string templatePath = Path.Combine(_webHostEnvironment.WebRootPath, "plantillas", "certificado-medico.pdf");
 
             using var memoryStream = new MemoryStream();
             PdfReader pdfReader = new PdfReader(templatePath);
@@ -2271,6 +2271,7 @@ namespace ExpertMed.Controllers
             AcroFields formFields = pdfStamper.AcroFields;
 
             InsertImageFromField(pdfStamper, formFields, "txt_imagen_logo", consultation.UsersEstablishmentLogo);
+            InsertImageFromField(pdfStamper, formFields, "txt_imagen_logo_2", consultation.UsersEstablishmentLogo);
 
 
             // Asignar valores a campos de la plantilla PDF
@@ -2317,7 +2318,7 @@ namespace ExpertMed.Controllers
             var medicationsInfo = string.Join("\n", consultation.MedicationsConsultations.Select(mc =>
             {
                 var medication = allMedications.FirstOrDefault(m => m.MedicationsId == mc.MedicationsMedicationsid);
-                return medication != null ? $"({medication.MedicationsCie10}) {medication.MedicationsName} - X: {mc.MedicationsAmount}" : "N/A";
+                return medication != null ? $"({medication.MedicationsCie10}) {medication.MedicationsName} - Cantidad: {mc.MedicationsAmount}" : "N/A";
             }));
 
             formFields.SetField("txt_prescripcion", medicationsInfo);
@@ -2326,7 +2327,7 @@ namespace ExpertMed.Controllers
             var indications = string.Join("\n", consultation.MedicationsConsultations.Select(mc =>
             {
                 var medication = allMedications.FirstOrDefault(m => m.MedicationsId == mc.MedicationsMedicationsid);
-                return medication != null ? $"({medication.MedicationsCie10}) {medication.MedicationsName} - Obs: {mc.MedicationsObservation}" : "N/A";
+                return medication != null ? $"({medication.MedicationsCie10}) {medication.MedicationsName} - Observaciones: {mc.MedicationsObservation}" : "N/A";
             }));
 
             formFields.SetField("txt_observacion", indications);
@@ -2394,7 +2395,7 @@ namespace ExpertMed.Controllers
             PdfStamper pdfStamper = new PdfStamper(pdfReader, memoryStream);
 
             AcroFields formFields = pdfStamper.AcroFields;
-            InsertImageFromField(pdfStamper, formFields, "txt_imagen_logo", consultation.UsersEstablishmentLogo);
+            InsertImageFromField(pdfStamper, formFields, "txt_imagen_logo_2", consultation.UsersEstablishmentLogo);
 
             // Asignar valores a campos de la plantilla PDF
             formFields.SetField("txt_nombre_doctor", consultation.UsersNames + " " + consultation.UsersSurcenames);
@@ -2433,26 +2434,26 @@ namespace ExpertMed.Controllers
                 ? diagnosisList.FirstOrDefault(d => d.DiagnosisId == presumptiveDiagnosis.DiagnosisDiagnosisid)?.DiagnosisName ?? "N/A"
                 : "N/A";
 
-            formFields.SetField("txt_diagnostico", $"Definitivo: {diagnosisDefName} | Presuntivo: {diagnosisPresumptiveName}");
+            formFields.SetField("txt_diagnosticos", $"Definitivo: {diagnosisDefName} | Presuntivo: {diagnosisPresumptiveName}");
 
             // Laboratorios
             var allLabs = await _selectService.GetAllLaboratoriesAsync();
             var laboratoriesInfo = string.Join("\n", consultation.LaboratoriesConsultations.Select(lc =>
             {
                 var lab = allLabs.FirstOrDefault(l => l.LaboratoriesId == lc.LaboratoriesLaboratoriesid);
-                return lab != null ? $"({lab.LaboratoriesCie10}) {lab.LaboratoriesName} - X: {lc.LaboratoriesAmount}" : "N/A";
+                return lab != null ? $"({lab.LaboratoriesCie10}) {lab.LaboratoriesName} - Cantidad: {lc.LaboratoriesAmount}" : "N/A";
             }));
 
             formFields.SetField("txt_laboratorios", laboratoriesInfo);
+            var firstObservation = consultation.LaboratoriesConsultations
+    .Select(lc =>
+    {
+        var lab = allLabs.FirstOrDefault(l => l.LaboratoriesId == lc.LaboratoriesLaboratoriesid);
+        return lab != null ? $"({lab.LaboratoriesCie10}) {lab.LaboratoriesName} - Observación: {lc.LaboratoriesObservation}" : null;
+    })
+    .FirstOrDefault(obs => obs != null); // Get the first non-null observation
 
-            // Observaciones
-            var observations = string.Join("\n", consultation.LaboratoriesConsultations.Select(lc =>
-            {
-                var lab = allLabs.FirstOrDefault(l => l.LaboratoriesId == lc.LaboratoriesLaboratoriesid);
-                return lab != null ? $"({lab.LaboratoriesCie10}) {lab.LaboratoriesName} - Obs: {lc.LaboratoriesObservation}" : "N/A";
-            }));
-
-            formFields.SetField("txt_observaciones", observations);
+            formFields.SetField("txt_observaciones", firstObservation ?? string.Empty); // Set the field, defaulting to empty string if no observation found
             formFields.SetField("txt_direccion", consultation.UsersEstablishmentAddress);
 
             // Finalizar la edición y cerrar el stamper
@@ -2491,7 +2492,7 @@ namespace ExpertMed.Controllers
             PdfStamper pdfStamper = new PdfStamper(pdfReader, memoryStream);
 
             AcroFields formFields = pdfStamper.AcroFields;
-            InsertImageFromField(pdfStamper, formFields, "txt_imagen_logo", consultation.UsersEstablishmentLogo);
+            InsertImageFromField(pdfStamper, formFields, "txt_imagen_logo_2", consultation.UsersEstablishmentLogo);
 
             // Asignar valores a campos de la plantilla PDF
             formFields.SetField("txt_nombre_doctor", consultation.UsersNames + " " + consultation.UsersSurcenames);
@@ -2530,14 +2531,14 @@ namespace ExpertMed.Controllers
                 ? diagnosisList.FirstOrDefault(d => d.DiagnosisId == presumptiveDiagnosis.DiagnosisDiagnosisid)?.DiagnosisName ?? "N/A"
                 : "N/A";
 
-            formFields.SetField("txt_diagnostico", $"Definitivo: {diagnosisDefName} | Presuntivo: {diagnosisPresumptiveName}");
+            formFields.SetField("txt_diagnosticos", $"Definitivo: {diagnosisDefName} | Presuntivo: {diagnosisPresumptiveName}");
 
             // Imágenes
             var allImages = await _selectService.GetAllImagesAsync();
             var imagesInfo = string.Join("\n", consultation.ImagesConsultations.Select(ic =>
             {
                 var image = allImages.FirstOrDefault(i => i.ImagesId == ic.ImagesImagesid);
-                return image != null ? $"({image.ImagesCie10}) {image.ImagesName} - X: {ic.ImagesAmount}" : "N/A";
+                return image != null ? $"({image.ImagesCie10}) {image.ImagesName} - Cantidad: {ic.ImagesAmount}" : "N/A";
             }));
 
             formFields.SetField("txt_imagenes", imagesInfo);
@@ -2546,7 +2547,7 @@ namespace ExpertMed.Controllers
             var observations = string.Join("\n", consultation.ImagesConsultations.Select(ic =>
             {
                 var image = allImages.FirstOrDefault(i => i.ImagesId == ic.ImagesImagesid);
-                return image != null ? $"({image.ImagesCie10}) {image.ImagesName} - Obs: {ic.ImagesObservation}" : "N/A";
+                return image != null ? $"({image.ImagesCie10}) {image.ImagesName} - Observación: {ic.ImagesObservation}" : "N/A";
             }));
 
             formFields.SetField("txt_observaciones", observations);

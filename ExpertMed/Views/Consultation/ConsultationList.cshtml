@@ -67,6 +67,7 @@
                                         @(firstConsulta.ConsultationCreationdate?.ToString("dd/MM/yyyy") ?? "—")
                                     </span>
                                 </div>
+
                                 <div>
                                     <a class="btn btn-sm btn-soft-info" data-bs-toggle="collapse" href="#@collapseId" role="button" aria-expanded="false" aria-controls="@collapseId">
                                         <i class="mdi mdi-eye-outline"></i> Ver detalles
@@ -82,7 +83,7 @@
                                     <table class="table table-sm table-bordered align-middle mb-0">
                                         <thead class="table-light">
                                             <tr>
-                                                @if (perfilId == 1)
+                                                @if (perfilId == 1 || perfilId == 2)
                                                 {
                                                     <th>Secuencial</th>
                                                     <th>Médico</th>
@@ -99,7 +100,7 @@
                                             @foreach (var consulta in consultas)
                                             {
                                                 <tr>
-                                                    @if (perfilId == 1)
+                                                    @if (perfilId == 1 || perfilId == 2)
                                                     {
                                                         <td>@consulta.ConsultationId</td>
                                                         <td>
@@ -321,7 +322,7 @@
                     const actions = {
 
             justificante: '@Url.Action("MedicalCertificate", "Documents")',
-            formulario: '@Url.Action("MedicalForm2", "Documents")',
+            formulario: '@Url.Action("MedicalForm", "Documents")',
             receta: '@Url.Action("MedicationRecipe", "Documents")',
             laboratorio: '@Url.Action("LaboratoryDoc", "Documents")',
             imagen: '@Url.Action("ImageDoc", "Documents")'

@@ -15,7 +15,11 @@
 
 }
 
+@section Styles{
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+   
 
+}
 
 @model NewPatientViewModel
 <div class="position-relative mx-n4 mt-n4">
@@ -630,7 +634,7 @@
                                     <select class="form-control" id="allergiesSelect"
                                             name="allergiesSelect" data-choices data-choices-removeItem
                                             multiple required>
-                                        <option value="">En caso de no tener, escriba ninguno</option>
+                                        <option value="">En caso de no tener, escriba desconoce</option>
                                         @foreach (var allergies in Model.AllergiesTypes)
                                         {
                                             <option value="@allergies.CatalogId">
@@ -644,7 +648,7 @@
 
                                 </div>
                                 <div class="invalid-feedback">
-                                    POR FAVOR ESTE CAMPO ES REQUERIDO SI NO TIENE ALERGIAS COLOCAR NINGUNA
+                                    POR FAVOR ESTE CAMPO ES REQUERIDO SI NO TIENE ALERGIAS COLOCAR DESCONOCE
                                 </div>
                             </div>
                             <!-- #endregion Alergias-->
@@ -658,7 +662,7 @@
                                     <select class="form-control" id="surgeriesSelect"
                                             name="surgeriesSelect" data-choices data-choices-removeItem
                                             multiple required>
-                                        <option value="">En caso de no tener, escriba ninguno</option>
+                                        <option value="">En caso de no tener, escriba desconoce</option>
                                         @foreach (var surgeries in Model.SurgeriesTypes)
                                         {
                                             <option value="@surgeries.CatalogId">
@@ -671,7 +675,7 @@
                                            name="selectSurgeriesId">
                                 </div>
                                 <div class="invalid-feedback">
-                                    POR FAVOR ESTE CAMPO ES REQUERIDO SI NO TIENE CIRUGIAS COLOCAR NINGUNA
+                                    POR FAVOR ESTE CAMPO ES REQUERIDO SI NO TIENE CIRUGIAS COLOCAR DESCONOCE
                                 </div>
                             </div>
                             <!-- #endregion Cirugias-->
@@ -1317,22 +1321,22 @@
 
                             <div class="col-lg-4">
                                 <div class="mb-3">
-                                    <label for="temperatureInput" class="form-label">Temperatura ºC *</label>
-                                    <input type="text" class="form-control" id="consultation_temperature" name="temperatureInput" value="@Model.DetailsPatient.Temperature" placeholder="37.5" required>
+                                    <label for="temperatureInput" class="form-label">Temperatura ºC </label>
+                                    <input type="text" class="form-control" id="consultation_temperature" name="temperatureInput" value="@Model.DetailsPatient.Temperature" placeholder="37.5">
                                 </div>
                             </div>
 
                             <div class="col-lg-4">
                                 <div class="mb-3">
-                                    <label for="respiratoryRateInput" class="form-label"> Frecuencia respiratoria *</label>
-                                    <input type="text" class="form-control" id="consultation_respirationrate" name="respiratoryRateInput" value="@Model.DetailsPatient.RespiratoryRate" placeholder="12" required>
+                                    <label for="respiratoryRateInput" class="form-label"> Frecuencia respiratoria </label>
+                                    <input type="text" class="form-control" id="consultation_respirationrate" name="respiratoryRateInput" value="@Model.DetailsPatient.RespiratoryRate" placeholder="12" >
                                 </div>
                             </div>
 
                             <div class="col-lg-4">
                                 <div class="mb-3">
-                                    <label for="bloodPressureInput" class="form-label"> Presion Arterial * </label>
-                                    <input type="text" class="form-control" id="bloodPressureInput" name="bloodPressureInput" value="@Model.DetailsPatient.BloodPressureAS @Model.DetailsPatient.BloodPressureDIS" placeholder="/" required>
+                                    <label for="bloodPressureInput" class="form-label"> Presion Arterial  </label>
+                                    <input type="text" class="form-control" id="bloodPressureInput" name="bloodPressureInput" value="@Model.DetailsPatient.BloodPressureAS @Model.DetailsPatient.BloodPressureDIS" placeholder="/" >
                                     <span>Si la presión es de dos cifras, anteceda el 0 antes del número. Ej: 046/123 siempre colocar como el ejemplo</span>
 
                                     <input type="hidden" name="PresionArterialDiastolica" id="consultation_bloodpresuredDIS" />
@@ -1343,23 +1347,23 @@
 
                             <div class="col-lg-4">
                                 <div class="mb-3">
-                                    <label for="pulseMinuteInput" class="form-label"> Pulso por minuto * </label>
-                                    <input type="text" class="form-control" id="consultation_pulse" name="pulseMinuteInput" value="@Model.DetailsPatient.Pulse" placeholder="12" required>
+                                    <label for="pulseMinuteInput" class="form-label"> Pulso por minuto  </label>
+                                    <input type="text" class="form-control" id="consultation_pulse" name="pulseMinuteInput" value="@Model.DetailsPatient.Pulse" placeholder="12" >
                                 </div>
                             </div>
 
                             <div class="col-lg-4">
                                 <div class="mb-3">
-                                    <label for="weightInput" class="form-label"> Peso * (Kg)</label>
-                                    <input type="text" class="form-control" id="consultation_weight" name="weightInput" placeholder="40" value="@Model.DetailsPatient.Size" required>
+                                    <label for="weightInput" class="form-label"> Peso  (Kg)</label>
+                                    <input type="text" class="form-control" id="consultation_weight" name="weightInput" placeholder="40" value="@Model.DetailsPatient.Size" >
                                 </div>
                             </div>
 
 
                             <div class="col-lg-4">
                                 <div class="mb-3">
-                                    <label for="pointofsaleInput" class="form-label"> Altura * (cm)</label>
-                                    <input type="text" class="form-control" id="consultation_size" name="weightInput" placeholder="160" value="@Model.DetailsPatient.Weight" required>
+                                    <label for="pointofsaleInput" class="form-label"> Altura  (cm)</label>
+                                    <input type="text" class="form-control" id="consultation_size" name="weightInput" placeholder="160" value="@Model.DetailsPatient.Weight" >
                                 </div>
                             </div>
                             <!-- #endregion Signos Vitales-->
@@ -1369,8 +1373,16 @@
                                 <i class="las la-stethoscope" id="icons"></i> <span>
                                     Examen fisico regional
                                 </span>
+                                
                             </div>
-
+                            <!-- Contenedor flex para alinear icono y texto -->
+                            <div id="mensajeSwitch" style="display: flex; align-items: center; color: #555; font-style: italic; margin-top: 5px; font-size: 0.9em;">
+                                <!-- Icono MDI a la izquierda -->
+                                <i class="mdi mdi-information-outline" style="margin-left: 8px; font-size: 1.2em;"></i>
+                                <span>
+                                    Si necesita colocar un comentario pero sin patología, active el switch correspondiente, coloque la observación y luego desactívelo.
+                                </span>
+                            </div>
 
                             <!-- #region  Head-->
                             <div class="form-check form-switch">
@@ -1579,15 +1591,16 @@
                                         <h6 class="card-title mb-0">Diagnosticos</h6>
                                     </div>
                                     <select name="DiagnosisConsultation" id="DiagnosisConsultation"
-                                            class="form-control" data-choices data-choices-sorting-false>
+                                            class="form-control">
                                         <option value="">Busque y seleccione</option>
                                         @foreach (var diagnosis in Model.Diagnoses)
                                         {
-                                            <option value="@diagnosis.DiagnosisId" data-search="@diagnosis.DiagnosisName" data-name="@diagnosis.DiagnosisName">
+                                            <option value="@diagnosis.DiagnosisId" data-name="@diagnosis.DiagnosisName">
                                                 @diagnosis.DiagnosisName
                                             </option>
                                         }
                                     </select>
+
                                     <div class="card-body">
                                         <div class="row">
                                             <div class="col-lg-12">
@@ -1673,8 +1686,7 @@
                                         <h6 class="card-title mb-0">Medicamentos</h6>
                                     </div>
                                     <select name="MedicationsConsultation" id="MedicationsConsultation"
-                                            class="form-control" data-choices
-                                            data-choices-sorting-false>
+                                            class="form-control">
                                         <option value="">Escriba y seleccione un medicamento</option>
                                         @foreach (var medications in Model.Medications)
                                         {
@@ -1788,8 +1800,7 @@
                                         <h6 class="card-title mb-0">Imagenes(Test)</h6>
                                     </div>
                                     <select name="ImagesConsultation" id="ImagesConsultation"
-                                            class="form-control" data-choices
-                                            data-choices-sorting-false>
+                                            class="form-control">
                                         <option value="">Escriba y seleccione una imagen(Test)</option>
                                         @foreach (var images in Model.Images)
                                         {
@@ -1817,7 +1828,6 @@
                                                     <th scope="col" hidden style="font-size: 12px;">Images ID</th>
                                                     <th scope="col" style="font-size: 12px;">Nombre de las imagenes</th>
                                                     <th scope="col" style="font-size: 12px;">Cantidad</th>
-                                                    <th scope="col" style="font-size: 12px;">observación</th>
                                                     <th scope="col" style="font-size: 12px;">Acciones</th>
                                                 </tr>
                                             </thead>
@@ -1825,6 +1835,10 @@
                                                 <!-- Las filas se agregarán dinámicamente aquí -->
                                             </tbody>
                                         </table>
+                                        <div class="mb-3 mt-4">
+                                            <label for="imagesGeneralObservation" class="form-label">Observación general</label>
+                                            <textarea id="imagesGeneralObservation" name="imagesGeneralObservation" class="form-control" rows="3" placeholder="Escribe una observación para todos los laboratorios..."></textarea>
+                                        </div>
                                     </div>
 
 
@@ -1846,8 +1860,7 @@
                                         <h6 class="card-title mb-0">Laboratorios(Test)</h6>
                                     </div>
                                     <select name="LaboratoriesConsultation" id="LaboratoriesConsultation"
-                                            class="form-control" data-choices
-                                            data-choices-sorting-false>
+                                            class="form-control" >
                                         <option value="">Escriba y seleccione un laboratorio</option>
                                         @foreach (var images in Model.Laboratories)
                                         {
@@ -1875,14 +1888,19 @@
                                                     <th scope="col" hidden style="font-size: 12px;">Laboratories ID</th>
                                                     <th scope="col" style="font-size: 12px;">Laboratorios</th>
                                                     <th scope="col" style="font-size: 12px;">Cantidad</th>
-                                                    <th scope="col" style="font-size: 12px;">Observación</th>
                                                     <th scope="col" style="font-size: 12px;">Acciones</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <!-- Las filas se agregarán dinámicamente aquí -->
                                             </tbody>
+
                                         </table>
+                                        <div class="mb-3 mt-4">
+                                            <label for="laboratoriesGeneralObservation" class="form-label">Observación general</label>
+                                            <textarea id="laboratoriesGeneralObservation" name="laboratoriesGeneralObservation" class="form-control" rows="3" placeholder="Escribe una observación para todos los laboratorios..."></textarea>
+                                        </div>
+
                                     </div>
 
 
@@ -1995,41 +2013,60 @@
 
 
     <script>
-
         document.addEventListener("DOMContentLoaded", function () {
-            // Selecciona todos los switches
             const switches = document.querySelectorAll(".form-check-input");
 
             switches.forEach(switchElement => {
-                // Asocia un evento de cambio a cada switch
                 switchElement.addEventListener("change", function () {
-                    // Obtén los campos asociados al switch actual
                     const parentDiv = this.closest(".form-check");
-                    const nextSibling = parentDiv.nextElementSibling;
-                    const selectField = nextSibling.querySelector("select");
-                    const observationField = nextSibling.nextElementSibling.querySelector("input");
+                    const nextSibling = parentDiv?.nextElementSibling;
+                    const nextNextSibling = nextSibling?.nextElementSibling;
 
-                    // Muestra u oculta los campos según el estado del switch
+                    const selectField = nextSibling?.querySelector("select");
+                    const observationField = nextNextSibling?.querySelector("input");
+
                     if (this.checked) {
-                        selectField.closest(".col-lg-5").style.display = "block";
-                        observationField.closest(".col-lg-5").style.display = "block";
+                        if (selectField) {
+                            const selectContainer = selectField.closest(".col-lg-5");
+                            if (selectContainer) selectContainer.style.display = "block";
+                        }
+                        if (observationField) {
+                            const obsContainer = observationField.closest(".col-lg-5");
+                            if (obsContainer) obsContainer.style.display = "block";
+                        }
                     } else {
-                        selectField.closest(".col-lg-5").style.display = "none";
-                        observationField.closest(".col-lg-5").style.display = "none";
+                        if (selectField) {
+                            const selectContainer = selectField.closest(".col-lg-5");
+                            if (selectContainer) selectContainer.style.display = "none";
+                        }
+                        if (observationField) {
+                            const obsContainer = observationField.closest(".col-lg-5");
+                            if (obsContainer) obsContainer.style.display = "none";
+                        }
                     }
                 });
 
                 // Oculta inicialmente los campos asociados
                 const parentDiv = switchElement.closest(".form-check");
-                const nextSibling = parentDiv.nextElementSibling;
-                const selectField = nextSibling.querySelector("select");
-                const observationField = nextSibling.nextElementSibling.querySelector("input");
+                const nextSibling = parentDiv?.nextElementSibling;
+                const nextNextSibling = nextSibling?.nextElementSibling;
 
-                selectField.closest(".col-lg-5").style.display = "none";
-                observationField.closest(".col-lg-5").style.display = "none";
+                const selectField = nextSibling?.querySelector("select");
+                const observationField = nextNextSibling?.querySelector("input");
+
+                if (selectField) {
+                    const selectContainer = selectField.closest(".col-lg-5");
+                    if (selectContainer) selectContainer.style.display = "none";
+                }
+
+                if (observationField) {
+                    const obsContainer = observationField.closest(".col-lg-5");
+                    if (obsContainer) obsContainer.style.display = "none";
+                }
             });
         });
     </script>
+
 
 
     <script>
@@ -2139,6 +2176,62 @@
         });
 
     </script>
+    <script>
+        $(document).ready(function () {
+            $('#DiagnosisConsultation').select2({
+                placeholder: "Busque y seleccione",
+                allowClear: true,
+                width: '100%',
+                language: "es"
+            });
+              $('#MedicationsConsultation').select2({
+                placeholder: "Busque y seleccione",
+                allowClear: true,
+                width: '100%',
+                language: "es"
+            });    $('#LaboratoriesConsultation').select2({
+                placeholder: "Busque y seleccione",
+                allowClear: true,
+                width: '100%',
+                language: "es"
+            });$('#ImagesConsultation').select2({
+                placeholder: "Busque y seleccione",
+                allowClear: true,
+                width: '100%',
+                language: "es"
+            });
+        });
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+
+            if(@perfilId === 2) {
+                const form = document.querySelector("form"); // Ajusta selector si tienes varios formularios
+
+                form.addEventListener("submit", function(e) {
+                    // Aquí defines los inputs y valores por defecto
+                    const defaults = {
+                        consultation_temperature: "36.5",
+                        consultation_respirationrate: "12",
+                        bloodPressureInput: "046/123",
+                        consultation_pulse: "70",
+                        consultation_weight: "60",
+                        consultation_size: "170"
+                    };
+
+                    Object.entries(defaults).forEach(([id, defaultVal]) => {
+                        const input = document.getElementById(id);
+                        if(input && input.value.trim() === "") {
+                            input.value = defaultVal;
+                        }
+                    });
+                });
+            }
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="~/assets/js/consultation.js"></script>
 
 }

@@ -82,21 +82,60 @@
                 <div class="collapse mb-3" id="filterCollapse">
                     <div class="card card-body p-2">
                         <div class="btn-group flex-wrap w-100" role="group">
+                            @{
+                                // Obtener los valores actuales de los estados desde el ViewBag
+                                int? currentStatus1 = ViewBag.CurrentStatus;
+                                int? currentStatus2 = ViewBag.CurrentStatus2;
+                                bool isPaid = ViewBag.IsPaidOnly == true; // Asegúrate de que ViewBag.IsPaidOnly sea bool
+                            }
+
+                            @* Botón para "Activas y Emergencias" - Este será el predeterminado. *@
+                            @{
+                                bool isActiveAndEmergencies = (currentStatus1 == 1 && currentStatus2 == 5 && !isPaid);
+                            }
+                            <button class="btn btn-soft-primary @(isActiveAndEmergencies ? "active" : "")"
+                                    onclick="filterAppointments(1, false, 5)">
+                                <i class="mdi mdi-clipboard-list-outline"></i> Activas y Emergencias
+                            </button>
+
+                            @* Ocultamos o eliminamos los botones individuales de "Activas" y "Emergencias" * /
+                            @* Puedes eliminarlos completamente si no los necesitas, o mantenerlos comentados como referencia. *@
+                            @*
                             @foreach (var estado in new[] {
-                            (1, "Activas", "btn-soft-warning"),
+                                (1, "Activas", "btn-soft-warning"), // Este se oculta/elimina
+                                (5, "EMERGENCIAS", "bg-danger text-white fw-bold text-uppercase") // Este se oculta/elimina
+                            })
+                            {
+                                <button class="btn @estado.Item3"
+                                        onclick="filterAppointments(@estado.Item1)">
+                                    @estado.Item2
+                                </button>
+                            }
+                            *@
+
+                            @* Mantendremos los otros estados si son necesarios individualmente *@
+                            @foreach (var estado in new[] {
                             (2, "Canceladas", "btn-soft-danger"),
                             (3, "Seguimiento", "btn-soft-info"),
-                            (4, "Finalizadas", "btn-soft-dark"),
-                            (5, "EMERGENCIAS", "bg-danger text-white fw-bold text-uppercase") })
+                            (4, "Finalizadas", "btn-soft-dark") })
                             {
-                                <button class="btn @estado.Item3 @(ViewBag.CurrentStatus == estado.Item1 && ViewBag.IsPaidOnly != true ? "active" : "")"
+                                bool isActive = (currentStatus1 == estado.Item1 && currentStatus2 == null && !isPaid);
+                                <button class="btn @estado.Item3 @(isActive ? "active" : "")"
                                         onclick="filterAppointments(@estado.Item1)">
                                     @estado.Item2
                                 </button>
                             }
 
-                            <!-- Botón para "Pagadas" -->
-                            <button class="btn btn-soft-success @(ViewBag.IsPaidOnly == true ? "active" : "")"
+                            @* Botón para "Todas" (si -1 es para ignorar status) *@
+                            @{
+                                bool isAllActive = (currentStatus1 == -1 && currentStatus2 == null && !isPaid);
+                            }
+                            <button class="btn btn-outline-secondary @(isAllActive ? "active" : "")"
+                                    onclick="filterAppointments(-1)">
+                                <i class="mdi mdi-format-list-bulleted"></i> Todas
+                            </button>
+
+                            <button class="btn btn-soft-success @(isPaid ? "active" : "")"
                                     onclick="filterAppointments(-1, true)">
                                 <i class="mdi mdi-cash-check"></i> Pagadas
                             </button>
@@ -109,6 +148,8 @@
                         <tr>
                             <th hidden>ID</th>
                             <th hidden>ID PATIENT</th>
+                            @* Asegúrate de que perfilId esté definido, probablemente desde ViewBag o un modelo *@
+                          
                             @if (perfilId == 1 || perfilId == 3 || perfilId == 4 || perfilId == 8)
                             {
                                 <th>Nombre del médico</th>
@@ -194,6 +235,7 @@
 </div>
 
 
+
 <!-- Modal Opciones Cita -->
 <div class="modal fade" id="optionModal" tabindex="-1"
      aria-labelledby="optionModalLabel" aria-hidden="true">
@@ -255,6 +297,12 @@
                                 data-bs-target="#vitalSignsCanvas"
                                 onclick="prepareVitalSigns()">
                             <i class="ri-heart-pulse-line"></i> Signos Vitales
+                        </button>
+                    </div>
+                    <div class="col-4" id="viewHistoryCol">
+                        <button class="btn btn-soft-primary btn-sm w-100"
+                                onclick="viewPatientHistory()">
+                            <i class="ri-history line"></i> Ver historial clínico
                         </button>
                     </div>
                 </div>
@@ -400,9 +448,16 @@
             });
         });
 
-              function filterAppointments(status, isPaidOnly = false) {
+                    function filterAppointments(status, isPaidOnly = false, status2 = null) {
             const baseUrl = '@Url.Action("AppointmentList", "Appointment")';
-            const url = `${baseUrl}?appointmentStatus=${status}&isPaidOnly=${isPaidOnly}`;
+            let url = `${baseUrl}?appointmentStatus=${status}&isPaidOnly=${isPaidOnly}`;
+
+            // Si 'status2' no es nulo, lo añadimos a la URL.
+            // Esto te permitirá mandar un segundo estado solo cuando sea necesario.
+            if (status2 !== null) {
+                url += `&appointmentStatus2=${status2}`;
+            }
+
             window.location.href = url;
         }
 
@@ -456,8 +511,8 @@
                 .done(data => {
                     if (!data) return alert('Cita no encontrada.');
                     $('#appointment').val(id);
-        $('#patientId').val(data.patientId);          // ahora coincide: id + propiedad
-                        $('#selectedDate').val(data.date);
+                    $('#patientId').val(data.patientId);          // ahora coincide: id + propiedad
+                    $('#selectedDate').val(data.date);
                     $('#appointmentTime').val('');
                     $('#doctorUserId').val(data.doctorUserId);
                     $('#AppointmentMedicalofficeid').val('');
@@ -541,8 +596,8 @@
                 .fail((_, __, e) => alert('Error al cargar horas: ' + e));
         });
 
-                // Selección de hora: asigna hora, consultorio y reprograma automáticamente
-             $('#availableHoursContainer').on('click', 'button', function () {
+        // Selección de hora: asigna hora, consultorio y reprograma automáticamente
+        $('#availableHoursContainer').on('click', 'button', function () {
             const selectedHour = $(this).data('hour');
             $('#appointmentTime').val(selectedHour);
             $('#hoursModalgrid').modal('hide');
@@ -624,9 +679,7 @@
         });
 
     
-
-
-
+        //Funcion para cancelar la cita
         function cancelAppointment() {
             Swal.fire({
                 title: '¿Seguro de cancelar?',
@@ -656,7 +709,8 @@
             });
         }
 
-                function startConsultation() {
+        //Funcion para empezar una consulta
+        function startConsultation() {
             const id = $('#appointmentIdInput').val();
             fetch(`@Url.Action("AppointmentGetById", "Appointment")?id=${id}&userProfile=${perfilId}`)
                 .then(res => res.json())
@@ -669,29 +723,29 @@
                 .catch(() => alert('Error al iniciar consulta'));
         }
 
-
+        //Funcion para empezar una consulta seguimiento
         function startFollowupConsultation() {
             const pid = $('#appointmentPatientId').val();
             window.location.href = `@Url.Action("ConsultationFollowUp", "Consultation")?patientid=${pid}`;
         }
-
+        //Funcion para realizar el pago
         function payAppointment() {
             const id = $('#appointmentIdInput').val();
             const pid = $('#appointmentPatientId').val();
             if (!id || !pid) return alert('Faltan IDs de cita o paciente.');
             window.location.href = `@Url.Action("Facturacion", "Billing")?appointmentId=${id}&patientId=${pid}`;
         }
-
+        //Funcion para enviar el envio de recordatorio
         function sendReminderMessage() {
             const id = $('#appointmentIdInput').val();
             window.location.href = `@Url.Action("SendWhatsAppReminder", "Appointment")?appointmentId=${id}&userProfile=@ViewBag.UserProfile`;
         }
-
+        //Funcion para tomar los signos vitales
         function prepareVitalSigns() {
             $('#vsAppointmentId').val($('#appointmentIdInput').val());
             $('#vsPatientId').val($('#appointmentPatientId').val());
         }
-
+        //Funcion pra controlar el formato de la presion
         function submitVitalSigns() {
             const rawBP = $('#bloodPressure').val().replace(/[^\d/]/g, '');
             const parts = rawBP.split('/');
@@ -744,6 +798,32 @@
             document.body.classList.remove('modal-open');
             document.body.style.paddingRight = '';
         });
+        //Funcion para ver el histori
+        function viewPatientHistory() {
+            // Obtener el ID del paciente desde el input oculto en el modal de opciones de cita
+            var patientId = document.getElementById('appointmentPatientId').value;
+
+            if (!patientId) {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'No se pudo obtener el ID del paciente para ver el historial.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+                return;
+            }
+
+            // Cerrar el modal actual si está abierto
+            var optionModalEl = document.getElementById('optionModal');
+            var optionModal = bootstrap.Modal.getInstance(optionModalEl);
+            if (optionModal) {
+                optionModal.hide();
+            }
+
+            // Redirigir a la acción ConsultationList en el controlador Consultation,
+            // pasando el patientId como parámetro de query string
+            window.location.href = '@Url.Action("ConsultationList", "Consultation")' + '?patientId=' + encodeURIComponent(patientId);
+        }
     </script>
 
 

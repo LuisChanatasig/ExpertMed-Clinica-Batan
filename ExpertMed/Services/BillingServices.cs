@@ -23,18 +23,18 @@ namespace ExpertMed.Services
         }
 
         public async Task<string> CreateAndSendInvoiceAsync(
-    int citaId,
-    DateTime fechaFacturacion,
-    decimal totalFactura,
-    string metodoPago,
-    byte[] comprobantePagoFacturacion,
-    string billingDetailsNames,
-    string billingDetailsCiNumber,
-    string billingDetailsDocumentType,
-    string billingDetailsAddress,
-    string billingDetailsPhone,
-    string billingDetailsEmail,
-    List<BillingItemDTO> items)
+            int citaId,
+            DateTime fechaFacturacion,
+            decimal totalFactura,
+            string metodoPago,
+            byte[] comprobantePagoFacturacion,
+            string billingDetailsNames,
+            string billingDetailsCiNumber,
+            string billingDetailsDocumentType,
+            string billingDetailsAddress,
+            string billingDetailsPhone,
+            string billingDetailsEmail,
+            List<BillingItemDTO> items)
         {
             string jsonFactura = string.Empty;
             string xKey = string.Empty;
@@ -132,6 +132,7 @@ namespace ExpertMed.Services
                     throw new Exception("El JSON generado por el SP es inválido o está vacío.");
 
                 _logger.LogDebug("Factura JSON para cita {CitaId}: {JsonFactura}", citaId, jsonFactura);
+                Console.WriteLine($"Factura JSON para cita {citaId}: {jsonFactura}");
 
                 // 4. Envío a Dátil
                 using (var request = new HttpRequestMessage(HttpMethod.Post, "https://link.datil.co/invoices/issue"))
@@ -144,7 +145,27 @@ namespace ExpertMed.Services
                     var responseContent = await response.Content.ReadAsStringAsync();
 
                     if (!response.IsSuccessStatusCode)
-                        throw new Exception($"Error Dátil: {response.StatusCode} - {responseContent}");
+                    {
+                        try
+                        {
+                            var errorObj = JsonSerializer.Deserialize<DatilErrorResponse>(responseContent, new JsonSerializerOptions
+                            {
+                                PropertyNameCaseInsensitive = true
+                            });
+
+                            if (errorObj?.Errors != null && errorObj.Errors.Any(e => e.Code == "INVALID_RECEIPT"))
+                            {
+                                var errorDetail = errorObj.Errors.First(e => e.Code == "INVALID_RECEIPT").Details;
+                                throw new Exception($"Factura rechazada: {errorDetail}");
+                            }
+
+                            throw new Exception($"Error al emitir factura: {response.StatusCode} - {responseContent}");
+                        }
+                        catch (JsonException)
+                        {
+                            throw new Exception($"Error inesperado al emitir factura: {response.StatusCode} - {responseContent}");
+                        }
+                    }
 
                     return responseContent;
                 }
@@ -173,7 +194,6 @@ namespace ExpertMed.Services
             return await Task.FromResult(cita);
         }
 
-
         public async Task<List<FacturaEmitidaDTO>> ObtenerFacturasEmitidasAsync()
         {
             var facturas = new List<FacturaEmitidaDTO>();
@@ -193,13 +213,23 @@ namespace ExpertMed.Services
                             facturas.Add(new FacturaEmitidaDTO
                             {
                                 FacturaId = reader.GetInt32(reader.GetOrdinal("FacturaId")),
+                                Secuencial = reader.GetInt32(reader.GetOrdinal("Secuencial")),
                                 Fecha = reader.GetDateTime(reader.GetOrdinal("Fecha")),
-                                Paciente = reader.GetString(reader.GetOrdinal("Paciente")),
+                                Paciente = reader.IsDBNull(reader.GetOrdinal("Paciente"))
+                                           ? "(Sin nombre)"
+                                           : reader.GetString(reader.GetOrdinal("Paciente")),
+                                Medico = reader.IsDBNull(reader.GetOrdinal("Medico"))
+                                         ? "(Sin médico)"
+                                         : reader.GetString(reader.GetOrdinal("Medico")),
                                 Subtotal = reader.GetDecimal(reader.GetOrdinal("Subtotal")),
                                 TotalAseguradora = reader.GetDecimal(reader.GetOrdinal("TotalAseguradora")),
                                 TotalCopago = reader.GetDecimal(reader.GetOrdinal("TotalCopago")),
-                                MetodoPago = reader.GetString(reader.GetOrdinal("MetodoPago")),
-                                Aseguradora = reader.IsDBNull(reader.GetOrdinal("Aseguradora")) ? "Particular" : reader.GetString(reader.GetOrdinal("Aseguradora")),
+                                MetodoPago = reader.IsDBNull(reader.GetOrdinal("MetodoPago"))
+                                             ? "-"
+                                             : reader.GetString(reader.GetOrdinal("MetodoPago")),
+                                Aseguradora = reader.IsDBNull(reader.GetOrdinal("Aseguradora"))
+                                              ? "Particular"
+                                              : reader.GetString(reader.GetOrdinal("Aseguradora")),
                                 TotalItems = reader.GetInt32(reader.GetOrdinal("TotalItems")),
                                 Origen = "LOCAL"
                             });
@@ -238,8 +268,9 @@ namespace ExpertMed.Services
                 }
             }
 
-            return facturas.OrderByDescending(f => f.Fecha).ToList(); // para ordenarlos todos juntos
+            return facturas.OrderByDescending(f => f.Fecha).ToList();
         }
+
 
 
         public async Task<FacturaDetalleDTO?> GetFacturaConDetalleAsync(int facturaId)
@@ -250,15 +281,22 @@ namespace ExpertMed.Services
             FacturaDetalleDTO? factura = null;
 
             var commandText = @"
-        SELECT 
-            b.billing_id,
-            b.billing_creationdate,
-            p.patient_firstname + ' ' + p.patient_firstsurname AS paciente,
-            b.billing_payment_method,
-            ic.insurance_company_name,
-            bi.billing_item_description,
-            bi.billing_item_quantity,
-            bi.billing_item_unit_price
+        SELECT
+            b.billing_id,                      -- 0
+            b.billing_creationdate,            -- 1
+            ISNULL(p.patient_firstname, '') + ' ' +
+            ISNULL(p.patient_middlename, '') + ' ' +
+            ISNULL(p.patient_firstsurname, '') + ' ' +
+            ISNULL(p.patient_secondlastname, '') AS paciente, -- 2
+            p.patient_landline_phone,          -- 3
+            p.patient_cellular_phone,          -- 4
+            p.patient_email,                   -- 5
+            p.patient_address,                 -- 6
+            b.billing_payment_method,          -- 7
+            ic.insurance_company_name,         -- 8
+            bi.billing_item_description,       -- 9
+            bi.billing_item_quantity,          -- 10
+            bi.billing_item_unit_price         -- 11
         FROM billing b
         INNER JOIN appointment a ON b.appointment_id = a.appointment_id
         INNER JOIN patient p ON a.appointment_patientid = p.patient_id
@@ -267,7 +305,7 @@ namespace ExpertMed.Services
         WHERE b.billing_id = @FacturaId
     ";
 
-            var command = new SqlCommand(commandText, connection);
+            using var command = new SqlCommand(commandText, connection);
             command.Parameters.AddWithValue("@FacturaId", facturaId);
 
             using var reader = await command.ExecuteReaderAsync();
@@ -280,21 +318,26 @@ namespace ExpertMed.Services
                     {
                         FacturaId = reader.GetInt32(0),
                         Fecha = reader.GetDateTime(1),
-                        Paciente = reader.GetString(2),
-                        MetodoPago = reader.GetString(3),
-                        Aseguradora = reader.IsDBNull(4) ? "N/A" : reader.GetString(4)
+                        Paciente = reader.IsDBNull(2) ? "Sin nombre" : reader.GetString(2).Trim(),
+                        PacienteNumeroFijo = reader.IsDBNull(3) ? null : reader.GetString(3),
+                        PacienteNumeroCelular = reader.IsDBNull(4) ? null : reader.GetString(4),
+                        PacienteEmail = reader.IsDBNull(5) ? null : reader.GetString(5),
+                        PacienteDireccion = reader.IsDBNull(6) ? null : reader.GetString(6),
+                        MetodoPago = reader.IsDBNull(7) ? "No especificado" : reader.GetString(7),
+                        Aseguradora = reader.IsDBNull(8) ? "Particular" : reader.GetString(8),
+                        Items = new List<FacturaItemDTO>()
                     };
                 }
 
-                if (!reader.IsDBNull(5))
+                // Validar si hay ítems
+                if (!reader.IsDBNull(9))
                 {
                     var item = new FacturaItemDTO
                     {
-                        Descripcion = reader.GetString(5),
-                        Cantidad = reader.GetInt32(6),
-                        PrecioUnitario = reader.GetDecimal(7)
+                        Descripcion = reader.GetString(9),
+                        Cantidad = reader.IsDBNull(10) ? 0 : reader.GetInt32(10),
+                        PrecioUnitario = reader.IsDBNull(11) ? 0 : reader.GetDecimal(11)
                     };
-
                     factura.Items.Add(item);
                 }
             }
@@ -302,32 +345,45 @@ namespace ExpertMed.Services
             if (factura != null)
             {
                 factura.Subtotal = factura.Items.Sum(i => i.Total);
-                factura.TotalAseguradora = factura.Subtotal; // Puedes ajustar esto si manejas seguros
-                factura.TotalCopago = 0; // Ajustar si manejas copagos por ítem
+
+                // Lógica provisional: puedes ajustarla según cómo se calcule aseguradora/copago
+                factura.TotalAseguradora = factura.MetodoPago.ToLower().Contains("seguro")
+                    ? factura.Subtotal
+                    : 0;
+
+                factura.TotalCopago = factura.Subtotal - factura.TotalAseguradora;
             }
 
             return factura;
         }
-        public class FacturaDetalleDTO
-        {
-            public int FacturaId { get; set; }
-            public DateTime Fecha { get; set; }
-            public string Paciente { get; set; }
-            public decimal Subtotal { get; set; }
-            public decimal TotalAseguradora { get; set; }
-            public decimal TotalCopago { get; set; }
-            public string MetodoPago { get; set; }
-            public string Aseguradora { get; set; }
-            public List<FacturaItemDTO> Items { get; set; } = new();
-        }
-
-        public class FacturaItemDTO
-        {
-            public string Descripcion { get; set; }
-            public int Cantidad { get; set; }
-            public decimal PrecioUnitario { get; set; }
-            public decimal Total => PrecioUnitario * Cantidad;
-        }
-
     }
+
+    // Updated DTOs
+    public class FacturaDetalleDTO
+    {
+        public int FacturaId { get; set; }
+        public DateTime Fecha { get; set; }
+        public string Paciente { get; set; }
+        public string? PacienteDireccion { get; set; } // Added '?' for nullability
+        public string? PacienteNumeroCelular { get; set; } // Added '?' for nullability
+        public string? PacienteNumeroFijo { get; set; } // Added '?' for nullability
+        public string? PacienteEmail { get; set; } // NEW: Added patient email
+
+        public decimal Subtotal { get; set; }
+        public decimal TotalAseguradora { get; set; }
+        public decimal TotalCopago { get; set; }
+        public string MetodoPago { get; set; }
+        public string Aseguradora { get; set; }
+        public List<FacturaItemDTO> Items { get; set; } = new(); // Initialize list to avoid NullReferenceException
+    }
+
+    public class FacturaItemDTO
+    {
+        public string Descripcion { get; set; }
+        public int Cantidad { get; set; }
+        public decimal PrecioUnitario { get; set; }
+        public decimal Total => PrecioUnitario * Cantidad;
+    }
+
 }
+

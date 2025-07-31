@@ -28,21 +28,30 @@ namespace ExpertMed.Services
         }
 
 
-        public async Task<List<AppointmentDTO>> GetAllAppointmentAsync(int userProfile, int appointmentStatus, int? userId = null, bool isPaidOnly = false)
+        public async Task<List<AppointmentDTO>> GetAllAppointmentAsync(
+           int userProfile,
+           int appointmentStatus,
+           int? userId = null,
+           bool isPaidOnly = false,
+           int? appointmentStatus2 = null) // New optional parameter for the second status
         {
             try
             {
-                var parameters = new[]
-                {
+                var parameters = new List<SqlParameter>
+        {
             new SqlParameter("@UserProfile", userProfile),
             new SqlParameter("@UserID", userId ?? (object)DBNull.Value),
             new SqlParameter("@AppointmentStatus", appointmentStatus),
             new SqlParameter("@IsPaidOnly", isPaidOnly ? 1 : 0)
         };
 
+                // Add the second status parameter only if it's provided
+                parameters.Add(new SqlParameter("@AppointmentStatus2", appointmentStatus2 ?? (object)DBNull.Value));
+
+
                 var result = await _dbContext
                     .Set<AppointmentDTO>()
-                    .FromSqlRaw("EXEC sp_ListAllAppointment @UserProfile, @UserID, @AppointmentStatus, @IsPaidOnly", parameters)
+                    .FromSqlRaw("EXEC sp_ListAllAppointment @UserProfile, @UserID, @AppointmentStatus, @AppointmentStatus2, @IsPaidOnly", parameters.ToArray())
                     .ToListAsync();
 
                 return result;
@@ -58,8 +67,6 @@ namespace ExpertMed.Services
                 throw;
             }
         }
-
-
 
         /// <summary>
         /// Obtener horas disponibles por medico

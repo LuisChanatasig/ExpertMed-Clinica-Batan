@@ -31,19 +31,29 @@ namespace ExpertMed.Controllers
 
 
         [HttpGet]
-        public async Task<IActionResult> ConsultationList()
+        public async Task<IActionResult> ConsultationList(int? patientId = null) // Añade patientId como parámetro opcional
         {
             // Obtén el ID del usuario y el perfil desde la sesión
             var userId = HttpContext.Session.GetInt32("UsuarioId");
             var profileId = HttpContext.Session.GetInt32("PerfilId");
 
-            // Obtén las consultas del servicio
-            var consultations = await _consultationService.GetConsultationsAsync(userId.Value, profileId.Value);
+            // Asegúrate de que los valores de sesión existan antes de usarlos
+            if (!userId.HasValue || !profileId.HasValue)
+            {
+                // Redirigir al login o mostrar un error si la sesión no es válida
+                return RedirectToAction("Login", "Account"); // Ejemplo: redirigir a una página de login
+            }
+
+            // Obtén las consultas del servicio, pasando patientId si está presente
+            var consultations = await _consultationService.GetConsultationsAsync(
+                userId.Value,
+                profileId.Value,
+                patientId  // Pasa el patientId opcional directamente
+            );
 
             // Pasa las consultas a la vista
             return View(consultations);
         }
-
 
         [HttpGet]
         public async Task<IActionResult> NewConsultation(int patientId)

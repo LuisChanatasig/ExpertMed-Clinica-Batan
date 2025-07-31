@@ -18,8 +18,9 @@
                     <table id="facturas-table" class="table table-hover table-bordered align-middle table-striped w-100">
                         <thead class="table-light">
                             <tr>
-                                <th><i class="mdi mdi-pound"></i> N°</th>
+                                <th><i class="mdi mdi-pound"></i> N° de factura</th>
                                 <th><i class="mdi mdi-calendar-clock-outline"></i> Fecha</th>
+                                <th><i class="mdi mdi-doctor"></i> Medico que lo atendio</th>
                                 <th><i class="mdi mdi-account-outline"></i> Paciente</th>
                                 <th><i class="mdi mdi-shield-account-outline"></i> Aseguradora</th>
                                 <th><i class="mdi mdi-cash-multiple"></i> Subtotal</th>
@@ -37,8 +38,9 @@
                                 foreach (var item in Model)
                                 {
                                     <tr>
-                                        <td>@(item.FacturaId > 0 ? item.FacturaId.ToString() : "—")</td>
+                                        <td>@item.SecuencialFormateado</td>
                                         <td>@item.Fecha.ToString("dd/MM/yyyy")</td>
+                                        <td>@item.Medico</td>
                                         <td>@item.Paciente</td>
                                         <td>@(string.IsNullOrWhiteSpace(item.Aseguradora) ? "—" : item.Aseguradora)</td>
                                         <td><span class="badge bg-primary-subtle text-primary">$@item.Subtotal.ToString("F2")</span></td>
@@ -59,7 +61,7 @@
                                         <td>
                                             @if (item.Origen == "LOCAL" && item.FacturaId > 0)
                                             {
-                                                <a href="@Url.Action("NotaVenta", "Billing", new { facturaId = item.FacturaId })"
+                                                <a href="@Url.Action("NotaVentaConTablaDinamica", "Billing", new { facturaId = item.FacturaId })"
                                                    class="btn btn-sm btn-soft-primary" title="Imprimir Nota de Venta">
                                                     <i class="mdi mdi-printer"></i>
                                                 </a>

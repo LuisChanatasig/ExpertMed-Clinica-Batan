@@ -20,18 +20,36 @@ namespace ExpertMed.Services
         }
 
 
-        public async Task<List<Consultation>> GetConsultationsAsync(int userId, int profileId)
+        public async Task<List<Consultation>> GetConsultationsAsync(int userId, int profileId, int? patientId = null)
         {
             try
             {
+                // Construir la consulta SQL dinámica basada en si patientId está presente
+                string sqlQuery;
+                List<object> parameters = new List<object> { userId, profileId };
+
+                if (patientId.HasValue)
+                {
+                    // Si se proporciona patientId, se usa el nuevo formato del stored procedure
+                    sqlQuery = "EXEC sp_ListAllConsultation @user_id = {0}, @profile_id = {1}, @patient_id = {2}";
+                    parameters.Add(patientId.Value);
+                }
+                else
+                {
+                    // Si no se proporciona patientId, se usa el formato original
+                    sqlQuery = "EXEC sp_ListAllConsultation @user_id = {0}, @profile_id = {1}";
+                }
+
                 var consultations = await _dbContext.Consultations
-                    .FromSqlRaw("EXEC sp_ListAllConsultation @user_id = {0}, @profile_id = {1}", userId, profileId)
+                    .FromSqlRaw(sqlQuery, parameters.ToArray())
                     .ToListAsync();
+
                 // Cargar relaciones necesarias explícitamente
+                // Nota: Considera usar .Include() en FromSqlRaw para optimizar si tu EF Core versión lo permite
+                // o si los datos ya vienen "aplanados" del SP, aunque FromSqlRaw no siempre lo permite directamente.
+                // Si no, este enfoque de LoadAsync es válido, pero ten en cuenta el rendimiento.
                 foreach (var consultation in consultations)
                 {
-                    // Esto es útil si necesitas cargar relaciones adicionales como PatientNationalityNavigation o PatientCreationuserNavigation
-                    // Usamos 'LoadAsync' solo cuando sea necesario, pero si tienes muchas relaciones o muchos pacientes, puede afectar el rendimiento
                     await _dbContext.Entry(consultation)
                         .Reference(p => p.ConsultationPatientNavigation)
                         .LoadAsync();
@@ -49,10 +67,11 @@ namespace ExpertMed.Services
             catch (Exception ex)
             {
                 // Manejo de errores (log, excepción personalizada, etc.)
+                // Puedes usar un logger como ILogger para registrar el error
+                Console.WriteLine($"Error en GetConsultationsAsync: {ex.Message}");
                 throw new ApplicationException("Error al obtener las consultas", ex);
             }
         }
-
 
 
         public async Task CrearConsultaAsync(
