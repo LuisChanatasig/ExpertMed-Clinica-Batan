@@ -75,6 +75,7 @@ namespace ExpertMed.Services
 
 
         public async Task CrearConsultaAsync(
+            int? consultationId,
          DateTime consultation_creationdate,
          int? consultation_usercreate,
          int consultation_sequential,
@@ -106,7 +107,7 @@ namespace ExpertMed.Services
          bool consultation_hasdisease,
 string consultation_diseaseobservation,
 string consultation_contingencytype,
-
+ bool consultation_is_final,
          // Parámetros para órganos y sistemas
          bool? organssystems_organsenses,
          string organssystems_organsenses_Obs,
@@ -189,6 +190,7 @@ string consultation_contingencytype,
                     command.CommandType = CommandType.StoredProcedure;
 
                     // Parámetros de consulta
+                    AddSqlParameter(command, "@consultation_id",consultationId);
                     AddSqlParameter(command, "@consultation_creationdate", DateTime.Today);
                     AddSqlParameter(command, "@consultation_usercreate", consultation_usercreate);
                     AddSqlParameter(command, "@consultation_patient", consultation_patient);
@@ -220,6 +222,8 @@ string consultation_contingencytype,
                     AddSqlParameter(command, "@consultation_hasdisease", consultation_hasdisease);
                     AddSqlParameter(command, "@consultation_diseaseobservation", consultation_diseaseobservation);
                     AddSqlParameter(command, "@consultation_contingencytype", consultation_contingencytype);
+                    AddSqlParameter(command, "@consultation_is_final", consultation_is_final);
+
 
                     // Parámetros de órganos y sistemas
                     AddSqlParameter(command, "@organssystems_organsenses", organssystems_organsenses);

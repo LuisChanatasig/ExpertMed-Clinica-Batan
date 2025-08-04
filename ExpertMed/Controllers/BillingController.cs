@@ -43,7 +43,12 @@ namespace ExpertMed.Controllers
             return View(cita);
         }
 
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="viewModel"></param>
+        /// <param name="comprobantePagoFile"></param>
+        /// <returns></returns>
 
         [HttpPost]
         [RequestSizeLimit(52428800)] // 50MB
@@ -225,6 +230,11 @@ namespace ExpertMed.Controllers
         //}
 
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="facturaId"></param>
+        /// <returns></returns>
         [HttpGet]
         public async Task<IActionResult> NotaVentaConTablaDinamica(int facturaId)
         {

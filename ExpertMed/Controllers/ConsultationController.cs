@@ -142,6 +142,7 @@ namespace ExpertMed.Controllers
             try
             {
                 await _consultationService.CrearConsultaAsync(
+                consultaDto.ConsultationId ?? 0,
                 consultaDto.ConsultationCreationdate ?? DateTime.Now, // Add this line to provide a default value
                 consultaDto.ConsultationUsercreate,
                 consultaDto.ConsultationSequential ?? 0, // Add this line to provide a default value
@@ -173,6 +174,8 @@ namespace ExpertMed.Controllers
                    consultaDto.ConsultationHasdisease ?? false,
 consultaDto.ConsultationDiseaseobservation,
 consultaDto.ConsultationContingencytype,
+                // Flag para la cita
+                consultaDto.ConsultationIsFinal,
                 consultaDto.OrgansSystem?.OrganssystemsOrgansenses,
                 consultaDto.OrgansSystem?.OrganssystemsOrgansensesObs,
                 consultaDto.OrgansSystem?.OrganssystemsRespiratory,

@@ -5,7 +5,7 @@ namespace ExpertMed.Models
 {
     public class Consulta
     {
-        public int ConsultationId { get; set; }
+        public int? ConsultationId { get; set; }
 
         public DateTime? ConsultationCreationdate { get; set; }
 
@@ -65,6 +65,9 @@ namespace ExpertMed.Models
         public string? ConsultationDiseaseobservation { get; set; }
         public string? ConsultationContingencytype { get; set; }
 
+
+        // NUEVO:
+        public bool ConsultationIsFinal { get; set; }
         public string? UsersNames { get; set; }
         public string? UsersSurcenames { get; set; }
         public string? UsersEmail { get; set; }

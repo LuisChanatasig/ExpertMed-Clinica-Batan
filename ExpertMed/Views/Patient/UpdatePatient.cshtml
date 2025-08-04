@@ -429,7 +429,7 @@
                     <!-- Seleccionar aseguradora -->
                     <div class="col-xxl-12">
                         <label for="appointmentInsuranceCompanyId" class="form-label">Aseguradora</label>
-                        <select class="form-control" id="appointmentInsuranceCompanyId" name="appointmentInsuranceCompanyId">
+                        <select class="form-control" id="appointmentInsuranceCompanyId" name="appointmentInsuranceCompanyId" required>
                             <option value="">Seleccione aseguradora (si aplica), en caso de que no coloque Ninguno</option>
                             @foreach (var aseguradora in Model.InsuranceCompanies)
                             {
