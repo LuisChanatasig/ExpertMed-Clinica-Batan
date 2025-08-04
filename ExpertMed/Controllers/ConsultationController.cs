@@ -170,6 +170,9 @@ namespace ExpertMed.Controllers
                 consultaDto.ConsultationTherapies,// Add this line to provide a default value
                 consultaDto.ConsultationType ?? 0, // Add this line to provide a default value
                 consultaDto.ConsultationStatus ?? 0, // Add this line to provide a default value
+                   consultaDto.ConsultationHasdisease ?? false,
+consultaDto.ConsultationDiseaseobservation,
+consultaDto.ConsultationContingencytype,
                 consultaDto.OrgansSystem?.OrganssystemsOrgansenses,
                 consultaDto.OrgansSystem?.OrganssystemsOrgansensesObs,
                 consultaDto.OrgansSystem?.OrganssystemsRespiratory,
@@ -237,8 +240,12 @@ namespace ExpertMed.Controllers
                 consultaDto.MedicationsConsultations,
                 consultaDto.LaboratoriesConsultations,
                 consultaDto.ImagesConsultations,
-                consultaDto.DiagnosisConsultations // Add this line to provide a default value
- );
+                consultaDto.DiagnosisConsultations, // Add this line to provide a default value
+                consultaDto.Procedures
+
+
+
+                );
 
                 _logger.LogInformation("Consulta creada exitosamente.");
 

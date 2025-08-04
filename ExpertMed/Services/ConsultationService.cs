@@ -103,6 +103,10 @@ namespace ExpertMed.Services
          string consultation_therapies,
          int consultation_type,
          int consultation_status,
+         bool consultation_hasdisease,
+string consultation_diseaseobservation,
+string consultation_contingencytype,
+
          // Parámetros para órganos y sistemas
          bool? organssystems_organsenses,
          string organssystems_organsenses_Obs,
@@ -174,7 +178,9 @@ namespace ExpertMed.Services
          List<ConsultaMedicamentoDTO> medications_consultation,
          List<ConsultaLaboratorioDTO> laboratories_consultation,
          List<ConsultaImagenDTO> images_consutlation,
-         List<ConsultaDiagnosticoDTO> diagnosis_consultation)
+         List<ConsultaDiagnosticoDTO> diagnosis_consultation,
+         List<ConsultaProcedimientoDTO> procedures
+)
         {
             using (var connection = new SqlConnection(_dbContext.Database.GetConnectionString()))
             {
@@ -211,6 +217,9 @@ namespace ExpertMed.Services
                     AddSqlParameter(command, "@consultation_type", consultation_type);
 
                     AddSqlParameter(command, "@consultation_status", consultation_status);
+                    AddSqlParameter(command, "@consultation_hasdisease", consultation_hasdisease);
+                    AddSqlParameter(command, "@consultation_diseaseobservation", consultation_diseaseobservation);
+                    AddSqlParameter(command, "@consultation_contingencytype", consultation_contingencytype);
 
                     // Parámetros de órganos y sistemas
                     AddSqlParameter(command, "@organssystems_organsenses", organssystems_organsenses);
@@ -287,6 +296,7 @@ namespace ExpertMed.Services
                     AddSqlParameter(command, "@laboratories", CreateDataTable(laboratories_consultation));
                     AddSqlParameter(command, "@images", CreateDataTable(images_consutlation));
                     AddSqlParameter(command, "@diagnostics", CreateDataTable(diagnosis_consultation));
+                    AddSqlParameter(command, "@procedures", CreateDataTable(procedures));
 
                     await connection.OpenAsync();
                     await command.ExecuteNonQueryAsync();

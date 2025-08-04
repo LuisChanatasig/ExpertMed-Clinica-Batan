@@ -268,57 +268,50 @@ function removeMedicationsRow(button) {
 
 
 document.getElementById("selectImages").addEventListener("click", function () {
-  const select = document.getElementById("ImagesConsultation");
-  const selectedOption = select.options[select.selectedIndex];
+    const select = document.getElementById("ImagesConsultation");
+    const selectedOption = select.options[select.selectedIndex];
+    const observacionGeneral = document.getElementById("imagesGeneralObservation")?.value?.trim() || "";
 
-  // Verificar que se haya seleccionado una imagen
-  if (selectedOption.value !== "") {
-    const imagesId = selectedOption.value;
-    const imagesName =
-      selectedOption.getAttribute("data-name") || selectedOption.innerText; // Fallback al texto visible
+    if (selectedOption.value !== "") {
+        const imagesId = selectedOption.value;
+        const imagesName =
+            selectedOption.getAttribute("data-name") || selectedOption.innerText;
 
-    // Verificar si el data-name se obtiene correctamente
-    console.log("Images ID:", imagesId);
-    console.log("Images Name:", imagesName); // Verifica si el nombre se está recuperando correctamente
+        const tableBody = document.querySelector("#selectedImagesTable tbody");
+        const row = document.createElement("tr");
 
-    // Crear una nueva fila en la tabla
-    const tableBody = document.querySelector("#selectedImagesTable tbody");
-    const row = document.createElement("tr");
+        const imagesIdCell = document.createElement("td");
+        imagesIdCell.textContent = imagesId;
+        imagesIdCell.hidden = true;
 
-    // Crear las celdas de la fila
-    const imagesIdCell = document.createElement("td");
-    imagesIdCell.textContent = imagesId; // Mostrar el ID de la imagen
-    imagesIdCell.hidden = true; // Ocultar la celda
+        const imagesNameCell = document.createElement("td");
+        imagesNameCell.textContent = imagesName;
 
-    const imagesNameCell = document.createElement("td");
-    imagesNameCell.textContent = imagesName; // Mostrar el nombre de la imagen
+        const amountCell = document.createElement("td");
+        amountCell.innerHTML = `
+      <input type="number" name="amount_${imagesId}" id="amount_${imagesId}" class="form-control" min="1">
+    `;
 
-    const amountCell = document.createElement("td");
-    amountCell.innerHTML = `
-            <input type="number" name="amount_${imagesId}" id="amount_${imagesId}" class="form-control" min="1">
-        `; // Campo para la cantidad
+        const observationCell = document.createElement("td");
+        observationCell.innerHTML = `
+      <input type="hidden" name="observation_${imagesId}" id="observation_${imagesId}" value="${observacionGeneral}">
+    `;
 
-    const observationCell = document.createElement("td");
-    observationCell.innerHTML = `
-            <input type="text" name="observation_${imagesId}" id="observation_${imagesId}" class="form-control">
-        `; // Campo para observaciones
-    const actionsCell = document.createElement("td");
-    actionsCell.innerHTML = `
-    <button type="button" class="btn btn-outline-danger btn-icon waves-effect waves-light" onclick="removeImagesRow(this)">
+        const actionsCell = document.createElement("td");
+        actionsCell.innerHTML = `
+      <button type="button" class="btn btn-outline-danger btn-icon waves-effect waves-light" onclick="removeImagesRow(this)">
         <i class="ri-delete-bin-5-line"></i>
-    </button>
-`;
+      </button>
+    `;
 
-    // Añadir las celdas a la fila
-    row.appendChild(imagesIdCell);
-    row.appendChild(imagesNameCell);
-    row.appendChild(amountCell);
-    row.appendChild(observationCell);
-    row.appendChild(actionsCell);
+        row.appendChild(imagesIdCell);
+        row.appendChild(imagesNameCell);
+        row.appendChild(amountCell);
+        row.appendChild(observationCell);
+        row.appendChild(actionsCell);
 
-    // Añadir la fila al cuerpo de la tabla
-    tableBody.appendChild(row);
-  }
+        tableBody.appendChild(row);
+    }
 });
 
 // Función para eliminar la fila
@@ -366,8 +359,8 @@ document
 
       const observationCell = document.createElement("td");
         observationCell.innerHTML = `
-            <input type="text" name="observation_${laboratoriesId}" id="observation_${laboratoriesId}" value="${observacionGeneral}" class="form-control">
-        `; // Campo para observaciones
+    <input type="hidden" name="observation_${laboratoriesId}" id="observation_${laboratoriesId}" value="${observacionGeneral}">
+`; // Campo para observaciones
 
       const actionsCell = document.createElement("td");
       actionsCell.innerHTML = `
@@ -395,6 +388,21 @@ function removeLaboratoriesRow(button) {
 }
 
 
+// Sincronizar observación general de LABORATORIOS con las filas
+document.getElementById("laboratoriesGeneralObservation").addEventListener("input", function (e) {
+    const newValue = e.target.value.trim();
+    document.querySelectorAll('#selectedLaboratoriesTable input[id^="observation_"]').forEach(input => {
+        input.value = newValue;
+    });
+});
+
+// Sincronizar observación general de IMÁGENES con las filas
+document.getElementById("imagesGeneralObservation").addEventListener("input", function (e) {
+    const newValue = e.target.value.trim();
+    document.querySelectorAll('#selectedImagesTable input[id^="observation_"]').forEach(input => {
+        input.value = newValue;
+    });
+});
 
 
 //Speech
@@ -528,6 +536,41 @@ document
     }
   });
 
+document.addEventListener("DOMContentLoaded", function () {
+    const tabla = document.getElementById("procedimientosTable").querySelector("tbody");
+    const addBtn = document.getElementById("addProcedureBtn");
+
+    addBtn.addEventListener("click", function () {
+        const rowCount = tabla.rows.length;
+        const newRow = document.createElement("tr");
+        newRow.innerHTML = `
+                <td><input type="text" name="Procedures[${rowCount}].procedure_name" class="form-control" /></td>
+                <td><input type="date" name="Procedures[${rowCount}].procedure_date" class="form-control" /></td>
+                <td class="text-center"><button type="button" class="btn btn-sm btn-danger removeRow">−</button></td>
+            `;
+        tabla.appendChild(newRow);
+    });
+
+    tabla.addEventListener("click", function (e) {
+        if (e.target.classList.contains("removeRow")) {
+            const row = e.target.closest("tr");
+            row.remove();
+            renumerarProcedimientos();
+        }
+    });
+
+    function renumerarProcedimientos() {
+        [...tabla.rows].forEach((row, index) => {
+            row.querySelectorAll("input").forEach(input => {
+                if (input.name.includes("procedure_name")) {
+                    input.name = `Procedures[${index}].procedure_name`;
+                } else if (input.name.includes("procedure_date")) {
+                    input.name = `Procedures[${index}].procedure_date`;
+                }
+            });
+        });
+    }
+});
 document
     .getElementById("consultationForm")
     .addEventListener("submit", async function (event) {
@@ -548,6 +591,11 @@ document
             SurgeriesCatalogid: parseInt(id, 10) || 0,
             SurgeriesObservation: "",
             SurgeriesStatus: 1,
+        }));
+        // Capturar los procedimientos dinámicos desde la tabla
+        const Procedures = Array.from(document.querySelectorAll("#procedimientosTable tbody tr")).map((tr) => ({
+            procedure_name: tr.querySelector('input[name*="procedure_name"]')?.value || null,
+            procedure_date: tr.querySelector('input[name*="procedure_date"]')?.value || null
         }));
 
         // Parámetros de consulta
@@ -582,19 +630,20 @@ document
             ConsultationFamiliaryphone:
                 document.getElementById("consultation_familiaryphone")?.value || null,
             ConsultationTemperature:
-                document.getElementById("consultation_temperature")?.value || null,
+                document.getElementById("consultation_temperature")?.value || "0.0",
             ConsultationRespirationrate:
-                document.getElementById("consultation_respirationrate")?.value || null,
+                document.getElementById("consultation_respirationrate")?.value || "0",
             ConsultationBloodpressuredAs:
-                document.getElementById("consultation_bloodpressuredAS")?.value || null,
+                document.getElementById("consultation_bloodpressuredAS")?.value || "000",
             ConsultationBloodpresuredDis:
-                document.getElementById("consultation_bloodpresuredDIS")?.value || null,
+                document.getElementById("consultation_bloodpresuredDIS")?.value || "000",
             ConsultationPulse:
-                document.getElementById("consultation_pulse")?.value || null,
+                document.getElementById("consultation_pulse")?.value || "0",
             ConsultationWeight:
-                document.getElementById("consultation_weight")?.value || null,
+                document.getElementById("consultation_weight")?.value || "0.0",
             ConsultationSize:
-                document.getElementById("consultation_size")?.value || null,
+                document.getElementById("consultation_size")?.value || "0.0",
+
             ConsultationTreatmentplan:
                 document.getElementById("consultation_treatmentplan")?.value || null,
             ConsultationObservation:
@@ -614,6 +663,14 @@ document
                 parseInt(document.getElementById("consultation_type")?.value) || null,
             ConsultationStatus:
                 parseInt(document.getElementById("consultation_status")?.value) || 1,
+            ConsultationHasdisease:
+                document.getElementById("cert_tiene_enfermedad")?.checked || false,
+
+            ConsultationDiseaseobservation:
+                document.getElementById("cert_observacion")?.value || null,
+
+            ConsultationContingencytype:
+                document.getElementById("cert_tipo_contingencia")?.value || null,
 
             // Parámetros de órganos y sistemas
             OrgansSystem: {
@@ -914,6 +971,9 @@ document
                 DiagnosisObservation: null, // No hay campo de observación en la tabla
                 DiagnosisStatus: 1, // Estado activo
             })),
+
+            Procedures: Procedures,
+
         };
 
         // Muestra el JSON generado en la consola para debug

@@ -61,6 +61,9 @@ namespace ExpertMed.Models
         public int? ConsultationType { get; set; }
 
         public int? ConsultationStatus { get; set; }
+        public bool? ConsultationHasdisease { get; set; }
+        public string? ConsultationDiseaseobservation { get; set; }
+        public string? ConsultationContingencytype { get; set; }
 
         public string? UsersNames { get; set; }
         public string? UsersSurcenames { get; set; }
@@ -94,7 +97,8 @@ namespace ExpertMed.Models
         public List<ConsultaLaboratorioDTO> LaboratoriesConsultations { get; set; } // Lista de laboratorios asociadosss
         public List<ConsultaImagenDTO> ImagesConsultations { get; set; } // Lista de imágenes asociadas
         public List<ConsultaDiagnosticoDTO> DiagnosisConsultations { get; set; }
-       
+        public List<ConsultaProcedimientoDTO> Procedures { get; set; } = new();
+
         public OrgansSystem OrgansSystem { get; set; } // Órganos y sistemas asociados
         public PhysicalExamination PhysicalExamination { get; set; } // Examen físico asociado
         public FamiliaryBackground FamiliaryBackground { get; set; } // Antecedentes familiares asociados
@@ -205,4 +209,10 @@ namespace ExpertMed.Models
         public int? DiagnosisStatus { get; set; } = 1;
 
     }
+    public class ConsultaProcedimientoDTO
+    {
+        public string? Procedure_Name { get; set; }
+        public DateTime? Procedure_Date { get; set; }
+    }
+
 }
