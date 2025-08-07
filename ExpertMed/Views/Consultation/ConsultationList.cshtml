@@ -120,14 +120,18 @@
                                                             : consulta.ConsultationType == 2 ? "Seguimiento"
                                                             : "Otro")
                                                     </td>
+
                                                     <td>
-                                                        <a href="#" class="btn btn-sm btn-soft-info"
+                                                        <a href="#"
+                                                           class="btn btn-sm btn-soft-info"
                                                            data-bs-toggle="modal"
                                                            data-bs-target="#optionModal"
-                                                           onclick="openOptionModal(@consulta.ConsultationId)">
+                                                           onclick="openOptionModal(@consulta.ConsultationId, @consulta.AppointmentStatus)">
                                                             <i class="ri-edit-line"></i> Revisar
                                                         </a>
                                                     </td>
+
+
                                                 </tr>
                                             }
                                         </tbody>
@@ -181,7 +185,13 @@
                         </button>
                     </div>
 
-
+                    <!-- Botón Terminar Consulta, oculto hasta que abramos -->
+                    <button id="btnFinishConsult"
+                            type="button"
+                            class="btn btn-success d-none"
+                            onclick="finishConsultation()">
+                        <i class="ri-check-line me-1"></i> Terminar Consulta
+                    </button>
 
                 </div><!--end row-->
             </div>
@@ -212,7 +222,9 @@
                     </div><!--end row-->
                 </form>
             </div>
+        
             <div class="modal-footer">
+              
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                 <button type="button" class="btn btn-primary" id="downloadButton" onclick="downloadDocument()" disabled>
                     <span id="downloadText">Descargar</span>
@@ -251,101 +263,124 @@
     <script src="~/assets/js/pages/datatables.init.js"></script>
 
     <script>
-                        function openOptionModal(consultationId) {
-                    // Establecer el consultationId en el input oculto
-                    document.getElementById('consultationId').value = consultationId;
-                }
+          // Abre el modal de opciones, recibiendo ID y estado de cita
+        function openOptionModal(consultationId, appointmentStatus) {
+          console.log('Estado de la cita:', appointmentStatus);
 
-                // Abrir modal de documentos
-                function openModalDocument() {
-                    var modalElement = document.getElementById('optionsDocuments');
-                    if (!modalElement) {
-                        console.error("El modal 'optionsDocuments' no fue encontrado.");
-                        return;
-                    }
-                    var myModal = new bootstrap.Modal(modalElement, { keyboard: false });
-                    myModal.show();
-                }
+          // 1) Guarda el ID en el hidden
+          document.getElementById('consultationId').value = consultationId;
 
-                    function openReviewConsulta() {
-                    // Obtener el consultationId desde el input oculto
-                    var consultationId = document.getElementById('consultationId').value;
-                    if (!consultationId) {
-                        alert("No se encontró un ID de consulta válido.");
-                        return;
-                    }
+          // 2) Muestra u oculta el botón “Terminar Consulta”
+          const btnFinish = document.getElementById('btnFinishConsult');
+          // Asegúrate de partir sin la clase d-none
+          btnFinish.classList.remove('d-none');
 
-                    // Ahora puedes hacer lo que necesites con el consultationId, por ejemplo:
-        window.location.href = '@Url.Action("ConsultationDetails", "Consultation")' + '?consultationId=' + consultationId;
-                }
+          if (appointmentStatus === 4) {
+            // Estado 4 = ya terminada → lo oculto de nuevo
+            btnFinish.classList.add('d-none');
+          }
+
+          // 3) Abre el modal de opciones
+          new bootstrap.Modal(document.getElementById('optionModal'), {
+            keyboard: false
+          }).show();
+        }
+
+        // Redirige al GET ConsultationUpdate para “terminar” la consulta
+        function finishConsultation() {
+          const id = document.getElementById('consultationId').value;
+          window.location.href =
+            '@Url.Action("ConsultationUpdate", "Consultation")'
+            + '?consultationId=' + encodeURIComponent(id);
+        }
 
 
-                // Habilitar/deshabilitar el botón de descarga según selección
-                function enableDownloadButton() {
-                    const selectedValue = document.getElementById('documentType').value;
-                    const downloadButton = document.getElementById('downloadButton');
+        // Redirige al GET ConsultationUpdate para editar la consulta
+        function finishConsultation() {
+          const id = document.getElementById('consultationId').value;
+          window.location.href =
+            '@Url.Action("ConsultationUpdate", "Consultation")'
+            + '?consultationId=' + encodeURIComponent(id);
+        }
 
-                    if (!downloadButton) {
-                        console.error("Botón de descarga no encontrado.");
-                        return;
-                    }
+        // Abre el modal para generar documentos
+        function openModalDocument() {
+          const modalElement = document.getElementById('optionsDocuments');
+          if (!modalElement) {
+            console.error("El modal 'optionsDocuments' no fue encontrado.");
+            return;
+          }
+          new bootstrap.Modal(modalElement, { keyboard: false }).show();
+        }
 
-                    downloadButton.disabled = (selectedValue === "Seleccione un documento");
-                }
+        // Navega a la vista de detalle de consulta
+        function openReviewConsulta() {
+          const consultationId = document.getElementById('consultationId').value;
+          if (!consultationId) {
+            alert("No se encontró un ID de consulta válido.");
+            return;
+          }
+          window.location.href =
+            '@Url.Action("ConsultationDetails", "Consultation")'
+            + '?consultationId=' + encodeURIComponent(consultationId);
+        }
 
-                // Descargar documento según la opción seleccionada
-                     // Descargar documento según la opción seleccionada
-                function downloadDocument() {
-                    const selectedValue = document.getElementById('documentType').value;
-                    const downloadButton = document.getElementById('downloadButton');
-                    const downloadText = document.getElementById('downloadText');
-                    const downloadSpinner = document.getElementById('downloadSpinner');
+        // Habilita o deshabilita el botón de descarga según la selección
+        function enableDownloadButton() {
+          const selectedValue = document.getElementById('documentType').value;
+          const downloadButton = document.getElementById('downloadButton');
+          if (!downloadButton) {
+            console.error("Botón de descarga no encontrado.");
+            return;
+          }
+          downloadButton.disabled = (selectedValue === "Seleccione un documento");
+        }
 
-                    // Obtener el consultationId desde el input oculto
-                    const consultationId = document.getElementById('consultationId').value;
-                    if (!consultationId) {
-                        alert("No se encontró un ID de consulta válido.");
-                        return;
-                    }
+        // Descarga el documento seleccionado
+        function downloadDocument() {
+          const selectedValue = document.getElementById('documentType').value;
+          const downloadButton = document.getElementById('downloadButton');
+          const downloadText   = document.getElementById('downloadText');
+          const downloadSpinner= document.getElementById('downloadSpinner');
+          const consultationId = document.getElementById('consultationId').value;
 
-                    if (!downloadButton || !downloadText || !downloadSpinner) {
-                        console.error("Elementos del botón de descarga no encontrados.");
-                        return;
-                    }
+          if (!consultationId) {
+            alert("No se encontró un ID de consulta válido.");
+            return;
+          }
+          if (!downloadButton || !downloadText || !downloadSpinner) {
+            console.error("Elementos del botón de descarga no encontrados.");
+            return;
+          }
 
-                    // Mostrar el spinner y deshabilitar el botón
-                    downloadText.textContent = "Generando...";
-                    downloadSpinner.classList.remove('d-none');
-                    downloadButton.disabled = true;
+          // Mostrar spinner y deshabilitar botón
+          downloadText.textContent = "Generando...";
+          downloadSpinner.classList.remove('d-none');
+          downloadButton.disabled = true;
 
-                    // Mapear opción seleccionada a URL correspondiente
-                    const actions = {
-
+          const actions = {
             justificante: '@Url.Action("MedicalCertificate", "Documents")',
-            formulario: '@Url.Action("MedicalForm", "Documents")',
-            receta: '@Url.Action("MedicationRecipe", "Documents")',
+            formulario:  '@Url.Action("MedicalForm", "Documents")',
+            receta:      '@Url.Action("MedicationRecipe", "Documents")',
             laboratorio: '@Url.Action("LaboratoryDoc", "Documents")',
-            imagen: '@Url.Action("ImageDoc", "Documents")'
+            imagen:      '@Url.Action("ImageDoc", "Documents")'
+          };
 
+          if (actions[selectedValue]) {
+            const url = actions[selectedValue]
+                      + '?consultationId=' + encodeURIComponent(consultationId);
+            window.open(url, '_blank');
+          } else {
+            alert("Opción no válida.");
+          }
 
-                    };
-
-                    // Si la opción es válida, agregar el consultationId como query parameter
-                    if (actions[selectedValue]) {
-                        const url = actions[selectedValue] + "?consultationId=" + encodeURIComponent(consultationId);
-                        window.open(url, '_blank');
-                    } else {
-                        alert("Opción no válida.");
-                    }
-
-                    // Restaurar el botón después de 2 segundos
-                    setTimeout(() => {
-                        downloadText.textContent = "Descargar";
-                        downloadSpinner.classList.add('d-none');
-                        downloadButton.disabled = false;
-                    }, 2000);
-                }
-
+          // Restaurar botón después de 2 segundos
+          setTimeout(() => {
+            downloadText.textContent = "Descargar";
+            downloadSpinner.classList.add('d-none');
+            downloadButton.disabled = false;
+          }, 2000);
+        }
     </script>
 
 

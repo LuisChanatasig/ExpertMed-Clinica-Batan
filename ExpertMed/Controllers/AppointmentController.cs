@@ -1,5 +1,6 @@
 ﻿using ExpertMed.Models;
 using ExpertMed.Services;
+using iText.StyledXmlParser.Jsoup.Nodes;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 
@@ -10,19 +11,19 @@ namespace ExpertMed.Controllers
         private readonly ILogger<AppointmentController> _logger;
         private readonly AppointmentService _appointmentService;
         private readonly PatientService _patientService;
+        private readonly SelectsService _selectService;
 
-        public AppointmentController(ILogger<AppointmentController> logger, AppointmentService appointmentService, PatientService patientService)
+        public AppointmentController(ILogger<AppointmentController> logger, AppointmentService appointmentService, PatientService patientService,SelectsService selectsService)
         {
             _logger = logger;
             _appointmentService = appointmentService;
             _patientService = patientService;
+            _selectService = selectsService;
         }
         public class ErrorViewModel
         {
             public string Message { get; set; }
         }
-
-
         /// <summary>
         /// 
         /// </summary>
@@ -32,50 +33,115 @@ namespace ExpertMed.Controllers
         /// <returns></returns>
         [HttpGet]
         public async Task<IActionResult> AppointmentList(
-      int appointmentStatus = 5, // Default for the first status
-      int? appointmentStatus2 = 1, // New optional parameter for the second status, defaults to null
-      bool isPaidOnly = false)
+            int appointmentStatus = 5,
+            int? appointmentStatus2 = 1,
+            bool isPaidOnly = false)
         {
             try
             {
                 var userId = HttpContext.Session.GetInt32("UsuarioId");
                 var userProfile = HttpContext.Session.GetInt32("PerfilId");
-
                 if (!userId.HasValue || !userProfile.HasValue)
                 {
                     TempData["Error"] = "Por favor, inicie sesión para continuar.";
                     return RedirectToAction("SignIn", "Authentication");
                 }
 
+                // — Tus ViewBags de siempre —
                 ViewBag.CurrentStatus = appointmentStatus;
-                ViewBag.CurrentStatus2 = appointmentStatus2; // Add to ViewBag if you need it in the view
+                ViewBag.CurrentStatus2 = appointmentStatus2;
                 ViewBag.IsPaidOnly = isPaidOnly;
                 ViewBag.UserProfile = userProfile.Value;
                 ViewBag.UserId = userId.Value;
 
+                // — Obtén la lista de citas —
                 var appointments = await _appointmentService.GetAllAppointmentAsync(
                     userProfile.Value,
                     appointmentStatus,
                     userId,
                     isPaidOnly,
-                    appointmentStatus2 // ✅ Pass the new second status here
+                    appointmentStatus2
                 );
 
-                if (appointments == null || !appointments.Any())
+                if (appointments == null)
                 {
-                    TempData["Info"] = "No se encontraron citas para los parámetros especificados.";
-                    return View(new List<AppointmentDTO>());
+                    appointments = new List<AppointmentDTO>();
                 }
 
-                return View(appointments);
+                if (!appointments.Any())
+                {
+                    TempData["Info"] = "No se encontraron citas para los parámetros especificados.";
+                }
+
+                // 3️⃣ Construye el ViewModel completo:
+                var viewModel = new AppointmentListViewModel
+                {
+                    Appointments = appointments
+                };
+
+                // Construye los datos del formulario de paciente y asígnalos al ViewModel
+                var newPatientForm = await BuildNewPatientViewModelAsync();
+
+                // Asignar los datos del formulario al ViewModel
+                viewModel.Users = newPatientForm.Users ?? new List<User>();
+                viewModel.InsuranceCompanies = newPatientForm.InsuranceCompanies ?? new List<InsuranceCompanyDto>();
+                viewModel.Patient = newPatientForm.Patient;
+                viewModel.GenderTypes = newPatientForm.GenderTypes ?? new List<Catalog>();
+                viewModel.BloodTypes = newPatientForm.BloodTypes ?? new List<Catalog>();
+                viewModel.CivilTypes = newPatientForm.CivilTypes ?? new List<Catalog>();
+                viewModel.ProfessionalTrainingTypes = newPatientForm.ProfessionalTrainingTypes ?? new List<Catalog>();
+                viewModel.SureHealthTypes = newPatientForm.SureHealthTypes ?? new List<Catalog>();
+                viewModel.Countries = newPatientForm.Countries ?? new List<Country>();
+                viewModel.Provinces = newPatientForm.Provinces ?? new List<Province>();
+                viewModel.UsersP = newPatientForm.UsersP ?? new List<MedicDetails>();
+
+                return View(viewModel);
             }
             catch (Exception ex)
             {
                 _logger.LogError($"Unhandled exception in AppointmentList: {ex.Message}");
                 TempData["Error"] = "Ocurrió un error inesperado. Inténtalo de nuevo más tarde.";
-                return View(new List<AppointmentDTO>());
+                return View(new AppointmentListViewModel());
             }
         }
+
+        // 2️⃣ Sigue existiendo para cuando quieras devolver SOLO el formulario:
+        private async Task<IActionResult> LoadPatientFormAsync(
+            Patient patient = null,
+            int? establishmentId = null)
+        {
+            var viewModel = await BuildNewPatientViewModelAsync(patient, establishmentId);
+            return View(viewModel);
+        }
+
+        // 1️⃣ Construye SOLO el modelo:
+        private async Task<NewPatientViewModel> BuildNewPatientViewModelAsync(
+            Patient patient = null,
+            int? establishmentId = null)
+        {
+            var usuarioId = HttpContext.Session.GetInt32("UsuarioId") ?? 0;
+            var perfilId = HttpContext.Session.GetInt32("PerfilId") ?? 0;
+            var estid = establishmentId ?? HttpContext.Session.GetInt32("UsuarioEstablecimientoId") ?? 0;
+
+            return new NewPatientViewModel
+            {
+                Patient = patient,
+                GenderTypes = await _selectService.GetGenderTypeAsync(),
+                BloodTypes = await _selectService.GetBloodTypeAsync(),
+                DocumentTypes = await _selectService.GetDocumentTypeAsync(),
+                CivilTypes = await _selectService.GetCivilTypeAsync(),
+                ProfessionalTrainingTypes = await _selectService.GetProfessionaltrainingTypeAsync(),
+                SureHealthTypes = await _selectService.GetSureHealtTypeAsync(),
+                Countries = await _selectService.GetAllCountriesAsync(),
+                Provinces = await _selectService.GetAllProvinceAsync(),
+                Users = await _patientService.GetDoctorsByAssistantAsync(usuarioId, perfilId),
+                UsersP = establishmentId.HasValue
+                         ? await _selectService.GetAllMedicsDetailsAsync(establishmentId.Value)
+                         : new List<MedicDetails>(),
+                InsuranceCompanies = await _selectService.GetInsuranceByEstablishmentAsync(estid)
+            };
+        }
+
         /// <summary>
         /// Obtiene las horas del medico
         /// </summary>
@@ -345,9 +411,11 @@ namespace ExpertMed.Controllers
                     patientId = appt.AppointmentPatientid,
                     date = appt.AppointmentDate.ToString("yyyy-MM-dd"),
                     time = hora,
-                    doctorUserId = (userProfile == 3 || userProfile == 4 || userProfile == 8) ? appt.DoctorUserId : (int?)null,
+                    doctorUserId = (userProfile == 1 || userProfile == 3 || userProfile == 4 || userProfile == 8) ? appt.DoctorUserId : (int?)null,
                     medicalOfficeId = appt.AppointmentMedicalofficeid,
                     status = appt.AppointmentStatus,
+                    appointmentReason = appt.AppointmentReason,
+                    appointmentInsuranceCompanyId = appt.AppointmentInsuranceCompanyId,
                     hasConsultation = appt.AppointmentConsultationid.HasValue && appt.AppointmentConsultationid.Value > 0
                 };
 
@@ -366,36 +434,43 @@ namespace ExpertMed.Controllers
         /// <param name="request"></param>
         /// <returns></returns>
 
-        [HttpPost("ModifyAppointment")]
+        [HttpPost]
         public async Task<IActionResult> ModifyAppointment([FromBody] Appointment request)
         {
             try
             {
-                var usuarioId = HttpContext.Session.GetInt32("UsuarioId");
+                var usuarioId = HttpContext.Session.GetInt32("UsuarioId") ?? 0;
 
-                // Lógica para modificar la cita, ahora con el ID de consultorio
+                // Prepara el DTO completo con todos los campos
                 var appointment = new Appointment
                 {
                     AppointmentId = request.AppointmentId,
                     AppointmentModifydate = DateTime.Now,
-                    AppointmentModifyuser = usuarioId ?? 0,
+                    AppointmentModifyuser = usuarioId,
                     AppointmentDate = request.AppointmentDate,
                     AppointmentHour = request.AppointmentHour,
                     AppointmentPatientid = request.AppointmentPatientid,
                     AppointmentStatus = request.AppointmentStatus ?? 1,
-                    AppointmentMedicalofficeid = request.AppointmentMedicalofficeid // nuevo campo
+                    AppointmentMedicalofficeid = request.AppointmentMedicalofficeid,
+                    DoctorUserId = request.DoctorUserId,                   // ← nuevo
+                    AppointmentInsuranceCompanyId = request.AppointmentInsuranceCompanyId,  // ← nuevo
+                    AppointmentInsuranceAuthCode = request.AppointmentInsuranceAuthCode,   // ← nuevo
+                    AppointmentReason = request.AppointmentReason               // ← nuevo
                 };
 
                 await _appointmentService.ModifyAppointmentAsync(appointment);
 
-                // Construcción de mensaje WhatsApp si el paciente tiene número registrado
+                // Construye la URL de WhatsApp si el paciente tiene celular
                 string whatsappUrl = null;
                 var patient = await _patientService.GetPatientDetailsAsync(appointment.AppointmentPatientid ?? 0);
                 if (patient != null && !string.IsNullOrEmpty(patient.PatientCellularPhone))
                 {
-                    var message = $"¡Hola {patient.PatientFirstname.Trim()}! Queríamos avisarte que tu cita médica se ha reagendado para el {appointment.AppointmentDate:dd/MM/yyyy} a las {appointment.AppointmentHour:HH:mm}. ¡Estamos encantados de poder atenderte y esperamos verte pronto! Si tienes alguna pregunta, no dudes en contactarnos.";
-                    var encodedMessage = WebUtility.UrlEncode(message);
-                    whatsappUrl = $"https://api.whatsapp.com/send?phone={patient.PatientCellularPhone}&text={encodedMessage}";
+                    var msg = $"¡Hola {patient.PatientFirstname.Trim()}! " +
+                              $"Tu cita se reagendó para el {appointment.AppointmentDate:dd/MM/yyyy} " +
+                              $"a las {appointment.AppointmentHour:HH:mm}. " +
+                              "Si tienes alguna duda, estamos a tu disposición.";
+                    var encoded = WebUtility.UrlEncode(msg);
+                    whatsappUrl = $"https://api.whatsapp.com/send?phone={patient.PatientCellularPhone}&text={encoded}";
                 }
 
                 return Ok(new
@@ -407,6 +482,7 @@ namespace ExpertMed.Controllers
             }
             catch (Exception ex)
             {
+                // Aquí podrías distinguir errores de validación vs. de sistema si quieres
                 return BadRequest(new
                 {
                     success = false,

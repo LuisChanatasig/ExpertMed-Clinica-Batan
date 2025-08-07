@@ -213,6 +213,31 @@ namespace ExpertMed.Controllers
             formFields.SetField("txt_cedula_doctor", consultation.UsersDocumentNumber.ToUpper());
             formFields.SetField("txt_motivo_enfermedad_paciente", consultation.ConsultationReason.ToUpper());
             formFields.SetField("txt_enfermedad_paciente", consultation.ConsultationDisease.ToUpper());
+            formFields.SetField("txt_tipo_contingencia", consultation.ConsultationContingencytype.ToUpper());
+
+            if (consultation.ConsutationHasSymptoms == true)
+            {
+                formFields.SetField("txt_sintomas_si", "X");
+                formFields.SetField("txt_sintomas_no", "");
+            }
+            else
+            {
+                formFields.SetField("txt_sintomas_si", "");
+                formFields.SetField("txt_sintomas_no", "X");
+            }
+
+            // Asumimos que ConsultationDiseaseobservation es string
+            bool tieneEnfermedad = consultation.ConsultationHasdisease.GetValueOrDefault();
+            string descripcion = consultation.ConsultationDiseaseobservation ?? "";
+
+            // 1) Marcar sí/no
+            formFields.SetField("txt_enfermedad_si", tieneEnfermedad ? "X" : "");
+            formFields.SetField("txt_enfermedad_no", !tieneEnfermedad ? "X" : "");
+
+            // 2) Enviar descripción solo si tiene enfermedad
+            formFields.SetField("txt_enfermedad_descripcion", tieneEnfermedad ? descripcion : "");
+
+
 
             formFields.SetField("txt_footer_direccion",
                 string.IsNullOrWhiteSpace(consultation.UsersEstablishmentAddress)
@@ -2371,7 +2396,6 @@ namespace ExpertMed.Controllers
         }
 
 
-
         public async Task<IActionResult> LaboratoryDoc(int consultationId)
         {
             var consultation = _consultationService.GetConsultationDetails(consultationId);
@@ -2445,16 +2469,17 @@ namespace ExpertMed.Controllers
             }));
 
             formFields.SetField("txt_laboratorios", laboratoriesInfo);
-            var firstObservation = consultation.LaboratoriesConsultations
-    .Select(lc =>
-    {
-        var lab = allLabs.FirstOrDefault(l => l.LaboratoriesId == lc.LaboratoriesLaboratoriesid);
-        return lab != null ? $"({lab.LaboratoriesCie10}) {lab.LaboratoriesName} - Observación: {lc.LaboratoriesObservation}" : null;
-    })
-    .FirstOrDefault(obs => obs != null); // Get the first non-null observation
 
-            formFields.SetField("txt_observaciones", firstObservation ?? string.Empty); // Set the field, defaulting to empty string if no observation found
+            // Obtener solo la primera observación de los laboratorios
+            var firstLaboratoryObservation = consultation.LaboratoriesConsultations
+                .Select(lc => lc.LaboratoriesObservation)
+                .FirstOrDefault(obs => !string.IsNullOrEmpty(obs));
+
+            formFields.SetField("txt_observaciones", firstLaboratoryObservation ?? string.Empty);
+            Console.WriteLine($"Primera observación encontrada: {firstLaboratoryObservation}");
+
             formFields.SetField("txt_direccion", consultation.UsersEstablishmentAddress);
+
 
             // Finalizar la edición y cerrar el stamper
             pdfStamper.FormFlattening = true;
@@ -2467,7 +2492,6 @@ namespace ExpertMed.Controllers
             // Devuelve el archivo PDF generado
             return File(memoryStream.ToArray(), "application/pdf", $"pedido_laboratorio_{randomNumber}.pdf");
         }
-
 
         public async Task<IActionResult> ImageDoc(int consultationId)
         {
@@ -2543,14 +2567,12 @@ namespace ExpertMed.Controllers
 
             formFields.SetField("txt_imagenes", imagesInfo);
 
-            // Observaciones
-            var observations = string.Join("\n", consultation.ImagesConsultations.Select(ic =>
-            {
-                var image = allImages.FirstOrDefault(i => i.ImagesId == ic.ImagesImagesid);
-                return image != null ? $"({image.ImagesCie10}) {image.ImagesName} - Observación: {ic.ImagesObservation}" : "N/A";
-            }));
+            // Obtener solo la primera observación de las imágenes
+            var firstImageObservation = consultation.ImagesConsultations
+                .Select(ic => ic.ImagesObservation)
+                .FirstOrDefault(obs => !string.IsNullOrEmpty(obs));
 
-            formFields.SetField("txt_observaciones", observations);
+            formFields.SetField("txt_observaciones", firstImageObservation ?? string.Empty);
             formFields.SetField("txt_direccion", consultation.UsersEstablishmentAddress);
 
             // Finalizar la edición y cerrar el stamper
@@ -2564,7 +2586,5 @@ namespace ExpertMed.Controllers
             // Devuelve el archivo PDF generado
             return File(memoryStream.ToArray(), "application/pdf", $"pedido_imagenes_{randomNumber}.pdf");
         }
-
-
     }
 }

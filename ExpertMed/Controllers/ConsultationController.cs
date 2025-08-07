@@ -122,8 +122,12 @@ namespace ExpertMed.Controllers
                 return View();
             }
         }
-
-
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="consultaDto"></param>
+        /// <returns></returns>
         [HttpPost]
         public async Task<IActionResult> CrearConsulta([FromBody] Consulta consultaDto)
         {
@@ -141,129 +145,222 @@ namespace ExpertMed.Controllers
 
             try
             {
-                await _consultationService.CrearConsultaAsync(
-                consultaDto.ConsultationId ?? 0,
-                consultaDto.ConsultationCreationdate ?? DateTime.Now, // Add this line to provide a default value
-                consultaDto.ConsultationUsercreate,
-                consultaDto.ConsultationSequential ?? 0, // Add this line to provide a default value
-                consultaDto.ConsultationPatient,
-                consultaDto.ConsultationSpeciality ?? 0, // Add this line to provide a default value
-                consultaDto.ConsultationHistoryclinic,
-                consultaDto.ConsultationReason,
-                consultaDto.ConsultationDisease,
-                consultaDto.ConsultationFamiliaryname,
-                consultaDto.ConsultationWarningsings,
-                consultaDto.ConsultationNonpharmacologycal,
-                consultaDto.ConsultationFamiliarytype ?? 0, // Add this line to provide a default value
-                consultaDto.ConsultationFamiliaryphone,
-                consultaDto.ConsultationTemperature,
-                consultaDto.ConsultationRespirationrate,
-                consultaDto.ConsultationBloodpressuredAs,
-                consultaDto.ConsultationBloodpresuredDis,
-                consultaDto.ConsultationPulse,
-                consultaDto.ConsultationWeight,
-                consultaDto.ConsultationSize,
-                consultaDto.ConsultationTreatmentplan,
-                consultaDto.ConsultationObservation,
-                consultaDto.ConsultationPersonalbackground,
-                consultaDto.ConsultationDisablilitydays ?? 0,
-                consultaDto.ConsultationEvolutionNotes,
-                consultaDto.ConsultationTherapies,// Add this line to provide a default value
-                consultaDto.ConsultationType ?? 0, // Add this line to provide a default value
-                consultaDto.ConsultationStatus ?? 0, // Add this line to provide a default value
-                   consultaDto.ConsultationHasdisease ?? false,
-consultaDto.ConsultationDiseaseobservation,
-consultaDto.ConsultationContingencytype,
-                // Flag para la cita
-                consultaDto.ConsultationIsFinal,
-                consultaDto.OrgansSystem?.OrganssystemsOrgansenses,
-                consultaDto.OrgansSystem?.OrganssystemsOrgansensesObs,
-                consultaDto.OrgansSystem?.OrganssystemsRespiratory,
-                consultaDto.OrgansSystem?.OrganssystemsRespiratoryObs,
-                consultaDto.OrgansSystem?.OrganssystemsCardiovascular,
-                consultaDto.OrgansSystem?.OrganssystemsCardiovascularObs,
-                consultaDto.OrgansSystem?.OrganssystemsDigestive,
-                consultaDto.OrgansSystem?.OrganssystemsDigestiveObs,
-                consultaDto.OrgansSystem?.OrganssystemsGenital,
-                consultaDto.OrgansSystem?.OrganssystemsGenitalObs,
-                consultaDto.OrgansSystem?.OrganssystemsUrinary,
-                consultaDto.OrgansSystem?.OrganssystemsUrinaryObs,
-                consultaDto.OrgansSystem?.OrganssystemsSkeletalM,
-                consultaDto.OrgansSystem?.OrganssystemsSkeletalMObs,
-                consultaDto.OrgansSystem?.OrganssystemsEndrocrine,
-                consultaDto.OrgansSystem?.OrganssystemsEndocrine,
-                consultaDto.OrgansSystem?.OrganssystemsLymphatic,
-                consultaDto.OrgansSystem?.OrganssystemsLymphaticObs,
-                consultaDto.OrgansSystem?.OrganssystemsNervous,
-                consultaDto.OrgansSystem?.OrganssystemsNervousObs,
-                consultaDto.PhysicalExamination?.PhysicalexaminationHead,
-                consultaDto.PhysicalExamination?.PhysicalexaminationHeadObs,
-                consultaDto.PhysicalExamination?.PhysicalexaminationNeck,
-                consultaDto.PhysicalExamination?.PhysicalexaminationNeckObs,
-                consultaDto.PhysicalExamination?.PhysicalexaminationChest,
-                consultaDto.PhysicalExamination?.PhysicalexaminationChestObs,
-                consultaDto.PhysicalExamination?.PhysicalexaminationAbdomen,
-                consultaDto.PhysicalExamination?.PhysicalexaminationAbdomenObs,
-                consultaDto.PhysicalExamination?.PhysicalexaminationPelvis,
-                consultaDto.PhysicalExamination?.PhysicalexaminationPelvisObs,
-                consultaDto.PhysicalExamination?.PhysicalexaminationLimbs,
-                consultaDto.PhysicalExamination?.PhysicalexaminationLimbsObs,
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundHeartdisease,
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundHeartdiseaseObservation,
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundRelatshcatalogHeartdisease ?? null, // Add this line to provide a default value
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundDiabetes,
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundDiabetesObservation,
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundRelatshcatalogDiabetes ?? null, // Add this line to provide a default value
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundDxcardiovascular,
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundDxcardiovascularObservation,
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundRelatshcatalogDxcardiovascular ?? null, // Add this line to provide a default value
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundHypertension,
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundHypertensionObservation,
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundRelatshcatalogHypertension ?? null, // Add this line to provide a default value
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundCancer,
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundCancerObservation,
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundRelatshcatalogCancer ?? null, // Add this line to provide a default value
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundTuberculosis,
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundTuberculosisObservation,
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundRelatshTuberculosis ?? null, // Add this line to provide a default value
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundDxmental,
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundDxmentalObservation,
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundRelatshcatalogDxmental ?? null, // Add this line to provide a default value
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundDxinfectious,
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundDxinfectiousObservation,
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundRelatshcatalogDxinfectious ?? null, // Add this line to provide a default value
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundMalformation,
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundMalformationObservation,
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundRelatshcatalogMalformation ?? null, // Add this line to provide a default value
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundOther,
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundOtherObservation,
-                consultaDto.FamiliaryBackground?.FamiliaryBackgroundRelatshcatalogOther ?? null, // Add this line to provide a default value
-                consultaDto.AllergiesConsultations,
-                consultaDto.SurgeriesConsultations,
-                consultaDto.MedicationsConsultations,
-                consultaDto.LaboratoriesConsultations,
-                consultaDto.ImagesConsultations,
-                consultaDto.DiagnosisConsultations, // Add this line to provide a default value
-                consultaDto.Procedures
+                // 1) Llamada al servicio, capturando el ID (nuevo o existente)
+                var newId = await _consultationService.CrearConsultaAsync(
+                    consultaDto.ConsultationId,                                    // InputOutput
+                    consultaDto.ConsultationCreationdate ?? DateTime.Now,
+                    consultaDto.ConsultationUsercreate,
+                    consultaDto.ConsultationPatient,
+                    consultaDto.ConsultationSpeciality ?? 0,
+                    consultaDto.ConsultationHistoryclinic,
+                    consultaDto.ConsultationReason,
+                    consultaDto.ConsultationDisease,
+                    consultaDto.ConsultationFamiliaryname,
+                    consultaDto.ConsultationWarningsings,
+                    consultaDto.ConsultationNonpharmacologycal,
+                    consultaDto.ConsultationFamiliarytype ?? 0,
+                    consultaDto.ConsultationFamiliaryphone,
+                    consultaDto.ConsultationTemperature,
+                    consultaDto.ConsultationRespirationrate,
+                    consultaDto.ConsultationBloodpressuredAs,
+                    consultaDto.ConsultationBloodpresuredDis,
+                    consultaDto.ConsultationPulse,
+                    consultaDto.ConsultationWeight,
+                    consultaDto.ConsultationSize,
+                    consultaDto.ConsultationTreatmentplan,
+                    consultaDto.ConsultationObservation,
+                    consultaDto.ConsultationPersonalbackground,
+                    consultaDto.ConsultationDisablilitydays ?? 0,
+                    consultaDto.ConsultationEvolutionNotes,
+                    consultaDto.ConsultationTherapies,
+                    consultaDto.ConsultationType ?? 0,
+                    consultaDto.ConsultationStatus ?? 0,
+                    consultaDto.ConsultationHasdisease ?? false,
+                    consultaDto.ConsultationDiseaseobservation,
+                    consultaDto.ConsultationContingencytype,
+                    consultaDto.ConsutationHasSymptoms,
+                    consultaDto.ConsultationIsFinal,
 
+                    // Órganos y sistemas
+                    consultaDto.OrgansSystem?.OrganssystemsOrgansenses,
+                    consultaDto.OrgansSystem?.OrganssystemsOrgansensesObs,
+                    consultaDto.OrgansSystem?.OrganssystemsRespiratory,
+                    consultaDto.OrgansSystem?.OrganssystemsRespiratoryObs,
+                    consultaDto.OrgansSystem?.OrganssystemsCardiovascular,
+                    consultaDto.OrgansSystem?.OrganssystemsCardiovascularObs,
+                    consultaDto.OrgansSystem?.OrganssystemsDigestive,
+                    consultaDto.OrgansSystem?.OrganssystemsDigestiveObs,
+                    consultaDto.OrgansSystem?.OrganssystemsGenital,
+                    consultaDto.OrgansSystem?.OrganssystemsGenitalObs,
+                    consultaDto.OrgansSystem?.OrganssystemsUrinary,
+                    consultaDto.OrgansSystem?.OrganssystemsUrinaryObs,
+                    consultaDto.OrgansSystem?.OrganssystemsSkeletalM,
+                    consultaDto.OrgansSystem?.OrganssystemsSkeletalMObs,
+                    consultaDto.OrgansSystem?.OrganssystemsEndrocrine,
+                    consultaDto.OrgansSystem?.OrganssystemsEndocrine,
+                    consultaDto.OrgansSystem?.OrganssystemsLymphatic,
+                    consultaDto.OrgansSystem?.OrganssystemsLymphaticObs,
+                    consultaDto.OrgansSystem?.OrganssystemsNervous,
+                    consultaDto.OrgansSystem?.OrganssystemsNervousObs,
 
+                    // Examen físico
+                    consultaDto.PhysicalExamination?.PhysicalexaminationHead,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationHeadObs,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationNeck,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationNeckObs,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationChest,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationChestObs,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationAbdomen,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationAbdomenObs,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationPelvis,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationPelvisObs,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationLimbs,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationLimbsObs,
 
+                    // Antecedentes familiares
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundHeartdisease,
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundHeartdiseaseObservation,
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundRelatshcatalogHeartdisease,
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundDiabetes,
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundDiabetesObservation,
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundRelatshcatalogDiabetes,
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundDxcardiovascular,
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundDxcardiovascularObservation,
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundRelatshcatalogDxcardiovascular,
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundHypertension,
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundHypertensionObservation,
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundRelatshcatalogHypertension,
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundCancer,
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundCancerObservation,
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundRelatshcatalogCancer,
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundTuberculosis,
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundTuberculosisObservation,
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundRelatshTuberculosis,
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundDxmental,
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundDxmentalObservation,
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundRelatshcatalogDxmental,
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundDxinfectious,
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundDxinfectiousObservation,
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundRelatshcatalogDxinfectious,
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundMalformation,
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundMalformationObservation,
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundRelatshcatalogMalformation,
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundOther,
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundOtherObservation,
+                    consultaDto.FamiliaryBackground?.FamiliaryBackgroundRelatshcatalogOther,
+
+                    // TVPs
+                    consultaDto.AllergiesConsultations,
+                    consultaDto.SurgeriesConsultations,
+                    consultaDto.MedicationsConsultations,
+                    consultaDto.LaboratoriesConsultations,
+                    consultaDto.ImagesConsultations,
+                    consultaDto.DiagnosisConsultations,
+                    consultaDto.Procedures
                 );
 
-                _logger.LogInformation("Consulta creada exitosamente.");
+                _logger.LogInformation("Consulta creada exitosamente. ID={ConsultationId}", newId);
 
-                return Json(new { success = true, message = "Consulta creada exitosamente" });
+                // 2) Devolvemos el ID para que el cliente lo use y no re-inserte
+                return Json(new
+                {
+                    success = true,
+                    consultationId = newId,
+                    message = "Consulta creada exitosamente"
+                });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al crear la consulta");
-
-                return StatusCode(500, new { success = false, message = "Ocurrió un error en el servidor.", details = ex.Message });
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Ocurrió un error en el servidor.",
+                    details = ex.Message
+                });
             }
         }
 
         [HttpGet]
         public async Task<IActionResult> ConsultationDetails(int consultationId)
+        {
+            // Obtener los detalles de la consulta
+            var consultation = _consultationService.GetConsultationDetails(consultationId);
+
+            // Verificar si la consulta existe
+            if (consultation == null)
+            {
+                TempData["ErrorMessage"] = "Consulta no encontrada.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            // Obtener el patientId de la consulta
+            var patientId = consultation.ConsultationPatient;
+
+            // Obtener los detalles del paciente
+            var patient = await _patientService.GetPatientFullByIdAsync(patientId);
+
+            // Si el paciente no existe, devolver una respuesta de "No encontrado"
+            if (patient == null)
+            {
+                TempData["ErrorMessage"] = "Paciente no encontrado.";
+                return RedirectToAction("Index", "Home");
+            }
+            var usuarioId = HttpContext.Session.GetInt32("UsuarioId") ?? 0;
+            var perfilId = HttpContext.Session.GetInt32("PerfilId") ?? 0;
+            // Obtener datos adicionales para la vista
+            var genderTypes = await _selectService.GetGenderTypeAsync();
+            var bloodTypes = await _selectService.GetBloodTypeAsync();
+            var documentTypes = await _selectService.GetDocumentTypeAsync();
+            var civilTypes = await _selectService.GetCivilTypeAsync();
+            var professionalTrainingTypes = await _selectService.GetProfessionaltrainingTypeAsync();
+            var sureHealthTypes = await _selectService.GetSureHealtTypeAsync();
+            var countries = await _selectService.GetAllCountriesAsync();
+            var provinces = await _selectService.GetAllProvinceAsync();
+            var parents = await _selectService.GetRelationshipTypeAsync();
+            var allergies = await _selectService.GetAllergiesTypeAsync();
+            var surgeries = await _selectService.GetSurgeriesTypeAsync();
+            var familyMember = await _selectService.GetFamiliarTypeAsync();
+            var diagnosis = await _selectService.GetAllDiagnosisAsync();
+            var medications = await _selectService.GetAllMedicationsAsync();
+            var images = await _selectService.GetAllImagesAsync();
+            var laboratories = await _selectService.GetAllLaboratoriesAsync();
+            var doctor = await _patientService.GetDoctorsByAssistantAsync(usuarioId, perfilId);
+
+
+            // Crear el ViewModel
+            var viewModel = new NewPatientViewModel
+            {
+                DetailsPatient = patient,
+                GenderTypes = genderTypes,
+                BloodTypes = bloodTypes,
+                DocumentTypes = documentTypes,
+                CivilTypes = civilTypes,
+                ProfessionalTrainingTypes = professionalTrainingTypes,
+                SureHealthTypes = sureHealthTypes,
+                Countries = countries,
+                Provinces = provinces,
+                Parents = parents,
+                AllergiesTypes = allergies,
+                SurgeriesTypes = surgeries,
+                FamilyMember = familyMember,
+                Diagnoses = diagnosis,
+                Medications = medications,
+                Images = images,
+                Laboratories = laboratories,
+                Consultation = consultation, // Agregar los detalles de la consulta al ViewModel
+                Users = doctor
+            };
+
+            // Retornar la vista con el modelo
+            return View(viewModel);
+        }
+
+
+
+
+        [HttpGet]
+        public async Task<IActionResult> ConsultationUpdate(int consultationId)
         {
             // Obtener los detalles de la consulta
             var consultation = _consultationService.GetConsultationDetails(consultationId);

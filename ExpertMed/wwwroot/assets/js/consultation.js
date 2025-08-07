@@ -1,97 +1,87 @@
 ﻿document
-  .getElementById("selectDiagnosis")
-  .addEventListener("click", function () {
-    const select = document.getElementById("DiagnosisConsultation");
-    const selectedOption = select.options[select.selectedIndex];
+    .getElementById("selectDiagnosis")
+    .addEventListener("click", function () {
+        const select = document.getElementById("DiagnosisConsultation");
+        const opt = select.options[select.selectedIndex];
+        if (!opt.value) return;
 
-    // Verificar que se haya seleccionado un diagnóstico
-    if (selectedOption.value !== "") {
-      const diagnosisId = selectedOption.value;
-      const diagnosisName =
-        selectedOption.getAttribute("data-name") || selectedOption.innerText; // Fallback al texto visible
+        const diagnosisId = opt.value;
+        const diagnosisName = opt.getAttribute("data-name") || opt.text;
 
-      // Verificar si el data-name se obtiene correctamente
-      console.log("Diagnosis ID:", diagnosisId);
-      console.log("Diagnosis Name:", diagnosisName); // Verifica si el nombre se está recuperando correctamente
+        const tableBody = document.querySelector("#selectedDiagnosesTable tbody");
+        const row = document.createElement("tr");
 
-      // Crear una nueva fila en la tabla
-      const tableBody = document.querySelector("#selectedDiagnosesTable tbody");
-      const row = document.createElement("tr");
+        // **Este es el cambio clave**:
+        row.dataset.id = diagnosisId;
 
-      // Crear las celdas de la fila
-      const diagnosisIdCell = document.createElement("td");
-      diagnosisIdCell.textContent = diagnosisId; // Mostrar el ID del diagnóstico
-      diagnosisIdCell.hidden = true; // Ocultar la celda
+        // Columna visible con el nombre
+        const nameCell = document.createElement("td");
+        nameCell.textContent = diagnosisName;
 
-      const diagnosisNameCell = document.createElement("td");
-      diagnosisNameCell.textContent = diagnosisName; // Mostrar el nombre del diagnóstico
+        // Tus checkboxes
+        const presCell = document.createElement("td");
+        presCell.innerHTML = `<input type="checkbox" name="presumptive_${diagnosisId}">`;
+        const defCell = document.createElement("td");
+        defCell.innerHTML = `<input type="checkbox" name="definitive_${diagnosisId}">`;
 
-      const presumptiveCell = document.createElement("td");
-      presumptiveCell.innerHTML = `
-            <input type="checkbox" name="presumptive_${diagnosisId}" id="presumptive_${diagnosisId}">
-        `;
+        // Botón de eliminar
+        const actionCell = document.createElement("td");
+        actionCell.innerHTML = `
+      <button type="button" 
+              class="btn btn-outline-danger btn-icon" 
+              onclick="removeDiagnosisRow(this)">
+        <i class="ri-delete-bin-5-line"></i>
+      </button>`;
 
-      const definitiveCell = document.createElement("td");
-      definitiveCell.innerHTML = `
-            <input type="checkbox" name="definitive_${diagnosisId}" id="definitive_${diagnosisId}">
-        `;
+        row.append(nameCell, presCell, defCell, actionCell);
+        tableBody.appendChild(row);
 
-      const actionsCell = document.createElement("td");
-      actionsCell.innerHTML = `
-            <button type="button" class="btn btn-outline-danger btn-icon waves-effect waves-light" onclick="removeDiagnosisRow(this)">
-                <i class="ri-delete-bin-5-line"></i>
-            </button>
-        `;
+        isFormChanged = true;  // marca el formulario como "cambiado" para que auto-save lo pille
+    });
 
-      // Añadir las celdas a la fila
-      row.appendChild(diagnosisIdCell);
-      row.appendChild(diagnosisNameCell);
-      row.appendChild(presumptiveCell);
-      row.appendChild(definitiveCell);
-      row.appendChild(actionsCell);
-
-      // Añadir la fila al cuerpo de la tabla
-      tableBody.appendChild(row);
-    }
-  });
 
 // Función para eliminar la fila
 function removeDiagnosisRow(button) {
-  const row = button.closest("tr");
-  row.remove();
+    const row = button.closest("tr");
+    row.remove();
 }
 
 // Selección de medicamento desde dropdown
+// Medicamentos
 document.getElementById("selectMedications").addEventListener("click", function () {
     const select = document.getElementById("MedicationsConsultation");
     const selectedOption = select.options[select.selectedIndex];
-
-    if (!selectedOption || selectedOption.value === "") return;
+    if (!selectedOption || !selectedOption.value) return;
 
     const medicationsId = selectedOption.value;
     const medicationsName = selectedOption.getAttribute("data-name") || selectedOption.innerText;
-
     const tableBody = document.querySelector("#selectedMedicationsTable tbody");
     const row = document.createElement("tr");
-    row.setAttribute("data-medication-id", medicationsId);
+
+    // Asignamos data-id para poder leerlo luego con tr.dataset.id
+    row.dataset.id = medicationsId;
 
     row.innerHTML = `
         <td hidden>${medicationsId}</td>
         <td>${medicationsName}</td>
-        <td><input type="number" name="amount_${medicationsId}" id="amount_${medicationsId}" class="form-control medication-amount" min="1"></td>
-        <td><input type="text" name="observation_${medicationsId}" id="observation_${medicationsId}" class="form-control medication-observation"></td>
+        <td><input type="number" name="amount_${medicationsId}" id="amount_${medicationsId}"
+                   class="form-control medication-amount" min="1"></td>
+        <td><input type="text"   name="observation_${medicationsId}" id="observation_${medicationsId}"
+                   class="form-control medication-observation"></td>
         <td>
-            <button type="button" class="btn btn-outline-warning btn-sm add-favorite" title="Guardar como favorito">
+            <button type="button" class="btn btn-outline-warning btn-sm add-favorite"
+                    title="Guardar como favorito">
                 <i class="mdi mdi-star-outline"></i>
             </button>
-            <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeMedicationsRow(this)">
+            <button type="button" class="btn btn-outline-danger btn-sm"
+                    onclick="removeMedicationsRow(this)">
                 <i class="ri-delete-bin-5-line"></i>
             </button>
         </td>
     `;
-
     tableBody.appendChild(row);
 });
+
 
 // Guardar medicamento como favorito
 document.addEventListener("click", function (event) {
@@ -265,126 +255,85 @@ function removeMedicationsRow(button) {
 }
 
 
-
-
+// Imágenes
 document.getElementById("selectImages").addEventListener("click", function () {
     const select = document.getElementById("ImagesConsultation");
     const selectedOption = select.options[select.selectedIndex];
-    const observacionGeneral = document.getElementById("imagesGeneralObservation")?.value?.trim() || "";
+    const observacionGeneral = document.getElementById("imagesGeneralObservation")?.value.trim() || "";
+    if (!selectedOption || !selectedOption.value) return;
 
-    if (selectedOption.value !== "") {
-        const imagesId = selectedOption.value;
-        const imagesName =
-            selectedOption.getAttribute("data-name") || selectedOption.innerText;
+    const imagesId = selectedOption.value;
+    const imagesName = selectedOption.getAttribute("data-name") || selectedOption.innerText;
+    const tableBody = document.querySelector("#selectedImagesTable tbody");
+    const row = document.createElement("tr");
 
-        const tableBody = document.querySelector("#selectedImagesTable tbody");
-        const row = document.createElement("tr");
+    // Data-id unificado
+    row.dataset.id = imagesId;
 
-        const imagesIdCell = document.createElement("td");
-        imagesIdCell.textContent = imagesId;
-        imagesIdCell.hidden = true;
-
-        const imagesNameCell = document.createElement("td");
-        imagesNameCell.textContent = imagesName;
-
-        const amountCell = document.createElement("td");
-        amountCell.innerHTML = `
-      <input type="number" name="amount_${imagesId}" id="amount_${imagesId}" class="form-control" min="1">
+    row.innerHTML = `
+        <td hidden>${imagesId}</td>
+        <td>${imagesName}</td>
+        <td><input type="number" name="amount_${imagesId}" id="amount_${imagesId}"
+                   class="form-control" min="1"></td>
+        <td><input type="hidden" name="observation_${imagesId}"
+                   id="observation_${imagesId}"
+                   value="${observacionGeneral}"></td>
+        <td>
+            <button type="button" class="btn btn-outline-danger btn-icon waves-effect waves-light"
+                    onclick="removeImagesRow(this)">
+                <i class="ri-delete-bin-5-line"></i>
+            </button>
+        </td>
     `;
-
-        const observationCell = document.createElement("td");
-        observationCell.innerHTML = `
-      <input type="hidden" name="observation_${imagesId}" id="observation_${imagesId}" value="${observacionGeneral}">
-    `;
-
-        const actionsCell = document.createElement("td");
-        actionsCell.innerHTML = `
-      <button type="button" class="btn btn-outline-danger btn-icon waves-effect waves-light" onclick="removeImagesRow(this)">
-        <i class="ri-delete-bin-5-line"></i>
-      </button>
-    `;
-
-        row.appendChild(imagesIdCell);
-        row.appendChild(imagesNameCell);
-        row.appendChild(amountCell);
-        row.appendChild(observationCell);
-        row.appendChild(actionsCell);
-
-        tableBody.appendChild(row);
-    }
+    tableBody.appendChild(row);
 });
+
 
 // Función para eliminar la fila
 function removeImagesRow(button) {
-  const row = button.closest("tr");
-  row.remove();
+    const row = button.closest("tr");
+    row.remove();
 }
 
-document
-  .getElementById("selectLaboratories")
-  .addEventListener("click", function () {
+// Laboratorios
+document.getElementById("selectLaboratories").addEventListener("click", function () {
     const select = document.getElementById("LaboratoriesConsultation");
     const selectedOption = select.options[select.selectedIndex];
-      const observacionGeneral = document.getElementById("laboratoriesGeneralObservation")?.value?.trim() || null;
+    const observacionGeneral = document.getElementById("laboratoriesGeneralObservation")?.value.trim() || "";
+    if (!selectedOption || !selectedOption.value) return;
 
+    const laboratoriesId = selectedOption.value;
+    const laboratoriesName = selectedOption.getAttribute("data-name") || selectedOption.innerText;
+    const tableBody = document.querySelector("#selectedLaboratoriesTable tbody");
+    const row = document.createElement("tr");
 
-    // Verificar que se haya seleccionado un laboratorio
-    if (selectedOption.value !== "") {
-      const laboratoriesId = selectedOption.value;
-      const laboratoriesName =
-        selectedOption.getAttribute("data-name") || selectedOption.innerText; // Fallback al texto visible
+    // Mismo data-id
+    row.dataset.id = laboratoriesId;
 
-      // Verificar si el data-name se obtiene correctamente
-      console.log("Laboratories ID:", laboratoriesId);
-      console.log("Laboratories Name:", laboratoriesName); // Verifica si el nombre se está recuperando correctamente
-
-      // Crear una nueva fila en la tabla
-      const tableBody = document.querySelector(
-        "#selectedLaboratoriesTable tbody"
-      );
-      const row = document.createElement("tr");
-
-      // Crear las celdas de la fila
-      const laboratoriesIdCell = document.createElement("td");
-      laboratoriesIdCell.textContent = laboratoriesId; // Mostrar el ID del laboratorio
-      laboratoriesIdCell.hidden = true; // Ocultar la celda
-
-      const laboratoriesNameCell = document.createElement("td");
-      laboratoriesNameCell.textContent = laboratoriesName; // Mostrar el nombre del laboratorio
-
-      const amountCell = document.createElement("td");
-      amountCell.innerHTML = `
-            <input type="number" name="amount_${laboratoriesId}" id="amount_${laboratoriesId}" value="1" class="form-control" min="1">
-        `; // Campo para la cantidad
-
-      const observationCell = document.createElement("td");
-        observationCell.innerHTML = `
-    <input type="hidden" name="observation_${laboratoriesId}" id="observation_${laboratoriesId}" value="${observacionGeneral}">
-`; // Campo para observaciones
-
-      const actionsCell = document.createElement("td");
-      actionsCell.innerHTML = `
-            <button type="button" class="btn btn-outline-danger btn-icon waves-effect waves-light" onclick="removeLaboratoriesRow(this)">
+    row.innerHTML = `
+        <td hidden>${laboratoriesId}</td>
+        <td>${laboratoriesName}</td>
+        <td><input type="number" name="amount_${laboratoriesId}"
+                   id="amount_${laboratoriesId}" value="1"
+                   class="form-control" min="1"></td>
+        <td><input type="hidden" name="observation_${laboratoriesId}"
+                   id="observation_${laboratoriesId}"
+                   value="${observacionGeneral}"></td>
+        <td>
+            <button type="button" class="btn btn-outline-danger btn-icon waves-effect waves-light"
+                    onclick="removeLaboratoriesRow(this)">
                 <i class="ri-delete-bin-5-line"></i>
             </button>
-        `; // Botón para eliminar la fila
+        </td>
+    `;
+    tableBody.appendChild(row);
+});
 
-      // Añadir las celdas a la fila
-      row.appendChild(laboratoriesIdCell);
-      row.appendChild(laboratoriesNameCell);
-      row.appendChild(amountCell);
-      row.appendChild(observationCell);
-      row.appendChild(actionsCell);
-
-      // Añadir la fila al cuerpo de la tabla
-      tableBody.appendChild(row);
-    }
-  });
 
 // Función para eliminar la fila
 function removeLaboratoriesRow(button) {
-  const row = button.closest("tr");
-  row.remove();
+    const row = button.closest("tr");
+    row.remove();
 }
 
 
@@ -410,131 +359,131 @@ var recognition;
 var recognizing = false;
 
 function toggleDictation(textareaId, iconId) {
-  if (recognizing) {
-    stopDictation(iconId);
-  } else {
-    startDictation(textareaId, iconId);
-  }
+    if (recognizing) {
+        stopDictation(iconId);
+    } else {
+        startDictation(textareaId, iconId);
+    }
 }
 
 function startDictation(textareaId, iconId) {
-  if (window.hasOwnProperty("webkitSpeechRecognition")) {
-    recognition = new webkitSpeechRecognition();
+    if (window.hasOwnProperty("webkitSpeechRecognition")) {
+        recognition = new webkitSpeechRecognition();
 
-    recognition.continuous = true; // Permite que la grabación sea continua
-    recognition.interimResults = false;
+        recognition.continuous = true; // Permite que la grabación sea continua
+        recognition.interimResults = false;
 
-    recognition.lang = "es-ES"; // Cambia el idioma según sea necesario
+        recognition.lang = "es-ES"; // Cambia el idioma según sea necesario
 
-    recognition.onstart = function () {
-      recognizing = true;
-      updateIconState(iconId);
-      console.log("Reconocimiento de voz iniciado. Por favor, hable.");
-    };
+        recognition.onstart = function () {
+            recognizing = true;
+            updateIconState(iconId);
+            console.log("Reconocimiento de voz iniciado. Por favor, hable.");
+        };
 
-    recognition.onresult = function (event) {
-      const newText = event.results[event.results.length - 1][0].transcript;
-      document.getElementById(textareaId).value += " " + newText; // Concatena al texto existente
-    };
+        recognition.onresult = function (event) {
+            const newText = event.results[event.results.length - 1][0].transcript;
+            document.getElementById(textareaId).value += " " + newText; // Concatena al texto existente
+        };
 
-    recognition.onerror = function (event) {
-      console.error("Error en el reconocimiento de voz: ", event.error);
-    };
+        recognition.onerror = function (event) {
+            console.error("Error en el reconocimiento de voz: ", event.error);
+        };
 
-    recognition.onend = function () {
-      recognizing = false;
-      updateIconState(iconId);
-      console.log("El reconocimiento de voz ha finalizado.");
-    };
+        recognition.onend = function () {
+            recognizing = false;
+            updateIconState(iconId);
+            console.log("El reconocimiento de voz ha finalizado.");
+        };
 
-    recognition.start();
-  } else {
-    alert("Tu navegador no soporta el reconocimiento de voz.");
-  }
+        recognition.start();
+    } else {
+        alert("Tu navegador no soporta el reconocimiento de voz.");
+    }
 }
 
 function stopDictation(iconId) {
-  if (recognition && recognizing) {
-    recognizing = false;
-    recognition.stop();
-    updateIconState(iconId);
-    console.log("Reconocimiento de voz detenido.");
-  }
+    if (recognition && recognizing) {
+        recognizing = false;
+        recognition.stop();
+        updateIconState(iconId);
+        console.log("Reconocimiento de voz detenido.");
+    }
 }
 
 function updateIconState(iconId) {
-  var icon = document.getElementById(iconId);
+    var icon = document.getElementById(iconId);
 
-  if (recognizing) {
-    icon.classList.remove("ri-mic-fill");
-    icon.classList.add("ri-mic-off-fill");
-  } else {
-    icon.classList.remove("ri-mic-off-fill");
-    icon.classList.add("ri-mic-fill");
-  }
+    if (recognizing) {
+        icon.classList.remove("ri-mic-fill");
+        icon.classList.add("ri-mic-off-fill");
+    } else {
+        icon.classList.remove("ri-mic-off-fill");
+        icon.classList.add("ri-mic-fill");
+    }
 }
 
 // Asignar eventos de clic a los iconos
 document
-  .getElementById("dictationIcon1")
-  .addEventListener("click", function () {
-      toggleDictation("consultation_personalbackground", "dictationIcon1");
-  });
+    .getElementById("dictationIcon1")
+    .addEventListener("click", function () {
+        toggleDictation("consultation_personalbackground", "dictationIcon1");
+    });
 
 document
-  .getElementById("dictationIcon2")
-  .addEventListener("click", function () {
-      toggleDictation("consultation_disease", "dictationIcon2");
-  });
+    .getElementById("dictationIcon2")
+    .addEventListener("click", function () {
+        toggleDictation("consultation_disease", "dictationIcon2");
+    });
 
 document
-  .getElementById("dictationIcon3")
-  .addEventListener("click", function () {
-      toggleDictation("consultation_treatmentplan", "dictationIcon3");
-  });
+    .getElementById("dictationIcon3")
+    .addEventListener("click", function () {
+        toggleDictation("consultation_treatmentplan", "dictationIcon3");
+    });
 
 document
-  .getElementById("dictationIcon4")
-  .addEventListener("click", function () {
-      toggleDictation("consultation_nonpharmacologycal", "dictationIcon4");
-  });
+    .getElementById("dictationIcon4")
+    .addEventListener("click", function () {
+        toggleDictation("consultation_nonpharmacologycal", "dictationIcon4");
+    });
 
 document
-  .getElementById("dictationIcon5")
-  .addEventListener("click", function () {
-      toggleDictation("consultation_warningsings", "dictationIcon5");
-  });
+    .getElementById("dictationIcon5")
+    .addEventListener("click", function () {
+        toggleDictation("consultation_warningsings", "dictationIcon5");
+    });
 // Asignar eventos de clic al icono
 document
-  .getElementById("dictationIcon6")
-  .addEventListener("click", function () {
-      toggleDictation("consultation_observation", "dictationIcon6");
-  });
+    .getElementById("dictationIcon6")
+    .addEventListener("click", function () {
+        toggleDictation("consultation_observation", "dictationIcon6");
+    });
 
 //Preecion Arterial
 document
-  .getElementById("bloodPressureInput")
-  .addEventListener("input", function (e) {
-    let value = e.target.value.replace(/\D/g, ""); // Elimina cualquier caracter que no sea un dígito
+    .getElementById("bloodPressureInput")
+    .addEventListener("input", function (e) {
+        let value = e.target.value.replace(/\D/g, ""); // Elimina cualquier caracter que no sea un dígito
 
-    if (value.length > 3) {
-      value = value.slice(0, 3) + "/" + value.slice(3); // Inserta el '/'
-    }
+        if (value.length > 3) {
+            value = value.slice(0, 3) + "/" + value.slice(3); // Inserta el '/'
+        }
 
-    e.target.value = value; // Actualiza el campo de entrada con el nuevo valor
+        e.target.value = value; // Actualiza el campo de entrada con el nuevo valor
 
-    // Opcional: Si deseas actualizar los campos ocultos para diastólica y sistólica
-    if (value.length >= 5) {
-      document.getElementById("consultation_bloodpresuredDIS").value =
-        value.slice(4, 6);
-      document.getElementById("consultation_bloodpressuredAS").value =
-        value.slice(0, 3);
-    } else {
-      document.getElementById("consultation_bloodpresuredDIS").value = "";
-      document.getElementById("consultation_bloodpressuredAS").value =
-        value.slice(0, 3);
-    }
-  });
+        // Opcional: Si deseas actualizar los campos ocultos para diastólica y sistólica
+        if (value.length >= 5) {
+            document.getElementById("consultation_bloodpresuredDIS").value =
+                value.slice(4, 6);
+            document.getElementById("consultation_bloodpressuredAS").value =
+                value.slice(0, 3);
+        } else {
+            document.getElementById("consultation_bloodpresuredDIS").value = "";
+            document.getElementById("consultation_bloodpressuredAS").value =
+                value.slice(0, 3);
+        }
+    });
 
 document.addEventListener("DOMContentLoaded", function () {
     const tabla = document.getElementById("procedimientosTable").querySelector("tbody");
@@ -605,11 +554,24 @@ function getFormData(isFinal = false) {
     const mapTable = (selector, mapper) =>
         Array.from(document.querySelectorAll(selector + " tbody tr")).map(mapper);
 
+    // 1) Obtener el consultationId del input hidden
+    const hiddenInput = document.getElementById("consultationId");
+    let currentConsultationId = null;
+    console.log(hiddenInput);
+    if (hiddenInput && hiddenInput.value) {
+        currentConsultationId = hiddenInput.value;
+        console.log("Usando consultationId del input hidden:", currentConsultationId);
+    } else {
+        // Si no se encuentra, usar el valor de la variable global
+        currentConsultationId = consultationId;
+        console.log("Usando consultationId de la variable global:", currentConsultationId);
+    }
+
+    // 1) Construye primero el DTO con los campos simples
     const dto = {
-        ConsultationId: consultationId,
+        ConsultationId: currentConsultationId, 
         ConsultationDate: getValue("consultation_date"),
         ConsultationUsercreate: getInt("consultation_usercreate", null),
-        ConsultationSequential: getValue("consultation_sequential"),
         ConsultationPatient: getInt("consultation_patient", null),
         ConsultationSpeciality: getInt("consultation_speciality", null),
         ConsultationHistoryclinic: getValue("consultation_historyclinic"),
@@ -637,51 +599,90 @@ function getFormData(isFinal = false) {
         ConsultationStatus: getInt("consultation_status", 1),
         ConsultationHasdisease: getChecked("cert_tiene_enfermedad") ?? false,
         ConsultationDiseaseobservation: getValue("cert_observacion"),
-        ConsultationContingencytype: getInt("cert_tipo_contingencia", null),
+        ConsultationContingencytype: getValue("cert_tipo_contingencia"),
+        ConsutationHasSymptoms: getChecked("cert_tiene_sintomas") ?? false,
 
-        // Nuevo flag para el SP
-        ConsultationIsFinal: isFinal,
+        // Flag para el SP
+        ConsultationIsFinal: isFinal
+    };
 
-        AllergiesConsultations: mapTable("#selectedAllergiesTable", tr => ({
-            AllergiesCatalogid: getInt(tr.querySelector("td").textContent),
-            AllergiesObservation: "",
-            AllergiesStatus: 1
-        })),
-        SurgeriesConsultations: mapTable("#selectedSurgeriesTable", tr => ({
-            SurgeriesCatalogid: getInt(tr.querySelector("td").textContent),
-            SurgeriesObservation: "",
-            SurgeriesStatus: 1
-        })),
-        MedicationsConsultations: mapTable("#selectedMedicationsTable", tr => ({
-            MedicationsMedicationsid: getInt(tr.cells[0].textContent),
-            MedicationsAmount: tr.querySelector('input[name^="amount_"]')?.value ?? null,
-            MedicationsObservation: tr.querySelector('input[name^="observation_"]')?.value ?? null,
-            MedicationsStatus: 1
-        })),
-        LaboratoriesConsultations: mapTable("#selectedLaboratoriesTable", tr => ({
-            LaboratoriesLaboratoriesid: getInt(tr.cells[0].textContent),
-            LaboratoriesAmount: getInt(tr.querySelector('input[name^="amount_"]')?.value),
-            LaboratoriesObservation: tr.querySelector('input[name^="observation_"]')?.value ?? null,
-            LaboratoriesStatus: 1
-        })),
-        ImagesConsultations: mapTable("#selectedImagesTable", tr => ({
-            ImagesImagesid: getInt(tr.cells[0].textContent),
-            ImagesAmount: getInt(tr.querySelector('input[name^="amount_"]')?.value),
-            ImagesObservation: tr.querySelector('input[name^="observation_"]')?.value ?? null,
-            ImagesStatus: 1
-        })),
-        DiagnosisConsultations: mapTable("#selectedDiagnosesTable", tr => ({
-            DiagnosisDiagnosisid: getInt(tr.cells[0].textContent),
-            DiagnosisPresumptive: tr.querySelector('input[name^="presumptive_"]')?.checked ?? false,
-            DiagnosisDefinitive: tr.querySelector('input[name^="definitive_"]')?.checked ?? false,
+    // 2) Alergias directo desde el <select multiple>
+    const allergyOpts = Array.from(
+        document.getElementById("allergiesSelect").selectedOptions
+    );
+    dto.AllergiesConsultations = allergyOpts.map(opt => ({
+        AllergiesCatalogid: parseInt(opt.value, 10),
+        AllergiesObservation: "",
+        AllergiesStatus: 1
+    }));
+
+    // 3) Cirugías directo desde el <select multiple>
+    const surgeryOpts = Array.from(
+        document.getElementById("surgeriesSelect").selectedOptions
+    );
+    dto.SurgeriesConsultations = surgeryOpts.map(opt => ({
+        SurgeriesCatalogid: parseInt(opt.value, 10),
+        SurgeriesObservation: "",
+        SurgeriesStatus: 1
+    }));
+
+    // 4) El resto de TVPs como antes, usando mapTable si usas tablas dinámicas
+    // Medicamentos
+    dto.MedicationsConsultations = Array.from(
+        document.querySelectorAll("#selectedMedicationsTable tbody tr")
+    ).map(tr => ({
+        // Aquí debería haberse asignado tr.dataset.id al crear la fila
+        MedicationsMedicationsid: parseInt(tr.dataset.id, 10),
+        MedicationsAmount: tr.querySelector('input[name^="amount_"]')?.value ?? null,
+        MedicationsObservation: tr.querySelector('input[name^="observation_"]')?.value ?? null,
+        MedicationsStatus: 1
+    }));
+
+    // Laboratorios
+    dto.LaboratoriesConsultations = Array.from(
+        document.querySelectorAll("#selectedLaboratoriesTable tbody tr")
+    ).map(tr => ({
+        LaboratoriesLaboratoriesid: parseInt(tr.dataset.id, 10),
+        LaboratoriesAmount: tr.querySelector('input[name^="amount_"]')?.value ?? "",
+        LaboratoriesObservation: tr.querySelector('input[name^="observation_"]')?.value ?? null,
+        LaboratoriesStatus: 1
+    }));
+
+    // Imágenes
+    dto.ImagesConsultations = Array.from(
+        document.querySelectorAll("#selectedImagesTable tbody tr")
+    ).map(tr => ({
+        ImagesImagesid: parseInt(tr.dataset.id, 10),
+        ImagesAmount: tr.querySelector('input[name^="amount_"]')?.value ?? "",
+        ImagesObservation: tr.querySelector('input[name^="observation_"]')?.value ?? null,
+        ImagesStatus: 1
+    }));
+
+    // Diagnósticos (para referencia)
+    dto.DiagnosisConsultations = Array.from(
+        document.querySelectorAll(
+            "#selectedDiagnosesTable tbody tr[data-id]"
+        )
+    ).map(tr => {
+        const id = tr.dataset.id;
+        return {
+            DiagnosisDiagnosisid: parseInt(id, 10),
+            DiagnosisPresumptive: tr.querySelector(`input[name="presumptive_${id}"]`)
+                ?.checked ?? false,
+            DiagnosisDefinitive: tr.querySelector(`input[name="definitive_${id}"]`)
+                ?.checked ?? false,
             DiagnosisObservation: null,
             DiagnosisStatus: 1
-        })),
-        Procedures: mapTable("#procedimientosTable", tr => ({
-            procedure_name: tr.querySelector('input[name*="procedure_name"]')?.value ?? null,
-            procedure_date: tr.querySelector('input[name*="procedure_date"]')?.value ?? null
-        }))
-    };
+        };
+    });
+
+
+    dto.Procedures = mapTable("#procedimientosTable", tr => ({
+        procedure_name:
+            tr.querySelector('input[name*="procedure_name"]')?.value ?? null,
+        procedure_date:
+            tr.querySelector('input[name*="procedure_date"]')?.value ?? null
+    }));
 
     // Órganos y sistemas
     const organDefs = [
@@ -799,8 +800,12 @@ async function autoSaveConsultation() {
     showSaveIndicator("saving");
     if (autoSaveController) autoSaveController.abort();
     autoSaveController = new AbortController();
+
     try {
-        const dto = getFormData(false);  // <-- auto-guardado: isFinal = false
+        const dto = getFormData(false);
+        console.log("→ Enviando auto-save DTO", dto);
+        const body = JSON.stringify(dto);
+        console.log("—> RAW fetch body:", body);
         const res = await fetch(consultaUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -808,8 +813,11 @@ async function autoSaveConsultation() {
             signal: autoSaveController.signal
         });
         const json = await res.json();
-        if (res.ok) {
-            if (!consultationId && json.consultation_id) consultationId = json.consultation_id;
+        console.log("← Respuesta auto-save", json);
+
+        if (res.ok && typeof json.consultationId === "number") {
+            consultationId = json.consultationId;
+            console.log("★ consultationId asignado a", consultationId);
             isFormChanged = false;
             showSaveIndicator("saved");
         } else {

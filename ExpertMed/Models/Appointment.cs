@@ -52,9 +52,7 @@ namespace ExpertMed.Models
         [NotMapped]
         public string? DoctorName2 { get; set; }   // Nombre completo del doctor
         [NotMapped]
-        public int DoctorUserId { get; set; }   // Nombre completo del doctor
-
-
+        public int DoctorUserId { get; set; }   
         // Relacionados con el paciente, doctor y usuario
         public virtual Consultation? AppointmentConsultation { get; set; }
 

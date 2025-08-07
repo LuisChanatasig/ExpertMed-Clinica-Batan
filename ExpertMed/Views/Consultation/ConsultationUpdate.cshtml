@@ -1,9 +1,9 @@
 ﻿@using Microsoft.AspNetCore.Http
 
 @{
-    ViewBag.Title = "Crear Consulta";
-    ViewBag.pTitle = "Crear Consulta";
-    ViewBag.pageTitle = "Crear Consulta";
+    ViewBag.Title = "Modificar Consulta din terminnar";
+    ViewBag.pTitle = "Modificar Consulta din terminnar";
+    ViewBag.pageTitle = "Modificar Consulta din terminnar";
     Layout = "~/Views/Shared/_Layout.cshtml";
 
     var successMessage = TempData["SuccessMessage"] as string;
@@ -15,9 +15,9 @@
 
 }
 
-@section Styles{
+@section Styles {
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-   
+
 
 }
 
@@ -30,7 +30,7 @@
                 <div class="p-0 ms-auto rounded-circle profile-photo-edit">
                     <input id="profile-foreground-img-file-input" type="file" class="profile-foreground-img-file-input">
                     <h1 class="cabeceras">
-                        <i class="ri-survey-fill"></i> Nueva Consulta
+                        <i class="ri-survey-fill"></i> Actualizar Consulta
                     </h1>
 
                     <!-- Botón de videollamada -->
@@ -53,6 +53,7 @@
                 <input type="hidden" class="form-control" id="consultation_usercreate" value="@usuarioId" />
                 <input type="hidden" id="consultation_sequential" value="0" />
                 <input type="hidden" id="consultation_patient" value="@Model.DetailsPatient.PatientId" />
+                <input type="hidden" id="consultationId" value="@Model.Consultation.ConsultationId" />
                 <input type="hidden" id="consultation_speciality" value="@especialidadId" />
                 <input type="hidden" id="consultation_date" value="" />
                 <input type="hidden" id="consultation_type" value="1" />
@@ -288,7 +289,7 @@
                                             data-choices data-choices-sorting-false disabled>
 
                                         @foreach (var professionaltraining in
-                                        Model.ProfessionalTrainingTypes)
+                                                                                Model.ProfessionalTrainingTypes)
                                         {
                                             <option value="@professionaltraining.CatalogId">
                                                 @professionaltraining.CatalogName
@@ -516,8 +517,8 @@
                                         <td style="font-size: 0.7rem;">
                                             <i class="ri-calendar-event-fill"></i> <br /> Fecha de nacimiento <br />
                                             @((Model.DetailsPatient.PatientBirthdate.HasValue) ?
-                                                Model.DetailsPatient.PatientBirthdate.Value.ToString("yyyy-MM-dd")
-                                                : string.Empty)
+                                                                                        Model.DetailsPatient.PatientBirthdate.Value.ToString("yyyy-MM-dd")
+                                                                                        : string.Empty)
                                         </td>
                                         <td style="font-size: 0.7rem;">
                                             <i class="ri-calendar-event-fill"></i> <br /> Edad
@@ -562,7 +563,7 @@
                                         Nombre del acompañante
                                     </label>
                                     <input type="text" class="form-control" id="consultation_familiaryname"
-                                           name="ConsultationFamiliaryName" placeholder="Ingrese el nombre de su acompañante">
+                                           name="ConsultationFamiliaryName" placeholder="Ingrese el nombre de su acompañante" value="@Model.Consultation.ConsultationFamiliaryname">
 
                                 </div>
                             </div>
@@ -572,7 +573,7 @@
                                     <label for="parentSelect" class="form-label">
                                         Seleccione el parentesco
                                     </label>
-                                    <select class="form-control" id="consultation_familiarytype" name="ConsultationFamiliaryType"
+                                    <select class="form-control" id="consultation_familiarytype" asp-for="Consultation.ConsultationFamiliarytype" name="ConsultationFamiliaryType"
                                             data-choices data-choices-sorting-false>
                                         @foreach (var parents in Model.Parents)
                                         {
@@ -591,7 +592,7 @@
                                         Teléfono del acompañante
                                     </label>
                                     <input type="text" class="form-control" id="consultation_familiaryphone"
-                                           name="ConsultationFamiliaryPhone" placeholder="0900000000">
+                                           name="ConsultationFamiliaryPhone" value="@Model.Consultation.ConsultationFamiliaryphone" placeholder="0900000000">
 
                                 </div>
                             </div>
@@ -603,7 +604,7 @@
                                     </label>
                                     <input type="text" class="form-control"
                                            id="consultation_reason" name="ConsultationReason"
-                                           placeholder="Ingrese la razón de su consulta" required>
+                                           placeholder="Ingrese la razón de su consulta" value="@Model.Consultation.ConsultationReason" required>
 
                                 </div>
                             </div>
@@ -619,7 +620,7 @@
                                 <div class="mb-3">
 
                                     <textarea class="form-control" id="consultation_personalbackground"
-                                              rows="3" name="ConsultationPersonalBackground"
+                                              rows="3" name="ConsultationPersonalBackground" asp-for="Consultation.ConsultationPersonalbackground"
                                               placeholder="Escriba una descripción, o si prefiere pude ocupar el micrófono"></textarea>
                                     <i id="dictationIcon1" class=" ri-mic-fill position-absolute" style="top: 35px; right: 15px; cursor: pointer;"></i>
 
@@ -637,14 +638,18 @@
                                         <option value="">En caso de no tener, escriba desconoce</option>
                                         @foreach (var allergies in Model.AllergiesTypes)
                                         {
-                                            <option value="@allergies.CatalogId">
+                                            // Verificar si la alergia está asociada a la consulta
+                                            var isSelected = Model.Consultation.AllergiesConsultations
+                                            .Any(a => a.AllergiesCatalogid == allergies.CatalogId);
+
+                                            <option value="@allergies.CatalogId" selected="@(isSelected ? "selected" : null)">
                                                 @allergies.CatalogName
                                             </option>
                                         }
 
                                     </select>
-                                    <input type="hidden" id="selectallergiesId"
-                                           name="selectallergiesId">
+                                    <input type="hidden" id="selectallergiesId" name="selectallergiesId" value="@string.Join(",", Model.Consultation.AllergiesConsultations.Select(a => a.AllergiesCatalogid))">
+                              
 
                                 </div>
                                 <div class="invalid-feedback">
@@ -665,14 +670,19 @@
                                         <option value="">En caso de no tener, escriba desconoce</option>
                                         @foreach (var surgeries in Model.SurgeriesTypes)
                                         {
-                                            <option value="@surgeries.CatalogId">
+
+                                            // Verificar si la cirugía está asociada a la consulta
+                                            var isSelected = Model.Consultation.SurgeriesConsultations
+                                            .Any(s => s.SurgeriesCatalogid == surgeries.CatalogId);
+
+                                            <option value="@surgeries.CatalogId" selected="@(isSelected ? "selected" : null)">
                                                 @surgeries.CatalogName
                                             </option>
                                         }
                                     </select>
                                     <!-- Input oculto para enviar los IDs seleccionados -->
-                                    <input type="hidden" id="selectSurgeriesId"
-                                           name="selectSurgeriesId">
+                                    <input type="hidden" id="selectSurgeriesId" name="selectSurgeriesId" value="@string.Join(",", Model.Consultation.SurgeriesConsultations.Select(s => s.SurgeriesCatalogid))">
+
                                 </div>
                                 <div class="invalid-feedback">
                                     POR FAVOR ESTE CAMPO ES REQUERIDO SI NO TIENE CIRUGIAS COLOCAR DESCONOCE
@@ -690,7 +700,7 @@
                             <!-- #region  Cardiopatia-->
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" role="switch"
-                                       id="familiary_background_heartdisease">
+                                       id="familiary_background_heartdisease" @(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundHeartdisease == true ? "checked" : "")>
                                 <label class="form-check-label" for="SwitchCheckHeartdiasease">
                                     Cardiopatía
                                 </label>
@@ -701,7 +711,7 @@
 
                                     <select class="form-control" id="familiary_background_relatshcatalog_heartdisease"
                                             name="familyMemberHeartDisease" data-choices
-                                            data-choices-sorting-false>
+                                            data-choices-sorting-false asp-for="Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogHeartdisease">
                                         <option value="">Selecciona el miembro de tu familia</option>
                                         @foreach (var familyMember in Model.FamilyMember)
                                         {
@@ -719,7 +729,7 @@
 
                                     <input type="text" class="form-control"
                                            id="familiary_background_heartdisease_observation" name="observationHeartDisease"
-                                           placeholder="Ingrese una observación">
+                                           placeholder="Ingrese una observación" value="@Model.Consultation.FamiliaryBackground.FamiliaryBackgroundHeartdiseaseObservation">
 
                                 </div>
                             </div>
@@ -727,7 +737,7 @@
                             <!-- #region Diabtes-->
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" role="switch"
-                                       id="familiary_background_diabetes">
+                                       id="familiary_background_diabetes" @(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundDiabetes == true ? "checked" : "")>
                                 <label class="form-check-label"
                                        for="SwitchCheckDiabetes">Diabetes</label>
                             </div>
@@ -736,7 +746,7 @@
                                 <div class="mb-3">
                                     <select class="form-control" id="familiary_background_relatshcatalog_diabetes"
                                             name="familyMemberDiabetes" data-choices
-                                            data-choices-sorting-false>
+                                            data-choices-sorting-false asp-for="Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogDiabetes">
                                         <option value="">Selecciona el miembro de tu familia</option>
                                         @foreach (var familyMember in Model.FamilyMember)
                                         {
@@ -752,7 +762,7 @@
                                 <div class="mb-3">
 
                                     <input type="text" class="form-control" id="familiary_background_diabetes_observation"
-                                           name="observationDiabetes"
+                                           name="observationDiabetes" value="@Model.Consultation.FamiliaryBackground.FamiliaryBackgroundDiabetesObservation"
                                            placeholder="Ingrese una observación">
 
                                 </div>
@@ -761,7 +771,7 @@
                             <!-- #region Enfermedad Cardiovascular-->
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" role="switch"
-                                       id="familiary_background_dxcardiovascular">
+                                       id="familiary_background_dxcardiovascular" @(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundDxcardiovascular == true ? "checked" : "")>
                                 <label class="form-check-label"
                                        for="SwitchCheckCardiovascular">Enfermedad Cardiovascular</label>
                             </div>
@@ -769,7 +779,7 @@
                             <div class="col-lg-5">
                                 <div class="mb-3">
                                     <select class="form-control" id="familiary_background_relatshcatalog_dxcardiovascular"
-                                            name="familyMemberCardiovascularDisease" data-choices
+                                            name="familyMemberCardiovascularDisease" asp-for="Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogDxcardiovascular" data-choices
                                             data-choices-sorting-false>
                                         <option value="">Selecciona el miembro de tu familia</option>
                                         @foreach (var familyMember in Model.FamilyMember)
@@ -788,7 +798,7 @@
                                     <input type="text" class="form-control"
                                            id="familiary_background_dxcardiovascular_observation"
                                            name="observationCardiovascularDisease"
-                                           placeholder="Ingrese una observación">
+                                           placeholder="Ingrese una observación" value="@Model.Consultation.FamiliaryBackground.FamiliaryBackgroundDxcardiovascularObservation">
 
                                 </div>
                             </div>
@@ -796,7 +806,7 @@
                             <!-- #region Hipertension-->
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" role="switch"
-                                       id="familiary_background_hypertension">
+                                       id="familiary_background_hypertension @(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundHypertension == true ? "checked" : "")>
                                 <label class="form-check-label"
                                        for="SwitchCheckHypertension">Hipertensión</label>
                             </div>
@@ -804,7 +814,7 @@
                             <div class="col-lg-5">
                                 <div class="mb-3">
                                     <select class="form-control" id="familiary_background_relatshcatalog_hypertension"
-                                            name="familiary_background_relatshcatalog_hypertension" data-choices
+                                            name="familiary_background_relatshcatalog_hypertension" asp-for="Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogHypertension" data-choices
                                             data-choices-sorting-false>
                                         <option value="">Selecciona el miembro de tu familia</option>
                                         @foreach (var familyMember in Model.FamilyMember)
@@ -822,7 +832,7 @@
 
                                     <input type="text" class="form-control"
                                            id="familiary_background_hypertension_observation" name="observationHypertension"
-                                           placeholder="Ingrese una observación">
+                                           placeholder="Ingrese una observación" value="@Model.Consultation.FamiliaryBackground.FamiliaryBackgroundHypertensionObservation">
 
                                 </div>
                             </div>
@@ -830,7 +840,7 @@
                             <!-- #region Cancer-->
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" role="switch"
-                                       id="familiary_background_cancer">
+                                       id="familiary_background_cancer" @(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundCancer == true ? "checked" : "")>
                                 <label class="form-check-label"
                                        for="SwitchCheckCancer">Cáncer</label>
                             </div>
@@ -839,7 +849,7 @@
                                 <div class="mb-3">
                                     <select class="form-control" id="familiary_background_relatshcatalog_cancer"
                                             name="familyMemberCancer" data-choices
-                                            data-choices-sorting-false>
+                                            data-choices-sorting-false asp-for="Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogCancer">
                                         <option value="">Selecciona el miembro de tu familia</option>
                                         @foreach (var familyMember in Model.FamilyMember)
                                         {
@@ -855,7 +865,7 @@
                                 <div class="mb-3">
 
                                     <input type="text" class="form-control" id="familiary_background_cancer_observation"
-                                           name="observationCancer" placeholder="Ingrese una observación">
+                                           name="observationCancer" placeholder="Ingrese una observación" value="@Model.Consultation.FamiliaryBackground.FamiliaryBackgroundCancerObservation">
 
                                 </div>
                             </div>
@@ -863,7 +873,7 @@
                             <!-- #region Tuberculosis-->
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" role="switch"
-                                       id="familiary_background_tuberculosis">
+                                       id="familiary_background_tuberculosis" @(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundTuberculosis == true ? "checked" : "")>
                                 <label class="form-check-label"
                                        for="SwitchCheckTuberculosis">Tuberculosis</label>
                             </div>
@@ -872,7 +882,7 @@
                                 <div class="mb-3">
                                     <select class="form-control" id="familiary_background_relatshcatalog_tuberculosis"
                                             name="familyMemberTuberculosis" data-choices
-                                            data-choices-sorting-false>
+                                            data-choices-sorting-false asp-for="Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshTuberculosis">
                                         <option value="">Selecciona el miembro de tu familia</option>
                                         @foreach (var familyMember in Model.FamilyMember)
                                         {
@@ -889,7 +899,7 @@
 
                                     <input type="text" class="form-control"
                                            id="familiary_background_tuberculosis_observation" name="observationTuberculosis"
-                                           placeholder="Ingrese una observación">
+                                           placeholder="Ingrese una observación" value="@Model.Consultation.FamiliaryBackground.FamiliaryBackgroundTuberculosisObservation">
 
                                 </div>
                             </div>
@@ -897,7 +907,7 @@
                             <!-- #region Enfermedad Mental-->
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" role="switch"
-                                       id="familiary_background_dxmental">
+                                       id="familiary_background_dxmental" @(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundDxmental == true ? "checked" : "")>
                                 <label class="form-check-label"
                                        for="SwitchCheckMentalIllness">Enfermedad Mental</label>
                             </div>
@@ -906,7 +916,7 @@
                                 <div class="mb-3">
                                     <select class="form-control" id="familiary_background_relatshcatalog_dxmental"
                                             name="familyMemberMentalIllness" data-choices
-                                            data-choices-sorting-false>
+                                            data-choices-sorting-false asp-for="Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogDxmental">
                                         <option value="">Selecciona el miembro de tu familia</option>
                                         @foreach (var familyMember in Model.FamilyMember)
                                         {
@@ -924,7 +934,7 @@
                                     <input type="text" class="form-control"
                                            id="familiary_background_dxmental_observation"
                                            name="observationMentalIllness"
-                                           placeholder="Ingrese una observación">
+                                           placeholder="Ingrese una observación" value="@Model.Consultation.FamiliaryBackground.FamiliaryBackgroundDxcardiovascularObservation">
 
                                 </div>
                             </div>
@@ -932,7 +942,7 @@
                             <!-- #region Enfermedad Infecciosa-->
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" role="switch"
-                                       id="familiary_background_dxinfectious">
+                                       id="familiary_background_dxinfectious" @(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundDxinfectious == true ? "checked" : "")>
                                 <label class="form-check-label"
                                        for="SwitchCheckInfectious">Enfermedad Infecciosa</label>
                             </div>
@@ -941,7 +951,7 @@
                                 <div class="mb-3">
                                     <select class="form-control" id="FamilyMembers"
                                             name="familiary_background_relatshcatalog_dxinfectious" data-choices
-                                            data-choices-sorting-false>
+                                            data-choices-sorting-false asp-for="Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogDxinfectious">
                                         <option value="">Selecciona el miembro de tu familia</option>
                                         @foreach (var familyMember in Model.FamilyMember)
                                         {
@@ -958,7 +968,7 @@
 
                                     <input type="text" class="form-control"
                                            id="familiary_background_dxinfectious_observation" name="observationInfectious"
-                                           placeholder="Ingrese una observación">
+                                           placeholder="Ingrese una observación" value="@Model.Consultation.FamiliaryBackground.FamiliaryBackgroundDxinfectiousObservation">
 
                                 </div>
                             </div>
@@ -966,7 +976,7 @@
                             <!-- #region Malformacion-->
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" role="switch"
-                                       id="familiary_background_malformation">
+                                       id="familiary_background_malformation" @(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundMalformation == true ? "checked" : "")>
                                 <label class="form-check-label"
                                        for="SwitchCheckMalformation">Malformación</label>
                             </div>
@@ -975,7 +985,7 @@
                                 <div class="mb-3">
                                     <select class="form-control" id="familiary_background_relatshcatalog_malformation"
                                             name="familyMemberMalformation" data-choices
-                                            data-choices-sorting-false>
+                                            data-choices-sorting-false asp-for="Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogMalformation">
                                         <option value="">Selecciona el miembro de tu familia</option>
                                         @foreach (var familyMember in Model.FamilyMember)
                                         {
@@ -992,7 +1002,7 @@
 
                                     <input type="text" class="form-control"
                                            id="familiary_background_malformation_observation" name="observationMalformation"
-                                           placeholder="Ingrese una observación">
+                                           placeholder="Ingrese una observación" value="@Model.Consultation.FamiliaryBackground.FamiliaryBackgroundMalformationObservation">
 
                                 </div>
                             </div>
@@ -1000,7 +1010,7 @@
                             <!-- #region Other-->
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" role="switch"
-                                       id="familiary_background_other">
+                                       id="familiary_background_other" @(Model.Consultation.FamiliaryBackground.FamiliaryBackgroundOther == true ? "checked" : "")>
                                 <label class="form-check-label" for="SwitchCheckOther">Otros</label>
                             </div>
 
@@ -1009,7 +1019,7 @@
                                 <div class="mb-3">
                                     <select class="form-control" id="familiary_background_relatshcatalog_other"
                                             name="familyMemberOther" data-choices
-                                            data-choices-sorting-false>
+                                            data-choices-sorting-false asp-for="Consultation.FamiliaryBackground.FamiliaryBackgroundRelatshcatalogOther">
                                         <option value="">Selecciona el miembro de tu familia</option>
                                         @foreach (var familyMember in Model.FamilyMember)
                                         {
@@ -1025,7 +1035,7 @@
                                 <div class="mb-3">
 
                                     <input type="text" class="form-control" id="familiary_background_relatshcatalog_malformation"
-                                           name="observationOther" placeholder="Ingrese una observación">
+                                           name="observationOther" placeholder="Ingrese una observación" value="@Model.Consultation.FamiliaryBackground.FamiliaryBackgroundOtherObservation">
 
                                 </div>
                             </div>
@@ -1043,7 +1053,7 @@
 
                                     <textarea class="form-control" id="consultation_disease"
                                               rows="3"
-                                              placeholder="Escriba una descripción, o si prefiere pude ocupar el micrófono"
+                                              placeholder="Escriba una descripción, o si prefiere pude ocupar el micrófono" asp-for="Consultation.ConsultationDisease"
                                               required></textarea>
                                     <i id="dictationIcon2" class=" ri-mic-fill position-absolute" style="top: 35px; right: 15px; cursor: pointer;"></i>
 
@@ -1101,8 +1111,8 @@
                                         <td style="font-size: 0.7rem;">
                                             <i class="ri-calendar-event-fill"></i> <br /> Fecha de nacimiento <br />
                                             @((Model.DetailsPatient.PatientBirthdate.HasValue) ?
-                                                Model.DetailsPatient.PatientBirthdate.Value.ToString("yyyy-MM-dd")
-                                                : string.Empty)
+                                                                                        Model.DetailsPatient.PatientBirthdate.Value.ToString("yyyy-MM-dd")
+                                                                                        : string.Empty)
                                         </td>
                                         <td style="font-size: 0.7rem;">
                                             <i class="ri-calendar-event-fill"></i> <br /> Edad
@@ -1150,7 +1160,7 @@
                             <!-- #region organos de los sentidos-->
                             <div class="form-check form-switch">
                                 <input class="form-check-input" name="SwitchCheckSenseOrgans"
-                                       type="checkbox" role="switch" id="organssystems_organsenses">
+                                       type="checkbox" role="switch" id="organssystems_organsenses" @(Model.Consultation.OrgansSystem.OrganssystemsOrgansenses == true ? "checked" : "")>
                                 <label class="form-check-label" for="SwitchCheckSenseOrgans">
                                     Órganos de los sentidos
                                 </label>
@@ -1160,14 +1170,14 @@
                             <div class="col-lg-5">
                                 <div class="mb-3">
                                     <input type="text" class="form-control" id="organssystems_organsenses_Obs"
-                                           name="observationSenseOrgans" placeholder="Ingrese una observación">
+                                           name="observationSenseOrgans" placeholder="Ingrese una observación" value="@Model.Consultation.OrgansSystem.OrganssystemsOrgansensesObs" >
                                 </div>
                             </div>
                             <!-- #endregion organos de los sentidos-->
                             <!-- #region Respiratory-->
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" role="switch"
-                                       id="organssystems_respiratory" name="SwitchCheckRespiratory">
+                                       id="organssystems_respiratory" name="SwitchCheckRespiratory" @(Model.Consultation.OrgansSystem.OrganssystemsRespiratory == true ? "checked" : "")>
                                 <label class="form-check-label" for="SwitchCheckRespiratory">Respiratorio</label>
                             </div>
 
@@ -1175,14 +1185,14 @@
                             <div class="col-lg-5">
                                 <div class="mb-3">
                                     <input type="text" class="form-control" id="organssystems_respiratory_obs"
-                                           name="observationRespiratory" placeholder="Ingrese una observación">
+                                           name="observationRespiratory" placeholder="Ingrese una observación" value="@Model.Consultation.OrgansSystem.OrganssystemsRespiratoryObs">
                                 </div>
                             </div>
                             <!-- #endregion Respiratory-->
                             <!-- #region Cardiovascular-->
                             <div class="form-check form-switch">
                                 <input class="form-check-input" name="SwitchCheckCardiovascular"
-                                       type="checkbox" role="switch" id="organssystems_cardiovascular">
+                                       type="checkbox" role="switch" id="organssystems_cardiovascular" @(Model.Consultation.OrgansSystem.OrganssystemsCardiovascular == true ? "checked" : "")>
                                 <label class="form-check-label" for="SwitchCheckCardiovascular">Cardiovascular</label>
                             </div>
 
@@ -1190,14 +1200,14 @@
                             <div class="col-lg-5">
                                 <div class="mb-3">
                                     <input type="text" class="form-control" id="organssystems_cardiovascular_obs"
-                                           name="observationCardiovascular" placeholder="Ingrese una observación">
+                                           name="observationCardiovascular" placeholder="Ingrese una observación" value="@Model.Consultation.OrgansSystem.OrganssystemsCardiovascularObs">
                                 </div>
                             </div>
                             <!-- #endregion Cardiovascular-->
                             <!-- #region Digestive-->
                             <div class="form-check form-switch">
                                 <input class="form-check-input" name="SwitchCheckDigestive"
-                                       type="checkbox" role="switch" id="organssystems_digestive">
+                                       type="checkbox" role="switch" id="organssystems_digestive" @(Model.Consultation.OrgansSystem.OrganssystemsDigestive == true ? "checked" : "")>
                                 <label class="form-check-label" for="SwitchCheckDigestive">Digestivo</label>
                             </div>
 
@@ -1205,14 +1215,14 @@
                             <div class="col-lg-5">
                                 <div class="mb-3">
                                     <input type="text" class="form-control" id="organssystems_digestive_obs"
-                                           name="observationDigestive" placeholder="Ingrese una observación">
+                                           name="observationDigestive" placeholder="Ingrese una observación" value="@Model.Consultation.OrgansSystem.OrganssystemsDigestiveObs" >
                                 </div>
                             </div>
                             <!-- #endregion Digestive-->
                             <!-- #region Genital-->
                             <div class="form-check form-switch">
                                 <input class="form-check-input" name="SwitchCheckGenital"
-                                       type="checkbox" role="switch" id="organssystems_genital">
+                                       type="checkbox" role="switch" id="organssystems_genital" @(Model.Consultation.OrgansSystem.OrganssystemsGenital == true ? "checked" : "")>
                                 <label class="form-check-label" for="SwitchCheckGenital">Genital</label>
                             </div>
 
@@ -1220,14 +1230,14 @@
                             <div class="col-lg-5">
                                 <div class="mb-3">
                                     <input type="text" class="form-control" id="organssystems_genital_obs"
-                                           name="observationGenital" placeholder="Ingrese una observación">
+                                           name="observationGenital" placeholder="Ingrese una observación" value="@Model.Consultation.OrgansSystem.OrganssystemsGenitalObs">
                                 </div>
                             </div>
                             <!-- #endregion Genital-->
                             <!-- #region Urinary-->
                             <div class="form-check form-switch">
                                 <input class="form-check-input" name="SwitchCheckUrinary"
-                                       type="checkbox" role="switch" id="organssystems_urinary">
+                                       type="checkbox" role="switch" id="organssystems_urinary" @(Model.Consultation.OrgansSystem.OrganssystemsUrinary == true ? "checked" : "")>
                                 <label class="form-check-label" for="SwitchCheckUrinary">Urinario</label>
                             </div>
 
@@ -1235,29 +1245,29 @@
                             <div class="col-lg-5">
                                 <div class="mb-3">
                                     <input type="text" class="form-control" id="organssystems_urinary_obs"
-                                           name="observationUrinary" placeholder="Ingrese una observación">
+                                           name="observationUrinary" placeholder="Ingrese una observación" value="@Model.Consultation.OrgansSystem.OrganssystemsUrinaryObs">
                                 </div>
                             </div>
                             <!-- #endregion Urinary-->
                             <!-- #region Skeletal Muscle-->
                             <div class="form-check form-switch">
                                 <input class="form-check-input" name="SwitchCheckSkeletalMuscle"
-                                       type="checkbox" role="switch" id="organssystems_skeletal_m">
+                                       type="checkbox" role="switch" id="organssystems_skeletal_m" @(Model.Consultation.OrgansSystem.OrganssystemsSkeletalM == true ? "checked" : "")>
                                 <label class="form-check-label" for="SwitchCheckSkeletalMuscle"> Musculoesquelético</label>
                             </div>
 
 
                             <div class="col-lg-5">
                                 <div class="mb-3">
-                                    <input type="text" class="form-control" id="organssystems_skeletal_m_obs"
-                                           name="observationSkeletalMuscle" placeholder="Ingrese una observación">
+                                    <input type="text" class="form-control" id="organssystems_skeletal_m_obs" 
+                                           name="observationSkeletalMuscle" placeholder="Ingrese una observación" value="@Model.Consultation.OrgansSystem.OrganssystemsSkeletalMObs">
                                 </div>
                             </div>
                             <!-- #endregion Skeletal Muscle-->
                             <!-- #region Endocrine-->
                             <div class="form-check form-switch">
                                 <input class="form-check-input" name="SwitchCheckEndocrine"
-                                       type="checkbox" role="switch" id="organssystems_endrocrine">
+                                       type="checkbox" role="switch" id="organssystems_endrocrine" @(Model.Consultation.OrgansSystem.OrganssystemsEndrocrine == true ? "checked" : "")>
                                 <label class="form-check-label" for="SwitchCheckEndocrine">Endocrino</label>
                             </div>
 
@@ -1265,14 +1275,14 @@
                             <div class="col-lg-5">
                                 <div class="mb-3">
                                     <input type="text" class="form-control" id="organssystems_endocrine"
-                                           name="observationEndocrine" placeholder="Ingrese una observación">
+                                           name="observationEndocrine" placeholder="Ingrese una observación" value="@Model.Consultation.OrgansSystem.OrganssystemsEndocrine">
                                 </div>
                             </div>
                             <!-- #endregion Endocrine-->
                             <!-- #region Lymphatic Heme-->
                             <div class="form-check form-switch">
                                 <input class="form-check-input" name="SwitchCheckLymphaticHeme"
-                                       type="checkbox" role="switch" id="organssystems_lymphatic">
+                                       type="checkbox" role="switch" id="organssystems_lymphatic" @(Model.Consultation.OrgansSystem.OrganssystemsLymphatic == true ? "checked" : "")>
                                 <label class="form-check-label" for="SwitchCheckLymphaticHeme">Hemolinfático</label>
                             </div>
 
@@ -1281,14 +1291,14 @@
                             <div class="col-lg-5">
                                 <div class="mb-3">
                                     <input type="text" class="form-control" id="organssystems_lymphatic_obs"
-                                           name="observationLymphaticHeme" placeholder="Ingrese una observación">
+                                           name="observationLymphaticHeme" placeholder="Ingrese una observación" value="@Model.Consultation.OrgansSystem.OrganssystemsLymphaticObs">
                                 </div>
                             </div>
                             <!-- #endregion Lymphatic Heme-->
                             <!-- #region Nervous System-->
                             <div class="form-check form-switch">
                                 <input class="form-check-input" name="SwitchCheckHighlystrung"
-                                       type="checkbox" role="switch" id="organssystems_nervous">
+                                       type="checkbox" role="switch" id="organssystems_nervous"   @(Model.Consultation.OrgansSystem.OrganssystemsNervous == true ? "checked" : "")>
                                 <label class="form-check-label" for="SwitchCheckHighlystrung">Sistema Nervioso</label>
                             </div>
 
@@ -1296,7 +1306,7 @@
                             <div class="col-lg-5">
                                 <div class="mb-3">
                                     <input type="text" class="form-control" id="organssystems_nervous_obs"
-                                           name="observationHighlystrung" placeholder="Ingrese una observación">
+                                           name="observationHighlystrung" placeholder="Ingrese una observación" value="@Model.Consultation.OrgansSystem.OrganssystemsNervousObs">
                                 </div>
                             </div>
                             <!-- #endregion Nervous System-->
@@ -1329,14 +1339,14 @@
                             <div class="col-lg-4">
                                 <div class="mb-3">
                                     <label for="respiratoryRateInput" class="form-label"> Frecuencia respiratoria </label>
-                                    <input type="text" class="form-control" id="consultation_respirationrate" name="respiratoryRateInput" value="@Model.DetailsPatient.RespiratoryRate" placeholder="12" >
+                                    <input type="text" class="form-control" id="consultation_respirationrate" name="respiratoryRateInput" value="@Model.DetailsPatient.RespiratoryRate" placeholder="12">
                                 </div>
                             </div>
 
                             <div class="col-lg-4">
                                 <div class="mb-3">
                                     <label for="bloodPressureInput" class="form-label"> Presion Arterial  </label>
-                                    <input type="text" class="form-control" id="bloodPressureInput" name="bloodPressureInput" value="@Model.DetailsPatient.BloodPressureAS @Model.DetailsPatient.BloodPressureDIS" placeholder="/" >
+                                    <input type="text" class="form-control" id="bloodPressureInput" name="bloodPressureInput" value="@Model.DetailsPatient.BloodPressureAS @Model.DetailsPatient.BloodPressureDIS" placeholder="/">
                                     <span>Si la presión es de dos cifras, anteceda el 0 antes del número. Ej: 046/123 siempre colocar como el ejemplo</span>
 
                                     <input type="hidden" name="PresionArterialDiastolica" id="consultation_bloodpresuredDIS" />
@@ -1348,14 +1358,14 @@
                             <div class="col-lg-4">
                                 <div class="mb-3">
                                     <label for="pulseMinuteInput" class="form-label"> Pulso por minuto  </label>
-                                    <input type="text" class="form-control" id="consultation_pulse" name="pulseMinuteInput" value="@Model.DetailsPatient.Pulse" placeholder="12" >
+                                    <input type="text" class="form-control" id="consultation_pulse" name="pulseMinuteInput" value="@Model.DetailsPatient.Pulse" placeholder="12">
                                 </div>
                             </div>
 
                             <div class="col-lg-4">
                                 <div class="mb-3">
                                     <label for="weightInput" class="form-label"> Peso  (Kg)</label>
-                                    <input type="text" class="form-control" id="consultation_weight" name="weightInput" placeholder="40" value="@Model.DetailsPatient.Size" >
+                                    <input type="text" class="form-control" id="consultation_weight" name="weightInput" placeholder="40" value="@Model.DetailsPatient.Size">
                                 </div>
                             </div>
 
@@ -1363,17 +1373,17 @@
                             <div class="col-lg-4">
                                 <div class="mb-3">
                                     <label for="pointofsaleInput" class="form-label"> Altura  (cm)</label>
-                                    <input type="text" class="form-control" id="consultation_size" name="weightInput" placeholder="160" value="@Model.DetailsPatient.Weight" >
+                                    <input type="text" class="form-control" id="consultation_size" name="weightInput" placeholder="160" value="@Model.DetailsPatient.Weight">
                                 </div>
                             </div>
                             <!-- #endregion Signos Vitales-->
                             <!-- #region Examen Fisico Regional-->
 
                             <div class="divider-with-text">
-                                 <span>
+                                <span>
                                     Examen fisico regional
                                 </span>
-                                
+
                             </div>
                             <!-- Contenedor flex para alinear icono y texto -->
                             <div id="mensajeSwitch" style="display: flex; align-items: center; color: #555; font-style: italic; margin-top: 5px; font-size: 0.9em;">
@@ -1387,7 +1397,7 @@
                             <!-- #region  Head-->
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" role="switch"
-                                       id="physicalexamination_head">
+                                       id="physicalexamination_head" name="physicalexamination_head" @(Model.Consultation.PhysicalExamination.PhysicalexaminationHead == true ? "checked" : "")>
                                 <label class="form-check-label" for="SwitchCheckHead">Cabeza</label>
                             </div>
 
@@ -1396,7 +1406,7 @@
                                 <div class="mb-3">
 
                                     <input type="text" class="form-control" id="physicalexamination_head_obs"
-                                           name="observationHead" placeholder="Ingrese una observación">
+                                           name="observationHead" placeholder="Ingrese una observación" value="@Model.Consultation.PhysicalExamination.PhysicalexaminationHeadObs">
 
                                 </div>
                             </div>
@@ -1406,7 +1416,7 @@
 
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" role="switch"
-                                       id="physicalexamination_neck">
+                                       id="physicalexamination_neck" name="physicalexamination_neck" @(Model.Consultation.PhysicalExamination.PhysicalexaminationNeck == true ? "checked" : "")>
                                 <label class="form-check-label" for="SwitchCheckNeck">Cuello</label>
                             </div>
 
@@ -1414,7 +1424,7 @@
                                 <div class="mb-3">
 
                                     <input type="text" class="form-control" id="physicalexamination_neck_obs"
-                                           name="observationNeck" placeholder="Ingrese una observación">
+                                           name="observationNeck" placeholder="Ingrese una observación" value="@Model.Consultation.PhysicalExamination.PhysicalexaminationNeckObs">
 
                                 </div>
                             </div>
@@ -1424,7 +1434,7 @@
 
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" role="switch"
-                                       id="physicalexamination_chest">
+                                       id="physicalexamination_chest" name="physicalexamination_chest" @(Model.Consultation.PhysicalExamination.PhysicalexaminationChest == true ? "checked" : "")>
                                 <label class="form-check-label" for="SwitchCheckNeck">Tórax</label>
                             </div>
 
@@ -1432,7 +1442,7 @@
                                 <div class="mb-3">
 
                                     <input type="text" class="form-control" id="physicalexamination_chest_obs"
-                                           name="observationChest" placeholder="Ingrese una observación">
+                                           name="observationChest" placeholder="Ingrese una observación" value="@Model.Consultation.PhysicalExamination.PhysicalexaminationChestObs">
 
                                 </div>
                             </div>
@@ -1442,7 +1452,7 @@
 
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" role="switch"
-                                       id="physicalexamination_abdomen">
+                                       id="physicalexamination_abdomen" name="physicalexamination_abdomen" @(Model.Consultation.PhysicalExamination.PhysicalexaminationAbdomen == true ? "checked" : "")>
                                 <label class="form-check-label" for="SwitchCheckAbdomen">Abdomen</label>
                             </div>
 
@@ -1450,7 +1460,7 @@
                                 <div class="mb-3">
 
                                     <input type="text" class="form-control" id="physicalexamination_abdomen_obs"
-                                           name="observationAbdomen" placeholder="Ingrese una observación">
+                                           name="observationAbdomen" placeholder="Ingrese una observación" value="@Model.Consultation.PhysicalExamination.PhysicalexaminationAbdomenObs">
 
                                 </div>
                             </div>
@@ -1460,7 +1470,7 @@
 
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" role="switch"
-                                       id="physicalexamination_pelvis">
+                                       id="physicalexamination_pelvis" name="physicalexamination_pelvis"  @(Model.Consultation.PhysicalExamination.PhysicalexaminationPelvis == true ? "checked" : "")>
                                 <label class="form-check-label" for="SwitchCheckPelvis">Pelvis</label>
                             </div>
 
@@ -1468,7 +1478,7 @@
                                 <div class="mb-3">
 
                                     <input type="text" class="form-control" id="physicalexamination_pelvis_obs"
-                                           name="observationPelvis" placeholder="Ingrese una observación">
+                                           name="observationPelvis" placeholder="Ingrese una observación" value="@Model.Consultation.PhysicalExamination.PhysicalexaminationPelvisObs">
 
                                 </div>
                             </div>
@@ -1478,7 +1488,7 @@
 
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" role="switch"
-                                       id="physicalexamination_limbs">
+                                       id="physicalexamination_limbs" @(Model.Consultation.PhysicalExamination.PhysicalexaminationLimbs == true ? "checked" : "")>
                                 <label class="form-check-label" for="SwitchCheckExtremities">Extremidades</label>
                             </div>
 
@@ -1486,7 +1496,7 @@
                                 <div class="mb-3">
 
                                     <input type="text" class="form-control" id="physicalexamination_limbs_obs"
-                                           name="observationExtremities" placeholder="Ingrese una observación">
+                                           name="observationExtremities" placeholder="Ingrese una observación" value="@Model.Consultation.PhysicalExamination.PhysicalexaminationLimbsObs">
 
                                 </div>
                             </div>
@@ -1540,8 +1550,8 @@
                                     <td style="font-size: 0.7rem;">
                                         <i class="ri-calendar-event-fill"></i> <br /> Fecha de nacimiento <br />
                                         @((Model.DetailsPatient.PatientBirthdate.HasValue) ?
-                                            Model.DetailsPatient.PatientBirthdate.Value.ToString("yyyy-MM-dd")
-                                            : string.Empty)
+                                                                                Model.DetailsPatient.PatientBirthdate.Value.ToString("yyyy-MM-dd")
+                                                                                : string.Empty)
                                     </td>
                                     <td style="font-size: 0.7rem;">
                                         <i class="ri-calendar-event-fill"></i> <br /> Edad
@@ -1625,7 +1635,32 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <!-- Las filas se agregarán dinámicamente aquí -->
+                                                @if (Model.Consultation.DiagnosisConsultations != null)
+                                                {
+                                                    foreach (var diag in Model.Consultation.DiagnosisConsultations)
+                                                    {
+                                                        <tr>
+                                                            <td hidden>@diag.DiagnosisDiagnosisid</td>
+                                                            <!-- Suponiendo que tienes el nombre en alguna propiedad, por ejemplo diag.DiagnosisName,
+                                                                 de lo contrario, podrías hacer una búsqueda en Model.Diagnoses -->
+                                                            <td>
+                                                                @* Si no cuentas con el nombre directamente, puedes buscarlo:
+                               Model.Diagnoses.FirstOrDefault(d => d.DiagnosisId == diag.DiagnosisDiagnosisid)?.DiagnosisName
+                             *@
+                                                                @(Model.Diagnoses.FirstOrDefault(d => d.DiagnosisId == diag.DiagnosisDiagnosisid)?.DiagnosisName ?? "N/A")
+                                                            </td>
+                                                            <td>
+                                                                <input type="checkbox"  @(diag.DiagnosisPresumptive == true ? "checked" : "") />
+                                                            </td>
+                                                            <td>
+                                                                <input type="checkbox"  @(diag.DiagnosisDefinitive == true ? "checked" : "") />
+                                                            </td>
+                                                            <td>
+                                                                <button class="btn btn-danger btn-sm">Eliminar</button>
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                }
                                             </tbody>
                                         </table>
                                     </div>
@@ -1654,7 +1689,7 @@
                                             <div class="col-lg-12">
                                                 <div class="mb-3">
                                                     <textarea class="form-control" id="consultation_treatmentplan"
-                                                              rows="3"
+                                                              rows="3" asp-for="@Model.Consultation.ConsultationTreatmentplan"
                                                               placeholder="Escriba una descripción, o si prefiere pude ocupar el micrófono"></textarea>
                                                     <i id="dictationIcon3" class=" ri-mic-fill position-absolute" style="top: 35px; right: 15px; cursor: pointer;"></i>
 
@@ -1703,8 +1738,9 @@
                                             </div>
 
                                             <div class="col-lg-3 d-flex gap-2 align-items-start mb-3">
-                                                <button type="button" class="btn btn-soft-success waves-effect waves-light" id="selectMedications">Seleccionar
-                                                <i class="mdi mdi-plus-box-outline"></i> Agregar medicamento
+                                                <button type="button" class="btn btn-soft-success waves-effect waves-light" id="selectMedications">
+                                                    Seleccionar
+                                                    <i class="mdi mdi-plus-box-outline"></i> Agregar medicamento
                                                 </button>
                                                 <button type="button" class="btn btn-warning" data-bs-toggle="offcanvas" data-bs-target="#offcanvasFavoritos">
                                                     <i class="mdi mdi-star-outline"></i> Ver favoritos
@@ -1717,7 +1753,7 @@
 
 
                                         <!--inicio offcanvas de la los medicamentos-->
-                                   
+
 
                                         <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasFavoritos" aria-labelledby="offcanvasFavoritosLabel">
                                             <div class="offcanvas-header">
@@ -1746,7 +1782,24 @@
                                                 </tr>
                                             </thead>
                                             <tbody id="medicationsTableBody">
-                                                <!-- Las filas se agregarán dinámicamente aquí -->
+                                                @if (Model.Consultation.MedicationsConsultations != null)
+                                                {
+                                                    foreach (var med in Model.Consultation.MedicationsConsultations)
+                                                    {
+                                                        <tr>
+                                                            <td hidden>@med.MedicationsMedicationsid</td>
+                                                            <td>
+                                                                @* Buscamos la descripción en la lista de medicamentos, en caso de que el DTO no la tenga directamente *@
+                                                                @(Model.Medications.FirstOrDefault(m => m.MedicationsId == med.MedicationsMedicationsid)?.MedicationsDescription ?? "N/A")
+                                                            </td>
+                                                            <td>@med.MedicationsAmount</td>
+                                                            <td>@med.MedicationsObservation</td>
+                                                            <td>
+                                                                <button class="btn btn-danger btn-sm">Eliminar</button>
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                }
                                             </tbody>
                                         </table>
 
@@ -1755,7 +1808,7 @@
                                                 <div class="mb-3">
                                                     <label>Recomendaciones no farmacológicas</label>
                                                     <textarea class="form-control" id="consultation_nonpharmacologycal"
-                                                              rows="3"
+                                                              rows="3" asp-for="Consultation.ConsultationNonpharmacologycal"
                                                               placeholder="Escriba una descripción, o si prefiere pude ocupar el micrófono"></textarea>
                                                     <i id="dictationIcon4" class=" ri-mic-fill position-absolute" style="top: 35px; right: 15px; cursor: pointer;"></i>
 
@@ -1769,7 +1822,7 @@
                                                 <div class="mb-3">
                                                     <label>Signos de alarma</label>
                                                     <textarea class="form-control" id="consultation_warningsings"
-                                                              rows="3"
+                                                              rows="3" asp-for="Consultation.ConsultationWarningsings"
                                                               placeholder="Escriba una descripción, o si prefiere pude ocupar el micrófono"></textarea>
                                                     <i id="dictationIcon5" class=" ri-mic-fill position-absolute" style="top: 35px; right: 15px; cursor: pointer;"></i>
 
@@ -1832,7 +1885,22 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <!-- Las filas se agregarán dinámicamente aquí -->
+                                                @if (Model.Consultation.ImagesConsultations != null)
+                                                {
+                                                    foreach (var labConsulta in Model.Consultation.ImagesConsultations)
+                                                    {
+                                                        <tr>
+                                                            <td hidden>@labConsulta.ImagesImagesid</td>
+                                                            <td>
+                                                                @(Model.Images.FirstOrDefault(l => l.ImagesId == labConsulta.ImagesImagesid)?.ImagesDescription ?? "N/A")
+                                                            </td>
+                                                            <td>@labConsulta.ImagesAmount</td>
+                                                            <td>
+                                                                <button class="btn btn-danger btn-sm">Eliminar</button>
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                }
                                             </tbody>
                                         </table>
                                         <div class="mb-3 mt-4">
@@ -1860,7 +1928,7 @@
                                         <h6 class="card-title mb-0">Laboratorios(Test)</h6>
                                     </div>
                                     <select name="LaboratoriesConsultation" id="LaboratoriesConsultation"
-                                            class="form-control" >
+                                            class="form-control">
                                         <option value="">Escriba y seleccione un laboratorio</option>
                                         @foreach (var images in Model.Laboratories)
                                         {
@@ -1892,7 +1960,23 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <!-- Las filas se agregarán dinámicamente aquí -->
+                                                @if (Model.Consultation.LaboratoriesConsultations != null)
+                                                {
+                                                    foreach (var labConsulta in Model.Consultation.LaboratoriesConsultations)
+                                                    {
+                                                        <tr>
+                                                            <td hidden>@labConsulta.LaboratoriesLaboratoriesid</td>
+                                                            <td>
+                                                                @(Model.Laboratories.FirstOrDefault(l => l.LaboratoriesId == labConsulta.LaboratoriesLaboratoriesid)?.LaboratoriesDescription ?? "N/A")
+                                                            </td>
+                                                            <td>@labConsulta.LaboratoriesAmount</td>
+                                                            <td>@labConsulta.LaboratoriesObservation</td>
+                                                            <td>
+                                                                <button class="btn btn-danger btn-sm">Eliminar</button>
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                }
                                             </tbody>
 
                                         </table>
@@ -1966,21 +2050,15 @@
                                             <div class="col-md-6">
                                                 <div class="form-check mb-3 mt-2">
                                                     <input type="checkbox" class="form-check-input" id="cert_tiene_enfermedad" name="tiene_enfermedad" />
-                                                    <label class="form-check-label" for="cert_tiene_enfermedad">Presenta enfermedad</label>
+                                                    <label class="form-check-label" for="cert_tiene_enfermedad">Tiene enfermedad</label>
                                                 </div>
                                             </div>
 
-                                            <div class="col-md-6">
-                                                <div class="form-check mb-3 mt-2">
-                                                    <input type="checkbox" class="form-check-input" id="cert_tiene_sintomas" name="tiene_sintomas" />
-                                                    <label class="form-check-label" for="cert_tiene_sintomas">Tiene Sintomas</label>
-                                                </div>
-                                            </div>
                                             <!-- Observación (condicional) -->
                                             <div class="col-md-6" id="observacion_container" style="display: none;">
-                                                <div class="mb-3">
+                                                <div class="mb-3" >
                                                     <label for="cert_observacion" class="form-label">Observación</label>
-                                                    <textarea class="form-control" name="observacion" id="cert_observacion" rows="2"></textarea>
+                                                    <textarea class="form-control" name="observacion" id="cert_observacion" asp-for="Consultation.ConsultationDiseaseobservation" rows="2"></textarea>
                                                 </div>
                                             </div>
                                         </div>
@@ -2005,7 +2083,7 @@
                                             <div class="col-lg-12">
                                                 <div class="mb-3">
                                                     <textarea class="form-control" id="consultation_observation"
-                                                              rows="3"
+                                                              rows="3" asp-for="@Model.Consultation.ConsultationObservation"
                                                               placeholder="Escriba una descripción, o si prefiere pude ocupar el micrófono"></textarea>
                                                     <i id="dictationIcon6" class=" ri-mic-fill position-absolute" style="top: 35px; right: 15px; cursor: pointer;"></i>
 

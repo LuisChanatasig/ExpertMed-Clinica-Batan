@@ -74,238 +74,244 @@ namespace ExpertMed.Services
         }
 
 
-        public async Task CrearConsultaAsync(
-            int? consultationId,
-         DateTime consultation_creationdate,
-         int? consultation_usercreate,
-         int consultation_sequential,
-         int consultation_patient,
-         int consultation_speciality,
-         string consultation_historyclinic,
-         string consultation_reason,
-         string consultation_disease,
-         string consultation_familiaryname,
-         string consultation_warningsings,
-         string consultation_nonpharmacologycal,
-         int consultation_familiarytype,
-         string consultation_familiaryphone,
-         string consultation_temperature,
-         string consultation_respirationrate,
-         string consultation_bloodpressuredAS,
-         string consultation_bloodpresuredDIS,
-         string consultation_pulse,
-         string consultation_weight,
-         string consultation_size,
-         string consultation_treatmentplan,
-         string consultation_observation,
-         string consultation_personalbackground,
-         int consultation_disablilitydays,
-         string consultation_evolution_notes,
-         string consultation_therapies,
-         int consultation_type,
-         int consultation_status,
-         bool consultation_hasdisease,
-string consultation_diseaseobservation,
-string consultation_contingencytype,
- bool consultation_is_final,
-         // Parámetros para órganos y sistemas
-         bool? organssystems_organsenses,
-         string organssystems_organsenses_Obs,
-         bool? organssystems_respiratory,
-         string organssystems_respiratory_obs,
-         bool? organssystems_cardiovascular,
-         string organssystems_cardiovascular_obs,
-         bool? organssystems_digestive,
-         string organssystems_digestive_obs,
-         bool? organssystems_genital,
-         string organssystems_genital_obs,
-         bool? organssystems_urinary,
-         string organssystems_urinary_obs,
-         bool? organssystems_skeletal_m,
-         string organssystems_skeletal_m_obs,
-         bool? organssystems_endrocrine,
-         string organssystems_endocrine,
-         bool? organssystems_lymphatic,
-         string organssystems_lymphatic_obs,
-         bool? organssystems_nervous,
-         string organssystems_nervous_obs,
-         // Parámetros para examen físico
-         bool? physicalexamination_head,
-         string physicalexamination_head_obs,
-         bool? physicalexamination_neck,
-         string physicalexamination_neck_obs,
-         bool? physicalexamination_chest,
-         string physicalexamination_chest_obs,
-         bool? physicalexamination_abdomen,
-         string physicalexamination_abdomen_obs,
-         bool? physicalexamination_pelvis,
-         string physicalexamination_pelvis_obs,
-         bool? physicalexamination_limbs,
-         string physicalexamination_limbs_obs,
-         // Parámetros para antecedentes familiares
-         bool? familiary_background_heartdisease,
-         string familiary_background_heartdisease_observation,
-         int? familiary_background_relatshcatalog_heartdisease,
-         bool? familiary_background_diabetes,
-         string familiary_background_diabetes_observation,
-         int? familiary_background_relatshcatalog_diabetes,
-         bool? familiary_background_dxcardiovascular,
-         string familiary_background_dxcardiovascular_observation,
-         int? familiary_background_relatshcatalog_dxcardiovascular,
-         bool? familiary_background_hypertension,
-         string familiary_background_hypertension_observation,
-         int? familiary_background_relatshcatalog_hypertension,
-         bool? familiary_background_cancer,
-         string familiary_background_cancer_observation,
-         int? familiary_background_relatshcatalog_cancer,
-         bool? familiary_background_tuberculosis,
-         string familiary_background_tuberculosis_observation,
-         int? familiary_background_relatsh_tuberculosis,
-         bool? familiary_background_dxmental,
-         string familiary_background_dxmental_observation,
-         int? familiary_background_relatshcatalog_dxmental,
-         bool? familiary_background_dxinfectious,
-         string familiary_background_dxinfectious_observation,
-         int? familiary_background_relatshcatalog_dxinfectious,
-         bool? familiary_background_malformation,
-         string familiary_background_malformation_observation,
-         int? familiary_background_relatshcatalog_malformation,
-         bool? familiary_background_other,
-         string familiary_background_other_observation,
-         int? familiary_background_relatshcatalog_other,
-         // Tablas relacionadas
-         List<ConsultaAlergiaDTO> allergies_consultation,
-         List<ConsultaCirugiaDTO> surgeries_consultation,
-         List<ConsultaMedicamentoDTO> medications_consultation,
-         List<ConsultaLaboratorioDTO> laboratories_consultation,
-         List<ConsultaImagenDTO> images_consutlation,
-         List<ConsultaDiagnosticoDTO> diagnosis_consultation,
-         List<ConsultaProcedimientoDTO> procedures
-)
+        public async Task<int> CrearConsultaAsync(
+       int? consultationId,
+       DateTime consultation_creationdate,
+       int? consultation_usercreate,
+       int consultation_patient,
+       int consultation_speciality,
+       string consultation_historyclinic,
+       string consultation_reason,
+       string consultation_disease,
+       string consultation_familiaryname,
+       string consultation_warningsings,
+       string consultation_nonpharmacologycal,
+       int consultation_familiarytype,
+       string consultation_familiaryphone,
+       string consultation_temperature,
+       string consultation_respirationrate,
+       string consultation_bloodpressuredAS,
+       string consultation_bloodpresuredDIS,
+       string consultation_pulse,
+       string consultation_weight,
+       string consultation_size,
+       string consultation_treatmentplan,
+       string consultation_observation,
+       string consultation_personalbackground,
+       int consultation_disablilitydays,
+       string consultation_evolution_notes,
+       string consultation_therapies,
+       int consultation_type,
+       int consultation_status,
+       bool consultation_hasdisease,
+       string consultation_diseaseobservation,
+       string consultation_contingencytype,
+       bool? consultation_hassymptoms,
+       bool consultation_is_final,
+
+       bool? organssystems_organsenses,
+       string organssystems_organsenses_Obs,
+       bool? organssystems_respiratory,
+       string organssystems_respiratory_obs,
+       bool? organssystems_cardiovascular,
+       string organssystems_cardiovascular_obs,
+       bool? organssystems_digestive,
+       string organssystems_digestive_obs,
+       bool? organssystems_genital,
+       string organssystems_genital_obs,
+       bool? organssystems_urinary,
+       string organssystems_urinary_obs,
+       bool? organssystems_skeletal_m,
+       string organssystems_skeletal_m_obs,
+       bool? organssystems_endrocrine,
+       string organssystems_endocrine,
+       bool? organssystems_lymphatic,
+       string organssystems_lymphatic_obs,
+       bool? organssystems_nervous,
+       string organssystems_nervous_obs,
+
+       bool? physicalexamination_head,
+       string physicalexamination_head_obs,
+       bool? physicalexamination_neck,
+       string physicalexamination_neck_obs,
+       bool? physicalexamination_chest,
+       string physicalexamination_chest_obs,
+       bool? physicalexamination_abdomen,
+       string physicalexamination_abdomen_obs,
+       bool? physicalexamination_pelvis,
+       string physicalexamination_pelvis_obs,
+       bool? physicalexamination_limbs,
+       string physicalexamination_limbs_obs,
+
+       bool? familiary_background_heartdisease,
+       string familiary_background_heartdisease_observation,
+       int? familiary_background_relatshcatalog_heartdisease,
+       bool? familiary_background_diabetes,
+       string familiary_background_diabetes_observation,
+       int? familiary_background_relatshcatalog_diabetes,
+       bool? familiary_background_dxcardiovascular,
+       string familiary_background_dxcardiovascular_observation,
+       int? familiary_background_relatshcatalog_dxcardiovascular,
+       bool? familiary_background_hypertension,
+       string familiary_background_hypertension_observation,
+       int? familiary_background_relatshcatalog_hypertension,
+       bool? familiary_background_cancer,
+       string familiary_background_cancer_observation,
+       int? familiary_background_relatshcatalog_cancer,
+       bool? familiary_background_tuberculosis,
+       string familiary_background_tuberculosis_observation,
+       int? familiary_background_relatsh_tuberculosis,
+       bool? familiary_background_dxmental,
+       string familiary_background_dxmental_observation,
+       int? familiary_background_relatshcatalog_dxmental,
+       bool? familiary_background_dxinfectious,
+       string familiary_background_dxinfectious_observation,
+       int? familiary_background_relatshcatalog_dxinfectious,
+       bool? familiary_background_malformation,
+       string familiary_background_malformation_observation,
+       int? familiary_background_relatshcatalog_malformation,
+       bool? familiary_background_other,
+       string familiary_background_other_observation,
+       int? familiary_background_relatshcatalog_other,
+
+       List<ConsultaAlergiaDTO> allergies_consultation,
+       List<ConsultaCirugiaDTO> surgeries_consultation,
+       List<ConsultaMedicamentoDTO> medications_consultation,
+       List<ConsultaLaboratorioDTO> laboratories_consultation,
+       List<ConsultaImagenDTO> images_consutlation,
+       List<ConsultaDiagnosticoDTO> diagnosis_consultation,
+       List<ConsultaProcedimientoDTO> procedures
+   )
         {
-            using (var connection = new SqlConnection(_dbContext.Database.GetConnectionString()))
+            using var connection = new SqlConnection(_dbContext.Database.GetConnectionString());
+            using var command = new SqlCommand("sp_CreateConsultation", connection)
             {
-                using (var command = new SqlCommand("sp_CreateConsultation", connection))
-                {
-                    command.CommandType = CommandType.StoredProcedure;
+                CommandType = CommandType.StoredProcedure
+            };
 
-                    // Parámetros de consulta
-                    AddSqlParameter(command, "@consultation_id",consultationId);
-                    AddSqlParameter(command, "@consultation_creationdate", DateTime.Today);
-                    AddSqlParameter(command, "@consultation_usercreate", consultation_usercreate);
-                    AddSqlParameter(command, "@consultation_patient", consultation_patient);
-                    AddSqlParameter(command, "@consultation_speciality", consultation_speciality);
-                    AddSqlParameter(command, "@consultation_historyclinic", consultation_historyclinic);
-                    AddSqlParameter(command, "@consultation_reason", consultation_reason);
-                    AddSqlParameter(command, "@consultation_disease", consultation_disease);
-                    AddSqlParameter(command, "@consultation_familiaryname", consultation_familiaryname);
-                    AddSqlParameter(command, "@consultation_warningsings", consultation_warningsings);
-                    AddSqlParameter(command, "@consultation_nonpharmacologycal", consultation_nonpharmacologycal);
-                    AddSqlParameter(command, "@consultation_familiarytype", consultation_familiarytype);
-                    AddSqlParameter(command, "@consultation_familiaryphone", consultation_familiaryphone);
-                    AddSqlParameter(command, "@consultation_temperature", consultation_temperature);
-                    AddSqlParameter(command, "@consultation_respirationrate", consultation_respirationrate);
-                    AddSqlParameter(command, "@consultation_bloodpressuredAS", consultation_bloodpressuredAS);
-                    AddSqlParameter(command, "@consultation_bloodpresuredDIS", consultation_bloodpresuredDIS);
-                    AddSqlParameter(command, "@consultation_pulse", consultation_pulse);
-                    AddSqlParameter(command, "@consultation_weight", consultation_weight);
-                    AddSqlParameter(command, "@consultation_size", consultation_size);
-                    AddSqlParameter(command, "@consultation_treatmentplan", consultation_treatmentplan);
-                    AddSqlParameter(command, "@consultation_observation", consultation_observation);
-                    AddSqlParameter(command, "@consultation_personalbackground", consultation_personalbackground);
-                    AddSqlParameter(command, "@consultation_disablilitydays", consultation_disablilitydays);
-                    AddSqlParameter(command, "@consultation_evolution_notes", consultation_evolution_notes);
-                    AddSqlParameter(command, "@consultation_therapies", consultation_therapies);
-                    AddSqlParameter(command, "@consultation_type", consultation_type);
+            // OUTPUT para capturar el ID
+            var idParam = new SqlParameter("@consultation_id", SqlDbType.Int)
+            {
+                Direction = ParameterDirection.InputOutput,
+                Value = consultationId.HasValue ? (object)consultationId.Value : DBNull.Value
+            };
+            command.Parameters.Add(idParam);
 
-                    AddSqlParameter(command, "@consultation_status", consultation_status);
-                    AddSqlParameter(command, "@consultation_hasdisease", consultation_hasdisease);
-                    AddSqlParameter(command, "@consultation_diseaseobservation", consultation_diseaseobservation);
-                    AddSqlParameter(command, "@consultation_contingencytype", consultation_contingencytype);
-                    AddSqlParameter(command, "@consultation_is_final", consultation_is_final);
+            // Parámetros simples
+            AddSqlParameter(command, "@consultation_creationdate", consultation_creationdate);
+            AddSqlParameter(command, "@consultation_usercreate", consultation_usercreate);
+            AddSqlParameter(command, "@consultation_patient", consultation_patient);
+            AddSqlParameter(command, "@consultation_speciality", consultation_speciality);
+            AddSqlParameter(command, "@consultation_historyclinic", consultation_historyclinic);
+            AddSqlParameter(command, "@consultation_reason", consultation_reason);
+            AddSqlParameter(command, "@consultation_disease", consultation_disease);
+            AddSqlParameter(command, "@consultation_familiaryname", consultation_familiaryname);
+            AddSqlParameter(command, "@consultation_warningsings", consultation_warningsings);
+            AddSqlParameter(command, "@consultation_nonpharmacologycal", consultation_nonpharmacologycal);
+            AddSqlParameter(command, "@consultation_familiarytype", consultation_familiarytype);
+            AddSqlParameter(command, "@consultation_familiaryphone", consultation_familiaryphone);
+            AddSqlParameter(command, "@consultation_temperature", consultation_temperature);
+            AddSqlParameter(command, "@consultation_respirationrate", consultation_respirationrate);
+            AddSqlParameter(command, "@consultation_bloodpressuredAS", consultation_bloodpressuredAS);
+            AddSqlParameter(command, "@consultation_bloodpresuredDIS", consultation_bloodpresuredDIS);
+            AddSqlParameter(command, "@consultation_pulse", consultation_pulse);
+            AddSqlParameter(command, "@consultation_weight", consultation_weight);
+            AddSqlParameter(command, "@consultation_size", consultation_size);
+            AddSqlParameter(command, "@consultation_treatmentplan", consultation_treatmentplan);
+            AddSqlParameter(command, "@consultation_observation", consultation_observation);
+            AddSqlParameter(command, "@consultation_personalbackground", consultation_personalbackground);
+            AddSqlParameter(command, "@consultation_disablilitydays", consultation_disablilitydays);
+            AddSqlParameter(command, "@consultation_evolution_notes", consultation_evolution_notes);
+            AddSqlParameter(command, "@consultation_therapies", consultation_therapies);
+            AddSqlParameter(command, "@consultation_type", consultation_type);
+            AddSqlParameter(command, "@consultation_status", consultation_status);
+            AddSqlParameter(command, "@consultation_hasdisease", consultation_hasdisease);
+            AddSqlParameter(command, "@consultation_diseaseobservation", consultation_diseaseobservation);
+            AddSqlParameter(command, "@consultation_contingencytype", consultation_contingencytype);
+            AddSqlParameter(command, "@consultation_hassymptoms", consultation_hassymptoms);
+            AddSqlParameter(command, "@consultation_is_final", consultation_is_final);
 
+            // Órganos y sistemas
+            AddSqlParameter(command, "@organssystems_organsenses", organssystems_organsenses);
+            AddSqlParameter(command, "@organssystems_organsenses_Obs", organssystems_organsenses_Obs);
+            AddSqlParameter(command, "@organssystems_respiratory", organssystems_respiratory);
+            AddSqlParameter(command, "@organssystems_respiratory_obs", organssystems_respiratory_obs);
+            AddSqlParameter(command, "@organssystems_cardiovascular", organssystems_cardiovascular);
+            AddSqlParameter(command, "@organssystems_cardiovascular_obs", organssystems_cardiovascular_obs);
+            AddSqlParameter(command, "@organssystems_digestive", organssystems_digestive);
+            AddSqlParameter(command, "@organssystems_digestive_obs", organssystems_digestive_obs);
+            AddSqlParameter(command, "@organssystems_genital", organssystems_genital);
+            AddSqlParameter(command, "@organssystems_genital_obs", organssystems_genital_obs);
+            AddSqlParameter(command, "@organssystems_urinary", organssystems_urinary);
+            AddSqlParameter(command, "@organssystems_urinary_obs", organssystems_urinary_obs);
+            AddSqlParameter(command, "@organssystems_skeletal_m", organssystems_skeletal_m);
+            AddSqlParameter(command, "@organssystems_skeletal_m_obs", organssystems_skeletal_m_obs);
+            AddSqlParameter(command, "@organssystems_endrocrine", organssystems_endrocrine);
+            AddSqlParameter(command, "@organssystems_endocrine", organssystems_endocrine);
+            AddSqlParameter(command, "@organssystems_lymphatic", organssystems_lymphatic);
+            AddSqlParameter(command, "@organssystems_lymphatic_obs", organssystems_lymphatic_obs);
+            AddSqlParameter(command, "@organssystems_nervous", organssystems_nervous);
+            AddSqlParameter(command, "@organssystems_nervous_obs", organssystems_nervous_obs);
 
-                    // Parámetros de órganos y sistemas
-                    AddSqlParameter(command, "@organssystems_organsenses", organssystems_organsenses);
-                    AddSqlParameter(command, "@organssystems_organsenses_Obs", organssystems_organsenses_Obs);
-                    AddSqlParameter(command, "@organssystems_respiratory", organssystems_respiratory);
-                    AddSqlParameter(command, "@organssystems_respiratory_obs", organssystems_respiratory_obs);
-                    AddSqlParameter(command, "@organssystems_cardiovascular", organssystems_cardiovascular);
-                    AddSqlParameter(command, "@organssystems_cardiovascular_obs", organssystems_cardiovascular_obs);
-                    AddSqlParameter(command, "@organssystems_digestive", organssystems_digestive);
-                    AddSqlParameter(command, "@organssystems_digestive_obs", organssystems_digestive_obs);
-                    AddSqlParameter(command, "@organssystems_genital", organssystems_genital);
-                    AddSqlParameter(command, "@organssystems_genital_obs", organssystems_genital_obs);
-                    AddSqlParameter(command, "@organssystems_urinary", organssystems_urinary);
-                    AddSqlParameter(command, "@organssystems_urinary_obs", organssystems_urinary_obs);
-                    AddSqlParameter(command, "@organssystems_skeletal_m", organssystems_skeletal_m);
-                    AddSqlParameter(command, "@organssystems_skeletal_m_obs", organssystems_skeletal_m_obs);
-                    AddSqlParameter(command, "@organssystems_endrocrine", organssystems_endrocrine);
-                    AddSqlParameter(command, "@organssystems_endocrine", organssystems_endocrine);
-                    AddSqlParameter(command, "@organssystems_lymphatic", organssystems_lymphatic);
-                    AddSqlParameter(command, "@organssystems_lymphatic_obs", organssystems_lymphatic_obs);
-                    AddSqlParameter(command, "@organssystems_nervous", organssystems_nervous);
-                    AddSqlParameter(command, "@organssystems_nervous_obs", organssystems_nervous_obs);
+            // Examen físico
+            AddSqlParameter(command, "@physicalexamination_head", physicalexamination_head);
+            AddSqlParameter(command, "@physicalexamination_head_obs", physicalexamination_head_obs);
+            AddSqlParameter(command, "@physicalexamination_neck", physicalexamination_neck);
+            AddSqlParameter(command, "@physicalexamination_neck_obs", physicalexamination_neck_obs);
+            AddSqlParameter(command, "@physicalexamination_chest", physicalexamination_chest);
+            AddSqlParameter(command, "@physicalexamination_chest_obs", physicalexamination_chest_obs);
+            AddSqlParameter(command, "@physicalexamination_abdomen", physicalexamination_abdomen);
+            AddSqlParameter(command, "@physicalexamination_abdomen_obs", physicalexamination_abdomen_obs);
+            AddSqlParameter(command, "@physicalexamination_pelvis", physicalexamination_pelvis);
+            AddSqlParameter(command, "@physicalexamination_pelvis_obs", physicalexamination_pelvis_obs);
+            AddSqlParameter(command, "@physicalexamination_limbs", physicalexamination_limbs);
+            AddSqlParameter(command, "@physicalexamination_limbs_obs", physicalexamination_limbs_obs);
 
-                    // Parámetros de examen físico
-                    AddSqlParameter(command, "@physicalexamination_head", physicalexamination_head);
-                    AddSqlParameter(command, "@physicalexamination_head_obs", physicalexamination_head_obs);
-                    AddSqlParameter(command, "@physicalexamination_neck", physicalexamination_neck);
-                    AddSqlParameter(command, "@physicalexamination_neck_obs", physicalexamination_neck_obs);
-                    AddSqlParameter(command, "@physicalexamination_chest", physicalexamination_chest);
-                    AddSqlParameter(command, "@physicalexamination_chest_obs", physicalexamination_chest_obs);
-                    AddSqlParameter(command, "@physicalexamination_abdomen", physicalexamination_abdomen);
-                    AddSqlParameter(command, "@physicalexamination_abdomen_obs", physicalexamination_abdomen_obs);
-                    AddSqlParameter(command, "@physicalexamination_pelvis", physicalexamination_pelvis);
-                    AddSqlParameter(command, "@physicalexamination_pelvis_obs", physicalexamination_pelvis_obs);
-                    AddSqlParameter(command, "@physicalexamination_limbs", physicalexamination_limbs);
-                    AddSqlParameter(command, "@physicalexamination_limbs_obs", physicalexamination_limbs_obs);
+            // Antecedentes familiares
+            AddSqlParameter(command, "@familiary_background_heartdisease", familiary_background_heartdisease);
+            AddSqlParameter(command, "@familiary_background_heartdisease_observation", familiary_background_heartdisease_observation);
+            AddSqlParameter(command, "@familiary_background_relatshcatalog_heartdisease", familiary_background_relatshcatalog_heartdisease);
+            AddSqlParameter(command, "@familiary_background_diabetes", familiary_background_diabetes);
+            AddSqlParameter(command, "@familiary_background_diabetes_observation", familiary_background_diabetes_observation);
+            AddSqlParameter(command, "@familiary_background_relatshcatalog_diabetes", familiary_background_relatshcatalog_diabetes);
+            AddSqlParameter(command, "@familiary_background_dxcardiovascular", familiary_background_dxcardiovascular);
+            AddSqlParameter(command, "@familiary_background_dxcardiovascular_observation", familiary_background_dxcardiovascular_observation);
+            AddSqlParameter(command, "@familiary_background_relatshcatalog_dxcardiovascular", familiary_background_relatshcatalog_dxcardiovascular);
+            AddSqlParameter(command, "@familiary_background_hypertension", familiary_background_hypertension);
+            AddSqlParameter(command, "@familiary_background_hypertension_observation", familiary_background_hypertension_observation);
+            AddSqlParameter(command, "@familiary_background_relatshcatalog_hypertension", familiary_background_relatshcatalog_hypertension);
+            AddSqlParameter(command, "@familiary_background_cancer", familiary_background_cancer);
+            AddSqlParameter(command, "@familiary_background_cancer_observation", familiary_background_cancer_observation);
+            AddSqlParameter(command, "@familiary_background_relatshcatalog_cancer", familiary_background_relatshcatalog_cancer);
+            AddSqlParameter(command, "@familiary_background_tuberculosis", familiary_background_tuberculosis);
+            AddSqlParameter(command, "@familiary_background_tuberculosis_observation", familiary_background_tuberculosis_observation);
+            AddSqlParameter(command, "@familiary_background_relatsh_tuberculosis", familiary_background_relatsh_tuberculosis);
+            AddSqlParameter(command, "@familiary_background_dxmental", familiary_background_dxmental);
+            AddSqlParameter(command, "@familiary_background_dxmental_observation", familiary_background_dxmental_observation);
+            AddSqlParameter(command, "@familiary_background_relatshcatalog_dxmental", familiary_background_relatshcatalog_dxmental);
+            AddSqlParameter(command, "@familiary_background_dxinfectious", familiary_background_dxinfectious);
+            AddSqlParameter(command, "@familiary_background_dxinfectious_observation", familiary_background_dxinfectious_observation);
+            AddSqlParameter(command, "@familiary_background_relatshcatalog_dxinfectious", familiary_background_relatshcatalog_dxinfectious);
+            AddSqlParameter(command, "@familiary_background_malformation", familiary_background_malformation);
+            AddSqlParameter(command, "@familiary_background_malformation_observation", familiary_background_malformation_observation);
+            AddSqlParameter(command, "@familiary_background_relatshcatalog_malformation", familiary_background_relatshcatalog_malformation);
+            AddSqlParameter(command, "@familiary_background_other", familiary_background_other);
+            AddSqlParameter(command, "@familiary_background_other_observation", familiary_background_other_observation);
+            AddSqlParameter(command, "@familiary_background_relatshcatalog_other", familiary_background_relatshcatalog_other);
 
-                    // Parámetros de antecedentes familiares
-                    AddSqlParameter(command, "@familiary_background_heartdisease", familiary_background_heartdisease);
-                    AddSqlParameter(command, "@familiary_background_heartdisease_observation", familiary_background_heartdisease_observation);
-                    AddSqlParameter(command, "@familiary_background_relatshcatalog_heartdisease", familiary_background_relatshcatalog_heartdisease);
-                    AddSqlParameter(command, "@familiary_background_diabetes", familiary_background_diabetes);
-                    AddSqlParameter(command, "@familiary_background_diabetes_observation", familiary_background_diabetes_observation);
-                    AddSqlParameter(command, "@familiary_background_relatshcatalog_diabetes", familiary_background_relatshcatalog_diabetes);
-                    AddSqlParameter(command, "@familiary_background_dxcardiovascular", familiary_background_dxcardiovascular);
-                    AddSqlParameter(command, "@familiary_background_dxcardiovascular_observation", familiary_background_dxcardiovascular_observation);
-                    AddSqlParameter(command, "@familiary_background_relatshcatalog_dxcardiovascular", familiary_background_relatshcatalog_dxcardiovascular);
-                    AddSqlParameter(command, "@familiary_background_hypertension", familiary_background_hypertension);
-                    AddSqlParameter(command, "@familiary_background_hypertension_observation", familiary_background_hypertension_observation);
-                    AddSqlParameter(command, "@familiary_background_relatshcatalog_hypertension", familiary_background_relatshcatalog_hypertension);
-                    AddSqlParameter(command, "@familiary_background_cancer", familiary_background_cancer);
-                    AddSqlParameter(command, "@familiary_background_cancer_observation", familiary_background_cancer_observation);
-                    AddSqlParameter(command, "@familiary_background_relatshcatalog_cancer", familiary_background_relatshcatalog_cancer);
-                    AddSqlParameter(command, "@familiary_background_tuberculosis", familiary_background_tuberculosis);
-                    AddSqlParameter(command, "@familiary_background_tuberculosis_observation", familiary_background_tuberculosis_observation);
-                    AddSqlParameter(command, "@familiary_background_relatsh_tuberculosis", familiary_background_relatsh_tuberculosis);
-                    AddSqlParameter(command, "@familiary_background_dxmental", familiary_background_dxmental);
-                    AddSqlParameter(command, "@familiary_background_dxmental_observation", familiary_background_dxmental_observation);
-                    AddSqlParameter(command, "@familiary_background_relatshcatalog_dxmental", familiary_background_relatshcatalog_dxmental);
-                    AddSqlParameter(command, "@familiary_background_dxinfectious", familiary_background_dxinfectious);
-                    AddSqlParameter(command, "@familiary_background_dxinfectious_observation", familiary_background_dxinfectious_observation);
-                    AddSqlParameter(command, "@familiary_background_relatshcatalog_dxinfectious", familiary_background_relatshcatalog_dxinfectious);
-                    AddSqlParameter(command, "@familiary_background_malformation", familiary_background_malformation);
-                    AddSqlParameter(command, "@familiary_background_malformation_observation", familiary_background_malformation_observation);
-                    AddSqlParameter(command, "familiary_background_relatshcatalog_malformation", familiary_background_relatshcatalog_malformation);
-                    AddSqlParameter(command, "@familiary_background_other", familiary_background_other);
-                    AddSqlParameter(command, "@familiary_background_other_observation", familiary_background_other_observation);
-                    AddSqlParameter(command, "@familiary_background_relatshcatalog_other", familiary_background_relatshcatalog_other);
+            // TVPs
+            AddSqlParameter(command, "@allergies", CreateDataTable(allergies_consultation));
+            AddSqlParameter(command, "@surgeries", CreateDataTable(surgeries_consultation));
+            AddSqlParameter(command, "@medications", CreateDataTable(medications_consultation));
+            AddSqlParameter(command, "@laboratories", CreateDataTable(laboratories_consultation));
+            AddSqlParameter(command, "@images", CreateDataTable(images_consutlation));
+            AddSqlParameter(command, "@diagnostics", CreateDataTable(diagnosis_consultation));
+            AddSqlParameter(command, "@procedures", CreateDataTable(procedures));
 
-                    // Tablas relacionadas (se inicializan con CreateDataTable)
-                    AddSqlParameter(command, "@allergies", CreateDataTable(allergies_consultation));
-                    AddSqlParameter(command, "@surgeries", CreateDataTable(surgeries_consultation));
-                    AddSqlParameter(command, "@medications", CreateDataTable(medications_consultation));
-                    AddSqlParameter(command, "@laboratories", CreateDataTable(laboratories_consultation));
-                    AddSqlParameter(command, "@images", CreateDataTable(images_consutlation));
-                    AddSqlParameter(command, "@diagnostics", CreateDataTable(diagnosis_consultation));
-                    AddSqlParameter(command, "@procedures", CreateDataTable(procedures));
+            await connection.OpenAsync();
+            await command.ExecuteNonQueryAsync();
 
-                    await connection.OpenAsync();
-                    await command.ExecuteNonQueryAsync();
-                }
-            }
+            return (int)idParam.Value;
         }
 
         private void AddSqlParameter(SqlCommand command, string paramName, object value)
@@ -349,13 +355,25 @@ string consultation_contingencytype,
 
 
         public Consulta GetConsultationDetails(int consultationId)
-        {
-            var consulta = new Consulta();
+        {// Inicializar todas las listas y objetos para evitar nulls
+            var consulta = new Consulta
+            {
+                DiagnosisConsultations = new List<ConsultaDiagnosticoDTO>(),
+                AllergiesConsultations = new List<ConsultaAlergiaDTO>(),
+                ImagesConsultations = new List<ConsultaImagenDTO>(),
+                LaboratoriesConsultations = new List<ConsultaLaboratorioDTO>(),
+                MedicationsConsultations = new List<ConsultaMedicamentoDTO>(),
+                Procedures = new List<ConsultaProcedimientoDTO>(),
+                SurgeriesConsultations = new List<ConsultaCirugiaDTO>(),
+                FamiliaryBackground = new FamiliaryBackground(),
+                OrgansSystem = new OrgansSystem(),
+                PhysicalExamination = new PhysicalExamination()
+            };
+
 
             using (var connection = new SqlConnection(_dbContext.Database.GetConnectionString()))
             {
                 connection.Open();
-
                 using (var command = new SqlCommand("sp_GetConsultationDetails", connection))
                 {
                     command.CommandType = CommandType.StoredProcedure;
@@ -363,320 +381,285 @@ string consultation_contingencytype,
 
                     using (var reader = command.ExecuteReader())
                     {
-                        // Leer la consulta principal
+                        // Helper method para obtener valores seguros
+                        T GetValueOrDefault<T>(string columnName, T defaultValue = default(T))
+                        {
+                            var ordinal = reader.GetOrdinal(columnName);
+                            return reader.IsDBNull(ordinal) ? defaultValue : (T)reader.GetValue(ordinal);
+                        }
+
+                        string GetStringOrEmpty(string columnName) => GetValueOrDefault(columnName, string.Empty);
+                        int GetIntOrZero(string columnName) => GetValueOrDefault(columnName, 0);
+                        DateTime GetDateTimeOrMin(string columnName) => GetValueOrDefault(columnName, DateTime.MinValue);
+                        bool GetBoolOrFalse(string columnName) => GetValueOrDefault(columnName, false);
+
+                        // 1) Consulta principal
                         if (reader.Read())
                         {
-                            consulta.ConsultationId = reader.GetInt32(0);
-                            consulta.ConsultationCreationdate = reader.IsDBNull(1) ? (DateTime?)null : reader.GetDateTime(1);
-                            consulta.ConsultationUsercreate = reader.IsDBNull(2) ? (int?)null : reader.GetInt32(2);
-                            consulta.ConsultationPatient = reader.GetInt32(3);
-                            consulta.ConsultationSpeciality = reader.IsDBNull(4) ? (int?)null : reader.GetInt32(4);
-                            consulta.ConsultationHistoryclinic = reader.GetString(5);
-                            consulta.ConsultationSequential = reader.IsDBNull(6) ? (int?)null : reader.GetInt32(6);
-                            consulta.ConsultationReason = reader.IsDBNull(7) ? null : reader.GetString(7);
-                            consulta.ConsultationDisease = reader.IsDBNull(8) ? null : reader.GetString(8);
-                            consulta.ConsultationFamiliaryname = reader.IsDBNull(9) ? null : reader.GetString(9);
-                            consulta.ConsultationWarningsings = reader.IsDBNull(10) ? null : reader.GetString(10);
-                            consulta.ConsultationNonpharmacologycal = reader.IsDBNull(11) ? null : reader.GetString(11);
-                            consulta.ConsultationFamiliarytype = reader.IsDBNull(12) ? (int?)null : reader.GetInt32(12);
-                            consulta.ConsultationFamiliaryphone = reader.IsDBNull(13) ? null : reader.GetString(13);
-                            consulta.ConsultationTemperature = reader.IsDBNull(14) ? null : reader.GetString(14);
-                            consulta.ConsultationRespirationrate = reader.IsDBNull(15) ? null : reader.GetString(15);
-                            consulta.ConsultationBloodpressuredAs = reader.IsDBNull(16) ? null : reader.GetString(16);
-                            consulta.ConsultationBloodpresuredDis = reader.IsDBNull(17) ? null : reader.GetString(17);
-                            consulta.ConsultationPulse = reader.GetString(18);
-                            consulta.ConsultationWeight = reader.GetString(19);
-                            consulta.ConsultationSize = reader.GetString(20);
-                            consulta.ConsultationTreatmentplan = reader.IsDBNull(21) ? null : reader.GetString(21);
-                            consulta.ConsultationObservation = reader.IsDBNull(22) ? null : reader.GetString(22);
-                            consulta.ConsultationPersonalbackground = reader.IsDBNull(23) ? null : reader.GetString(23);
-                            consulta.ConsultationDisablilitydays = reader.IsDBNull(24) ? (int?)null : reader.GetInt32(24);
-                            consulta.ConsultationEvolutionNotes = reader.IsDBNull(25) ? null : reader.GetString(25);
-                            consulta.ConsultationTherapies = reader.IsDBNull(26) ? null : reader.GetString(26);
+                            // Campos básicos - usando valores por defecto en lugar de null
+                            consulta.ConsultationId = reader.GetInt32(reader.GetOrdinal("consultation_id"));
+                            consulta.ConsultationCreationdate = GetValueOrDefault<DateTime?>("consultation_creationdate");
+                            consulta.ConsultationUsercreate = GetValueOrDefault<int?>("consultation_usercreate");
+                            consulta.ConsultationPatient = reader.GetInt32(reader.GetOrdinal("consultation_patient"));
+                            consulta.ConsultationSpeciality = GetValueOrDefault<int?>("consultation_speciality");
+                            consulta.ConsultationHistoryclinic = GetStringOrEmpty("consultation_historyclinic");
+                            consulta.ConsultationSequential = GetValueOrDefault<int?>("consultation_sequential");
+                            consulta.ConsultationReason = GetStringOrEmpty("consultation_reason");
+                            consulta.ConsultationDisease = GetStringOrEmpty("consultation_disease");
+                            consulta.ConsultationFamiliaryname = GetStringOrEmpty("consultation_familiaryname");
+                            consulta.ConsultationWarningsings = GetStringOrEmpty("consultation_warningsings");
+                            consulta.ConsultationNonpharmacologycal = GetStringOrEmpty("consultation_nonpharmacologycal");
+                            consulta.ConsultationFamiliarytype = GetValueOrDefault<int?>("consultation_familiarytype");
+                            consulta.ConsultationFamiliaryphone = GetStringOrEmpty("consultation_familiaryphone");
 
-                            consulta.ConsultationType = reader.IsDBNull(27) ? (int?)null : reader.GetInt32(27);
-                            consulta.ConsultationStatus = reader.IsDBNull(28) ? (int?)null : reader.GetInt32(28);
-                            consulta.UsersNames = reader.IsDBNull(29) ? null : reader.GetString(29);
-                            consulta.UsersSurcenames = reader.IsDBNull(30) ? null : reader.GetString(30);
-                            consulta.UsersEmail = reader.IsDBNull(31) ? null : reader.GetString(31);
-                            consulta.UsersPhone = reader.IsDBNull(32) ? null : reader.GetString(32);
-                            // Leer la imagen de perfil (columna varbinary en índice 33)
-                            if (!reader.IsDBNull(33))
+                            // Signos vitales - valores por defecto apropiados
+                            consulta.ConsultationTemperature = GetValueOrDefault("consultation_temperature", "36.5");
+                            consulta.ConsultationRespirationrate = GetValueOrDefault("consultation_respirationrate", "16");
+                            consulta.ConsultationBloodpressuredAs = GetValueOrDefault("consultation_bloodpressuredAS", "120");
+                            consulta.ConsultationBloodpresuredDis = GetValueOrDefault("consultation_bloodpresuredDIS", "80");
+                            consulta.ConsultationPulse = GetValueOrDefault("consultation_pulse", "72");
+                            consulta.ConsultationWeight = GetValueOrDefault("consultation_weight", "70");
+                            consulta.ConsultationSize = GetValueOrDefault("consultation_size", "170");
+
+                            consulta.ConsultationTreatmentplan = GetStringOrEmpty("consultation_treatmentplan");
+                            consulta.ConsultationObservation = GetStringOrEmpty("consultation_observation");
+                            consulta.ConsultationPersonalbackground = GetStringOrEmpty("consultation_personalbackground");
+                            consulta.ConsultationDisablilitydays = GetValueOrDefault<int?>("consultation_disablilitydays");
+                            consulta.ConsultationEvolutionNotes = GetStringOrEmpty("consultation_evolution_notes");
+                            consulta.ConsultationTherapies = GetStringOrEmpty("consultation_therapies");
+                            consulta.ConsultationType = GetValueOrDefault<int?>("consultation_type");
+                            consulta.ConsultationStatus = GetValueOrDefault<int?>("consultation_status");
+                            consulta.ConsultationHasdisease = GetValueOrDefault<bool?>("consultation_hasdisease");
+                            consulta.ConsutationHasSymptoms = GetValueOrDefault<bool?>("consultation_hassymptoms");
+                            consulta.ConsultationDiseaseobservation = GetStringOrEmpty("consultation_diseaseobservation");
+                            consulta.ConsultationContingencytype = GetStringOrEmpty("consultation_contingencytype");
+
+                            // Usuario & establecimiento
+                            consulta.UsersNames = GetStringOrEmpty("users_names");
+                            consulta.UsersSurcenames = GetStringOrEmpty("users_surcenames");
+                            consulta.UsersEmail = GetStringOrEmpty("users_email");
+                            consulta.UsersPhone = GetStringOrEmpty("users_phone");
+
+                            // Manejo seguro de imágenes
+                            if (!reader.IsDBNull(reader.GetOrdinal("users_profilephoto")))
                             {
-                                // Opción A: Asignarla directamente como byte[]
-                                byte[] profilePhotoBytes = (byte[])reader[33];
-                                consulta.UsersProfilephoto = profilePhotoBytes;
-
-                                // Opción B: Convertir a Base64 para insertar en el src de un <img>
-                                consulta.UsersProfilephoto64 = Convert.ToBase64String(profilePhotoBytes);
+                                var photoBytes = (byte[])reader["users_profilephoto"];
+                                consulta.UsersProfilephoto = photoBytes;
+                                consulta.UsersProfilephoto64 = Convert.ToBase64String(photoBytes);
                             }
                             else
                             {
-                                consulta.UsersProfilephoto = null;
-                                consulta.UsersProfilephoto64 = null;
+                                consulta.UsersProfilephoto = new byte[0];
+                                consulta.UsersProfilephoto64 = string.Empty;
                             }
 
-                            // La especialidad se encuentra en el índice 34
-                            consulta.SpecialityName = reader.IsDBNull(34) ? null : reader.GetString(34);
-                            consulta.EstablishmentName = reader.IsDBNull(35) ? null : reader.GetString(35);
-                            if (!reader.IsDBNull(36)) // Asegúrate de que este sea el índice correcto (ajústalo si agregas más columnas antes)
+                            consulta.UsersDocumentNumber = GetStringOrEmpty("users_document_number");
+                            consulta.SpecialityName = GetStringOrEmpty("speciality_name");
+                            consulta.EstablishmentName = GetStringOrEmpty("establishment_name");
+
+                            if (!reader.IsDBNull(reader.GetOrdinal("establishment_logo")))
                             {
-                                byte[] logoBytes = (byte[])reader[36];
+                                var logoBytes = (byte[])reader["establishment_logo"];
                                 consulta.UsersEstablishmentLogo = logoBytes;
                                 consulta.UsersEstablishmentLogo64 = Convert.ToBase64String(logoBytes);
                             }
                             else
                             {
-                                consulta.UsersEstablishmentLogo = null;
-                                consulta.UsersEstablishmentLogo64 = null;
+                                consulta.UsersEstablishmentLogo = new byte[0];
+                                consulta.UsersEstablishmentLogo64 = string.Empty;
                             }
-                            consulta.UsersDocumentNumber = reader.IsDBNull(37) ? null : reader.GetString(37);
-                            consulta.EstablishmentAddress = reader.IsDBNull(38) ? null : reader.GetString(38);
 
+                            consulta.EstablishmentAddress = GetStringOrEmpty("establishment_address");
                         }
 
-                        // Leer los diagnósticos
+                        // 2) Diagnósticos - inicializar lista vacía
                         reader.NextResult();
                         consulta.DiagnosisConsultations = new List<ConsultaDiagnosticoDTO>();
                         while (reader.Read())
                         {
                             consulta.DiagnosisConsultations.Add(new ConsultaDiagnosticoDTO
                             {
-                                DiagnosisDiagnosisid = reader.IsDBNull(1) ? (int?)null : reader.GetInt32(1),
-                                DiagnosisObservation = reader.IsDBNull(2) ? null : reader.GetString(2),
-                                DiagnosisPresumptive = reader.IsDBNull(3) ? (bool?)null : reader.GetBoolean(3),
-                                DiagnosisDefinitive = reader.IsDBNull(4) ? (bool?)null : reader.GetBoolean(4),
-                                DiagnosisStatus = reader.IsDBNull(6) ? (int?)null : reader.GetInt32(6)
+                                DiagnosisDiagnosisid = reader.GetInt32(reader.GetOrdinal("diagnosis_diagnosisid")),
+                                DiagnosisObservation = GetStringOrEmpty("diagnosis_observation"),
+                                DiagnosisPresumptive = reader.GetBoolean(reader.GetOrdinal("diagnosis_presumptive")),
+                                DiagnosisDefinitive = reader.GetBoolean(reader.GetOrdinal("diagnosis_definitive")),
+                                DiagnosisStatus = reader.GetInt32(reader.GetOrdinal("diagnosis_status"))
                             });
                         }
 
-                        // Leer las alergias
+                        // 3) Alergias - inicializar lista vacía
                         reader.NextResult();
                         consulta.AllergiesConsultations = new List<ConsultaAlergiaDTO>();
                         while (reader.Read())
                         {
                             consulta.AllergiesConsultations.Add(new ConsultaAlergiaDTO
                             {
-                                AllergiesCatalogid = reader.GetInt32(1),
-                                AllergiesObservation = reader.IsDBNull(2) ? null : reader.GetString(2),
-                                AllergiesStatus = reader.IsDBNull(3) ? (int?)null : reader.GetInt32(3)
+                                AllergiesCatalogid = reader.GetInt32(reader.GetOrdinal("allergies_catalogid")),
+                                AllergiesObservation = GetStringOrEmpty("allergies_observation"),
+                                AllergiesStatus = reader.GetInt32(reader.GetOrdinal("allergies_status"))
                             });
                         }
 
-                        // Leer las imágenes
+                        // 4) Imágenes - inicializar lista vacía
                         reader.NextResult();
                         consulta.ImagesConsultations = new List<ConsultaImagenDTO>();
                         while (reader.Read())
                         {
                             consulta.ImagesConsultations.Add(new ConsultaImagenDTO
                             {
-                                ImagesImagesid = reader.IsDBNull(1) ? (int?)null : reader.GetInt32(1),
-                                ImagesAmount = reader.IsDBNull(2) ? null : reader.GetString(2),
-                                ImagesObservation = reader.IsDBNull(3) ? null : reader.GetString(3),
-                                ImagesSequential = reader.IsDBNull(4) ? (int?)null : reader.GetInt32(4),
-                                ImagesStatus = reader.IsDBNull(5) ? (int?)null : reader.GetInt32(5)
+                                ImagesImagesid = reader.GetInt32(reader.GetOrdinal("images_imagesid")),
+                                ImagesAmount = GetStringOrEmpty("images_amount"),
+                                ImagesObservation = GetStringOrEmpty("images_observation"),
+                                ImagesSequential = reader.GetInt32(reader.GetOrdinal("images_sequential")),
+                                ImagesStatus = reader.GetInt32(reader.GetOrdinal("images_status"))
                             });
                         }
 
-                        // Leer los laboratorios
+                        // 5) Laboratorios - inicializar lista vacía
                         reader.NextResult();
                         consulta.LaboratoriesConsultations = new List<ConsultaLaboratorioDTO>();
                         while (reader.Read())
                         {
                             consulta.LaboratoriesConsultations.Add(new ConsultaLaboratorioDTO
                             {
-                                LaboratoriesLaboratoriesid = reader.IsDBNull(1) ? (int?)null : reader.GetInt32(1),
-                                LaboratoriesAmount = reader.IsDBNull(2) ? null : reader.GetString(2),
-                                LaboratoriesObservation = reader.IsDBNull(3) ? null : reader.GetString(3),
-                                LaboratoriesSequential = reader.IsDBNull(4) ? (int?)null : reader.GetInt32(4),
-                                LaboratoriesStatus = reader.IsDBNull(5) ? (int?)null : reader.GetInt32(5)
+                                LaboratoriesLaboratoriesid = reader.GetInt32(reader.GetOrdinal("laboratories_laboratoriesid")),
+                                LaboratoriesAmount = GetStringOrEmpty("laboratories_amount"),
+                                LaboratoriesObservation = GetStringOrEmpty("laboratories_observation"),
+                                LaboratoriesSequential = reader.GetInt32(reader.GetOrdinal("laboratories_sequential")),
+                                LaboratoriesStatus = reader.GetInt32(reader.GetOrdinal("laboratories_status"))
                             });
                         }
 
-                        // Leer los medicamentos
+                        // 6) Medicamentos - inicializar lista vacía
                         reader.NextResult();
                         consulta.MedicationsConsultations = new List<ConsultaMedicamentoDTO>();
                         while (reader.Read())
                         {
                             consulta.MedicationsConsultations.Add(new ConsultaMedicamentoDTO
                             {
-                                MedicationsMedicationsid = reader.IsDBNull(1) ? (int?)null : reader.GetInt32(1),
-                                MedicationsAmount = reader.IsDBNull(2) ? null : reader.GetString(2),
-                                MedicationsObservation = reader.IsDBNull(3) ? null : reader.GetString(3),
-                                MedicationsSequential = reader.IsDBNull(4) ? (int?)null : reader.GetInt32(4),
-                                MedicationsStatus = reader.IsDBNull(5) ? (int?)null : reader.GetInt32(5)
+                                MedicationsMedicationsid = reader.GetInt32(reader.GetOrdinal("medications_medicationsid")),
+                                MedicationsAmount = GetStringOrEmpty("medications_amount"),
+                                MedicationsObservation = GetStringOrEmpty("medications_observation"),
+                                MedicationsSequential = reader.GetInt32(reader.GetOrdinal("medications_sequential")),
+                                MedicationsStatus = reader.GetInt32(reader.GetOrdinal("medications_status"))
                             });
                         }
 
-                        // Leer las cirugías
+                        // 7) Procedimientos - inicializar lista vacía
+                        reader.NextResult();
+                        consulta.Procedures = new List<ConsultaProcedimientoDTO>();
+                        while (reader.Read())
+                        {
+                            consulta.Procedures.Add(new ConsultaProcedimientoDTO
+                            {
+                                Procedure_Name = GetStringOrEmpty("procedure_name"),
+                                Procedure_Date = GetValueOrDefault<DateTime?>("procedure_date")
+                            });
+                        }
+
+                        // 8) Cirugías - inicializar lista vacía
                         reader.NextResult();
                         consulta.SurgeriesConsultations = new List<ConsultaCirugiaDTO>();
                         while (reader.Read())
                         {
                             consulta.SurgeriesConsultations.Add(new ConsultaCirugiaDTO
                             {
-                                SurgeriesCatalogid = reader.IsDBNull(2) ? (int?)null : reader.GetInt32(2),
-                                SurgeriesObservation = reader.IsDBNull(3) ? null : reader.GetString(3),
-                                SurgeriesStatus = reader.IsDBNull(4) ? (int?)null : reader.GetInt32(4)
+                                SurgeriesCatalogid = reader.GetInt32(reader.GetOrdinal("surgeries_catalogid")),
+                                SurgeriesObservation = GetStringOrEmpty("surgeries_observation"),
+                                SurgeriesStatus = reader.GetInt32(reader.GetOrdinal("surgeries_status"))
                             });
                         }
 
-                        // Leer los antecedentes familiares
+                        // 9) Antecedentes familiares - inicializar objeto con valores por defecto
                         reader.NextResult();
+                        consulta.FamiliaryBackground = new FamiliaryBackground();
                         if (reader.Read())
                         {
-                            try
+                            consulta.FamiliaryBackground = new FamiliaryBackground
                             {
-                                // Imprimir valores crudos desde la base de datos para depuración
-                                for (int i = 0; i < reader.FieldCount; i++)
-                                {
-                                    Console.WriteLine($"Columna {i} ({reader.GetName(i)}): {reader.GetValue(i)}");
-                                }
-
-                                consulta.FamiliaryBackground = new FamiliaryBackground
-                                {
-                                    // Mapea las propiedades de FamiliaryBackground
-                                    FamiliaryBackgroundHeartdisease = reader.IsDBNull(0) ? false : Convert.ToBoolean(reader.GetValue(0)),
-                                    FamiliaryBackgroundHeartdiseaseObservation = reader.IsDBNull(1) ? null : reader.GetString(1),
-                                    FamiliaryBackgroundRelatshcatalogHeartdisease = reader.IsDBNull(2) ? (int?)null : reader.GetInt32(2),
-
-                                    FamiliaryBackgroundDiabetes = reader.IsDBNull(3) ? false : Convert.ToBoolean(reader.GetValue(3)),
-                                    FamiliaryBackgroundDiabetesObservation = reader.IsDBNull(4) ? null : reader.GetString(4),
-                                    FamiliaryBackgroundRelatshcatalogDiabetes = reader.IsDBNull(5) ? (int?)null : reader.GetInt32(5),
-
-                                    FamiliaryBackgroundDxcardiovascular = reader.IsDBNull(6) ? false : Convert.ToBoolean(reader.GetValue(6)),
-                                    FamiliaryBackgroundDxcardiovascularObservation = reader.IsDBNull(7) ? null : reader.GetString(7),
-                                    FamiliaryBackgroundRelatshcatalogDxcardiovascular = reader.IsDBNull(8) ? (int?)null : reader.GetInt32(8),
-
-                                    FamiliaryBackgroundHypertension = reader.IsDBNull(9) ? false : Convert.ToBoolean(reader.GetValue(9)),
-                                    FamiliaryBackgroundHypertensionObservation = reader.IsDBNull(10) ? null : reader.GetString(10),
-                                    FamiliaryBackgroundRelatshcatalogHypertension = reader.IsDBNull(11) ? (int?)null : reader.GetInt32(11),
-
-                                    FamiliaryBackgroundCancer = reader.IsDBNull(12) ? false : Convert.ToBoolean(reader.GetValue(12)),
-                                    FamiliaryBackgroundCancerObservation = reader.IsDBNull(13) ? null : reader.GetString(13),
-                                    FamiliaryBackgroundRelatshcatalogCancer = reader.IsDBNull(14) ? (int?)null : reader.GetInt32(14),
-
-                                    FamiliaryBackgroundTuberculosis = reader.IsDBNull(15) ? false : Convert.ToBoolean(reader.GetValue(15)),
-                                    FamiliaryBackgroundTuberculosisObservation = reader.IsDBNull(16) ? null : reader.GetString(16),
-                                    FamiliaryBackgroundRelatshTuberculosis = reader.IsDBNull(17) ? (int?)null : reader.GetInt32(17),
-
-                                    FamiliaryBackgroundDxmental = reader.IsDBNull(18) ? false : Convert.ToBoolean(reader.GetValue(18)),
-                                    FamiliaryBackgroundDxmentalObservation = reader.IsDBNull(19) ? null : reader.GetString(19),
-                                    FamiliaryBackgroundRelatshcatalogDxmental = reader.IsDBNull(20) ? (int?)null : reader.GetInt32(20),
-
-                                    FamiliaryBackgroundDxinfectious = reader.IsDBNull(21) ? false : Convert.ToBoolean(reader.GetValue(21)),
-                                    FamiliaryBackgroundDxinfectiousObservation = reader.IsDBNull(22) ? null : reader.GetString(22),
-                                    FamiliaryBackgroundRelatshcatalogDxinfectious = reader.IsDBNull(23) ? (int?)null : reader.GetInt32(23),
-
-                                    FamiliaryBackgroundMalformation = reader.IsDBNull(24) ? false : Convert.ToBoolean(reader.GetValue(24)),
-                                    FamiliaryBackgroundMalformationObservation = reader.IsDBNull(25) ? null : reader.GetString(25),
-                                    FamiliaryBackgroundRelatshcatalogMalformation = reader.IsDBNull(26) ? (int?)null : reader.GetInt32(26),
-
-                                    FamiliaryBackgroundOther = reader.IsDBNull(27) ? false : Convert.ToBoolean(reader.GetValue(27)),
-                                    FamiliaryBackgroundOtherObservation = reader.IsDBNull(28) ? null : reader.GetString(28),
-                                    FamiliaryBackgroundRelatshcatalogOther = reader.IsDBNull(29) ? (int?)null : reader.GetInt32(29),
-                                };
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"Error al mapear FamiliaryBackground: {ex.Message}");
-                            }
+                                FamiliaryBackgroundHeartdisease = GetBoolOrFalse("familiary_background_heartdisease"),
+                                FamiliaryBackgroundHeartdiseaseObservation = GetStringOrEmpty("familiary_background_heartdisease_observation"),
+                                FamiliaryBackgroundRelatshcatalogHeartdisease = GetIntOrZero("familiary_background_relatshcatalog_heartdisease"),
+                                FamiliaryBackgroundDiabetes = GetBoolOrFalse("familiary_background_diabetes"),
+                                FamiliaryBackgroundDiabetesObservation = GetStringOrEmpty("familiary_background_diabetes_observation"),
+                                FamiliaryBackgroundRelatshcatalogDiabetes = GetIntOrZero("familiary_background_relatshcatalog_diabetes"),
+                                FamiliaryBackgroundDxcardiovascular = GetBoolOrFalse("familiary_background_dxcardiovascular"),
+                                FamiliaryBackgroundDxcardiovascularObservation = GetStringOrEmpty("familiary_background_dxcardiovascular_observation"),
+                                FamiliaryBackgroundRelatshcatalogDxcardiovascular = GetIntOrZero("familiary_background_relatshcatalog_dxcardiovascular"),
+                                FamiliaryBackgroundHypertension = GetBoolOrFalse("familiary_background_hypertension"),
+                                FamiliaryBackgroundHypertensionObservation = GetStringOrEmpty("familiary_background_hypertension_observation"),
+                                FamiliaryBackgroundRelatshcatalogHypertension = GetIntOrZero("familiary_background_relatshcatalog_hypertension"),
+                                FamiliaryBackgroundCancer = GetBoolOrFalse("familiary_background_cancer"),
+                                FamiliaryBackgroundCancerObservation = GetStringOrEmpty("familiary_background_cancer_observation"),
+                                FamiliaryBackgroundRelatshcatalogCancer = GetIntOrZero("familiary_background_relatshcatalog_cancer"),
+                                FamiliaryBackgroundTuberculosis = GetBoolOrFalse("familiary_background_tuberculosis"),
+                                FamiliaryBackgroundTuberculosisObservation = GetStringOrEmpty("familiary_background_tuberculosis_observation"),
+                                FamiliaryBackgroundRelatshTuberculosis = GetIntOrZero("familiary_background_relatsh_tuberculosis"),
+                                FamiliaryBackgroundDxmental = GetBoolOrFalse("familiary_background_dxmental"),
+                                FamiliaryBackgroundDxmentalObservation = GetStringOrEmpty("familiary_background_dxmental_observation"),
+                                FamiliaryBackgroundRelatshcatalogDxmental = GetIntOrZero("familiary_background_relatshcatalog_dxmental"),
+                                FamiliaryBackgroundDxinfectious = GetBoolOrFalse("familiary_background_dxinfectious"),
+                                FamiliaryBackgroundDxinfectiousObservation = GetStringOrEmpty("familiary_background_dxinfectious_observation"),
+                                FamiliaryBackgroundRelatshcatalogDxinfectious = GetIntOrZero("familiary_background_relatshcatalog_dxinfectious"),
+                                FamiliaryBackgroundMalformation = GetBoolOrFalse("familiary_background_malformation"),
+                                FamiliaryBackgroundMalformationObservation = GetStringOrEmpty("familiary_background_malformation_observation"),
+                                FamiliaryBackgroundRelatshcatalogMalformation = GetIntOrZero("familiary_background_relatshcatalog_malformation"),
+                                FamiliaryBackgroundOther = GetBoolOrFalse("familiary_background_other"),
+                                FamiliaryBackgroundOtherObservation = GetStringOrEmpty("familiary_background_other_observation"),
+                                FamiliaryBackgroundRelatshcatalogOther = GetIntOrZero("familiary_background_relatshcatalog_other")
+                            };
                         }
 
-                        // Leer los sistemas de órganos
+                        // 10) Sistemas de órganos - inicializar objeto con valores por defecto
                         reader.NextResult();
+                        consulta.OrgansSystem = new OrgansSystem();
                         if (reader.Read())
                         {
-
-                            try
+                            consulta.OrgansSystem = new OrgansSystem
                             {
-                                // Imprimir valores crudos desde la base de datos para depuración
-                                for (int i = 0; i < reader.FieldCount; i++)
-                                {
-                                    Console.WriteLine($"Columna {i} ({reader.GetName(i)}): {reader.GetValue(i)}");
-                                }
-
-                                consulta.OrgansSystem = new OrgansSystem
-                                {
-
-                                    OrganssystemsOrgansenses = reader.IsDBNull(0) ? false : Convert.ToBoolean(reader.GetValue(0)),
-                                    OrganssystemsOrgansensesObs = reader.IsDBNull(1) ? null : reader.GetString(1),
-
-                                    OrganssystemsRespiratory = reader.IsDBNull(2) ? false : Convert.ToBoolean(reader.GetValue(2)),
-                                    OrganssystemsRespiratoryObs = reader.IsDBNull(3) ? null : reader.GetString(3),
-
-                                    OrganssystemsCardiovascular = reader.IsDBNull(4) ? false : Convert.ToBoolean(reader.GetValue(4)),
-                                    OrganssystemsCardiovascularObs = reader.IsDBNull(5) ? null : reader.GetString(5),
-
-                                    OrganssystemsDigestive = reader.IsDBNull(6) ? false : Convert.ToBoolean(reader.GetValue(6)),
-                                    OrganssystemsDigestiveObs = reader.IsDBNull(7) ? null : reader.GetString(7),
-
-                                    OrganssystemsGenital = reader.IsDBNull(8) ? false : Convert.ToBoolean(reader.GetValue(8)),
-                                    OrganssystemsGenitalObs = reader.IsDBNull(9) ? null : reader.GetString(9),
-
-                                    OrganssystemsUrinary = reader.IsDBNull(10) ? false : Convert.ToBoolean(reader.GetValue(10)),
-                                    OrganssystemsUrinaryObs = reader.IsDBNull(11) ? null : reader.GetString(11),
-
-                                    OrganssystemsSkeletalM = reader.IsDBNull(12) ? false : Convert.ToBoolean(reader.GetValue(12)),
-                                    OrganssystemsSkeletalMObs = reader.IsDBNull(13) ? null : reader.GetString(13),
-
-                                    OrganssystemsEndrocrine = reader.IsDBNull(14) ? false : Convert.ToBoolean(reader.GetValue(14)),
-                                    OrganssystemsEndocrine = reader.IsDBNull(15) ? null : reader.GetString(15),
-
-                                    OrganssystemsLymphatic = reader.IsDBNull(16) ? false : Convert.ToBoolean(reader.GetValue(16)),
-                                    OrganssystemsLymphaticObs = reader.IsDBNull(17) ? null : reader.GetString(17),
-
-                                    OrganssystemsNervous = reader.IsDBNull(18) ? false : Convert.ToBoolean(reader.GetValue(18)),
-                                    OrganssystemsNervousObs = reader.IsDBNull(19) ? null : reader.GetString(19),
-
-                                };
-
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"Error al mapear OrgansSystems: {ex.Message}");
-                            }
+                                OrganssystemsOrgansenses = GetBoolOrFalse("organssystems_organsenses"),
+                                OrganssystemsOrgansensesObs = GetStringOrEmpty("organssystems_organsenses_Obs"),
+                                OrganssystemsRespiratory = GetBoolOrFalse("organssystems_respiratory"),
+                                OrganssystemsRespiratoryObs = GetStringOrEmpty("organssystems_respiratory_obs"),
+                                OrganssystemsCardiovascular = GetBoolOrFalse("organssystems_cardiovascular"),
+                                OrganssystemsCardiovascularObs = GetStringOrEmpty("organssystems_cardiovascular_obs"),
+                                OrganssystemsDigestive = GetBoolOrFalse("organssystems_digestive"),
+                                OrganssystemsDigestiveObs = GetStringOrEmpty("organssystems_digestive_obs"),
+                                OrganssystemsGenital = GetBoolOrFalse("organssystems_genital"),
+                                OrganssystemsGenitalObs = GetStringOrEmpty("organssystems_genital_obs"),
+                                OrganssystemsUrinary = GetBoolOrFalse("organssystems_urinary"),
+                                OrganssystemsUrinaryObs = GetStringOrEmpty("organssystems_urinary_obs"),
+                                OrganssystemsSkeletalM = GetBoolOrFalse("organssystems_skeletal_m"),
+                                OrganssystemsSkeletalMObs = GetStringOrEmpty("organssystems_skeletal_m_obs"),
+                                OrganssystemsEndrocrine = GetBoolOrFalse("organssystems_endrocrine"),
+                                OrganssystemsEndocrine = GetStringOrEmpty("organssystems_endocrine"),
+                                OrganssystemsLymphatic = GetBoolOrFalse("organssystems_lymphatic"),
+                                OrganssystemsLymphaticObs = GetStringOrEmpty("organssystems_lymphatic_obs"),
+                                OrganssystemsNervous = GetBoolOrFalse("organssystems_nervous"),
+                                OrganssystemsNervousObs = GetStringOrEmpty("organssystems_nervous_obs")
+                            };
                         }
-                        // Leer el examen físico
+
+                        // 11) Examen físico - inicializar objeto con valores por defecto
                         reader.NextResult();
+                        consulta.PhysicalExamination = new PhysicalExamination();
                         if (reader.Read())
                         {
-
-                            try
+                            consulta.PhysicalExamination = new PhysicalExamination
                             {
-                                // Imprimir valores crudos desde la base de datos para depuración
-                                for (int i = 0; i < reader.FieldCount; i++)
-                                {
-                                    Console.WriteLine($"Columna {i} ({reader.GetName(i)}): {reader.GetValue(i)}");
-                                }
-                                consulta.PhysicalExamination = new PhysicalExamination
-                                {
-                                    // Mapea las propiedades de PhysicalExamination
-                                    PhysicalexaminationHead = reader.IsDBNull(0) ? false : Convert.ToBoolean(reader.GetValue(0)),
-                                    PhysicalexaminationHeadObs = reader.IsDBNull(1) ? null : reader.GetString(1),
-
-                                    PhysicalexaminationNeck = reader.IsDBNull(2) ? false : Convert.ToBoolean(reader.GetValue(2)),
-                                    PhysicalexaminationNeckObs = reader.IsDBNull(3) ? null : reader.GetString(3),
-
-                                    PhysicalexaminationChest = reader.IsDBNull(4) ? false : Convert.ToBoolean(reader.GetValue(4)),
-                                    PhysicalexaminationChestObs = reader.IsDBNull(5) ? null : reader.GetString(5),
-
-                                    PhysicalexaminationAbdomen = reader.IsDBNull(6) ? false : Convert.ToBoolean(reader.GetValue(6)),
-                                    PhysicalexaminationAbdomenObs = reader.IsDBNull(7) ? null : reader.GetString(7),
-
-                                    PhysicalexaminationPelvis = reader.IsDBNull(8) ? false : Convert.ToBoolean(reader.GetValue(8)),
-                                    PhysicalexaminationPelvisObs = reader.IsDBNull(9) ? null : reader.GetString(9),
-
-                                    PhysicalexaminationLimbs = reader.IsDBNull(10) ? false : Convert.ToBoolean(reader.GetValue(10)),
-                                    PhysicalexaminationLimbsObs = reader.IsDBNull(11) ? null : reader.GetString(11),
-                                };
-
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"Error al mapear Physical: {ex.Message}");
-                            }
-
+                                PhysicalexaminationHead = GetBoolOrFalse("physicalexamination_head"),
+                                PhysicalexaminationHeadObs = GetStringOrEmpty("physicalexamination_head_obs"),
+                                PhysicalexaminationNeck = GetBoolOrFalse("physicalexamination_neck"),
+                                PhysicalexaminationNeckObs = GetStringOrEmpty("physicalexamination_neck_obs"),
+                                PhysicalexaminationChest = GetBoolOrFalse("physicalexamination_chest"),
+                                PhysicalexaminationChestObs = GetStringOrEmpty("physicalexamination_chest_obs"),
+                                PhysicalexaminationAbdomen = GetBoolOrFalse("physicalexamination_abdomen"),
+                                PhysicalexaminationAbdomenObs = GetStringOrEmpty("physicalexamination_abdomen_obs"),
+                                PhysicalexaminationPelvis = GetBoolOrFalse("physicalexamination_pelvis"),
+                                PhysicalexaminationPelvisObs = GetStringOrEmpty("physicalexamination_pelvis_obs"),
+                                PhysicalexaminationLimbs = GetBoolOrFalse("physicalexamination_limbs"),
+                                PhysicalexaminationLimbsObs = GetStringOrEmpty("physicalexamination_limbs_obs")
+                            };
                         }
                     }
                 }
@@ -684,7 +667,7 @@ string consultation_contingencytype,
 
             return consulta;
         }
-      public Consulta GetLastConsultationDetails(string historyClinic)
+        public Consulta GetLastConsultationDetails(string historyClinic)
         {
             var consulta = new Consulta();
 

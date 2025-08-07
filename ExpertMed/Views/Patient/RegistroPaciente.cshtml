@@ -11,6 +11,11 @@
     var patientId = TempData["PatientId"] != null ? TempData["PatientId"].ToString() : "";
     var appointmentId = TempData["AppointmentId"] as int?;
     var forceEmergency = TempData["ForceEmergency"] != null && (bool)TempData["ForceEmergency"];
+    // Convierte en lista y calcula cuántos slides necesitas
+    var doctors = Model.UsersP.ToList();
+    int slideSize = 4;
+    int slideCount = (int)Math.Ceiling(doctors.Count / (double)slideSize);
+
 }
 @model NewPatientViewModel
 
@@ -19,6 +24,42 @@
 <head>
     @await Html.PartialAsync("_title_meta")
     @await Html.PartialAsync("_head_css")
+    <style>
+        /* Estilos para las “cards” seleccionables */
+        .btn-check:checked + .doctor-label {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0.5rem rgba(13,110,253,.25);
+        }
+
+        .doctor-label {
+            display: block;
+            border: 2px solid transparent;
+            border-radius: .5rem;
+            padding: .75rem;
+            cursor: pointer;
+            transition: border-color .3s, box-shadow .3s;
+            text-align: center;
+        }
+
+            .doctor-label img {
+                border-radius: 50%;
+                width: 80px;
+                height: 80px;
+                object-fit: cover;
+                margin-bottom: .5rem;
+            }
+
+        /* Flecha “prev” en rojo */
+        #doctorCarousel .carousel-control-prev-icon {
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23ff0000' viewBox='0 0 16 16'%3E%3Cpath d='M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z'/%3E%3C/svg%3E");
+        }
+
+        /* Flecha “next” en azul */
+        #doctorCarousel .carousel-control-next-icon {
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23007bff' viewBox='0 0 16 16'%3E%3Cpath d='M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+        }
+
+    </style>
     <style>
         .hidden-section { display: none; }
     </style>
@@ -36,7 +77,7 @@
                 <div class="text-end p-2">
                     <div class="p-0 ms-auto rounded-circle profile-photo-edit">
                         <input id="profile-foreground-img-file-input" type="file" class="profile-foreground-img-file-input">
-                        <h1 class="cabeceras"> Registra tus datos</h1>
+                        <h1 class="cabeceras"> Auto agendamiento</h1>
                     </div>
                 </div>
             </div>
@@ -80,21 +121,54 @@
                                                 <i class="ri-user-fill" id="icons"></i>
                                                 <span> Datos personales </span>
                                             </div>
-                                            <div class="col-lg-3">
-                                                <div class="mb-3">
-                                                    <label for="doctorsSelect" class="form-label">Seleccionar médico para su cita *</label>
-                                                    <select class="form-control" id="doctorsSelect" name="doctorUserId"
-                                                            data-choices data-choices-sorting-false required>
-                                                        <option value="">Seleccione un médico</option>
-                                                        @foreach (var doctor in Model.UsersP)
+                                            <div class="mb-3">
+                                                <label class="form-label">Seleccionar médico para su cita *</label>
+
+                                                <div id="doctorCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-wrap="false">
+                                                    <div class="carousel-inner">
+                                                        @for (int si = 0; si < slideCount; si++)
                                                         {
-                                                                <option value="@doctor.UsersId">
-                                                                @doctor.UsersNames @doctor.UsersSurcenames (@doctor.SpecialityName)
-                                                                </option>
+                                                            var slideDocs = doctors.Skip(si * slideSize).Take(slideSize);
+                                                            <div class="carousel-item @(si == 0 ? "active" : "")">
+                                                                <div class="row">
+                                                                    @foreach (var doctor in slideDocs)
+                                                                    {
+                                                                        var imgSrc = !string.IsNullOrWhiteSpace(doctor.UsersProfilephoto64)
+                                                                        ? $"data:image/png;base64,{doctor.UsersProfilephoto64}"
+                                                                        : Url.Content("~/images/default-avatar.png");
+                                                                        <div class="col-6 col-md-3 text-center">
+                                                                            <input type="radio"
+                                                                                   class="btn-check"
+                                                                                   name="doctorUserId"
+                                                                                   id="doc-@doctor.UsersId"
+                                                                                   value="@doctor.UsersId"
+                                                                                   autocomplete="off" required />
+                                                                            <label class="doctor-label d-block" for="doc-@doctor.UsersId">
+                                                                                <img src="@imgSrc" alt="Foto de @doctor.UsersNames" />
+                                                                                <div class="fw-semibold mt-1">
+                                                                                    @doctor.UsersNames
+                                                                                </div>
+                                                                                <small class="text-muted">
+                                                                                    @doctor.SpecialityName
+                                                                                </small>
+                                                                            </label>
+                                                                        </div>
+                                                                    }
+                                                                </div>
+                                                            </div>
                                                         }
-                                                    </select>
+                                                    </div>
+
+                                                    <button class="carousel-control-prev" type="button" data-bs-target="#doctorCarousel" data-bs-slide="prev">
+                                                        <span class="carousel-control-prev-icon"></span>
+                                                    </button>
+                                                    <button class="carousel-control-next" type="button" data-bs-target="#doctorCarousel" data-bs-slide="next">
+                                                        <span class="carousel-control-next-icon"></span>
+                                                    </button>
                                                 </div>
                                             </div>
+
+
                                             <div class="col-lg-3">
                                                 <div class="mb-3">
                                                     <label for="firstlastnameInput" class="form-label">Primer apellido*</label>
@@ -370,19 +444,51 @@
                                     <div class="tab-pane active" id="minimalDetails" role="tabpanel">
                                         <div class="row">
                                             <!-- Se muestran solo los campos de selección de médico y número de documento -->
-                                            <div class="col-lg-6">
+                                            <div class="col-lg-12">
                                                 <div class="mb-3">
-                                                    <label for="doctorsSelectSimplified" class="form-label">Seleccionar médico para su cita *</label>
-                                                    <select class="form-control" id="doctorsSelectSimplified" name="doctorUserId"
-                                                            data-choices data-choices-sorting-false required>
-                                                        <option value="">Seleccione un médico</option>
-                                                        @foreach (var doctor in Model.UsersP)
-                                                        {
-                                                                <option value="@doctor.UsersId">
-                                                                @doctor.UsersNames @doctor.UsersSurcenames (@doctor.SpecialityName)
-                                                                </option>
-                                                        }
-                                                    </select>
+                                                    <label class="form-label">Seleccionar médico para su cita *</label>
+                                                    <div id="doctorCarouselSimplified" class="carousel slide" data-bs-ride="carousel" data-bs-wrap="false">
+                                                        <div class="carousel-inner">
+                                                            @for (int si = 0; si < slideCount; si++)
+                                                            {
+                                                                var slideDocs = doctors.Skip(si * slideSize).Take(slideSize);
+                                                                <div class="carousel-item @(si == 0 ? "active" : "")">
+                                                                    <div class="row">
+                                                                        @foreach (var doctor in slideDocs)
+                                                                        {
+                                                                            var imgSrc = !string.IsNullOrWhiteSpace(doctor.UsersProfilephoto64)
+                                                                            ? $"data:image/png;base64,{doctor.UsersProfilephoto64}"
+                                                                            : Url.Content("~/images/default-avatar.png");
+                                                                            <div class="col-6 col-md-3 text-center">
+                                                                                <input type="radio"
+                                                                                       class="btn-check"
+                                                                                       name="doctorUserId"
+                                                                                       id="simp-doc-@doctor.UsersId"
+                                                                                       value="@doctor.UsersId"
+                                                                                       autocomplete="off"
+                                                                                       required />
+                                                                                <label class="doctor-label d-block" for="simp-doc-@doctor.UsersId">
+                                                                                    <img src="@imgSrc" alt="Foto de @doctor.UsersNames" />
+                                                                                    <div class="fw-semibold mt-1">
+                                                                                        @doctor.UsersNames @doctor.UsersSurcenames
+                                                                                    </div>
+                                                                                    <small class="text-muted">
+                                                                                        @doctor.SpecialityName
+                                                                                    </small>
+                                                                                </label>
+                                                                            </div>
+                                                                        }
+                                                                    </div>
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                        <button class="carousel-control-prev" type="button" data-bs-target="#doctorCarouselSimplified" data-bs-slide="prev">
+                                                            <span class="carousel-control-prev-icon"></span>
+                                                        </button>
+                                                        <button class="carousel-control-next" type="button" data-bs-target="#doctorCarouselSimplified" data-bs-slide="next">
+                                                            <span class="carousel-control-next-icon"></span>
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div class="col-lg-6">

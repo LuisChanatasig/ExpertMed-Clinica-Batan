@@ -1,5 +1,5 @@
 ﻿@using Microsoft.AspNetCore.Http
-@model List<ExpertMed.Models.AppointmentDTO>
+@model ExpertMed.Models.AppointmentListViewModel  
 @{
     ViewData["Title"] = "Listado De citas";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -115,9 +115,9 @@
 
                             @* Mantendremos los otros estados si son necesarios individualmente *@
                             @foreach (var estado in new[] {
-                            (2, "Canceladas", "btn-soft-danger"),
-                            (3, "Seguimiento", "btn-soft-info"),
-                            (4, "Finalizadas", "btn-soft-dark") })
+                                                        (2, "Canceladas", "btn-soft-danger"),
+                                                        (3, "Seguimiento", "btn-soft-info"),
+                                                        (4, "Finalizadas", "btn-soft-dark") })
                             {
                                 bool isActive = (currentStatus1 == estado.Item1 && currentStatus2 == null && !isPaid);
                                 <button class="btn @estado.Item3 @(isActive ? "active" : "")"
@@ -149,35 +149,32 @@
                             <th hidden>ID</th>
                             <th hidden>ID PATIENT</th>
                             @* Asegúrate de que perfilId esté definido, probablemente desde ViewBag o un modelo *@
-                          
+                            <th>Consultorio</th>
+                            <th>Fecha </th>
+                            <th>Hora</th>
+
+                            <th>Tipo de paciente</th>
                             @if (perfilId == 1 || perfilId == 3 || perfilId == 4 || perfilId == 8)
                             {
                                 <th>Nombre del médico</th>
                             }
-                            <th>Fecha / Hora</th>
+                            <th>Actividad</th>
+                            <th>Especialidad</th>
+                            <th>Pagado</th>
                             <th>Paciente</th>
-                            <th>Tipo de paciente</th>
-                            <th>Consultorio</th>
+                            <th>Valor a facturar</th>
+                            <th>Metodo de pago</th>
+
                             <th>Estado</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var appt in Model)
+                        @foreach (var appt in Model.Appointments)
                         {
                             <tr>
                                 <td hidden>@appt.AppointmentId</td>
                                 <td hidden>@appt.AppointmentPatientId</td>
-                                @if (perfilId == 1 || perfilId == 3 || perfilId == 4 || perfilId == 8)
-                                {
-                                    <td>@(appt.DoctorName ?? appt.DoctorName2)</td>
-                                }
-                                <td>
-                                    @appt.AppointmentDate.ToString("dd/MM/yyyy")
-                                    @(DateTime.Today.Add(appt.AppointmentHour).ToString("hh:mm tt", System.Globalization.CultureInfo.InvariantCulture))
-                                </td>
-                                <td>@appt.PatientName</td>
-                                <td>@appt.PatientInsuranceName</td>
                                 <td>
                                     @if (!string.IsNullOrEmpty(appt.MedicalOfficeName))
                                     {
@@ -191,6 +188,44 @@
                                         <span class="text-muted">Sin asignar</span>
                                     }
                                 </td>
+
+                                <td>
+                                    @appt.AppointmentDate.ToString("dd/MM/yyyy")
+                                </td>
+                                <td>
+                                    @(DateTime.Today.Add(appt.AppointmentHour).ToString("hh:mm tt", System.Globalization.CultureInfo.InvariantCulture))
+                                </td>
+                                <td>@appt.PatientInsuranceName</td>
+                                @if (perfilId == 1 || perfilId == 3 || perfilId == 4 || perfilId == 8)
+                                {
+                                    <td>@(appt.DoctorName ?? appt.DoctorName2)</td>
+                                }
+                                <td>
+                                    @if (!string.IsNullOrEmpty(appt.AppointmentReason))
+                                    {
+                                        @appt.AppointmentReason
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Sin Actividad Asignada</span>
+                                    }
+                                </td>
+
+                                <td>@appt.SpecialtyName</td>
+
+                                <td>
+                                    @{
+                                        var pagoText = appt.AppointmentPaymentStatus == 1 ? "Pagada" : "No pagada";
+                                        var pagoCls = appt.AppointmentPaymentStatus == 1
+                                        ? "bg-success text-white"
+                                        : "bg-secondary";
+                                    }
+                                    <span class="badge @pagoCls">@pagoText</span>
+                                </td>
+
+                                <td>@appt.PatientName</td>
+                                <td>@appt.AmountToBill</td>
+                                <td>@appt.PaymentMethod</td>
                                 <td>
                                     @{
                                         var (cls, txt) = appt.AppointmentStatus switch
@@ -202,14 +237,10 @@
                                             5 => ("bg-danger text-white fw-bold text-uppercase", "Emergencia"),
                                             _ => ("bg-secondary", "Desconocido")
                                         };
-
-                                        // Estado de pago
-                                        var pago = appt.AppointmentPaymentStatus == 1 ? "Pagada" : "No pagada";
-                                        var badgeText = $"{txt} - {pago}";
                                     }
-                                    <span class="badge @cls">@badgeText</span>
-
+                                    <span class="badge @cls">@txt</span>
                                 </td>
+
                                 <td>
                                     @if (appt.AppointmentStatus == 2 || appt.AppointmentStatus == 4)
                                     {
@@ -312,46 +343,131 @@
 </div>
 
 <!-- Modal Agendar/Editar Cita -->
-<div class="modal fade" id="appointmentModalgrid" tabindex="-1" aria-labelledby="appointmentModalgridLabel"
-     aria-hidden="true">
+<!-- Modal Agendar Cita con todos los campos requeridos -->
+<div class="modal flip" id="appointmentModalgrid" tabindex="-1" aria-labelledby="appointmentModalgridLabel">
     <div class="modal-dialog">
         <div class="modal-content">
+
+            <!-- Cabecera -->
             <div class="modal-header">
-                <h5 class="modal-title" id="appointmentModalgridLabel">Agendar / Editar cita</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title" id="appointmentModalgridLabel">Agendar Cita</h5>
+                <span>Todos los campos son requeridos</span>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+
+            <!-- Cuerpo del modal -->
             <div class="modal-body">
-                <form class="row g-3 needs-validation" novalidate id="formData">
-                    <input type="hidden" name="AppointmentId" id="appointment" />
-                    <input type="hidden" name="AppointmentPatientid" id="patientId" />
-                    <input type="hidden" id="doctorUserId" name="DoctorUserId" />
+                <form class="row g-3 needs-validation" novalidate name="formData">
 
-                    <input type="hidden" name="AppointmentMedicalofficeid" id="AppointmentMedicalofficeid" />
-
-                    <div class="col-6">
-                        <label for="selectedDate" class="form-label">Fecha</label>
-                        <input type="date" class="form-control" id="selectedDate" required>
-                    </div>
-                    <div class="col-6 d-flex align-items-end gap-2">
-                        <div class="w-100">
-                            <label for="appointmentTime" class="form-label">Hora</label>
-                            <input type="time" class="form-control" id="appointmentTime" readonly required>
+                    <!-- Selección de médico (visible sólo para ciertos perfiles) -->
+                    @if (perfilId == 3 || perfilId == 1 || perfilId == 4 || perfilId == 8)
+                    {
+                        <div class="col-xxl-6">
+                            <div class="mb-3">
+                                <label for="doctorUserId" class="form-label">Seleccionar médico asignado</label>
+                                <select class="form-control" id="doctorUserId" name="DoctorUserId" data-choices data-choices-sorting-false>
+                                    <option value="">Seleccione</option>
+                                    @foreach (var doctor in Model.Users)
+                                    {
+                                        <option value="@doctor.UsersId">
+                                            @doctor.UsersSurcenames @doctor.UsersNames - @doctor.SpecialityName
+                                        </option>
+                                    }
+                                </select>
+                            </div>
                         </div>
-                        <button type="button" class="btn btn-soft-info" id="viewHoursButton">
+                    }
+
+                    <!-- ID del paciente (oculto) -->
+                    <div class="col-xxl-6" hidden>
+                        <label for="patientId" class="form-label">Patient Id</label>
+                        <input type="number" class="form-control" id="patientId" name="AppointmentPatientid"
+                               value="@(Model.Patient?.PatientId ?? 0)" required>
+                    </div>
+
+                    <!-- Estado de la cita (oculto y siempre 1 = agendada) -->
+                    <input type="hidden" id="appointmentStatus" name="AppointmentStatus" value="1" />
+
+                    <!-- ID de la cita (para edición) -->
+                    <input type="hidden" id="appointment" name="AppointmentId" />
+
+                    <!-- Fecha -->
+                    <div class="col-xxl-6">
+                        <label for="selectedDate" class="form-label">Seleccione la fecha</label>
+                        <input type="date" class="form-control" id="selectedDate" name="selectedDate" required>
+                    </div>
+
+                    <!-- Hora -->
+                    <div class="col-xxl-6 d-flex align-items-end gap-2">
+                        <div class="w-100">
+                            <label for="appointmentTime" class="form-label">Hora seleccionada</label>
+                            <input type="time" class="form-control" id="appointmentTime" name="appointmentTime"
+                                   readonly required>
+                        </div>
+                        <button type="button" class="btn btn-soft-info mt-auto" id="viewHoursButton" style="height: 40px;">
                             <i class="ri-eye-fill"></i> Ver horas
                         </button>
                     </div>
-                    <div class="col-12 mt-3">
+
+                    <!-- Consultorios disponibles (oculto) -->
+                    <div class="col-xxl-12 mt-3" hidden>
                         <label class="form-label">Consultorios disponibles</label>
                         <div id="consultoriosContainer" class="row row-cols-1 row-cols-md-2 g-3"></div>
+                        <input type="hidden" id="AppointmentMedicalofficeid" name="AppointmentMedicalofficeid" />
                     </div>
+
+                    <!-- Motivo de la cita -->
+                    <div class="col-xxl-12">
+                        <label for="appointmentReason" class="form-label">Motivo de la cita</label>
+                        <textarea class="form-control" id="appointmentReason" name="appointmentReason"
+                                  rows="2" required
+                                  placeholder="Describa el motivo de la cita..."></textarea>
+                        <div class="invalid-feedback">
+                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                        </div>
+                    </div>
+
+                    <!-- Selección de aseguradora -->
+                    <div class="col-xxl-12">
+                        <label for="appointmentInsuranceCompanyId" class="form-label">Aseguradora</label>
+                        <select class="form-control" id="appointmentInsuranceCompanyId"
+                                name="appointmentInsuranceCompanyId" required>
+                            <option value="">
+                                Seleccione aseguradora (si aplica), en caso de que no coloque Ninguno
+                            </option>
+                            @foreach (var aseguradora in Model.InsuranceCompanies)
+                            {
+                                <option value="@aseguradora.InsuranceCompanyId">
+                                    @aseguradora.InsuranceCompanyName
+                                </option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Código de autorización de la aseguradora -->
+                    <div class="col-xxl-12">
+                        <label for="appointmentInsuranceAuthCode" class="form-label">
+                            Código autorización aseguradora
+                        </label>
+                        <input type="text" class="form-control" id="appointmentInsuranceAuthCode"
+                               name="appointmentInsuranceAuthCode" required
+                               placeholder="Escriba el código de autorización">
+                        <span>En caso de no tener colocar 0</span>
+                        <div class="invalid-feedback">
+                            POR FAVOR ESTE CAMPO ES REQUERIDO
+                        </div>
+                    </div>
+
+                    <!-- Botón de confirmar -->
                     <div class="col-12 text-end">
                         <button type="button" class="btn btn-primary" id="confirmAppointmentBtn" disabled>
-                            <i class="ri-check-line"></i> Confirmar
+                            <i class="ri-check-line"></i> Confirmar cita
                         </button>
                     </div>
+
                 </form>
             </div>
+
         </div>
     </div>
 </div>
@@ -431,7 +547,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
-
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.print.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
     <script src="~/assets/js/pages/datatables.init.js"></script>
 
     <script>
@@ -441,12 +561,46 @@
 
     <script>
         $(document).ready(function () {
-            $('#appointmentTable').DataTable({
-                responsive: true,
-                pageLength: 10,
-                order: [[0, 'desc']]
-            });
+          $('#appointmentTable').DataTable({
+            responsive: true,
+            pageLength: 10,
+            order: [[3, 'asc']],    // por FECHA (columna índice 3 considerando hidden ID y PATIENT)
+            dom: 'Bfrtip',           // muestra los botones encima de la tabla
+            buttons: [
+              {
+                extend: 'excelHtml5',
+                text: '<i class="mdi mdi-file-excel-outline"></i> Excel',
+                titleAttr: 'Exportar a Excel',
+                className: 'btn btn-sm btn-success',
+                 exportOptions: {
+          // Lista todos los índices que quieres exportar:
+          columns: [  2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+        }
+              },
+             
+              {
+                extend: 'pdfHtml5',
+                text: '<i class="mdi mdi-file-pdf-outline"></i> PDF',
+                titleAttr: 'Exportar a PDF',
+                className: 'btn btn-sm btn-danger',
+                exportOptions: { columns: ':visible' },
+                orientation: 'landscape',
+                pageSize: 'LETTER'
+              },
+              {
+                extend: 'print',
+                text: '<i class="mdi mdi-printer"></i> Imprimir',
+                titleAttr: 'Imprimir',
+                className: 'btn btn-sm btn-secondary',
+        exportOptions: {
+              // Lista todos los índices que quieres exportar:
+              columns: [  2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+            }              }
+            ]
+          });
         });
+    </script>
+    <script>
 
                     function filterAppointments(status, isPaidOnly = false, status2 = null) {
             const baseUrl = '@Url.Action("AppointmentList", "Appointment")';
@@ -461,8 +615,8 @@
             window.location.href = url;
         }
 
-              
-        
+
+
         function openOptionModal(id, status, patientId) {
             $.get('@Url.Action("AppointmentGetById", "Appointment")', { id, userProfile: @perfilId })
              .done(data => {
@@ -508,22 +662,39 @@
             if (!id) return alert('ID de cita no hallado.');
 
             $.get('@Url.Action("AppointmentGetById", "Appointment")', { id, userProfile: perfil })
-                .done(data => {
-                    if (!data) return alert('Cita no encontrada.');
-                    $('#appointment').val(id);
-                    $('#patientId').val(data.patientId);          // ahora coincide: id + propiedad
-                    $('#selectedDate').val(data.date);
-                    $('#appointmentTime').val('');
-                    $('#doctorUserId').val(data.doctorUserId);
-                    $('#AppointmentMedicalofficeid').val('');
-                    $('#consultoriosContainer').empty();
-                    $('#confirmAppointmentBtn').hide().prop('disabled', true);
-                    new bootstrap.Modal($('#appointmentModalgrid')).show();
+                     .done(data => {
+                           console.log('payload AppointmentGetById →', data);
 
-                console.log('Enviando al modal de aceptacion:', data);
-                })
+            $('#appointment').val(data.appointmentId);
+            $('#patientId').val(data.patientId);
+            $('#selectedDate').val(data.date);
+            $('#appointmentTime').val(data.time);
 
-                .fail(() => alert('Error al obtener datos de la cita.'));
+            // Médico
+            if (data.doctorUserId) {
+              $('#doctorUserId').val(data.doctorUserId).trigger('change');
+            }
+
+            // Motivo
+            $('#appointmentReason').val(data.appointmentReason);
+
+            // Aseguradora
+            $('#appointmentInsuranceCompanyId')
+              .val(data.appointmentInsuranceCompanyId || '')
+              .trigger('change');
+
+            // Consultorios (si usas radiobuttons)
+            if (data.medicalOfficeId) {
+              $(`#office-${data.medicalOfficeId}`).prop('checked', true);
+            }
+
+            // Habilita botón y abre modal
+            $('#confirmAppointmentBtn')
+              .prop('disabled', false)
+              .show();
+            new bootstrap.Modal($('#appointmentModalgrid')).show();
+        })
+        .fail(() => alert('Error al obtener datos de la cita.'));
 
 
 
@@ -596,89 +767,98 @@
                 .fail((_, __, e) => alert('Error al cargar horas: ' + e));
         });
 
-        // Selección de hora: asigna hora, consultorio y reprograma automáticamente
+              // 1) Click en una hora disponible: pre-rellenar y abrir el modal
         $('#availableHoursContainer').on('click', 'button', function () {
-            const selectedHour = $(this).data('hour');
+          const selectedHour = $(this).data('hour');
+          const date         = $('#selectedDate').val();
+          const doctorId     = $('#doctorUserId').val();
+
+          // Cierra el modal de horas
+          $('#hoursModalgrid').modal('hide');
+
+          // Pide consultorios libres
+          $.get('@Url.Action("GetAvailableOffices", "Appointment")', {
+            date: date,
+            hour: selectedHour,
+            doctorUserId: doctorId
+          })
+          .done(resp => {
+            if (!resp.success || !Array.isArray(resp.offices) || resp.offices.length === 0) {
+              return Swal.fire('Sin consultorio', 'No hay consultorios disponibles para esa hora.', 'warning');
+            }
+
+            const firstOffice = resp.offices[0];
+
+            // Pre-rellena campos del modal
             $('#appointmentTime').val(selectedHour);
-            $('#hoursModalgrid').modal('hide');
+            $('#selectedDate').val(date);
 
-            const date = $('#selectedDate').val();
-            const doctorUserId = $('#doctorUserId').val();
+            $('#doctorUserId')
+              .val(doctorId)
+              .trigger('change');
 
-            $.get('@Url.Action("GetAvailableOffices", "Appointment")', {
-                date: date,
-                hour: selectedHour,
-                doctorUserId: doctorUserId
-            })
-            .done(resp => {
-                const officesList = Array.isArray(resp.offices) ? resp.offices : [];
-                if (resp.success && officesList.length > 0) {
-                    const firstOffice = officesList[0];
-                    $('#AppointmentMedicalofficeid').val(firstOffice.medicalOfficeId);
+            // Rellena consultorio oculto
+            $('#AppointmentMedicalofficeid').val(firstOffice.medicalOfficeId);
+            $('#consultoriosContainer').closest('.col-xxl-12').removeAttr('hidden');
 
-                    // Mostramos resumen al usuario antes de enviar
-                    Swal.fire({
-                        title: '¿Confirmar reprogramación?',
-                        html: `
-                            <p><strong>Fecha:</strong> ${date}</p>
-                            <p><strong>Hora:</strong> ${selectedHour}</p>
-                            <p><strong>Consultorio:</strong> # ${firstOffice.medicalOfficeName}</p>
-                        `,
-                        icon: 'question',
-                        showCancelButton: true,
-                        confirmButtonText: 'Sí, reprogramar',
-                        cancelButtonText: 'Cancelar'
-                    }).then(result => {
-                        if (result.isConfirmed) {
-                            const payload = {
-                                AppointmentId:              $('#appointment').val(),
-                                AppointmentPatientid:       $('#patientId').val(),
-                                AppointmentDate:            date,
-                                AppointmentHour:            selectedHour,
-                                AppointmentMedicalofficeid: firstOffice.medicalOfficeId
-                            };
+            // Limpia los demás campos
+            $('#appointmentReason').val('');
+            $('#appointmentInsuranceCompanyId').val('').trigger('change');
+            $('#appointmentInsuranceAuthCode').val('');
 
-                            console.log('Confirmado. Enviando JSON:', payload);
+            // Activa botón y abre modal completo
+            $('#confirmAppointmentBtn')
+              .prop('disabled', false)
+              .show();
 
-                            $.ajax({
-                                url: '@Url.Action("ModifyAppointment", "Appointment")',
-                                type: 'POST',
-                                contentType: 'application/json; charset=utf-8',
-                                dataType: 'json',
-                                data: JSON.stringify(payload)
-                            })
-                            .done(resp => {
-                                if (resp.success) {
-                                    Swal.fire({
-                                        title: '¡Cita reprogramada!',
-                                        text: resp.message,
-                                        icon: 'success',
-                                        showCancelButton: !!resp.whatsappUrl,
-                                        confirmButtonText: resp.whatsappUrl ? 'Enviar recordatorio' : 'OK',
-                                        cancelButtonText: 'Omitir'
-                                    }).then(r => {
-                                        if (r.isConfirmed && resp.whatsappUrl) window.open(resp.whatsappUrl, '_blank');
-                                        location.href = '@Url.Action("AppointmentList", "Appointment")';
-                                    });
-                                } else {
-                                    Swal.fire('Error', resp.message || 'Fallo al reprogramar.', 'error');
-                                }
-                            })
-                            .fail((jq, status, err) => {
-                                console.error(status, err, jq.responseText);
-                                Swal.fire('Error', 'Solicitud falló', 'error');
-                            });
-                        }
-                    });
-
-                } else {
-                    Swal.fire('Sin consultorio', 'No hay consultorios disponibles para esa hora.', 'warning');
-                }
-            })
-            .fail(() => Swal.fire('Error', 'No cargó consultorios.', 'error'));
+            new bootstrap.Modal($('#appointmentModalgrid')).show();
+          })
+          .fail(() => {
+            Swal.fire('Error', 'No se pudieron cargar los consultorios.', 'error');
+          });
         });
 
-    
+
+        // 2) Al pulsar “Confirmar cita”: envía todos los campos al servidor
+        $('#confirmAppointmentBtn').on('click', function () {
+          const payload = {
+            AppointmentId:                    $('#appointment').val(),
+            AppointmentPatientid:             $('#patientId').val(),
+            AppointmentDate:                  $('#selectedDate').val(),
+            AppointmentHour:                  $('#appointmentTime').val(),
+            AppointmentMedicalofficeid:       $('#AppointmentMedicalofficeid').val(),
+            AppointmentStatus:                $('#appointmentStatus').val(),
+            DoctorUserId:                     $('#doctorUserId').val() || null,
+            AppointmentInsuranceCompanyId:    $('#appointmentInsuranceCompanyId').val() || null,
+            AppointmentInsuranceAuthCode:     $('#appointmentInsuranceAuthCode').val() || null,
+            AppointmentReason:                $('#appointmentReason').val() || null
+          };
+
+          console.log('Enviando payload ModifyAppointment:', payload);
+
+          $.ajax({
+            url: '@Url.Action("ModifyAppointment", "Appointment")',
+            type: 'POST',
+            contentType: 'application/json; charset=utf-8',
+            dataType: 'json',
+            data: JSON.stringify(payload)
+          })
+          .done(resp => {
+            if (resp.success) {
+              Swal.fire('¡Listo!', resp.message, 'success')
+                .then(() => window.location = '@Url.Action("AppointmentList", "Appointment")');
+            } else {
+              Swal.fire('Error', resp.message || 'No se pudo reprogramar.', 'error');
+            }
+          })
+          .fail((jq, status, err) => {
+            console.error('ModifyAppointment falló:', status, err, jq.responseText);
+            Swal.fire('Error', 'La petición de reprogramación falló.', 'error');
+          });
+        });
+
+
+
         //Funcion para cancelar la cita
         function cancelAppointment() {
             Swal.fire({

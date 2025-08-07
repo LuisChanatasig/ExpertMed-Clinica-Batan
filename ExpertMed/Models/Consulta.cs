@@ -62,6 +62,7 @@ namespace ExpertMed.Models
 
         public int? ConsultationStatus { get; set; }
         public bool? ConsultationHasdisease { get; set; }
+        public bool? ConsutationHasSymptoms { get; set; }
         public string? ConsultationDiseaseobservation { get; set; }
         public string? ConsultationContingencytype { get; set; }
 

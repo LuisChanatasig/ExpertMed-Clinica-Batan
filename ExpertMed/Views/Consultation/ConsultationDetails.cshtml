@@ -1919,38 +1919,78 @@ Clínica.
                             </div>
                         </div>
                         <!-- #endregion Laboratorios-->
-                        <!--region días incapacidad-->
+                        <!--region certificado medico-->
                         <div class="row">
-
                             <div class="col-xxl-12 col-lg-12">
-
                                 <div class="card" id="baccard">
-
                                     <div class="card-header" id="card-header-color">
-                                        <h6 class="card-title mb-0">Días de incapacidad</h6>
+                                        <h6 class="card-title mb-0">Certificado Médico</h6>
                                     </div>
-
                                     <div class="card-body">
                                         <div class="row">
-                                            <div class="col-lg-12">
+                                            <!-- Días de Incapacidad -->
+                                            <div class="col-md-6">
                                                 <div class="mb-3">
-                                                    <input type="type" name="diasincapacidad" value="@Model.Consultation.ConsultationDisablilitydays" id="consultation_disablilitydays" />
+                                                    <label for="cert_dias_incapacidad" class="form-label">Días de incapacidad</label>
+                                                    <input type="number" class="form-control" name="dias_incapacidad" id="cert_dias_incapacidad" value="@Model.Consultation.ConsultationDisablilitydays" />
                                                 </div>
                                             </div>
 
+                                            <!-- Procedimientos -->
+                                            <!-- Procedimientos múltiples -->
+                                            <div class="col-md-12">
+                                                <label class="form-label">Procedimientos</label>
+                                                <table class="table table-bordered" id="procedimientosTable">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Nombre del procedimiento</th>
+                                                            <th>Fecha</th>
+                                                            <th style="width: 40px;">Acciones</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!-- no se renderiza ninguna fila hasta que el usuario haga clic -->
+                                                    </tbody>
+                                                </table>
+                                                <button type="button" class="btn btn-sm btn-primary" id="addProcedureBtn">+ Agregar procedimiento</button>
+                                            </div>
 
+                                            <!-- Tipo de contingencia -->
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="cert_tipo_contingencia" class="form-label">Tipo de contingencia</label>
+                                                    <select class="form-select" name="tipo_contingencia" id="cert_tipo_contingencia">
+                                                        <option value="">Seleccione una opción</option>
+                                                        <option value="Accidente laboral">Accidente laboral</option>
+                                                        <option value="Enfermedad común">Enfermedad común</option>
+                                                        <option value="Licencia de maternidad">Licencia de maternidad</option>
+                                                        <option value="Licencia de paternidad">Licencia de paternidad</option>
+                                                        <option value="Accidente de tránsito">Accidente de tránsito</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <!-- Tiene enfermedad -->
+                                            <div class="col-md-6">
+                                                <div class="form-check mb-3 mt-2">
+                                                    <input type="checkbox" class="form-check-input" id="cert_tiene_enfermedad" name="tiene_enfermedad" />
+                                                    <label class="form-check-label" for="cert_tiene_enfermedad">Tiene enfermedad</label>
+                                                </div>
+                                            </div>
+
+                                            <!-- Observación (condicional) -->
+                                            <div class="col-md-6" id="observacion_container" style="display: none;">
+                                                <div class="mb-3">
+                                                    <label for="cert_observacion" class="form-label">Observación</label>
+                                                    <textarea class="form-control" name="observacion" id="cert_observacion" rows="2"></textarea>
+                                                </div>
+                                            </div>
                                         </div>
-
                                     </div>
-
-
-
                                 </div>
-
                             </div>
-
                         </div>
-                        <!--end region incapacidad-->
+                        <!--end region certificado medico-->
                         <!--region Observación-->
                         <div class="row">
 
@@ -2365,6 +2405,8 @@ Clínica.
             });
         });
     </script>
+
+
   <script src="~/assets/js/consultation.js"></script>
     <script src="~/assets/js/app.js"></script>
 

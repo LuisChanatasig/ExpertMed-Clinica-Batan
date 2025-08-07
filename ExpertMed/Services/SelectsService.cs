@@ -156,7 +156,6 @@ namespace ExpertMed.Services
                 cmd.Parameters.Add(param);
 
                 using var reader = await cmd.ExecuteReaderAsync();
-
                 while (await reader.ReadAsync())
                 {
                     var dto = new MedicDetails
@@ -168,6 +167,21 @@ namespace ExpertMed.Services
                         UsersEstablishmentId = reader.GetInt32(reader.GetOrdinal("establishment_id")),
                         UsersEstablishmentName = reader.GetString(reader.GetOrdinal("establishment_name"))
                     };
+
+                    // --- LEER LA FOTO ---
+                    int photoIndex = reader.GetOrdinal("users_profilephoto");
+                    if (!reader.IsDBNull(photoIndex))
+                    {
+                        // Esto devuelve un byte[] completo si el proveedor lo soporta
+                        var photoBytes = (byte[])reader.GetValue(photoIndex);
+                        dto.UsersProfilephoto = photoBytes;
+                        dto.UsersProfilephoto64 = Convert.ToBase64String(photoBytes);
+                    }
+                    else
+                    {
+                        dto.UsersProfilephoto = null;
+                        dto.UsersProfilephoto64 = null;
+                    }
 
                     results.Add(dto);
                 }

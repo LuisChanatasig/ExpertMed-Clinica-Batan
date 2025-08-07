@@ -26,6 +26,17 @@
 
         public int? AppointmentInsuranceCompanyId { get; set; }
         public string? AppointmentReason { get; set; }
+        public string? SpecialtyName { get; set; }
+        public string? PaymentMethod { get; set; }
+        public decimal AmountToBill { get; set; }
+
+
+        public List<InsuranceCompanyDto> InsuranceCompanies { get; set; }
+
+
+        public Patient Patient { get; set; }  // For user details
+
+        public List<User> Users { get; set; }  // For user details
     }
 
 }

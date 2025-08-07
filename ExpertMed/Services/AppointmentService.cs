@@ -179,7 +179,10 @@ namespace ExpertMed.Services
                     command.Parameters.AddWithValue("@appointment_date", appointmentDto.AppointmentDate.Date);
                     command.Parameters.AddWithValue("@appointment_hour", appointmentDto.AppointmentHour);
                     command.Parameters.AddWithValue("@appointment_patientid", appointmentDto.AppointmentPatientid);
-                    command.Parameters.AddWithValue("@appointment_status", appointmentDto.AppointmentStatus);
+                    command.Parameters.AddWithValue(
+                        "@appointment_status",
+                        appointmentDto.AppointmentStatus ?? 1
+                    );
                     command.Parameters.AddWithValue("@appointment_medicalofficeid", (object?)appointmentDto.AppointmentMedicalofficeid ?? DBNull.Value);
                     command.Parameters.AddWithValue("@doctor_userid", (object?)doctorUserId ?? DBNull.Value);
 
@@ -249,7 +252,13 @@ namespace ExpertMed.Services
                                 : (int?)null,
                             AppointmentMedicalofficeid = !reader.IsDBNull(reader.GetOrdinal("appointment_medicalofficeid"))
                                 ? reader.GetInt32(reader.GetOrdinal("appointment_medicalofficeid"))
-                                : (int?)null
+                                : (int?)null,
+                            AppointmentReason = !reader.IsDBNull(reader.GetOrdinal("appointment_reason"))
+        ? reader.GetString(reader.GetOrdinal("appointment_reason"))
+        : string.Empty,
+                            AppointmentInsuranceCompanyId = !reader.IsDBNull(reader.GetOrdinal("appointment_insurance_company_id"))
+        ? reader.GetInt32(reader.GetOrdinal("appointment_insurance_company_id"))
+        : (int?)null
                         };
 
                         if ((userProfile == 3 || userProfile == 4 || userProfile == 8) && !reader.IsDBNull(reader.GetOrdinal("DoctorUserId")))
@@ -262,50 +271,80 @@ namespace ExpertMed.Services
 
             return appointment;
         }
-         
+
         /// <summary>
         /// MODIFICAR UNA CITA
         /// </summary>
         /// <param name="appointmentDto"></param>
         /// <returns></returns>
         /// <exception cref="ApplicationException"></exception>
-
         public async Task ModifyAppointmentAsync(Appointment appointmentDto)
         {
-            using (var connection = new SqlConnection(_dbContext.Database.GetConnectionString()))
+            using var connection = new SqlConnection(_dbContext.Database.GetConnectionString());
+            await connection.OpenAsync();
+
+            using var command = new SqlCommand("sp_UpdateAppointment", connection)
             {
-                await connection.OpenAsync();
+                CommandType = CommandType.StoredProcedure
+            };
 
-                using (var command = new SqlCommand("sp_UpdateAppointment", connection))
-                {
-                    command.CommandType = CommandType.StoredProcedure;
+            // Parámetros obligatorios
+            command.Parameters.AddWithValue("@appointment_id", appointmentDto.AppointmentId);
+            command.Parameters.AddWithValue("@appointment_modifydate", DateTime.Now);
+            command.Parameters.AddWithValue("@appointment_modifyuser", appointmentDto.AppointmentModifyuser);
+            command.Parameters.AddWithValue("@appointment_date", appointmentDto.AppointmentDate);
+            command.Parameters.AddWithValue("@appointment_hour", appointmentDto.AppointmentHour);
+            command.Parameters.AddWithValue("@appointment_patientid", appointmentDto.AppointmentPatientid);
+            command.Parameters.AddWithValue("@appointment_status", appointmentDto.AppointmentStatus);
 
-                    // Parámetros para el procedimiento almacenado
-                    command.Parameters.AddWithValue("@appointment_id", appointmentDto.AppointmentId);
-                    command.Parameters.AddWithValue("@appointment_modifydate", DateTime.Now);
-                    command.Parameters.AddWithValue("@appointment_modifyuser", appointmentDto.AppointmentModifyuser);
-                    command.Parameters.AddWithValue("@appointment_date", appointmentDto.AppointmentDate);
-                    command.Parameters.AddWithValue("@appointment_hour", appointmentDto.AppointmentHour);
-                    command.Parameters.AddWithValue("@appointment_patientid", appointmentDto.AppointmentPatientid);
-                    command.Parameters.AddWithValue("@appointment_status", appointmentDto.AppointmentStatus);
+            // Consultorio (puede ser NULL)
+            command.Parameters.AddWithValue(
+                "@appointment_medicalofficeid",
+                appointmentDto.AppointmentMedicalofficeid.HasValue
+                    ? (object)appointmentDto.AppointmentMedicalofficeid.Value
+                    : DBNull.Value
+            );
 
-                    // Agregar el nuevo parámetro de consultorio (maneja NULL también)
-                    if (appointmentDto.AppointmentMedicalofficeid.HasValue)
-                        command.Parameters.AddWithValue("@appointment_medicalofficeid", appointmentDto.AppointmentMedicalofficeid.Value);
-                    else
-                        command.Parameters.AddWithValue("@appointment_medicalofficeid", DBNull.Value);
+            // Médico asignado (puede ser NULL)
+            command.Parameters.AddWithValue(
+       "@doctor_userid",
+       appointmentDto.DoctorUserId != 0
+           ? (object)appointmentDto.DoctorUserId
+           : DBNull.Value
+   );
 
-                    try
-                    {
-                        // Ejecutar el procedimiento almacenado
-                        await command.ExecuteNonQueryAsync();
-                    }
-                    catch (SqlException ex)
-                    {
-                        // Manejo de errores
-                        throw new ApplicationException("Error al modificar la cita: " + ex.Message);
-                    }
-                }
+            // Aseguradora (puede ser NULL)
+            command.Parameters.AddWithValue(
+                "@appointment_insurance_company_id",
+                appointmentDto.AppointmentInsuranceCompanyId.HasValue
+                    ? (object)appointmentDto.AppointmentInsuranceCompanyId.Value
+                    : DBNull.Value
+            );
+
+            // Código de autorización (puede ser NULL o cadena vacía)
+            command.Parameters.AddWithValue(
+                "@appointment_insurance_auth_code",
+                !string.IsNullOrWhiteSpace(appointmentDto.AppointmentInsuranceAuthCode)
+                    ? (object)appointmentDto.AppointmentInsuranceAuthCode
+                    : DBNull.Value
+            );
+
+            // Motivo de la cita (puede ser NULL o cadena vacía)
+            command.Parameters.AddWithValue(
+                "@appointment_reason",
+                !string.IsNullOrWhiteSpace(appointmentDto.AppointmentReason)
+                    ? (object)appointmentDto.AppointmentReason
+                    : DBNull.Value
+            );
+
+            try
+            {
+                await command.ExecuteNonQueryAsync();
+            }
+            catch (SqlException ex)
+            {
+                // Aquí podrías mapear códigos de error específicos del SP a mensajes más amigables
+                throw new ApplicationException($"Error al modificar la cita (ID {appointmentDto.AppointmentId}): {ex.Message}", ex);
             }
         }
 

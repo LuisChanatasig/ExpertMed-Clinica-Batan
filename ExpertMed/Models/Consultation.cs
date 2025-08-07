@@ -63,6 +63,8 @@ public partial class Consultation
 
     public string? ConsultationTherapies { get; set; }
 
+    public int? AppointmentStatus { get; set; }  // <- nuevo
+
     public virtual ICollection<AllergiesConsultation> AllergiesConsultations { get; set; } = new List<AllergiesConsultation>();
 
     public virtual ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
