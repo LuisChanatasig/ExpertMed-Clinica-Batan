@@ -122,6 +122,13 @@
                                                 <span> Datos personales </span>
                                             </div>
                                             <div class="mb-3">
+                                                <input type="text"
+                                                       id="doctorSearchMain"
+                                                       class="form-control"
+                                                       placeholder="Buscar médico (nombre o especialidad)…" />
+                                            </div>
+
+                                            <div class="mb-3">
                                                 <label class="form-label">Seleccionar médico para su cita *</label>
 
                                                 <div id="doctorCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-wrap="false">
@@ -443,6 +450,13 @@
                                     <h6 class="camp">Información mínima</h6>
                                     <div class="tab-pane active" id="minimalDetails" role="tabpanel">
                                         <div class="row">
+                                            <div class="col-lg-12 mb-3">
+                                                <input type="text"
+                                                       id="doctorSearch"
+                                                       class="form-control"
+                                                       placeholder="Buscar médico (nombre o especialidad)…" />
+                                            </div>
+
                                             <!-- Se muestran solo los campos de selección de médico y número de documento -->
                                             <div class="col-lg-12">
                                                 <div class="mb-3">
@@ -1056,7 +1070,39 @@
     </script>
 
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const input = document.getElementById('doctorSearch');
+            const carousel = document.getElementById('doctorCarouselSimplified');
+            const items = carousel.querySelectorAll('.carousel-item');
 
+            input.addEventListener('input', function() {
+                const term = this.value.trim().toLowerCase();
+
+                items.forEach(item => {
+                    let anyVisible = false;
+                    // Cada tarjeta .col-6 dentro de este slide
+                    item.querySelectorAll('.col-6').forEach(col => {
+                        const name    = col.querySelector('.fw-semibold').textContent.toLowerCase();
+                        const specialty = col.querySelector('.text-muted').textContent.toLowerCase();
+                        if (name.includes(term) || specialty.includes(term)) {
+                            col.style.display = '';
+                            anyVisible = true;
+                        } else {
+                            col.style.display = 'none';
+                        }
+                    });
+                    // Oculta el slide si no quedó ninguna tarjeta visible
+                    item.style.display = anyVisible ? '' : 'none';
+                });
+
+                // Reajusta la clase .active al primer slide visible
+                const firstVisible = carousel.querySelector('.carousel-item:not([style*="display: none"])');
+                items.forEach(i => i.classList.remove('active'));
+                if (firstVisible) firstVisible.classList.add('active');
+            });
+        });
+    </script>
 
     @if (!string.IsNullOrEmpty(message))
     {
@@ -1162,8 +1208,73 @@
                 });
             }
         });
+
+
     </script>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const input = document.getElementById('doctorSearchMain');
+            const carousel = document.getElementById('doctorCarousel');
+            const items = carousel.querySelectorAll('.carousel-item');
+
+            input.addEventListener('input', function() {
+                const term = this.value.trim().toLowerCase();
+
+                items.forEach(item => {
+                    let anyVisible = false;
+                    item.querySelectorAll('.doctor-card').forEach(col => {
+                        const name       = col.querySelector('.doctor-name').textContent.toLowerCase();
+                        const specialty  = col.querySelector('.doctor-specialty').textContent.toLowerCase();
+                        if (name.includes(term) || specialty.includes(term)) {
+                            col.style.display = '';
+                            anyVisible = true;
+                        } else {
+                            col.style.display = 'none';
+                        }
+                    });
+                    item.style.display = anyVisible ? '' : 'none';
+                });
+
+                // Activar la primera diapositiva visible
+                const firstVisible = carousel.querySelector('.carousel-item:not([style*="display: none"])');
+                items.forEach(i => i.classList.remove('active'));
+                if (firstVisible) firstVisible.classList.add('active');
+            });
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const input = document.getElementById('doctorSearchMain');
+            const carousel = document.getElementById('doctorCarousel');
+            const items = carousel.querySelectorAll('.carousel-item');
+
+            input.addEventListener('input', function() {
+                const term = this.value.trim().toLowerCase();
+
+                items.forEach(item => {
+                    let anyVisible = false;
+                    item.querySelectorAll('.doctor-card').forEach(col => {
+                        const name       = col.querySelector('.doctor-name').textContent.toLowerCase();
+                        const specialty  = col.querySelector('.doctor-specialty').textContent.toLowerCase();
+                        if (name.includes(term) || specialty.includes(term)) {
+                            col.style.display = '';
+                            anyVisible = true;
+                        } else {
+                            col.style.display = 'none';
+                        }
+                    });
+                    item.style.display = anyVisible ? '' : 'none';
+                });
+
+                // Activar la primera diapositiva visible
+                const firstVisible = carousel.querySelector('.carousel-item:not([style*="display: none"])');
+                items.forEach(i => i.classList.remove('active'));
+                if (firstVisible) firstVisible.classList.add('active');
+            });
+        });
+    </script>
     @if (!string.IsNullOrEmpty(errorMessage))
     {
         <script>
