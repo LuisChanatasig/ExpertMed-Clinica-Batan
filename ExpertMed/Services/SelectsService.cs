@@ -1,4 +1,5 @@
 ﻿using ExpertMed.Models;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
 
@@ -437,6 +438,111 @@ namespace ExpertMed.Services
             return await _dbContext.Catalogs
                 .Where(c => c.CatalogCategory == "CIRUGIAS")
                 .ToListAsync();
+        }
+
+        // En tu SelectService o el servicio correspondiente
+        // Agregar al final de la clase SelectsService, antes de la última llave
+
+        /// <summary>
+        /// Crea un nuevo medicamento en el sistema
+        /// </summary>
+        /// <summary>
+        /// Crea un nuevo medicamento en el sistema
+        /// </summary>
+        public async Task<(bool success, string message, MedicationDto data)> CreateMedicationAsync(CreateMedicationDto dto)
+        {
+            try
+            {
+                using (var connection = _dbContext.Database.GetDbConnection())
+                {
+                    await connection.OpenAsync();
+
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = "sp_medications_insert";
+                        command.CommandType = CommandType.StoredProcedure;
+
+                        // Parámetros de entrada
+                        var paramName = command.CreateParameter();
+                        paramName.ParameterName = "@medications_name";
+                        paramName.Value = dto.medications_name ?? (object)DBNull.Value;
+                        command.Parameters.Add(paramName);
+
+                        var paramDesc = command.CreateParameter();
+                        paramDesc.ParameterName = "@medications_description";
+                        paramDesc.Value = dto.medications_description ?? (object)DBNull.Value;
+                        command.Parameters.Add(paramDesc);
+
+                        var paramConc = command.CreateParameter();
+                        paramConc.ParameterName = "@medications_concentration";
+                        paramConc.Value = dto.medications_concentration ?? (object)DBNull.Value;
+                        command.Parameters.Add(paramConc);
+
+                        var paramCie = command.CreateParameter();
+                        paramCie.ParameterName = "@medications_cie10";
+                        paramCie.Value = dto.medications_cie10 ?? (object)DBNull.Value;
+                        command.Parameters.Add(paramCie);
+
+                        var paramStatus = command.CreateParameter();
+                        paramStatus.ParameterName = "@medications_status";
+                        paramStatus.Value = dto.medications_status ?? 1;
+                        command.Parameters.Add(paramStatus);
+
+                        // Parámetro de salida
+                        var paramId = command.CreateParameter();
+                        paramId.ParameterName = "@medications_id";
+                        paramId.DbType = DbType.Int32;
+                        paramId.Direction = ParameterDirection.Output;
+                        command.Parameters.Add(paramId);
+
+                        // Ejecutar
+                        await command.ExecuteNonQueryAsync();
+
+                        // Obtener el ID generado
+                        var newId = (int)paramId.Value;
+
+                        // Consultar el medicamento recién creado
+                        var newMedication = await _dbContext.Medications
+                            .FromSqlRaw("SELECT * FROM medications WHERE medications_id = {0}", newId)
+                            .FirstOrDefaultAsync();
+
+                        if (newMedication == null)
+                        {
+                            return (false, "No se pudo recuperar el medicamento creado", null);
+                        }
+
+                        var result = new MedicationDto
+                        {
+                            medications_id = newMedication.MedicationsId,
+                            medications_name = newMedication.MedicationsName,
+                            medications_description = newMedication.MedicationsDescription,
+                            medications_category = newMedication.MedicationsCategory,
+                            medications_distinctive = newMedication.MedicationsDistinctive,
+                            medications_concentration = newMedication.MedicationsConcentration,
+                            medications_cie10 = newMedication.MedicationsCie10,
+                            medications_status = newMedication.MedicationsStatus ?? 1
+                        };
+
+                        return (true, "Medicamento creado exitosamente", result);
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                _logger.LogError(ex, "Error SQL al crear medicamento");
+
+                if (ex.Message.Contains("Ya existe un medicamento"))
+                {
+                    return (false, ex.Message, null);
+                }
+
+                return (false, "Error al crear el medicamento: " + ex.Message, null);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al crear medicamento");
+                return (false, "Error interno: " + ex.Message, null);
+            }
         }
     }
 }

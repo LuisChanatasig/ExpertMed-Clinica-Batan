@@ -167,7 +167,7 @@ namespace ExpertMed.Controllers
                     consultaDto.ConsultationPulse,
                     consultaDto.ConsultationWeight,
                     consultaDto.ConsultationSize,
-                    consultaDto.ConsultationTreatmentplan,
+                    consultaDto.ConsultationTreatmentplan, 
                     consultaDto.ConsultationObservation,
                     consultaDto.ConsultationPersonalbackground,
                     consultaDto.ConsultationDisablilitydays ?? 0,
@@ -502,6 +502,37 @@ namespace ExpertMed.Controllers
             };
 
             return View(viewModel);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CreateMedication([FromBody] CreateMedicationDto dto)
+        {
+            if (!ModelState.IsValid || string.IsNullOrWhiteSpace(dto.medications_name))
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "El nombre del medicamento es obligatorio"
+                });
+            }
+
+            var result = await _selectService.CreateMedicationAsync(dto);
+
+            if (result.success)
+            {
+                return Json(new
+                {
+                    success = true,
+                    message = result.message,
+                    data = result.data
+                });
+            }
+
+            return Json(new
+            {
+                success = false,
+                message = result.message
+            });
         }
     }
 

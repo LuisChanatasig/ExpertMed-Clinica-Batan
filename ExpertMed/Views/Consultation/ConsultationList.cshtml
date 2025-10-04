@@ -10,35 +10,69 @@
 
     var successMessage = TempData["SuccessMessage"] as string;
     var errorMessage = TempData["ErrorMessage"] as string;
-
-    var consultasAgrupadasPorPaciente = Model
-     .OrderBy(c => c.ConsultationPatientNavigation.PatientFirstname)
-     .ThenBy(c => c.ConsultationCreationdate)
-     .GroupBy(c => c.ConsultationPatientNavigation.PatientFirstname + " " +
-                    c.ConsultationPatientNavigation.PatientMiddlename + " " +
-                    c.ConsultationPatientNavigation.PatientFirstsurname + " " +
-                    c.ConsultationPatientNavigation.PatientSecondlastname);
+var consultasAgrupadasPorPaciente = Model
+    .GroupBy(c => c.ConsultationPatientNavigation.PatientFirstname + " " +
+                   c.ConsultationPatientNavigation.PatientMiddlename + " " +
+                   c.ConsultationPatientNavigation.PatientFirstsurname + " " +
+                   c.ConsultationPatientNavigation.PatientSecondlastname)
+    .OrderByDescending(g => g.Max(c => c.ConsultationCreationdate))
+    .Select(g => new
+    {
+        Key = g.Key,
+        Consultas = g.OrderByDescending(c => c.ConsultationCreationdate).ToList()
+    });
 }
 
-
 @section styles {
-    <!--datatable css-->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" />
-    <!--datatable responsive css-->
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap.min.css" />
-
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.dataTables.min.css">
+    
+    <style>
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.35rem 0.65rem;
+            font-weight: 500;
+        }
+        .grupo-consulta {
+            transition: all 0.3s ease;
+        }
+        .grupo-consulta:hover {
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.075);
+        }
+    </style>
 }
 
 <div class="row">
     <div class="col-lg-12">
         <div class="card">
-
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">
-                    <i class="mdi mdi-clipboard-text-multiple-outline"></i> Listado de Consultas Médicas
-                </h5>
-                <input type="text" id="consultaSearch" class="form-control form-control-sm w-50" placeholder="🔍 Buscar paciente, médico o especialidad..." />
+            <div class="card-header">
+                <div class="row align-items-center g-3">
+                    <div class="col-md-4">
+                        <h5 class="card-title mb-0">
+                            <i class="mdi mdi-clipboard-text-multiple-outline"></i> 
+                            Listado de Consultas Médicas
+                        </h5>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" id="consultaSearch" 
+                               class="form-control form-control-sm" 
+                               placeholder="🔍 Buscar paciente, médico o especialidad..." />
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex justify-content-end gap-2">
+                            <small class="text-muted">
+                                <span class="badge bg-success status-badge">
+                                    <i class="mdi mdi-check-circle"></i> Finalizada
+                                </span>
+                                <span class="mx-1">|</span>
+                                <span class="badge bg-danger status-badge">
+                                    <i class="mdi mdi-alert-circle"></i> Pendiente
+                                </span>
+                            </small>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="card-body">
@@ -47,40 +81,53 @@
                     int grupoId = 1;
                     foreach (var grupo in consultasAgrupadasPorPaciente)
                     {
-                        var consultas = grupo.ToList();
+                        var consultas = grupo.Consultas;  // ← Cambio aquí
                         var pacienteNombre = grupo.Key;
                         var firstConsulta = consultas.First();
                         var collapseId = $"collapseConsulta{grupoId}";
 
                         <div class="mb-3 border rounded grupo-consulta">
-                            <div class="bg-light px-3 py-2 d-flex justify-content-between align-items-center">
-                                <div>
-                                    <strong><i class="mdi mdi-account"></i> @pacienteNombre</strong>
-                                    <br />
-                                    <span class="text-muted">
-                                        <i class="mdi mdi-stethoscope"></i>
-                                        Médico: @firstConsulta.ConsultationUsercreateNavigation.UsersNames @firstConsulta.ConsultationUsercreateNavigation.UsersSurcenames
-                                    </span>
-                                    <br />
-                                    <span class="text-muted">
-                                        <i class="mdi mdi-calendar-clock"></i> Última consulta:
-                                        @(firstConsulta.ConsultationCreationdate?.ToString("dd/MM/yyyy") ?? "—")
-                                    </span>
-                                </div>
-
-                                <div>
-                                    <a class="btn btn-sm btn-soft-info" data-bs-toggle="collapse" href="#@collapseId" role="button" aria-expanded="false" aria-controls="@collapseId">
-                                        <i class="mdi mdi-eye-outline"></i> Ver detalles
-                                    </a>
-                                    <a href="@Url.Action("AppointmentList", "Appointment")" class="btn btn-sm btn-soft-primary">
-                                        <i class="bx bx-user-plus"></i> Nueva consulta
-                                    </a>
+                            <div class="bg-light px-3 py-2">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <strong>
+                                                <i class="mdi mdi-account"></i> @pacienteNombre
+                                            </strong>
+                                            <span class="badge @(firstConsulta.AppointmentStatus == 4 ? "bg-success" : "bg-danger") status-badge">
+                                                @if (firstConsulta.AppointmentStatus == 4)
+                                                {
+                                                    <i class="mdi mdi-check-circle"></i> <text>Finalizada</text>
+                                                }
+                                                else
+                                                {
+                                                    <i class="mdi mdi-alert-circle"></i> <text>Pendiente</text>
+                                                }
+                                            </span>
+                                        </div>
+                                        <div class="text-muted small">
+                                            <i class="mdi mdi-stethoscope"></i>
+                                            Médico: @firstConsulta.ConsultationUsercreateNavigation.UsersNames @firstConsulta.ConsultationUsercreateNavigation.UsersSurcenames
+                                        </div>
+                                        <div class="text-muted small">
+                                            <i class="mdi mdi-calendar-clock"></i>
+                                            Última consulta: @(firstConsulta.ConsultationCreationdate?.ToString("dd/MM/yyyy") ?? "—")
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        <a class="btn btn-sm btn-soft-info" data-bs-toggle="collapse" href="#@collapseId" role="button" aria-expanded="false" aria-controls="@collapseId">
+                                            <i class="mdi mdi-eye-outline"></i> Ver detalles
+                                        </a>
+                                        <a href="@Url.Action("AppointmentList", "Appointment")" class="btn btn-sm btn-soft-primary">
+                                            <i class="bx bx-user-plus"></i> Nueva consulta
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
 
                             <div class="collapse px-2 py-2" id="@collapseId">
                                 <div class="table-responsive">
-                                    <table class="table table-sm table-bordered align-middle mb-0">
+                                    <table class="table table-sm table-hover table-bordered align-middle mb-0">
                                         <thead class="table-light">
                                             <tr>
                                                 @if (perfilId == 1 || perfilId == 2)
@@ -92,7 +139,8 @@
                                                 <th>Fecha</th>
                                                 <th>Especialidad</th>
                                                 <th>Motivo</th>
-                                                <th>Tipo de Consulta</th>
+                                                <th>Tipo</th>
+                                                <th>Estado</th>
                                                 <th>Acción</th>
                                             </tr>
                                         </thead>
@@ -110,27 +158,70 @@
                                                             </div>
                                                         </td>
                                                     }
-
                                                     <td>@consulta.ConsultationHistoryclinic</td>
                                                     <td>@(consulta.ConsultationCreationdate?.ToString("dd/MM/yyyy") ?? "")</td>
                                                     <td>@consulta.ConsultationSpecialityNavigation.SpecialityName</td>
                                                     <td>@consulta.ConsultationReason</td>
-                                                    <td style="color: @(consulta.ConsultationType == 1 ? "green" : consulta.ConsultationType == 2 ? "blue" : "black")">
-                                                        @(consulta.ConsultationType == 1 ? "Consulta Principal"
-                                                            : consulta.ConsultationType == 2 ? "Seguimiento"
-                                                            : "Otro")
-                                                    </td>
-
                                                     <td>
-                                                        <a href="#"
-                                                           class="btn btn-sm btn-soft-info"
-                                                           data-bs-toggle="modal"
-                                                           data-bs-target="#optionModal"
-                                                           onclick="openOptionModal(@consulta.ConsultationId, @consulta.AppointmentStatus)">
-                                                            <i class="ri-edit-line"></i> Revisar
-                                                        </a>
+                                                        <span class="badge @(consulta.ConsultationType == 1 ? "bg-success-subtle text-success" : "bg-info-subtle text-info")">
+                                                            @(consulta.ConsultationType == 1 ? "Principal" : consulta.ConsultationType == 2 ? "Seguimiento" : "Otro")
+                                                        </span>
                                                     </td>
-
+                                                    <td>
+    <span class="badge @(consulta.AppointmentStatus == 4 ? "bg-success" : "bg-danger") status-badge">
+        @if (consulta.AppointmentStatus == 4)
+        {
+            <i class="mdi mdi-check"></i> <text>Finalizada</text>
+        }
+        else
+        {
+            <i class="mdi mdi-clock-outline"></i> <text>Pendiente</text>
+        }
+    </span>
+</td>
+<td>
+    @if (consulta.AppointmentStatus == 4)
+    {
+        if (consulta.ConsultationCreationdate?.Date == DateTime.Today)
+        {
+            <!-- Finalizada hoy → permitir edición -->
+            <a href="@Url.Action("ConsultationUpdate", "Consultation", new { consultationId = consulta.ConsultationId })"
+               class="btn btn-sm btn-soft-warning">
+                <i class="ri-edit-line"></i> Editar
+            </a>
+               <!-- Finalizada otro día → solo revisión -->
+            <a href="#"
+               class="btn btn-sm btn-soft-success"
+               data-bs-toggle="modal"
+               data-bs-target="#optionModal"
+               onclick="openOptionModal(@consulta.ConsultationId, @consulta.AppointmentStatus)">
+                <i class="ri-eye-line"></i> Revisar
+            </a>
+        }
+        else
+        {
+            <!-- Finalizada otro día → solo revisión -->
+            <a href="#"
+               class="btn btn-sm btn-soft-success"
+               data-bs-toggle="modal"
+               data-bs-target="#optionModal"
+               onclick="openOptionModal(@consulta.ConsultationId, @consulta.AppointmentStatus)">
+                <i class="ri-eye-line"></i> Revisar
+            </a>
+        }
+    }
+    else
+    {
+        <!-- Pendiente → completar -->
+        <a href="#"
+           class="btn btn-sm btn-soft-warning"
+           data-bs-toggle="modal"
+           data-bs-target="#optionModal"
+           onclick="openOptionModal(@consulta.ConsultationId, @consulta.AppointmentStatus)">
+            <i class="ri-edit-line"></i> Completar
+        </a>
+    }
+</td>
 
                                                 </tr>
                                             }
@@ -139,25 +230,25 @@
                                 </div>
                             </div>
                         </div>
-
                         grupoId++;
                     }
                 }
                 else
                 {
-                    <div class="text-center text-muted">No hay consultas registradas.</div>
+                    <div class="text-center text-muted py-4">
+                        <i class="mdi mdi-information-outline fs-1 d-block mb-2"></i>
+                        No hay consultas registradas.
+                    </div>
                 }
             </div>
         </div>
     </div>
 </div>
 
-
 <!--Modal opciones consulta-->
 <div class="modal flip" id="optionModal" tabindex="-1" aria-labelledby="exampleModalgridLabel" aria-modal="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <!-- Hidden input to store AppointmentId -->
             <input type="hidden" id="consultationId" name="ConsultationId" />
             <input type="hidden" id="perfiltIdInput" value="@perfilId" name="perfil" />
 
@@ -168,38 +259,29 @@
 
             <div class="modal-body">
                 <div class="row g-3">
-                    <!-- Buttons Group -->
                     <div class="col-6">
                         <button type="button" class="btn btn-soft-info btn-label btn-sm w-100 waves-effect waves-light"
                                 onclick="openReviewConsulta()">
-
-                            <i class=" ri-eye-fill label-icon align-middle fs-16 me-2"></i> Revisar Consulta
-
+                            <i class="ri-eye-fill label-icon align-middle fs-16 me-2"></i> Revisar Consulta
                         </button>
                     </div>
-
                     <div class="col-6">
                         <button type="button" class="btn btn-soft-success btn-label btn-sm w-100 waves-effect waves-light"
                                 onclick="openModalDocument()">
                             <i class="ri-file-text-fill label-icon align-middle fs-16 me-2"></i> Generar Documento
                         </button>
                     </div>
-
-                    <!-- Botón Terminar Consulta, oculto hasta que abramos -->
                     <button id="btnFinishConsult"
                             type="button"
                             class="btn btn-success d-none"
                             onclick="finishConsultation()">
                         <i class="ri-check-line me-1"></i> Terminar Consulta
                     </button>
-
-                </div><!--end row-->
+                </div>
             </div>
-
         </div>
     </div>
 </div>
-
 
 <div class="modal fade" id="optionsDocuments" tabindex="-1" aria-labelledby="optionsDocuments">
     <div class="modal-dialog">
@@ -219,12 +301,10 @@
                             <option value="laboratorio">Laboratorio</option>
                             <option value="imagen">Imagen</option>
                         </select>
-                    </div><!--end row-->
+                    </div>
                 </form>
             </div>
-        
             <div class="modal-footer">
-              
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                 <button type="button" class="btn btn-primary" id="downloadButton" onclick="downloadDocument()" disabled>
                     <span id="downloadText">Descargar</span>
@@ -235,20 +315,11 @@
     </div>
 </div>
 
-
 @section scripts {
     <script src="~/assets/js/app.js"></script>
-
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"
-            integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
-
-    <!-- Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    <!-- DataTables -->
     <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
@@ -258,135 +329,95 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
-
-    <!-- Inicializar DataTables -->
     <script src="~/assets/js/pages/datatables.init.js"></script>
 
     <script>
-          // Abre el modal de opciones, recibiendo ID y estado de cita
         function openOptionModal(consultationId, appointmentStatus) {
-          console.log('Estado de la cita:', appointmentStatus);
-
-          // 1) Guarda el ID en el hidden
-          document.getElementById('consultationId').value = consultationId;
-
-          // 2) Muestra u oculta el botón “Terminar Consulta”
-          const btnFinish = document.getElementById('btnFinishConsult');
-          // Asegúrate de partir sin la clase d-none
-          btnFinish.classList.remove('d-none');
-
-          if (appointmentStatus === 4) {
-            // Estado 4 = ya terminada → lo oculto de nuevo
-            btnFinish.classList.add('d-none');
-          }
-
-          // 3) Abre el modal de opciones
-          new bootstrap.Modal(document.getElementById('optionModal'), {
-            keyboard: false
-          }).show();
+            console.log('Estado de la cita:', appointmentStatus);
+            document.getElementById('consultationId').value = consultationId;
+            const btnFinish = document.getElementById('btnFinishConsult');
+            btnFinish.classList.remove('d-none');
+            if (appointmentStatus === 4) {
+                btnFinish.classList.add('d-none');
+            }
+            new bootstrap.Modal(document.getElementById('optionModal'), { keyboard: false }).show();
         }
 
-        // Redirige al GET ConsultationUpdate para “terminar” la consulta
         function finishConsultation() {
-          const id = document.getElementById('consultationId').value;
-          window.location.href =
-            '@Url.Action("ConsultationUpdate", "Consultation")'
-            + '?consultationId=' + encodeURIComponent(id);
+            const id = document.getElementById('consultationId').value;
+            window.location.href = '@Url.Action("ConsultationUpdate", "Consultation")' + '?consultationId=' + encodeURIComponent(id);
         }
 
-
-        // Redirige al GET ConsultationUpdate para editar la consulta
-        function finishConsultation() {
-          const id = document.getElementById('consultationId').value;
-          window.location.href =
-            '@Url.Action("ConsultationUpdate", "Consultation")'
-            + '?consultationId=' + encodeURIComponent(id);
-        }
-
-        // Abre el modal para generar documentos
         function openModalDocument() {
-          const modalElement = document.getElementById('optionsDocuments');
-          if (!modalElement) {
-            console.error("El modal 'optionsDocuments' no fue encontrado.");
-            return;
-          }
-          new bootstrap.Modal(modalElement, { keyboard: false }).show();
+            const modalElement = document.getElementById('optionsDocuments');
+            if (!modalElement) {
+                console.error("El modal 'optionsDocuments' no fue encontrado.");
+                return;
+            }
+            new bootstrap.Modal(modalElement, { keyboard: false }).show();
         }
 
-        // Navega a la vista de detalle de consulta
         function openReviewConsulta() {
-          const consultationId = document.getElementById('consultationId').value;
-          if (!consultationId) {
-            alert("No se encontró un ID de consulta válido.");
-            return;
-          }
-          window.location.href =
-            '@Url.Action("ConsultationDetails", "Consultation")'
-            + '?consultationId=' + encodeURIComponent(consultationId);
+            const consultationId = document.getElementById('consultationId').value;
+            if (!consultationId) {
+                alert("No se encontró un ID de consulta válido.");
+                return;
+            }
+            window.location.href = '@Url.Action("ConsultationDetails", "Consultation")' + '?consultationId=' + encodeURIComponent(consultationId);
         }
 
-        // Habilita o deshabilita el botón de descarga según la selección
         function enableDownloadButton() {
-          const selectedValue = document.getElementById('documentType').value;
-          const downloadButton = document.getElementById('downloadButton');
-          if (!downloadButton) {
-            console.error("Botón de descarga no encontrado.");
-            return;
-          }
-          downloadButton.disabled = (selectedValue === "Seleccione un documento");
+            const selectedValue = document.getElementById('documentType').value;
+            const downloadButton = document.getElementById('downloadButton');
+            if (!downloadButton) {
+                console.error("Botón de descarga no encontrado.");
+                return;
+            }
+            downloadButton.disabled = (selectedValue === "Seleccione un documento");
         }
 
-        // Descarga el documento seleccionado
         function downloadDocument() {
-          const selectedValue = document.getElementById('documentType').value;
-          const downloadButton = document.getElementById('downloadButton');
-          const downloadText   = document.getElementById('downloadText');
-          const downloadSpinner= document.getElementById('downloadSpinner');
-          const consultationId = document.getElementById('consultationId').value;
+            const selectedValue = document.getElementById('documentType').value;
+            const downloadButton = document.getElementById('downloadButton');
+            const downloadText = document.getElementById('downloadText');
+            const downloadSpinner = document.getElementById('downloadSpinner');
+            const consultationId = document.getElementById('consultationId').value;
 
-          if (!consultationId) {
-            alert("No se encontró un ID de consulta válido.");
-            return;
-          }
-          if (!downloadButton || !downloadText || !downloadSpinner) {
-            console.error("Elementos del botón de descarga no encontrados.");
-            return;
-          }
+            if (!consultationId) {
+                alert("No se encontró un ID de consulta válido.");
+                return;
+            }
+            if (!downloadButton || !downloadText || !downloadSpinner) {
+                console.error("Elementos del botón de descarga no encontrados.");
+                return;
+            }
 
-          // Mostrar spinner y deshabilitar botón
-          downloadText.textContent = "Generando...";
-          downloadSpinner.classList.remove('d-none');
-          downloadButton.disabled = true;
+            downloadText.textContent = "Generando...";
+            downloadSpinner.classList.remove('d-none');
+            downloadButton.disabled = true;
 
-          const actions = {
-            justificante: '@Url.Action("MedicalCertificate", "Documents")',
-            formulario:  '@Url.Action("MedicalForm", "Documents")',
-            receta:      '@Url.Action("MedicationRecipe", "Documents")',
-            laboratorio: '@Url.Action("LaboratoryDoc", "Documents")',
-            imagen:      '@Url.Action("ImageDoc", "Documents")'
-          };
+            const actions = {
+                justificante: '@Url.Action("MedicalCertificate", "Documents")',
+                formulario: '@Url.Action("MedicalForm", "Documents")',
+                receta: '@Url.Action("MedicationRecipe", "Documents")',
+                laboratorio: '@Url.Action("LaboratoryDoc", "Documents")',
+                imagen: '@Url.Action("ImageDoc", "Documents")'
+            };
 
-          if (actions[selectedValue]) {
-            const url = actions[selectedValue]
-                      + '?consultationId=' + encodeURIComponent(consultationId);
-            window.open(url, '_blank');
-          } else {
-            alert("Opción no válida.");
-          }
+            if (actions[selectedValue]) {
+                const url = actions[selectedValue] + '?consultationId=' + encodeURIComponent(consultationId);
+                window.open(url, '_blank');
+            } else {
+                alert("Opción no válida.");
+            }
 
-          // Restaurar botón después de 2 segundos
-          setTimeout(() => {
-            downloadText.textContent = "Descargar";
-            downloadSpinner.classList.add('d-none');
-            downloadButton.disabled = false;
-          }, 2000);
+            setTimeout(() => {
+                downloadText.textContent = "Descargar";
+                downloadSpinner.classList.add('d-none');
+                downloadButton.disabled = false;
+            }, 2000);
         }
-    </script>
 
-
-
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
         $(document).ready(function () {
             $('#consultaSearch').on('keyup', function () {
                 var filtro = $(this).val().toLowerCase();
@@ -394,7 +425,6 @@
                     var textoGrupo = $(this).text().toLowerCase();
                     var match = textoGrupo.indexOf(filtro) > -1;
                     $(this).toggle(match);
-
                     var collapse = $(this).find('.collapse');
                     if (match) {
                         collapse.addClass('show');
@@ -404,15 +434,13 @@
                 });
             });
         });
-
-
     </script>
 
     @if (!string.IsNullOrEmpty(successMessage))
     {
         <script>
             Swal.fire({
-                title: '¡Success!',
+                title: '¡Éxito!',
                 text: '@successMessage',
                 icon: 'success',
                 confirmButtonText: 'OK',
@@ -425,7 +453,7 @@
     {
         <script>
             Swal.fire({
-                title: 'Success',
+                title: 'Error',
                 text: '@errorMessage',
                 icon: 'error',
                 confirmButtonText: 'OK',
@@ -433,5 +461,4 @@
             });
         </script>
     }
-
 }

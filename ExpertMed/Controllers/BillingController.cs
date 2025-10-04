@@ -51,67 +51,192 @@ namespace ExpertMed.Controllers
         /// <returns></returns>
 
         [HttpPost]
-        [RequestSizeLimit(52428800)] // 50MB
-        public async Task<IActionResult> Billing([FromForm] Facturacions viewModel, IFormFile? comprobantePagoFile)
+        [RequestSizeLimit(52428800)]
+        public async Task<IActionResult> Billing(
+    [FromForm] Facturacions viewModel,
+    IFormFile comprobantePagoFile = null,
+    List<IFormFile> PaymentProofs = null)
         {
             if (!ModelState.IsValid)
             {
-                _logger.LogWarning("Errores en la validación del modelo: {Errors}",
-                    string.Join("; ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
+                // Log detallado de errores
+                var errores = ModelState
+                    .Where(ms => ms.Value.Errors.Count > 0)
+                    .Select(ms => new
+                    {
+                        Campo = ms.Key,
+                        Errores = ms.Value.Errors.Select(e => e.ErrorMessage).ToList()
+                    }).ToList();
+
+                foreach (var error in errores)
+                {
+                    _logger.LogWarning("Campo: {Campo}, Errores: {Errores}",
+                        error.Campo, string.Join("; ", error.Errores));
+                }
 
                 TempData["ErrorMessage"] = "Verifique los datos ingresados.";
-                return View("Facturacion", viewModel); // Ojo: Vista debe llamarse igual que la Razor asociada
+                return View("Facturacion", viewModel);
             }
 
             try
             {
-                // Carga el comprobante (o dummy si no se subió)
-                if (comprobantePagoFile != null && comprobantePagoFile.Length > 0)
+                // Array de bytes dummy para cuando no hay comprobante
+                byte[] dummyBytes = new byte[] { 0x00 };
+
+                // Determinar si usar sistema antiguo o nuevo
+                bool usarMultiplesPagos = viewModel.PaymentMethods != null && viewModel.PaymentMethods.Any();
+
+                if (usarMultiplesPagos)
                 {
-                    using var memoryStream = new MemoryStream();
-                    await comprobantePagoFile.CopyToAsync(memoryStream);
-                    viewModel.ComprobantePagoFacturacion = memoryStream.ToArray();
+                    // Validar suma de pagos
+                    var totalPagos = viewModel.PaymentMethods.Sum(p => p.PaymentAmount);
+                    if (Math.Abs(totalPagos - viewModel.TotalFactura) > 0.01m)
+                    {
+                        TempData["ErrorMessage"] = $"La suma de los pagos ({totalPagos:F2}) no coincide con el total ({viewModel.TotalFactura:F2}).";
+                        return View("Facturacion", viewModel);
+                    }
+
+                    // Procesar comprobantes múltiples
+                    if (PaymentProofs != null && PaymentProofs.Count > 0)
+                    {
+                        for (int i = 0; i < PaymentProofs.Count && i < viewModel.PaymentMethods.Count; i++)
+                        {
+                            if (PaymentProofs[i] != null && PaymentProofs[i].Length > 0)
+                            {
+                                using var ms = new MemoryStream();
+                                await PaymentProofs[i].CopyToAsync(ms);
+                                viewModel.PaymentMethods[i].PaymentProof = ms.ToArray();
+                            }
+                            else
+                            {
+                                // Asignar dummy bytes si no hay archivo
+                                viewModel.PaymentMethods[i].PaymentProof = dummyBytes;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Si no se enviaron archivos, asignar dummy bytes a todos
+                        foreach (var payment in viewModel.PaymentMethods)
+                        {
+                            payment.PaymentProof = dummyBytes;
+                        }
+                    }
                 }
                 else
                 {
-                    viewModel.ComprobantePagoFacturacion = new byte[] { 0x01, 0x02, 0x03 }; // Dummy opcional
+                    // Sistema antiguo: un solo comprobante
+                    if (comprobantePagoFile != null && comprobantePagoFile.Length > 0)
+                    {
+                        using var ms = new MemoryStream();
+                        await comprobantePagoFile.CopyToAsync(ms);
+                        viewModel.ComprobantePagoFacturacion = ms.ToArray();
+                    }
+                    else
+                    {
+                        // Asignar dummy bytes
+                        viewModel.ComprobantePagoFacturacion = dummyBytes;
+                    }
                 }
 
-                // Ejecutar servicio para crear y enviar la factura
+                // Llamar al servicio
                 string response = await _facturacion.CreateAndSendInvoiceAsync(
                     viewModel.CitaId ?? 0,
                     DateTime.UtcNow,
                     viewModel.TotalFactura,
-                    viewModel.MetodoPago ?? string.Empty,
-                    viewModel.ComprobantePagoFacturacion,
+                    usarMultiplesPagos ? null : viewModel.MetodoPago,
+                    usarMultiplesPagos ? null : viewModel.ComprobantePagoFacturacion,
                     viewModel.BillingDetailsNames,
                     viewModel.BillingDetailsCiNumber,
                     viewModel.BillingDetailsDocumentType,
                     viewModel.BillingDetailsAddress,
                     viewModel.BillingDetailsPhone,
                     viewModel.BillingDetailsEmail,
-                    viewModel.Items
+                    viewModel.InsuranceCompanyId,
+                    viewModel.Items,
+                    usarMultiplesPagos ? viewModel.PaymentMethods : null
                 );
 
                 _logger.LogInformation("Factura generada con éxito para la cita ID: {CitaId}", viewModel.CitaId);
                 TempData["SuccessMessage"] = "Factura generada y enviada correctamente.";
-
                 return RedirectToAction("AppointmentList", "Appointment");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al facturar cita ID: {CitaId}", viewModel.CitaId);
                 TempData["ErrorMessage"] = $"Error al generar la factura: {ex.Message}";
-                return View("Facturacion", viewModel); // Mismo nombre que en error de validación
+                return View("Facturacion", viewModel);
             }
         }
 
 
         [HttpGet("Facturas")]
-        public async Task<IActionResult> FacturasEmitidas()
+        public async Task<IActionResult> FacturasEmitidas(DateTime? fechaDesde = null, DateTime? fechaHasta = null)
         {
-            var facturas = await _facturacion.ObtenerFacturasEmitidasAsync();
-            return View(facturas);
+            try
+            {
+                var facturas = await _facturacion.ObtenerFacturasEmitidasAsync(fechaDesde, fechaHasta);
+                return View(facturas);
+            }
+            catch (Exception ex)
+            {
+                // Log del error
+                Console.WriteLine($"Error en FacturasEmitidas: {ex.Message}");
+                return View(new List<FacturaEmitidaDTO>());
+            }
+        }
+        [HttpPost("Facturas/Filtrar")]
+        public async Task<JsonResult> FiltrarFacturas([FromBody] FiltroFechasRequest request)
+        {
+            try
+            {
+                var facturas = await _facturacion.ObtenerFacturasEmitidasAsync(request.FechaDesde, request.FechaHasta);
+
+                var facturasSerialized = facturas.Select(f => new
+                {
+                    facturaId = f.FacturaId,
+                    secuencial = f.Secuencial,
+                    secuencialFormateado = f.SecuencialFormateado, // ⬅️ AGREGAR ESTA LÍNEA
+                    fecha = f.Fecha.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    paciente = f.Paciente ?? "(Sin nombre)",
+                    medico = f.Medico ?? "(Sin médico)",
+                    subtotal = f.Subtotal,
+                    totalAseguradora = f.TotalAseguradora,
+                    totalCopago = f.TotalCopago,
+                    metodoPago = f.MetodoPago ?? "-",
+                    aseguradora = f.Aseguradora ?? "Particular",
+                    totalItems = f.TotalItems,
+                    origen = f.Origen ?? "LOCAL"
+                }).ToList();
+
+                return Json(new
+                {
+                    success = true,
+                    data = facturasSerialized,
+                    count = facturasSerialized.Count,
+                    fechaDesde = request.FechaDesde?.ToString("dd/MM/yyyy"),
+                    fechaHasta = request.FechaHasta?.ToString("dd/MM/yyyy")
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en FiltrarFacturas: {ex.Message}");
+                Console.WriteLine($"StackTrace: {ex.StackTrace}");
+
+                return Json(new
+                {
+                    success = false,
+                    message = "Error al filtrar facturas: " + ex.Message,
+                    data = new List<object>()
+                });
+            }
+        }
+
+        // Asegúrate de que esta clase esté definida
+        public class FiltroFechasRequest
+        {
+            public DateTime? FechaDesde { get; set; }
+            public DateTime? FechaHasta { get; set; }
         }
 
         //[HttpGet]
@@ -266,12 +391,13 @@ namespace ExpertMed.Controllers
 
                 // Campos estáticos
                 form.SetField("txt_fecha_es_:signer:date", datosFactura.Fecha.ToString("dd/MM/yyyy"));
-                form.SetField("txt_paciente_es_:signer:fullname", datosFactura.Paciente);
+                form.SetField("txt_nombre", datosFactura.Paciente);
                 form.SetField("txt_metodo_pago", datosFactura.MetodoPago.ToUpper());
-                form.SetField("txt_direccion_paciente", datosFactura.PacienteDireccion ?? "");
+                form.SetField("txt_direccion", datosFactura.PacienteDireccion ?? "");
                 form.SetField("txt_telefono_paciente", (datosFactura.PacienteNumeroCelular ?? "") + " / " +(datosFactura.PacienteNumeroFijo ?? ""));
                 form.SetField("pacienteEmail_es_:signer:email", datosFactura.PacienteEmail ?? "");
                 form.SetField("aseguradora", datosFactura.Aseguradora ?? "");
+                form.SetField("txt_numero_factura", datosFactura.NumeroFactura ?? "");
 
                 // Crear tabla
                 var itemTable = new PdfPTable(4) { WidthPercentage = 100 };

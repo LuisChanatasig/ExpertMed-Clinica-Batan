@@ -9,11 +9,13 @@ namespace ExpertMed.Controllers
     {
         private readonly TarifarioService _tariffService;
         private readonly DbExpertmedContext _dbContext;
+        private readonly ProcedimientoService _procedimientoService;
 
-        public TarifarioController(TarifarioService tariffService, DbExpertmedContext dbExpertmed)
+        public TarifarioController(TarifarioService tariffService, DbExpertmedContext dbExpertmed, ProcedimientoService procedimientoService)
         {
             _tariffService = tariffService;
             _dbContext = dbExpertmed;
+            _procedimientoService = procedimientoService;
         }
 
         [HttpGet("GetByDescripcion")]
@@ -41,20 +43,16 @@ namespace ExpertMed.Controllers
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(termino) || insuranceCompanyId <= 0)
-                    return Json(new List<object>());
+                var procedimientos = await _procedimientoService.BuscarProcedimientosAdoAsync(termino, insuranceCompanyId);
 
-                var result = await _dbContext.InsuranceTariff
-                    .Where(t => t.insurance_company_id == insuranceCompanyId &&
-                                t.insurance_tariff_description.Contains(termino))
-                    .Select(t => new
-                    {
-                        id = t.insurance_tariff_id,
-                        text = t.insurance_tariff_description,
-                        precio = t.insurance_tariff_price,
-                        precio_aseguradora = t.insurance_tariff_price // 👈 lo devolvemos duplicado para compatibilidad JS
-                    })
-                    .ToListAsync();
+                // Transformar a formato compatible con JavaScript (manteniendo la estructura original)
+                var result = procedimientos.Select(p => new
+                {
+                    id = p.Id,
+                    text = p.Text,
+                    precio = p.Precio,
+                    precio_aseguradora = p.PrecioAseguradora
+                }).ToList();
 
                 return Json(result);
             }

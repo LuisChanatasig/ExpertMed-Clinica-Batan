@@ -30,7 +30,7 @@ namespace ExpertMed.Controllers
             catch (Exception ex)
             {
                 ViewBag.ErrorMessage = "Ocurrió un error al obtener la lista de usuarios.";
-                return View("Error");
+                return View("UserList");
             }
         }
 

@@ -258,7 +258,11 @@ namespace ExpertMed.Services
         : string.Empty,
                             AppointmentInsuranceCompanyId = !reader.IsDBNull(reader.GetOrdinal("appointment_insurance_company_id"))
         ? reader.GetInt32(reader.GetOrdinal("appointment_insurance_company_id"))
-        : (int?)null
+        : (int?)null,
+                            AppointmentPaymentStatus = !reader.IsDBNull(reader.GetOrdinal("appointment_payment_status"))
+        ? reader.GetInt32(reader.GetOrdinal("appointment_payment_status"))
+        : (int?)null,
+
                         };
 
                         if ((userProfile == 3 || userProfile == 4 || userProfile == 8) && !reader.IsDBNull(reader.GetOrdinal("DoctorUserId")))

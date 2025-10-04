@@ -1,4 +1,5 @@
 ﻿@using Microsoft.AspNetCore.Http
+@using System.Text.Json
 @{
     var usuarioId = ViewContext.HttpContext.Session.GetInt32("UsuarioId");
     var perfilId = ViewContext.HttpContext.Session.GetInt32("PerfilId");
@@ -12,8 +13,8 @@
     var rutaImagenPorDefecto = Url.Content("~/assets/images/users/multi-user.jpg");
 
     string fotoPerfilSrc = string.IsNullOrEmpty(fotoPerfilBase64)
-    ? rutaImagenPorDefecto
-    : $"data:image/jpeg;base64,{fotoPerfilBase64}";
+        ? rutaImagenPorDefecto
+        : $"data:image/jpeg;base64,{fotoPerfilBase64}";
 }
 
 <!-- ========== App Menú ========== -->
@@ -36,8 +37,7 @@
             </span>
 
         </a>
-        <button type="button" class="btn btn-sm p-0 fs-20 header-item float-end btn-vertical-sm-hover"
-        id="vertical-hover">
+        <button type="button" class="btn btn-sm p-0 fs-20 header-item float-end btn-vertical-sm-hover" id="vertical-hover">
             <i class="ri-record-circle-line"></i>
         </button>
     </div>
@@ -45,12 +45,10 @@
     <div id="scrollbar">
         <div class="container-fluid">
 
-            <div id="two-column-menu">
-            </div>
+            <div id="two-column-menu"></div>
             <ul class="navbar-nav" id="navbar-nav">
 
                 <li class="menu-title"><span data-key="t-menu">Inicio</span></li>
-
 
                 <li class="nav-item">
                     <a class="nav-link menu-link" href="@Url.Action("Index", "Home")">
@@ -58,10 +56,9 @@
                     </a>
                 </li>
 
-                @if(perfilId == 4)
+                @if (perfilId == 4)
                 {
                     <li class="menu-title"><span>Administración</span></li>
-
 
                     <li class="nav-item">
                         <a class="nav-link menu-link" href="#sidebarConsultorios" data-bs-toggle="collapse" role="button">
@@ -94,7 +91,6 @@
                         </a>
                         <div class="collapse menu-dropdown" id="sidebarEstablecimientos">
                             <ul class="nav nav-sm flex-column">
-
                                 <li class="nav-item">
                                     <a href="@Url.Action("UpdateEstablishment", "Establisment", new { id = establecimientoId })" class="nav-link">
                                         <i class="mdi mdi-clipboard-list-outline"></i> Editar Establecimiento
@@ -103,6 +99,7 @@
                             </ul>
                         </div>
                     </li>
+
                     <li class="nav-item">
                         <a class="nav-link menu-link" href="#sidebarUsuarios" data-bs-toggle="collapse" role="button">
                             <i class="mdi mdi-account-multiple-outline"></i> <span>Usuarios</span>
@@ -142,10 +139,10 @@
                             </ul>
                         </div>
                     </li>
+
                     <!-- Agenda -->
                     <li class="nav-item">
-                        <a class="nav-link menu-link" href="#sidebarAppointment" data-bs-toggle="collapse" role="button"
-                           aria-expanded="false" aria-controls="sidebarAppointment">
+                        <a class="nav-link menu-link" href="#sidebarAppointment" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarAppointment">
                             <i class="mdi mdi-calendar-month-outline"></i> <span>Agenda</span>
                         </a>
                         <div class="collapse menu-dropdown" id="sidebarAppointment">
@@ -163,7 +160,6 @@
                             </ul>
                         </div>
                     </li>
-
 
                     <li class="nav-item">
                         <a class="nav-link menu-link" href="#sidebarConsultas" data-bs-toggle="collapse" role="button">
@@ -238,17 +234,15 @@
                                         <i class="mdi mdi-chart-arc"></i> Dashboard Resultados
                                     </a>
                                 </li>
-
                             </ul>
                         </div>
                     </li>
 
-
                     <li class="menu-title"><span>Imagenes</span></li>
+
                     <!-- Solicitudes de Imágenes -->
                     <li class="nav-item">
-                        <a class="nav-link menu-link" href="#sidebarSolicitudesImagen" data-bs-toggle="collapse" role="button"
-                           aria-expanded="false" aria-controls="sidebarSolicitudesImagen">
+                        <a class="nav-link menu-link" href="#sidebarSolicitudesImagen" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarSolicitudesImagen">
                             <i class="mdi mdi-image-multiple-outline"></i> <span>Solicitudes</span>
                         </a>
                         <div class="collapse menu-dropdown" id="sidebarSolicitudesImagen">
@@ -269,8 +263,7 @@
 
                     <!-- Resultados de Imágenes -->
                     <li class="nav-item">
-                        <a class="nav-link menu-link" href="#sidebarResultadosImagen" data-bs-toggle="collapse" role="button"
-                           aria-expanded="false" aria-controls="sidebarResultadosImagen">
+                        <a class="nav-link menu-link" href="#sidebarResultadosImagen" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarResultadosImagen">
                             <i class="mdi mdi-flask-outline"></i> <span>Resultados</span>
                         </a>
                         <div class="collapse menu-dropdown" id="sidebarResultadosImagen">
@@ -288,7 +281,6 @@
                             </ul>
                         </div>
                     </li>
-
 
                     <li class="menu-title"><span>Fisioterapia</span></li>
 
@@ -308,11 +300,6 @@
                                         <i class="mdi mdi-history"></i> Historial de tratamientos
                                     </a>
                                 </li>
-                                @*  <li class="nav-item">
-                                    <a href="@Url.Action("TherapyAlerts", "Fisioterapia")" class="nav-link">
-                                        <i class="mdi mdi-bell-alert-outline"></i> Alertas de continuidad
-                                    </a>
-                                </li> *@
                             </ul>
                         </div>
                     </li>
@@ -325,7 +312,6 @@
                         </a>
                         <div class="collapse menu-dropdown" id="sidebarFacturacion">
                             <ul class="nav nav-sm flex-column">
-                              
                                 <li class="nav-item">
                                     <a href="@Url.Action("FacturasEmitidas", "Billing")" class="nav-link">
                                         <i class="mdi mdi-file-document-outline"></i> Ver Facturas Emitidas
@@ -334,14 +320,11 @@
                             </ul>
                         </div>
                     </li>
-
                 }
 
-                @if (perfilId == 1 )
+                @if (perfilId == 1)
                 {
-
                     <li class="menu-title"><span>Administración</span></li>
-
 
                     <li class="nav-item">
                         <a class="nav-link menu-link" href="#sidebarConsultorios" data-bs-toggle="collapse" role="button">
@@ -367,6 +350,7 @@
                             </ul>
                         </div>
                     </li>
+
                     <li class="nav-item">
                         <a class="nav-link menu-link" href="#sidebarEstablecimientos" data-bs-toggle="collapse" role="button">
                             <i class="mdi mdi-hospital-building"></i> <span>Gestion de Establecimientos</span>
@@ -431,10 +415,10 @@
                             </ul>
                         </div>
                     </li>
+
                     <!-- Agenda -->
                     <li class="nav-item">
-                        <a class="nav-link menu-link" href="#sidebarAppointment" data-bs-toggle="collapse" role="button"
-                           aria-expanded="false" aria-controls="sidebarAppointment">
+                        <a class="nav-link menu-link" href="#sidebarAppointment" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarAppointment">
                             <i class="mdi mdi-calendar-month-outline"></i> <span>Agenda</span>
                         </a>
                         <div class="collapse menu-dropdown" id="sidebarAppointment">
@@ -452,7 +436,6 @@
                             </ul>
                         </div>
                     </li>
-
 
                     <li class="nav-item">
                         <a class="nav-link menu-link" href="#sidebarConsultas" data-bs-toggle="collapse" role="button">
@@ -527,17 +510,15 @@
                                         <i class="mdi mdi-chart-arc"></i> Dashboard Resultados
                                     </a>
                                 </li>
-                              
                             </ul>
                         </div>
                     </li>
 
-
                     <li class="menu-title"><span>Imagenes</span></li>
+
                     <!-- Solicitudes de Imágenes -->
                     <li class="nav-item">
-                        <a class="nav-link menu-link" href="#sidebarSolicitudesImagen" data-bs-toggle="collapse" role="button"
-                           aria-expanded="false" aria-controls="sidebarSolicitudesImagen">
+                        <a class="nav-link menu-link" href="#sidebarSolicitudesImagen" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarSolicitudesImagen">
                             <i class="mdi mdi-image-multiple-outline"></i> <span>Solicitudes</span>
                         </a>
                         <div class="collapse menu-dropdown" id="sidebarSolicitudesImagen">
@@ -558,8 +539,7 @@
 
                     <!-- Resultados de Imágenes -->
                     <li class="nav-item">
-                        <a class="nav-link menu-link" href="#sidebarResultadosImagen" data-bs-toggle="collapse" role="button"
-                           aria-expanded="false" aria-controls="sidebarResultadosImagen">
+                        <a class="nav-link menu-link" href="#sidebarResultadosImagen" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarResultadosImagen">
                             <i class="mdi mdi-flask-outline"></i> <span>Resultados</span>
                         </a>
                         <div class="collapse menu-dropdown" id="sidebarResultadosImagen">
@@ -577,7 +557,6 @@
                             </ul>
                         </div>
                     </li>
-
 
                     <li class="menu-title"><span>Fisioterapia</span></li>
 
@@ -597,23 +576,16 @@
                                         <i class="mdi mdi-history"></i> Historial de tratamientos
                                     </a>
                                 </li>
-                               @*  <li class="nav-item">
-                                    <a href="@Url.Action("TherapyAlerts", "Fisioterapia")" class="nav-link">
-                                        <i class="mdi mdi-bell-alert-outline"></i> Alertas de continuidad
-                                    </a>
-                                </li> *@
                             </ul>
                         </div>
                     </li>
                 }
 
-
                 @if (perfilId == 2)
                 {
                     <!-- Pacientes -->
                     <li class="nav-item">
-                        <a class="nav-link menu-link" href="#sidebarPatients" data-bs-toggle="collapse" role="button"
-                           aria-expanded="false" aria-controls="sidebarPatients">
+                        <a class="nav-link menu-link" href="#sidebarPatients" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarPatients">
                             <i class="mdi mdi-account-multiple-outline"></i> <span>Pacientes</span>
                         </a>
                         <div class="collapse menu-dropdown" id="sidebarPatients">
@@ -634,8 +606,7 @@
 
                     <!-- Agenda -->
                     <li class="nav-item">
-                        <a class="nav-link menu-link" href="#sidebarAppointment" data-bs-toggle="collapse" role="button"
-                           aria-expanded="false" aria-controls="sidebarAppointment">
+                        <a class="nav-link menu-link" href="#sidebarAppointment" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarAppointment">
                             <i class="mdi mdi-calendar-month-outline"></i> <span>Agenda</span>
                         </a>
                         <div class="collapse menu-dropdown" id="sidebarAppointment">
@@ -656,8 +627,7 @@
 
                     <!-- Consultas -->
                     <li class="nav-item">
-                        <a class="nav-link menu-link" href="#sidebarConsultation" data-bs-toggle="collapse" role="button"
-                           aria-expanded="false" aria-controls="sidebarConsultation">
+                        <a class="nav-link menu-link" href="#sidebarConsultation" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarConsultation">
                             <i class="mdi mdi-stethoscope"></i> <span>Consultas</span>
                         </a>
                         <div class="collapse menu-dropdown" id="sidebarConsultation">
@@ -704,7 +674,6 @@
                         </a>
                         <div class="collapse menu-dropdown" id="sidebarResultados">
                             <ul class="nav nav-sm flex-column">
-
                                 <li class="nav-item">
                                     <a href="@Url.Action("DownloadResults", "Laboratorio")" class="nav-link">
                                         <i class="mdi mdi-download"></i> Descargar resultados
@@ -715,10 +684,10 @@
                     </li>
 
                     <li class="menu-title"><span>Imagenes</span></li>
+
                     <!-- Solicitudes de Imágenes -->
                     <li class="nav-item">
-                        <a class="nav-link menu-link" href="#sidebarSolicitudesImagen" data-bs-toggle="collapse" role="button"
-                           aria-expanded="false" aria-controls="sidebarSolicitudesImagen">
+                        <a class="nav-link menu-link" href="#sidebarSolicitudesImagen" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarSolicitudesImagen">
                             <i class="mdi mdi-image-multiple-outline"></i> <span>Solicitudes</span>
                         </a>
                         <div class="collapse menu-dropdown" id="sidebarSolicitudesImagen">
@@ -739,13 +708,11 @@
 
                     <!-- Resultados de Imágenes -->
                     <li class="nav-item">
-                        <a class="nav-link menu-link" href="#sidebarResultadosImagen" data-bs-toggle="collapse" role="button"
-                           aria-expanded="false" aria-controls="sidebarResultadosImagen">
+                        <a class="nav-link menu-link" href="#sidebarResultadosImagen" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarResultadosImagen">
                             <i class="mdi mdi-flask-outline"></i> <span>Resultados</span>
                         </a>
                         <div class="collapse menu-dropdown" id="sidebarResultadosImagen">
                             <ul class="nav nav-sm flex-column">
-                       
                                 <li class="nav-item">
                                     <a href="@Url.Action("DownloadResults", "Images")" class="nav-link">
                                         <i class="mdi mdi-download"></i> Descargar resultados
@@ -773,26 +740,28 @@
                                         <i class="mdi mdi-history"></i> Historial de tratamientos
                                     </a>
                                 </li>
-                                @*  <li class="nav-item">
-                                    <a href="@Url.Action("TherapyAlerts", "Fisioterapia")" class="nav-link">
-                                        <i class="mdi mdi-bell-alert-outline"></i> Alertas de continuidad
-                                    </a>
-                                </li> *@
                             </ul>
                         </div>
                     </li>
-                    <li class="menu-title"><span>Facturación</span></li>
+                }
 
+                @if (perfilId == 3)
+                {
+                    <!-- Agenda -->
                     <li class="nav-item">
-                        <a class="nav-link menu-link" href="#sidebarFacturacion" data-bs-toggle="collapse" role="button" aria-expanded="false">
-                            <i class="mdi mdi-receipt-text"></i> <span>Facturación</span>
+                        <a class="nav-link menu-link" href="#sidebarAppointment" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarAppointment">
+                            <i class="mdi mdi-calendar-month-outline"></i> <span>Agenda</span>
                         </a>
-                        <div class="collapse menu-dropdown" id="sidebarFacturacion">
+                        <div class="collapse menu-dropdown" id="sidebarAppointment">
                             <ul class="nav nav-sm flex-column">
-
                                 <li class="nav-item">
-                                    <a href="@Url.Action("FacturasEmitidas", "Billing")" class="nav-link">
-                                        <i class="mdi mdi-file-document-outline"></i> Ver Facturas Emitidas
+                                    <a href="@Url.Action("AppointmentList", "Appointment")" class="nav-link">
+                                        <i class="mdi mdi-calendar-text-outline"></i> Lista de citas
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("PatientList", "Patient")" class="nav-link">
+                                        <i class="mdi mdi-calendar-plus-outline"></i> Nueva cita
                                     </a>
                                 </li>
                             </ul>
@@ -800,13 +769,11 @@
                     </li>
                 }
 
-
-                @if (perfilId == 3 || perfilId == 8)
+                @if (perfilId == 8)
                 {
                     <!-- Pacientes -->
                     <li class="nav-item">
-                        <a class="nav-link menu-link" href="#sidebarPatients" data-bs-toggle="collapse" role="button"
-                           aria-expanded="false" aria-controls="sidebarPatients">
+                        <a class="nav-link menu-link" href="#sidebarPatients" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarPatients">
                             <i class="mdi mdi-account-multiple-outline"></i> <span>Pacientes</span>
                         </a>
                         <div class="collapse menu-dropdown" id="sidebarPatients">
@@ -827,8 +794,7 @@
 
                     <!-- Agenda -->
                     <li class="nav-item">
-                        <a class="nav-link menu-link" href="#sidebarAppointment" data-bs-toggle="collapse" role="button"
-                           aria-expanded="false" aria-controls="sidebarAppointment">
+                        <a class="nav-link menu-link" href="#sidebarAppointment" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarAppointment">
                             <i class="mdi mdi-calendar-month-outline"></i> <span>Agenda</span>
                         </a>
                         <div class="collapse menu-dropdown" id="sidebarAppointment">
@@ -846,15 +812,32 @@
                             </ul>
                         </div>
                     </li>
+
+                    <li class="menu-title"><span>Facturación</span></li>
+
+                    <li class="nav-item">
+                        <a class="nav-link menu-link" href="#sidebarFacturacion" data-bs-toggle="collapse" role="button" aria-expanded="false">
+                            <i class="mdi mdi-receipt-text"></i> <span>Facturación</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarFacturacion">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("FacturasEmitidas", "Billing")" class="nav-link">
+                                        <i class="mdi mdi-file-document-outline"></i> Ver Facturas Emitidas
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
                 }
 
                 @if (perfilId == 5)
                 {
                     <li class="menu-title"><span>Imagenes</span></li>
+
                     <!-- Solicitudes de Imágenes -->
                     <li class="nav-item">
-                        <a class="nav-link menu-link" href="#sidebarSolicitudesImagen" data-bs-toggle="collapse" role="button"
-                           aria-expanded="false" aria-controls="sidebarSolicitudesImagen">
+                        <a class="nav-link menu-link" href="#sidebarSolicitudesImagen" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarSolicitudesImagen">
                             <i class="mdi mdi-image-multiple-outline"></i> <span>Solicitudes</span>
                         </a>
                         <div class="collapse menu-dropdown" id="sidebarSolicitudesImagen">
@@ -875,8 +858,7 @@
 
                     <!-- Resultados de Imágenes -->
                     <li class="nav-item">
-                        <a class="nav-link menu-link" href="#sidebarResultadosImagen" data-bs-toggle="collapse" role="button"
-                           aria-expanded="false" aria-controls="sidebarResultadosImagen">
+                        <a class="nav-link menu-link" href="#sidebarResultadosImagen" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarResultadosImagen">
                             <i class="mdi mdi-flask-outline"></i> <span>Resultados</span>
                         </a>
                         <div class="collapse menu-dropdown" id="sidebarResultadosImagen">
@@ -897,8 +879,7 @@
 
                     <!-- Reportes de Imágenes -->
                     <li class="nav-item" hidden>
-                        <a class="nav-link menu-link" href="#sidebarReportesImagen" data-bs-toggle="collapse" role="button"
-                           aria-expanded="false" aria-controls="sidebarReportesImagen">
+                        <a class="nav-link menu-link" href="#sidebarReportesImagen" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarReportesImagen">
                             <i class="mdi mdi-chart-bar"></i> <span>Reportes</span>
                         </a>
                         <div class="collapse menu-dropdown" id="sidebarReportesImagen">
@@ -922,8 +903,6 @@
                         </div>
                     </li>
                 }
-
-
 
                 @if (perfilId == 6)
                 {
@@ -968,10 +947,9 @@
                             </ul>
                         </div>
                     </li>
-
-
                 }
-                @if (perfilId == 7) // O el perfil correspondiente a fisioterapia
+
+                @if (perfilId == 7) // Fisioterapia
                 {
                     <li class="menu-title"><span>Fisioterapia</span></li>
 
@@ -1001,7 +979,6 @@
                     </li>
                 }
 
-
             </ul>
         </div>
         <!-- Sidebar -->
@@ -1012,3 +989,160 @@
 <!-- Vertical Overlay-->
 <div class="vertical-overlay"></div>
 
+@* ====== INTEGRACIÓN DEL BOT: pasos del menú + rutas rápidas + saludo por nombre ====== *@
+@{
+    // Nombre completo para saludo
+    var nombreCompleto = $"{(usuarioNombre ?? "").Trim()} {(usuarioApellido ?? "").Trim()}".Trim();
+
+    // Rutas rápidas (/ir <modulo>)
+    var routes = new Dictionary<string, string>
+    {
+        // Inicio
+        ["inicio"] = Url.Action("Index", "Home"),
+
+        // Pacientes
+        ["pacientes"] = Url.Action("PatientList", "Patient"),
+        ["lista pacientes"] = Url.Action("PatientList", "Patient"),
+        ["nuevo paciente"] = Url.Action("NewPatient", "Patient"),
+
+        // Agenda / Citas
+        ["agenda"] = Url.Action("AppointmentList", "Appointment"),
+        ["citas"] = Url.Action("AppointmentList", "Appointment"),
+        ["lista de citas"] = Url.Action("AppointmentList", "Appointment"),
+        ["nueva cita"] = Url.Action("PatientList", "Patient"),
+
+        // Consultas
+        ["consultas"] = Url.Action("ConsultationList", "Consultation"),
+        ["historial consultas"] = Url.Action("ConsultationList", "Consultation"),
+        ["nueva consulta"] = Url.Action("AppointmentList", "Appointment"),
+
+        // Laboratorio
+        ["laboratorio"] = Url.Action("LaboratoryList", "Laboratorio"),
+        ["pendientes laboratorio"] = Url.Action("LaboratoryList", "Laboratorio"),
+        ["historial laboratorio"] = Url.Action("LaboratoryHistory", "Laboratorio"),
+        ["resultados registrar"] = Url.Action("RecordResult", "Laboratorio"),
+        ["resultados descargar"] = Url.Action("DownloadResults", "Laboratorio"),
+
+        // Imágenes
+        ["imagenes"] = Url.Action("ImagesList", "Images"),
+        ["solicitudes imagenes"] = Url.Action("ImagesList", "Images"),
+        ["historial imagenes"] = Url.Action("ImagesHistory", "Images"),
+        ["imagenes registrar"] = Url.Action("RecordResult", "Images"),
+        ["imagenes descargar"] = Url.Action("DownloadResults", "Images"),
+
+        // Consultorios (admin/gestión)
+        ["consultorios crear"] = Url.Action("CreateMedicalOffice", "MedicalOffice"),
+        ["consultorios lista"] = Url.Action("ListaConsultorios", "MedicalOffice"),
+        ["consultorios asignar"] = Url.Action("OfficeAssignment", "MedicalOffice"),
+
+        // Establecimientos (admin/gestión)
+        ["establecimientos crear"] = Url.Action("CreateEstablishment", "Establisment"),
+        ["establecimientos lista"] = Url.Action("ListEstablishment", "Establisment"),
+        ["establecimientos editar"] = Url.Action("UpdateEstablishment", "Establisment", new { id = establecimientoId }),
+
+        // Usuarios (admin/gestión)
+        ["usuarios lista"] = Url.Action("UserList", "Users"),
+        ["usuarios nuevo"] = Url.Action("NewUser", "Users"),
+
+        // Reportes
+        ["reportes"] = Url.Action("ResumenConsultas", "ReportesConsultas"),
+        ["dashboard resultados"] = Url.Action("ResumenConsultas", "ReportesConsultas"),
+
+        // Fisioterapia
+        ["fisioterapia agenda"] = Url.Action("TherapySchedule", "Fisioterapia"),
+        ["fisioterapia historial"] = Url.Action("TherapyHistory", "Fisioterapia"),
+
+        // Facturación
+        ["facturacion"] = Url.Action("FacturasEmitidas", "Billing"),
+        ["facturas emitidas"] = Url.Action("FacturasEmitidas", "Billing"),
+    };
+
+    // Pasos del tour del menú (el bot ignorará los que no existan en el DOM)
+    var stepsMenu = new[]
+    {
+        new { selector = "#navbar-nav > li .nav-link.menu-link[href='#sidebarPatients']",          html = "<div class='fw-bold mb-1'>Pacientes</div><div>Lista y registro de pacientes.</div>",                           position = "right" },
+        new { selector = "#navbar-nav > li .nav-link.menu-link[href='#sidebarAppointment']",       html = "<div class='fw-bold mb-1'>Agenda</div><div>Lista de citas y creación de nuevas.</div>",                    position = "right" },
+        new { selector = "#navbar-nav > li .nav-link.menu-link[href='#sidebarConsultation']",      html = "<div class='fw-bold mb-1'>Consultas</div><div>Historial y nueva consulta.</div>",                            position = "right" },
+        new { selector = "#navbar-nav > li .nav-link.menu-link[href='#sidebarConsultas']",         html = "<div class='fw-bold mb-1'>Consultas Médicas</div><div>Historial y nueva consulta.</div>",                  position = "right" },
+        new { selector = "#navbar-nav > li .nav-link.menu-link[href='#sidebarLab']",               html = "<div class='fw-bold mb-1'>Laboratorio</div><div>Solicitudes pendientes e historial.</div>",               position = "right" },
+        new { selector = "#navbar-nav > li .nav-link.menu-link[href='#sidebarResultados']",        html = "<div class='fw-bold mb-1'>Resultados (Lab)</div><div>Registrar o descargar resultados.</div>",             position = "right" },
+        new { selector = "#navbar-nav > li .nav-link.menu-link[href='#sidebarSolicitudesImagen']", html = "<div class='fw-bold mb-1'>Imágenes</div><div>Solicitudes e historial de estudios.</div>",                 position = "right" },
+        new { selector = "#navbar-nav > li .nav-link.menu-link[href='#sidebarResultadosImagen']",  html = "<div class='fw-bold mb-1'>Resultados (Imágenes)</div><div>Registrar o descargar informes.</div>",        position = "right" },
+        new { selector = "#navbar-nav > li .nav-link.menu-link[href='#sidebarConsultorios']",      html = "<div class='fw-bold mb-1'>Consultorios</div><div>Crear, listar y asignar a médicos.</div>",                 position = "right" },
+        new { selector = "#navbar-nav > li .nav-link.menu-link[href='#sidebarEstablecimientos']",  html = "<div class='fw-bold mb-1'>Establecimientos</div><div>Crear, listar o editar el establecimiento.</div>",   position = "right" },
+        new { selector = "#navbar-nav > li .nav-link.menu-link[href='#sidebarUsuarios']",          html = "<div class='fw-bold mb-1'>Usuarios</div><div>Altas y gestión de usuarios.</div>",                           position = "right" },
+        new { selector = "#navbar-nav > li .nav-link.menu-link[href='#sidebarReportes']",          html = "<div class='fw-bold mb-1'>Reportes</div><div>Dashboard de consultas y métricas.</div>",                     position = "right" },
+        new { selector = "#navbar-nav > li .nav-link.menu-link[href='#sidebarFisioterapia']",      html = "<div class='fw-bold mb-1'>Fisioterapia</div><div>Agenda e historial de terapias.</div>",                    position = "right" },
+        new { selector = "#navbar-nav > li .nav-link.menu-link[href='#sidebarFacturacion']",       html = "<div class='fw-bold mb-1'>Facturación</div><div>Consulta de facturas emitidas.</div>",                      position = "right" }
+    };
+
+    // Texto de ayuda del menú según perfil
+    var activas = new List<string>();
+    if (perfilId == 1 || perfilId == 4)
+        activas.AddRange(new[] { "Consultorios", "Establecimientos", "Usuarios", "Pacientes", "Agenda", "Consultas", "Laboratorio", "Resultados (Lab)", "Imágenes", "Resultados (Imágenes)", "Reportes", "Fisioterapia", "Facturación" });
+    else if (perfilId == 2)
+        activas.AddRange(new[] { "Pacientes", "Agenda", "Consultas", "Laboratorio", "Resultados (Lab)", "Imágenes", "Resultados (Imágenes)", "Fisioterapia" });
+    else if (perfilId == 3)
+        activas.AddRange(new[] { "Agenda" });
+    else if (perfilId == 5)
+        activas.AddRange(new[] { "Imágenes", "Resultados (Imágenes)" });
+    else if (perfilId == 6)
+        activas.AddRange(new[] { "Laboratorio", "Resultados (Lab)" });
+    else if (perfilId == 7)
+        activas.AddRange(new[] { "Fisioterapia" });
+    else if (perfilId == 8)
+        activas.AddRange(new[] { "Pacientes", "Agenda", "Facturación" });
+
+    var menuHelpHtml =
+        $"<strong>Secciones disponibles para tu perfil:</strong><br>• {string.Join("<br>• ", activas)}" +
+        "<br><br><em>Puedes escribir <code>/menu</code> para ver el tour del menú o <code>/ir citas</code>, <code>/ir pacientes</code>, <code>/ir facturacion</code>, etc.</em>";
+
+    // Perfil (texto breve)
+    string perfilTexto = perfilId switch
+    {
+        1 => "Administrador: gestión total del sistema.",
+        2 => "Doctor: pacientes, agenda y consultas.",
+        3 => "Recepción: agenda y gestión de citas.",
+        4 => "Gestión: citas, consultas y reportes.",
+        5 => "Imágenes: estudios e informes radiológicos.",
+        6 => "Laboratorio: solicitudes y resultados.",
+        7 => "Fisioterapia: terapias y seguimiento.",
+        8 => "Caja/Facturación: pacientes, agenda y facturación.",
+        _ => "Perfil no identificado."
+    };
+
+    // Serializaciones seguras para JS
+    var stepsMenuJson = JsonSerializer.Serialize(stepsMenu);
+    var routesJson = JsonSerializer.Serialize(routes);
+    var menuHelpJson = JsonSerializer.Serialize(menuHelpHtml);
+    var nombreJson = JsonSerializer.Serialize(nombreCompleto);
+    var perfilJson = JsonSerializer.Serialize(perfilTexto);
+}
+
+<script>
+    // Opciones del bot inyectadas desde el menú (por perfil)
+    (function () {
+      // Rutas rápidas para /ir <módulo>
+      window.EBG_ROUTES = Object.assign({}, window.EBG_ROUTES || {}, @Html.Raw(routesJson));
+
+      // Pasos del tour del menú (+ ayuda)
+      window.EBG_OPTIONS = Object.assign({}, window.EBG_OPTIONS || {}, {
+        userName: @Html.Raw(nombreJson),
+        profileText: @Html.Raw(perfilJson),
+        greetMessage: "¡Hola, {name}! ¿Qué deseas hacer hoy?",
+        extraTours: Object.assign({}, (window.EBG_OPTIONS && window.EBG_OPTIONS.extraTours) || {}, {
+          menu: @Html.Raw(stepsMenuJson) // se activa con /menu
+        }),
+        menuHelp: @Html.Raw(menuHelpJson)
+      });
+
+      // Si por alguna razón no se inicializó en el _Layout, lo hacemos aquí de forma segura.
+      if (window.ExpertBotGuide && typeof window.ExpertBotGuide.init === "function" && !window.__EB_MENU_INIT__) {
+        window.__EB_MENU_INIT__ = true;
+        window.ExpertBotGuide.init(Object.assign({
+          storagePrefix: "exp.menu",
+          routes: (window.EBG_ROUTES || {})
+        }, window.EBG_OPTIONS || {}));
+      }
+    })();
+</script>

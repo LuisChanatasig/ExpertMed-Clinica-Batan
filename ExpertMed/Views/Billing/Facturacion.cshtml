@@ -12,161 +12,168 @@
 <div class="col-xl-12">
     <div class="card">
         <div class="card-header">
-            <h4 class="card-title mb-0">Generación de pago</h4>
+            <h4 class="card-title mb-0">Generación de Factura y Pago</h4>
         </div>
         <div class="card-body">
-            <div class="step-arrow-nav mb-4">
-                <ul class="nav nav-pills custom-nav nav-justified" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="efectivo-tab" data-bs-toggle="pill"
-                            data-bs-target="#efectivo" type="button" role="tab">
-                            Efectivo
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="transferencia-tab" data-bs-toggle="pill"
-                            data-bs-target="#transferencia" type="button" role="tab">
-                            Transferencia
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="tarjeta-tab" data-bs-toggle="pill" data-bs-target="#tarjeta"
-                            type="button" role="tab">
-                            Tarjeta
-                        </button>
-                    </li>
-                </ul>
-            </div>
+            <form asp-action="Billing" asp-controller="Billing" method="post" enctype="multipart/form-data" id="billingForm">
+                <input type="hidden" name="CitaId" value="@ViewBag.AppointmentId" />
+                <input type="hidden" name="AppointmentPatientId" value="@ViewBag.AppointmentPatientId" />
+                <input type="hidden" id="insuranceCompanyId" value="@ViewBag.InsuranceCompanyId" />
 
-            <div class="tab-content">
-                @foreach (var metodo in new[] { "efectivo", "transferencia", "tarjeta_credito" })
-                {
-                    var tabId = metodo == "efectivo" ? "efectivo" : metodo == "transferencia" ? "transferencia" : "tarjeta";
-                    <div class="tab-pane fade show @(metodo == "efectivo" ? "active" : "")" id="@tabId" role="tabpanel">
-                        <form asp-action="Billing" asp-controller="Billing" method="post" enctype="multipart/form-data">
-                            <input type="hidden" name="CitaId" value="@ViewBag.AppointmentId" />
-                            <input type="hidden" name="AppointmentPatientId" value="@ViewBag.AppointmentPatientId" />
-                            <input type="hidden" name="MetodoPago" value="@metodo" />
-
-                            @if (metodo != "efectivo")
-                            {
-                                <div class="mb-3">
-                                    <label for="comprobantePagoFile-@tabId" class="form-label">Comprobante de Pago</label>
-                                    <input type="file" id="comprobantePagoFile-@tabId" name="comprobantePagoFile"
-                                        accept=".jpeg,.jpg,.png" class="form-control" required />
-                                </div>
-                            }
-
-                            <div class="row mb-3">
-                                <div class="col">
-                                    <button type="button" class="btn btn-outline-primary w-100"
-                                        onclick="cargarDatosPaciente(this)">
-                                        <i class="ri-user-line align-middle"></i> Mismos datos del paciente
-                                    </button>
-                                </div>
-                                <div class="col">
-                                    <button type="button" class="btn btn-outline-secondary w-100" data-bs-toggle="collapse"
-                                        data-bs-target="#facturacion-extra-@metodo" onclick="limpiarFormulario(this)">
-                                        <i class="ri-edit-box-line align-middle"></i> Otros datos
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div class="collapse" id="facturacion-extra-@metodo">
-                                <div class="card card-body mb-3">
-                                    <h5 class="card-title mb-3">Datos de Facturación</h5>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <input type="text" class="form-control fact-input" name="BillingDetailsNames"
-                                                placeholder="Nombre completo">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <input type="text" class="form-control fact-input" name="BillingDetailsCiNumber"
-                                                placeholder="Identificación">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <small>Seleccione un tipo de documento</small>
-                                            <select class="form-control fact-input" name="BillingDetailsDocumentType" required>
-                                                <option value="05">Cédula</option>
-                                                <option value="04">RUC</option>
-                                                <option value="06">Pasaporte</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <input type="email" class="form-control fact-input" name="BillingDetailsEmail"
-                                                placeholder="Correo electrónico">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <input type="text" class="form-control fact-input" name="BillingDetailsAddress"
-                                                placeholder="Dirección">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <input type="tel" class="form-control fact-input" name="BillingDetailsPhone"
-                                                placeholder="Teléfono">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Detalle de servicios</label>
-                                <table class="table table-bordered">
-                                    <thead>
-                                        <tr>
-                                            <th>Descripción</th>
-                                            <th>Cantidad</th>
-                                            <th>Precio Unitario</th>
-                                            <th class="col-insurance d-none">Valor Aseguradora</th>
-                                            <th class="col-insurance d-none">Copago</th>
-                                            <th>Descuento (%)</th>
-                                            <th>Total</th>
-                                            <th>Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="invoice-items-body-@tabId"></tbody>
-                                </table>
-                                <button type="button" class="btn btn-outline-success" onclick="agregarItem(this)">
-                                    + Agregar
-                                    ítem
-                                </button>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <label class="form-label">Total Aseguradora</label>
-                                    <input type="text" class="form-control" name="TotalAseguradora"
-                                        id="totalAseguradora-@tabId" readonly>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Total Copago (Paciente)</label>
-                                    <input type="text" class="form-control" name="TotalCopago" id="totalCopago-@tabId"
-                                        readonly>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Total Factura</label>
-                                    <input type="text" class="form-control" name="TotalFactura" id="totalFactura-@tabId"
-                                        readonly required>
-                                </div>
-                            </div>
-
-
-                            <button type="submit" class="btn btn-success">Registrar Pago</button>
-                        </form>
+                <!-- Sección: Datos de Facturación -->
+                <div class="mb-4">
+                    <h5 class="mb-3">Datos de Facturación</h5>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <button type="button" class="btn btn-outline-primary w-100" onclick="cargarDatosPaciente()">
+                                <i class="ri-user-line align-middle"></i> Mismos datos del paciente
+                            </button>
+                        </div>
+                        <div class="col">
+                            <button type="button" class="btn btn-outline-secondary w-100" data-bs-toggle="collapse"
+                                    data-bs-target="#facturacion-extra" onclick="limpiarFormulario()">
+                                <i class="ri-edit-box-line align-middle"></i> Otros datos
+                            </button>
+                        </div>
                     </div>
-                }
-            </div>
+
+                    <div class="collapse" id="facturacion-extra">
+                        <div class="card card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Nombre completo</label>
+                                    <input type="text" class="form-control" name="BillingDetailsNames" placeholder="Nombre completo">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Identificación</label>
+                                    <input type="text" class="form-control" name="BillingDetailsCiNumber" placeholder="Identificación">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Tipo de Documento</label>
+                                    <select class="form-control" name="BillingDetailsDocumentType" required>
+                                        <option value="05" selected>Cédula</option>
+                                        <option value="04">RUC</option>
+                                        <option value="06">Pasaporte</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Correo Electrónico</label>
+                                    <input type="email" class="form-control" name="BillingDetailsEmail" placeholder="correo@ejemplo.com">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Dirección</label>
+                                    <input type="text" class="form-control" name="BillingDetailsAddress" placeholder="Dirección">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Teléfono</label>
+                                    <input type="tel" class="form-control" name="BillingDetailsPhone" placeholder="Teléfono">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección: Servicios -->
+                <div class="mb-4">
+                    <h5 class="mb-3">Detalle de Servicios</h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Descripción</th>
+                                    <th>Cantidad</th>
+                                    <th>Precio Unitario</th>
+                                    <th class="col-insurance d-none">Valor Aseguradora</th>
+                                    <th class="col-insurance d-none">Copago</th>
+                                    <th>Descuento (%)</th>
+                                    <th>Total</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="invoice-items-body"></tbody>
+                        </table>
+                    </div>
+                    <button type="button" class="btn btn-outline-success" onclick="agregarItem()">
+                        + Agregar ítem
+                    </button>
+                </div>
+
+                <!-- Sección: Métodos de Pago -->
+                <div class="mb-4">
+                    <h5 class="mb-3">Métodos de Pago</h5>
+                    <div class="alert alert-info">
+                        <i class="ri-information-line"></i> Puede agregar múltiples métodos de pago. La suma debe coincidir con el total de la factura.
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Método de Pago</th>
+                                    <th>Monto</th>
+                                    <th>Comprobante</th>
+                                    <th>Notas</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="payment-methods-body"></tbody>
+                        </table>
+                    </div>
+                    <button type="button" class="btn btn-outline-primary" onclick="agregarMetodoPago()">
+                        + Agregar Método de Pago
+                    </button>
+                </div>
+
+                <!-- Resumen de Totales -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label">Total Aseguradora</label>
+                        <input type="text" class="form-control" id="totalAseguradora" readonly>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Total Copago (Paciente)</label>
+                        <input type="text" class="form-control" id="totalCopago" readonly>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Total Factura</label>
+                        <input type="text" class="form-control" name="TotalFactura" id="totalFactura" readonly required>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="alert alert-warning">
+                            <strong>Pendiente por pagar: $<span id="total-pendiente">0.00</span></strong>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-success btn-lg">
+                    <i class="ri-save-line"></i> Generar Factura y Registrar Pago
+                </button>
+            </form>
         </div>
     </div>
 </div>
-
 
 @section Scripts {
     <script>
         const tieneSeguro = document.getElementById("hasInsurance").value === "true";
         const insuranceCompanyId = document.getElementById("insuranceCompanyId").value;
-        let contador = 0;
+        let contadorItems = 0;
+        let contadorPagos = 0;
 
-        // Función auxiliar para normalizar los valores de entrada (reemplazar coma por punto)
+        // Opciones de métodos de pago según Dátil
+        const paymentOptions = [
+            { value: 'efectivo', text: 'Efectivo' },
+            { value: 'transferencia', text: 'Transferencia bancaria' },
+            { value: 'tarjeta_debito', text: 'Tarjeta de débito' },
+            { value: 'tarjeta_prepago', text: 'Tarjeta prepago' },
+            { value: 'tarjeta_credito', text: 'Tarjeta de crédito' },
+            { value: 'otros', text: 'Otros' },
+            { value: 'endoso_titulos', text: 'Endoso de títulos' }
+        ];
+
+        // Función auxiliar para normalizar valores numéricos
         function normalizeNumberInput(value) {
             if (typeof value === 'string') {
                 return value.replace(",", ".");
@@ -174,128 +181,96 @@
             return value;
         }
 
+        // Inicialización al cargar el DOM
         document.addEventListener("DOMContentLoaded", () => {
             if (tieneSeguro) {
                 document.querySelectorAll(".col-insurance").forEach(el => el.classList.remove("d-none"));
             }
 
-            document.querySelectorAll("form").forEach(form => {
-                form.addEventListener("submit", function (e) {
-                    const filas = form.querySelectorAll("tbody tr");
-                    if (filas.length === 0) {
-                        e.preventDefault();
-                        Swal.fire('Error', 'Debes agregar al menos un ítem a la factura.', 'warning');
-                        return;
-                    }
+            // Validación del formulario
+            document.getElementById('billingForm').addEventListener('submit', function(e) {
+                const filas = document.querySelectorAll("#invoice-items-body tr");
+                if (filas.length === 0) {
+                    e.preventDefault();
+                    Swal.fire('Error', 'Debes agregar al menos un ítem a la factura.', 'warning');
+                    return false;
+                }
 
-                    let valido = true;
+                const paymentRows = document.querySelectorAll("#payment-methods-body tr");
+                if (paymentRows.length === 0) {
+                    e.preventDefault();
+                    Swal.fire('Error', 'Debes agregar al menos un método de pago.', 'warning');
+                    return false;
+                }
 
-                    console.log("🧾 Detalle de ítems que se van a enviar:");
-                    filas.forEach((fila, idx) => {
-                        const desc = fila.querySelector(".descripcion-select")?.value.trim();
-                        const cantInput = fila.querySelector(".cantidad");
-                        const precioInput = fila.querySelector(".precio");
-                        const seguroInput = fila.querySelector(".precio-seguro");
-                        const copagoInput = fila.querySelector(".copago");
-                        const totalInput = fila.querySelector(".total-item");
+                if (!validarTotalPagos()) {
+                    e.preventDefault();
+                    Swal.fire('Error', 'La suma de los métodos de pago debe coincidir exactamente con el total de la factura.', 'error');
+                    return false;
+                }
 
-                        const cant = parseFloat(normalizeNumberInput(cantInput?.value));
-                        const precio = parseFloat(normalizeNumberInput(precioInput?.value));
-                        const seguro = parseFloat(normalizeNumberInput(seguroInput?.value));
-                        const copago = parseFloat(normalizeNumberInput(copagoInput?.value));
-                        const total = parseFloat(normalizeNumberInput(totalInput?.value));
+                // Validar items
+                let valido = true;
+                filas.forEach((fila) => {
+                    const desc = fila.querySelector(".descripcion-select")?.value.trim();
+                    const cant = parseFloat(normalizeNumberInput(fila.querySelector(".cantidad")?.value));
+                    const precio = parseFloat(normalizeNumberInput(fila.querySelector(".precio")?.value));
 
-                        console.log(`Fila ${idx + 1}:`);
-                        console.log(`🟩 Descripción: ${desc}`);
-                        console.log(`📌 Cantidad: ${cant}`);
-                        console.log(`💲 Precio Unitario: ${precio}`);
-                        console.log(`🏥 Aseguradora: ${seguro}`);
-                        console.log(`🧾 Copago: ${copago}`);
-                        console.log(`📦 Total por ítem: ${total}`);
-
-                        if (!desc || isNaN(cant) || cant <= 0 || isNaN(precio) || precio <= 0) {
-                            valido = false;
-                        }
-                    });
-
-                    if (!valido) {
-                        e.preventDefault();
-                        Swal.fire('Error', 'Verifica que todos los ítems tengan descripción, cantidad y precio válidos.', 'warning');
-                        return;
-                    }
-
-                    // Mostrar totales finales por pestaña
-                    console.log("📊 Totales por pestaña:");
-                    document.querySelectorAll(".tab-pane").forEach(tab => {
-                        const tabId = tab.id;
-                        const inputFactura = document.getElementById(`totalFactura-${tabId}`);
-                        const inputAseguradora = document.getElementById(`totalAseguradora-${tabId}`);
-                        const inputCopago = document.getElementById(`totalCopago-${tabId}`);
-
-                        if (inputFactura && inputAseguradora && inputCopago) {
-                            console.log(`🧾 Tab: ${tabId}`);
-                            console.log(`🔹 Total Factura: ${inputFactura.value}`);
-                            console.log(`🔹 Total Aseguradora: ${inputAseguradora.value}`);
-                            console.log(`🔹 Total Copago: ${inputCopago.value}`);
-                        }
-                    });
-
-                    // También podemos capturar el FormData si es envío tradicional
-                    const formData = new FormData(form);
-                    console.log("📤 Contenido exacto del FormData que se va al backend:");
-                    for (const [key, value] of formData.entries()) {
-                        console.log(`${key}: ${value}`);
+                    if (!desc || isNaN(cant) || cant <= 0 || isNaN(precio) || precio <= 0) {
+                        valido = false;
                     }
                 });
+
+                if (!valido) {
+                    e.preventDefault();
+                    Swal.fire('Error', 'Verifica que todos los ítems tengan descripción, cantidad y precio válidos.', 'warning');
+                    return false;
+                }
             });
         });
 
-        function agregarItem(btn) {
-            const tabContent = btn.closest('.tab-pane');
-            const tbody = tabContent.querySelector('tbody');
-            const tabId = tabContent.id;
-            const index = contador++;
+        // Agregar ítem de servicio
+        function agregarItem() {
+            const tbody = document.getElementById('invoice-items-body');
+            const index = contadorItems++;
             const row = document.createElement('tr');
 
             row.innerHTML = `
-                        <td>
-                            <select class="form-control descripcion-select"
-                                    name="Items[${index}].DescripcionVisible"
-                                    placeholder="Buscar procedimiento" required></select>
-                        </td>
-                        <td>
-                            <input type="text" class="form-control cantidad" name="Items[${index}].Quantity"
-                                   min="1" value="1" onchange="recalcularItem(this)" required>
-                        </td>
-                        <td>
-                            <input type="text" class="form-control precio" name="Items[${index}].UnitPrice"
-                                   min="0" step="0.01" value="8.00" onchange="recalcularItem(this)" required>
-                        </td>
-                        <td class="col-insurance">
-                            <input type="text" class="form-control precio-seguro" name="Items[${index}].Aseguradora"
-                                   min="0" step="0.01" value="8.00" onchange="recalcularItem(this)" />
-                        </td>
-                        <td class="col-insurance">
-                            <input type="text" class="form-control copago"  value="0.00" step="0.01" tabindex="-1" onchange="recalcularItem(this)" />
-                        </td>
-                                <td>
-            <input type="number" class="form-control descuento-item"
-                   name="Items[${index}].DescuentoPorcentaje"
-                   value="0" min="0" max="100" step="0.01"
-                   onchange="recalcularItem(this)">
-        </td>
-
-                        <td><input type="text" class="form-control total-item" value="0.00" step="0.01" readonly></td>
-                        <td>
-                            <button type="button" class="btn btn-danger btn-sm" onclick="eliminarItem(this)">🖑</button>
-                        </td>
-                    `;
+                <td>
+                    <select class="form-control descripcion-select"
+                            name="Items[${index}].DescripcionVisible"
+                            placeholder="Buscar procedimiento" required></select>
+                </td>
+                <td>
+                    <input type="number" class="form-control cantidad" name="Items[${index}].Quantity"
+                           min="1" value="1" onchange="recalcularItem(this)" required>
+                </td>
+                <td>
+                    <input type="number" class="form-control precio" name="Items[${index}].UnitPrice"
+                           min="0" step="0.01" value="0.00" onchange="recalcularItem(this)" required>
+                </td>
+                <td class="col-insurance ${tieneSeguro ? '' : 'd-none'}">
+                    <input type="number" class="form-control precio-seguro" name="Items[${index}].Aseguradora"
+                           min="0" step="0.01" value="0.00" onchange="recalcularItem(this)" />
+                </td>
+                <td class="col-insurance ${tieneSeguro ? '' : 'd-none'}">
+                    <input type="number" class="form-control copago" value="0.00" step="0.01" readonly />
+                </td>
+                <td>
+                    <input type="number" class="form-control descuento-item"
+                           name="Items[${index}].DescuentoPorcentaje"
+                           value="0" min="0" max="100" step="0.01"
+                           onchange="recalcularItem(this)">
+                </td>
+                <td><input type="number" class="form-control total-item" value="0.00" step="0.01" readonly></td>
+                <td>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="eliminarItem(this)">
+                        <i class="ri-delete-bin-line"></i>
+                    </button>
+                </td>
+            `;
 
             tbody.appendChild(row);
-
-            if (tieneSeguro) {
-                row.querySelectorAll(".col-insurance").forEach(td => td.classList.remove("d-none"));
-            }
 
             const select = row.querySelector(".descripcion-select");
             $(select).select2({
@@ -311,9 +286,7 @@
                         };
                     },
                     processResults: function (data) {
-                        return {
-                            results: data
-                        };
+                        return { results: data };
                     }
                 }
             }).on('select2:select', function (e) {
@@ -339,10 +312,7 @@
                 }
                 hiddenDescription.value = selected.text || "";
 
-                // Aplicar normalización a selected.precio_aseguradora antes de parsear
-                let bruto = normalizeNumberInput(selected.precio_aseguradora?.toString() || "0");
-                const precioRef = parseFloat(bruto) || 0;
-
+                const precioRef = parseFloat(normalizeNumberInput(selected.precio_aseguradora?.toString() || "0")) || 0;
                 const precioInput = fila.querySelector(".precio");
                 const seguroInput = fila.querySelector(".precio-seguro");
 
@@ -358,7 +328,7 @@
             recalcularTotal();
         }
 
-               function recalcularItem(elemento) {
+        function recalcularItem(elemento) {
             const fila = elemento.closest('tr');
             const cantidad = parseFloat(normalizeNumberInput(fila.querySelector('.cantidad')?.value || 0));
             const precioUnitario = parseFloat(normalizeNumberInput(fila.querySelector('.precio')?.value || 0));
@@ -382,137 +352,136 @@
             const copagoInput = fila.querySelector('.copago');
             if (copagoInput) copagoInput.value = copago.toFixed(2);
 
-            calcularSubtotalFila(fila, precioConDescuento, cantidad);
-        }
-
-
-        function calcularSubtotalFila(fila, precio, cantidad) {
-            const subtotal = precio * cantidad;
+            const subtotal = precioConDescuento * cantidad;
             const totalItemInput = fila.querySelector('.total-item');
             if (totalItemInput) totalItemInput.value = subtotal.toFixed(2);
+
             recalcularTotal();
         }
 
         function recalcularTotal() {
-            document.querySelectorAll(".tab-pane").forEach(tab => {
-                const tabId = tab.id;
-                let totalFactura = 0;
-                let totalAseguradora = 0;
-                let totalCopago = 0;
+            let totalFactura = 0;
+            let totalAseguradora = 0;
+            let totalCopago = 0;
 
-                tab.querySelectorAll("tbody tr").forEach(fila => {
-                    const cantidad = parseFloat(normalizeNumberInput(fila.querySelector(".cantidad")?.value || 0));
-                    const precioUnitario = parseFloat(normalizeNumberInput(fila.querySelector(".precio")?.value || 0));
-                    const valorSeguro = parseFloat(normalizeNumberInput(fila.querySelector(".precio-seguro")?.value || 0));
-                    const copago = parseFloat(normalizeNumberInput(fila.querySelector(".copago")?.value || 0));
+            document.querySelectorAll("#invoice-items-body tr").forEach(fila => {
+                const cantidad = parseFloat(normalizeNumberInput(fila.querySelector(".cantidad")?.value || 0));
+                const precioUnitario = parseFloat(normalizeNumberInput(fila.querySelector(".precio")?.value || 0));
+                const valorSeguro = parseFloat(normalizeNumberInput(fila.querySelector(".precio-seguro")?.value || 0));
+                const copago = parseFloat(normalizeNumberInput(fila.querySelector(".copago")?.value || 0));
 
-                    const parcial = cantidad * precioUnitario;
-                    totalFactura += parcial;
-                    totalAseguradora += cantidad * valorSeguro;
-                    totalCopago += cantidad * copago;
-
-                    console.log(`▶️ ${cantidad} x ${precioUnitario} = ${parcial}`);
-                });
-
-                console.log(`💰 [${tabId}] total calculado: ${totalFactura}`);
-
-                const inputFactura = document.getElementById(`totalFactura-${tabId}`);
-                const inputAseguradora = document.getElementById(`totalAseguradora-${tabId}`);
-                const inputCopago = document.getElementById(`totalCopago-${tabId}`);
-
-                if (inputFactura) {
-                    inputFactura.value = totalFactura.toFixed(2);
-                    console.log("🧾 Asignado al input:", inputFactura.value);
-                }
-
-                if (inputAseguradora) inputAseguradora.value = totalAseguradora.toFixed(2);
-                if (inputCopago) inputCopago.value = totalCopago.toFixed(2);
+                const parcial = cantidad * precioUnitario;
+                totalFactura += parcial;
+                totalAseguradora += cantidad * valorSeguro;
+                totalCopago += cantidad * copago;
             });
+
+            document.getElementById('totalFactura').value = totalFactura.toFixed(2);
+            document.getElementById('totalAseguradora').value = totalAseguradora.toFixed(2);
+            document.getElementById('totalCopago').value = totalCopago.toFixed(2);
+
+            validarTotalPagos();
         }
 
+        // Agregar método de pago
+        function agregarMetodoPago() {
+            const tbody = document.getElementById('payment-methods-body');
+            const index = contadorPagos++;
+            const totalFactura = parseFloat(document.getElementById('totalFactura').value || 0);
 
-        document.addEventListener("focusin", function (e) {
-            if (e.target.classList.contains("descripcion-select") && !e.target.dataset.select2initialized) {
-                $(e.target).select2({
-                    placeholder: "Buscar procedimiento",
-                    minimumInputLength: 2,
-                    ajax: {
-                        url: '@Url.Action("BuscarProcedimientos", "Tarifario")',
-                        data: function (params) {
-                            return {
-                                termino: params.term,
-                                insuranceCompanyId: insuranceCompanyId
-                            };
-                        },
-                        processResults: function (data) {
-                            return {
-                                results: data
-                            };
-                        }
-                    }
-                }).on('select2:select', function (e) {
-                    const fila = e.target.closest("tr");
-                    const selected = e.params.data;
-                    const index = Array.from(fila.parentNode.children).indexOf(fila);
+            const optionsHtml = paymentOptions.map(opt =>
+                `<option value="${opt.value}">${opt.text}</option>`
+            ).join('');
 
-                    let hiddenInput = fila.querySelector(`input[name="Items[${index}].Code"]`);
-                    if (!hiddenInput) {
-                        hiddenInput = document.createElement('input');
-                        hiddenInput.type = 'hidden';
-                        hiddenInput.name = `Items[${index}].Code`;
-                        fila.appendChild(hiddenInput);
-                    }
-                    hiddenInput.value = selected.id || "";
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    <select class="form-control" name="PaymentMethods[${index}].PaymentMethod" required>
+                        ${optionsHtml}
+                    </select>
+                </td>
+                <td>
+                    <input type="number" class="form-control payment-amount"
+                           name="PaymentMethods[${index}].PaymentAmount"
+                           step="0.01" min="0.01" max="${totalFactura}"
+                           onchange="validarTotalPagos()" required>
+                </td>
+                <td>
+                   <input type="file" class="form-control payment-proof-file"
+        name="PaymentMethods[${index}].PaymentProof"
+        id="paymentProof${index}"
+        accept=".jpeg,.jpg,.png,.pdf">
 
-                    e.target.name = `Items[${index}].Description`;
+                </td>
+                <td>
+                    <input type="text" class="form-control"
+                           name="PaymentMethods[${index}].PaymentNotes"
+                           placeholder="Notas opcionales">
+                </td>
+                <td>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="eliminarMetodoPago(this)">
+                        <i class="ri-delete-bin-line"></i>
+                    </button>
+                </td>
+            `;
 
-                    // Aplicar normalización a selected.precio_aseguradora antes de parsear
-                    let bruto = normalizeNumberInput(selected.precio_aseguradora?.toString() || "0");
-                    const valorSeguro = parseFloat(bruto) || 0;
+            tbody.appendChild(row);
+            validarTotalPagos();
+        }
 
-                    // Normalizar valor del input de precio antes de parsear
-                    const precioUnitario = parseFloat(normalizeNumberInput(fila.querySelector(".precio")?.value || 0));
-                    const copago = precioUnitario - valorSeguro;
+        function eliminarMetodoPago(btn) {
+            btn.closest('tr').remove();
+            validarTotalPagos();
+        }
 
-                    const precioSeguroInput = fila.querySelector(".precio-seguro");
-                    const copagoInput = fila.querySelector(".copago");
+        function validarTotalPagos() {
+            const totalFactura = parseFloat(document.getElementById('totalFactura').value || 0);
+            let totalPagos = 0;
 
-                    if (precioSeguroInput && copagoInput) {
-                        precioSeguroInput.value = valorSeguro.toFixed(2);
-                        copagoInput.value = copago.toFixed(2);
-                    }
+            document.querySelectorAll('.payment-amount').forEach(input => {
+                totalPagos += parseFloat(input.value || 0);
+            });
 
-                    // Normalizar valor del input de cantidad antes de parsear
-                    const cantidad = parseFloat(normalizeNumberInput(fila.querySelector(".cantidad")?.value || 1));
-                    const precioActual = parseFloat(normalizeNumberInput(fila.querySelector(".precio")?.value || 0)); // Volver a leer y normalizar
-                    calcularSubtotalFila(fila, precioActual, cantidad);
-                });
+            const pendiente = totalFactura - totalPagos;
+            const pendienteElement = document.getElementById('total-pendiente');
 
-                e.target.dataset.select2initialized = "true";
+            if (pendienteElement) {
+                pendienteElement.textContent = Math.abs(pendiente).toFixed(2);
+                const alert = pendienteElement.closest('.alert');
+
+                if (Math.abs(pendiente) > 0.01) {
+                    alert.classList.remove('alert-success');
+                    alert.classList.add('alert-warning');
+                } else {
+                    alert.classList.remove('alert-warning');
+                    alert.classList.add('alert-success');
+                }
             }
-        });
-    </script>
-    <script>
-        function cargarDatosPaciente(btn) {
+
+            return Math.abs(pendiente) < 0.01;
+        }
+
+        // Cargar datos del paciente
+        function cargarDatosPaciente() {
             const patientId = parseInt(document.getElementById("AppointmentPatientId").value, 10);
-            const form = btn.closest('form');
 
             if (!patientId) {
-                alert("No se encontró el ID del paciente.");
+                Swal.fire('Error', 'No se encontró el ID del paciente.', 'error');
                 return;
             }
 
             fetch(`@Url.Action("GetPatientDetails", "Patient")?patientId=${patientId}`)
                 .then(r => r.json())
                 .then(data => {
+                    const form = document.getElementById('billingForm');
                     const campos = {
-        BillingDetailsNames: (
-            (data.patientFirstsurname ?? '') + ' ' +
-            (data.patientSecondlastname ?? '') + ' ' +
-            (data.patientFirstname ?? '') + ' ' +
-            (data.patientMiddlename ?? '')
-        ).trim(),
-                                BillingDetailsCiNumber: data.patientDocumentnumber,
+                        BillingDetailsNames: (
+                            (data.patientFirstsurname ?? '') + ' ' +
+                            (data.patientSecondlastname ?? '') + ' ' +
+                            (data.patientFirstname ?? '') + ' ' +
+                            (data.patientMiddlename ?? '')
+                        ).trim(),
+                        BillingDetailsCiNumber: data.patientDocumentnumber,
                         BillingDetailsDocumentType: data.patientDocumentType,
                         BillingDetailsEmail: data.patientEmail,
                         BillingDetailsAddress: data.patientAddress,
@@ -521,18 +490,27 @@
 
                     for (const name in campos) {
                         const input = form.querySelector(`[name="${name}"]`);
-                        if (input) input.value = campos[name];
+                        if (input) input.value = campos[name] || '';
                     }
 
-                    const collapseDiv = form.querySelector('.collapse');
+                    const collapseDiv = document.getElementById('facturacion-extra');
                     if (collapseDiv) new bootstrap.Collapse(collapseDiv, { toggle: true });
                 })
-                .catch(() => alert('Hubo un error al obtener los datos del paciente.'));
+                .catch(() => Swal.fire('Error', 'Hubo un error al obtener los datos del paciente.', 'error'));
         }
 
+        function limpiarFormulario() {
+            const form = document.getElementById('billingForm');
+            const campos = ['BillingDetailsNames', 'BillingDetailsCiNumber', 'BillingDetailsDocumentType',
+                          'BillingDetailsEmail', 'BillingDetailsAddress', 'BillingDetailsPhone'];
 
-
+            campos.forEach(campo => {
+                const input = form.querySelector(`[name="${campo}"]`);
+                if (input) input.value = '';
+            });
+        }
     </script>
+
     @if (!string.IsNullOrEmpty(successMessage))
     {
         <script>
@@ -553,8 +531,7 @@
                 title: 'Error',
                 text: '@errorMessage',
                 icon: 'error',
-                confirmButtonText: 'OK',
-
+                confirmButtonText: 'OK'
             });
         </script>
     }

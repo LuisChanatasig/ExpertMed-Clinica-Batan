@@ -34,6 +34,9 @@
         public string? PatientCode { get; set; }
         public int PatientStatus { get; set; }
         public string? DoctorFullname { get; set; }
+
+        public int? DoctorUserId { get; set; } // <-- NUEVO
+
     }
 
 

@@ -73,6 +73,37 @@ namespace ExpertMed.Controllers
             }
         }
 
+        private string ConvertirNumeroATexto(int numero)
+{
+    if (numero <= 0 || numero > 99) return numero.ToString();
+    
+    var unidades = new[] { "", "UNO", "DOS", "TRES", "CUATRO", "CINCO", "SEIS", "SIETE", "OCHO", "NUEVE" };
+    var especiales = new[] { "DIEZ", "ONCE", "DOCE", "TRECE", "CATORCE", "QUINCE", "DIECISÉIS", 
+                             "DIECISIETE", "DIECIOCHO", "DIECINUEVE" };
+    var decenas = new[] { "", "", "VEINTE", "TREINTA", "CUARENTA", "CINCUENTA", 
+                          "SESENTA", "SETENTA", "OCHENTA", "NOVENTA" };
+    
+    if (numero < 10)
+        return unidades[numero];
+    
+    if (numero < 20)
+        return especiales[numero - 10];
+    
+    if (numero < 30)
+    {
+        if (numero == 20) return "VEINTE";
+        return "VEINTI" + unidades[numero - 20];
+    }
+    
+    int decena = numero / 10;
+    int unidad = numero % 10;
+    
+    if (unidad == 0)
+        return decenas[decena];
+    
+    return decenas[decena] + " Y " + unidades[unidad];
+}
+
         void InsertImageFromField(PdfStamper stamper, AcroFields fields, string fieldName, byte[] imageBytes)
         {
             var fieldPosition = fields.GetFieldPositions(fieldName)?.FirstOrDefault();
@@ -89,16 +120,20 @@ namespace ExpertMed.Controllers
             }
         }
 
+
+
         [HttpGet]
         public async Task<IActionResult> MedicalCertificate(int consultationId)
         {
-            var consultation = _consultationService.GetConsultationDetails(consultationId);
+            // 1) Obtener consulta - usar versión async si existe
+            var consultation =  _consultationService.GetConsultationDetails(consultationId);
             if (consultation == null)
             {
                 TempData["ErrorMessage"] = "Consulta no encontrada.";
                 return RedirectToAction("Index", "Home");
             }
 
+            // 2) Obtener paciente
             var patient = await _patientService.GetPatientFullByIdAsync(consultation.ConsultationPatient);
             if (patient == null)
             {
@@ -106,169 +141,203 @@ namespace ExpertMed.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
-            var diagnosisList = await _selectService.GetAllDiagnosisAsync();
-            var definitiveDiagnosis = consultation.DiagnosisConsultations?
-                .FirstOrDefault(d => d.DiagnosisDefinitive == true) ??
-                consultation.DiagnosisConsultations?.FirstOrDefault(d => d.DiagnosisPresumptive == true);
+            // 3) Plantilla base
+            string templatePath = Path.Combine(_webHostEnvironment.WebRootPath, "plantillas", "Certificado_MedicoV12.pdf");
 
-            var diagnosisName = definitiveDiagnosis != null
-                ? diagnosisList.FirstOrDefault(d => d.DiagnosisId == definitiveDiagnosis.DiagnosisDiagnosisid)?.DiagnosisName ?? "N/A"
-                : "N/A";
+            byte[] pdfBytes;
 
-            var fechaInicial = consultation.ConsultationCreationdate ?? DateTime.Today;
-            var diasReposo = consultation.ConsultationDisablilitydays ?? 1;
-            var fechaFinal = fechaInicial.AddDays(diasReposo);
-
-            string templatePath = Path.Combine(_webHostEnvironment.WebRootPath, "plantillas", "certificado-medico.pdf");
-
-            using var memoryStream = new MemoryStream();
-            PdfReader pdfReader = new PdfReader(templatePath);
-            PdfStamper pdfStamper = new PdfStamper(pdfReader, memoryStream);
-            AcroFields formFields = pdfStamper.AcroFields;
-
-            // Rellenar campos
-            formFields.SetField("txt_nombre_paciente", $"{patient.PatientFirstname} {patient.PatientMiddlename} {patient.PatientFirstsurname} {patient.PatientSecondlastname}".ToUpper());
-            formFields.SetField("txt_apellidos", $"{patient.PatientFirstsurname} {patient.PatientSecondlastname}");
-            formFields.SetField("txt_cedula_paciente", patient.PatientDocumentnumber);
-            formFields.SetField("txt_direccion_paciente", patient.PatientAddress.ToUpper());
-            formFields.SetField("txt_numero_paciente", patient.PatientCellularPhone);
-            formFields.SetField("txt_empresa_paciente",
-                string.IsNullOrWhiteSpace(patient.PatientCompany)
-                    ? "NO ESPECIFICADO"
-                    : patient.PatientCompany.ToUpper());
-            formFields.SetField("txt_puesto_paciente",
-                string.IsNullOrWhiteSpace(patient.PatientOcupation)
-                    ? "NO ESPECIFICADO"
-                    : patient.PatientOcupation.ToUpper());
-            formFields.SetField("txt_codigo", patient.PatientId.ToString());
-
-            formFields.SetField("txt_fecha_emision", "Quito, " + fechaInicial.ToString("dd 'de' MMMM 'del' yyyy", new CultureInfo("es-ES")));
-
-            // FECHA INICIO
-            string fechaInicioCorta = fechaInicial.ToString("dd/MM/yyyy");
-            string fechaInicioLarga = FormatearFechaLarga(fechaInicial);
-            string fechaInicioCompleta = $"{fechaInicioCorta} - {fechaInicioLarga}";
-            formFields.SetField("txt_reposo_desde_paciente", fechaInicioCompleta);
-
-            // FECHA FIN
-            string fechaFinCorta = fechaFinal.ToString("dd/MM/yyyy");
-            string fechaFinLarga = FormatearFechaLarga(fechaFinal);
-            string fechaFinCompleta = $"{fechaFinCorta} - {fechaFinLarga}";
-            formFields.SetField("txt_reposo_hasta_paciente", fechaFinCompleta);
-
-
-            formFields.SetField("txt_dias", diasReposo.ToString());
-
-            var cultura = new CultureInfo("es-ES");
-            var diaNumero = fechaInicial.Day;
-            var diaTexto = cultura.DateTimeFormat.GetDayName(fechaInicial.DayOfWeek).ToUpper();
-            var mesTexto = cultura.DateTimeFormat.GetMonthName(fechaInicial.Month).ToUpper();
-
-            var diaEnLetras = diaNumero switch
+            using (var memoryStream = new MemoryStream())
             {
-                1 => "UNO",
-                2 => "DOS",
-                3 => "TRES",
-                4 => "CUATRO",
-                5 => "CINCO",
-                6 => "SEIS",
-                7 => "SIETE",
-                8 => "OCHO",
-                9 => "NUEVE",
-                10 => "DIEZ",
-                11 => "ONCE",
-                12 => "DOCE",
-                13 => "TRECE",
-                14 => "CATORCE",
-                15 => "QUINCE",
-                16 => "DIECISÉIS",
-                17 => "DIECISIETE",
-                18 => "DIECIOCHO",
-                19 => "DIECINUEVE",
-                20 => "VEINTE",
-                21 => "VEINTIUNO",
-                22 => "VEINTIDÓS",
-                23 => "VEINTITRÉS",
-                24 => "VEINTICUATRO",
-                25 => "VEINTICINCO",
-                26 => "VEINTISÉIS",
-                27 => "VEINTISIETE",
-                28 => "VEINTIOCHO",
-                29 => "VEINTINUEVE",
-                30 => "TREINTA",
-                31 => "TREINTA Y UNO",
-                _ => diaNumero.ToString()
+                using (var pdfReader = new PdfReader(templatePath))
+                using (var pdfStamper = new PdfStamper(pdfReader, memoryStream))
+                {
+                    AcroFields formFields = pdfStamper.AcroFields;
+                    var cultura = new CultureInfo("es-ES");
+
+                    // =========================
+                    // LOGO DE LA CABECERA
+                    // =========================
+                    InsertImageFromField(pdfStamper, formFields, "txt_imagen_logo", consultation.UsersEstablishmentLogo);
+
+                    // =========================
+                    // FECHA Y TEXTO CABECERA
+                    // =========================
+                    var fechaEmision = consultation.ConsultationCreationdate ?? DateTime.Today;
+
+                    string nombreCompletoPaciente = $"{patient.PatientFirstname ?? ""} {patient.PatientMiddlename ?? ""} {patient.PatientFirstsurname ?? ""} {patient.PatientSecondlastname ?? ""}"
+                                                    .Trim().ToUpper();
+
+                    string diaSemana = cultura.DateTimeFormat.GetDayName(fechaEmision.DayOfWeek).ToUpper();
+
+                    var diasEnLetras = new[]
+                    {
+                "", "UNO", "DOS", "TRES", "CUATRO", "CINCO", "SEIS", "SIETE", "OCHO", "NUEVE",
+                "DIEZ", "ONCE", "DOCE", "TRECE", "CATORCE", "QUINCE", "DIECISÉIS", "DIECISIETE",
+                "DIECIOCHO", "DIECINUEVE", "VEINTE", "VEINTIUNO", "VEINTIDÓS", "VEINTITRÉS",
+                "VEINTICUATRO", "VEINTICINCO", "VEINTISÉIS", "VEINTISIETE", "VEINTIOCHO", "VEINTINUEVE",
+                "TREINTA", "TREINTA Y UNO"
             };
 
-            string fechaLarga = $"{diaTexto} {diaNumero} ({diaEnLetras}) DE {mesTexto} DE {fechaInicial:yyyy}";
+                    string diaEnLetras = diasEnLetras[fechaEmision.Day];
+                    string mes = cultura.DateTimeFormat.GetMonthName(fechaEmision.Month).ToUpper();
 
-            // Rellenar en el PDF
-            formFields.SetField("txt_fecha_larga", fechaLarga);
+                    string textoCabecera = $"Certifico que el paciente {nombreCompletoPaciente} con identificación " +
+                                           $"{patient.PatientDocumentnumber ?? "N/A"} fue atendido el día de hoy " +
+                                           $"{diaSemana} {fechaEmision.Day} ({diaEnLetras}) DE {mes} DE {fechaEmision.Year}";
 
-            formFields.SetField("txt_diagnosticos_paciente", diagnosisName);
+                    formFields.SetField("txt_cabecera_certificado", textoCabecera);
+                    formFields.SetField("txt_fecha_emision", fechaEmision.ToString("dd/MM/yyyy"));
 
-            formFields.SetField("txt_nombre_doctor", $"{consultation.UsersNames} {consultation.UsersSurcenames}".ToUpper());
-            formFields.SetField("txt_especialidad_doctor", consultation.SpecialityName.ToUpper());
-            formFields.SetField("txt_email_doctor", consultation.UsersEmail.ToUpper());
-            formFields.SetField("txt_cedula_doctor", consultation.UsersDocumentNumber.ToUpper());
-            formFields.SetField("txt_motivo_enfermedad_paciente", consultation.ConsultationReason.ToUpper());
-            formFields.SetField("txt_enfermedad_paciente", consultation.ConsultationDisease.ToUpper());
-            formFields.SetField("txt_tipo_contingencia", consultation.ConsultationContingencytype.ToUpper());
+                    // =========================
+                    // DATOS DEL PACIENTE
+                    // =========================
+                    string nombreCompleto = $"{patient.PatientFirstname ?? ""} {patient.PatientMiddlename ?? ""} {patient.PatientFirstsurname ?? ""} {patient.PatientSecondlastname ?? ""}".Trim();
+                    string dataPaciente1 = $"Nombres y Apellidos: {nombreCompleto}\n" +
+                                           $"Dirección domicilio: {patient.PatientAddress ?? "N/A"}\n" +
+                                           $"Número telefónico de contacto: {patient.PatientCellularPhone ?? "N/A"} / {patient.PatientLandlinePhone ?? "N/A"}\n" +
+                                           $"Institución/Empresa: {patient.PatientCompany ?? "N/A"}\n" +
+                                           $"Puesto de trabajo: {patient.PatientOcupation ?? "N/A"}\n" +
+                                           $"Cédula/Pasaporte: {patient.PatientDocumentnumber ?? "N/A"}\n" +
+                                           $"Historia clínica: {patient.PatientDocumentnumber ?? "N/A"}";
 
-            if (consultation.ConsutationHasSymptoms == true)
-            {
-                formFields.SetField("txt_sintomas_si", "X");
-                formFields.SetField("txt_sintomas_no", "");
+                    formFields.SetField("txt_datos_paciente", dataPaciente1);
+                    formFields.SetField("txt_datos_paciente_2", dataPaciente1);
+
+                    // =========================
+                    // DIAGNÓSTICOS
+                    // =========================
+                    var diagnosisList = await _selectService.GetAllDiagnosisAsync();
+
+                    var diagnosisDefNames = consultation.DiagnosisConsultations?
+                        .Where(d => d.DiagnosisDefinitive == true)
+                        .Select(d => diagnosisList.FirstOrDefault(x => x.DiagnosisId == d.DiagnosisDiagnosisid)?.DiagnosisName ?? "N/A")
+                        .ToList() ?? new List<string>();
+
+                    var diagnosisPreNames = consultation.DiagnosisConsultations?
+                        .Where(d => d.DiagnosisPresumptive == true)
+                        .Select(d => diagnosisList.FirstOrDefault(x => x.DiagnosisId == d.DiagnosisDiagnosisid)?.DiagnosisName ?? "N/A")
+                        .ToList() ?? new List<string>();
+
+                    string diagnosticosTexto =
+                        $"• Diagnóstico Definitivo: {(diagnosisDefNames.Any() ? string.Join(", ", diagnosisDefNames) : "N/A")}\n" +
+                        $"• Diagnóstico Presuntivo: {(diagnosisPreNames.Any() ? string.Join(", ", diagnosisPreNames) : "N/A")}";
+
+                    formFields.SetField("txt_diagnosticos", diagnosticosTexto);
+
+                    // =========================
+                    // PROCEDIMIENTOS EN LÍNEA COMPACTA
+                    // =========================
+                    var procedimientosTexto = new StringBuilder();
+                    if (consultation.Procedures?.Any() == true)
+                    {
+                        int count = 1;
+                        foreach (var proc in consultation.Procedures.OrderBy(p => p.Procedure_Date ?? DateTime.MaxValue))
+                        {
+                            string nombreProc = string.IsNullOrWhiteSpace(proc.Procedure_Name) ? "Sin especificar" : proc.Procedure_Name;
+                            string fechaProc = proc.Procedure_Date?.ToString("dd/MM/yy", cultura) ?? "S/F";
+
+                            // Truncar a 25 caracteres
+                            if (nombreProc.Length > 25)
+                                nombreProc = nombreProc.Substring(0, 22) + "...";
+
+                            // Todo en una línea: "1) Nombre (fecha) | "
+                            procedimientosTexto.Append($"{count}) {nombreProc} ({fechaProc})  |  ");
+                            count++;
+
+                            // Salto de línea cada 2 procedimientos (ajustable)
+                            if (count % 2 == 1)
+                                procedimientosTexto.AppendLine();
+                        }
+                    }
+                    else
+                    {
+                        procedimientosTexto.AppendLine("No se registraron procedimientos");
+                    }
+                    formFields.SetField("txt_procedimientos", procedimientosTexto.ToString().TrimEnd());
+                    // =========================
+                    // SÍNTOMAS Y ENFERMEDAD
+                    // =========================
+                    formFields.SetField("chk_sintomas_si", consultation.ConsutationHasSymptoms == true ? "X" : "");
+                    formFields.SetField("chk_sintomas_no", consultation.ConsutationHasSymptoms != true ? "X" : "");
+
+                    bool tieneEnfermedad = consultation.ConsultationHasdisease ?? false;
+                    formFields.SetField("chk_enfermedad_si", tieneEnfermedad ? "X" : "");
+                    formFields.SetField("chk_enfermedad_no", !tieneEnfermedad ? "X" : "");
+
+                    string descripcionEnfermedad = tieneEnfermedad
+                        ? (consultation.ConsultationDiseaseobservation ?? consultation.ConsultationDisease ?? "N/A")
+                        : "N/A";
+                    formFields.SetField("txt_descripcion_enfermedad", descripcionEnfermedad);
+
+                    // =========================
+                    // CONTINGENCIA
+                    // =========================
+                    formFields.SetField("txt_tipo_contigencia", consultation.ConsultationContingencytype ?? "Común");
+
+                    // =========================
+                    // REPOSO MÉDICO
+                    // =========================
+                    // =========================
+                    // REPOSO MÉDICO
+                    // =========================
+                    int diasReposo = consultation.ConsultationDisablilitydays ?? 0;
+
+                    string reposoTexto;
+
+                    if (diasReposo > 0)
+                    {
+                        var fechaFin = fechaEmision.AddDays(diasReposo - 1); // -1 porque si pide 1 día, es el mismo día
+
+                        // Convertir número a texto
+                        string diasEnTexto = ConvertirNumeroATexto(diasReposo);
+                        string pluralDia = diasReposo == 1 ? "Día" : "Días";
+
+                        // Fecha DESDE
+                        string diaSemanaDesde = cultura.DateTimeFormat.GetDayName(fechaEmision.DayOfWeek).ToUpper();
+                        string diaEnLetrasDesde = diasEnLetras[fechaEmision.Day];
+                        string mesDesde = cultura.DateTimeFormat.GetMonthName(fechaEmision.Month).ToUpper();
+                        string anioDesde = ConvertirAnioALetras(fechaEmision.Year);
+
+                        // Fecha HASTA
+                        string diaSemanaHasta = cultura.DateTimeFormat.GetDayName(fechaFin.DayOfWeek).ToUpper();
+                        string diaEnLetrasHasta = diasEnLetras[fechaFin.Day];
+                        string mesHasta = cultura.DateTimeFormat.GetMonthName(fechaFin.Month).ToUpper();
+                        string anioHasta =  ConvertirAnioALetras(fechaFin.Year);
+
+                        reposoTexto = $"Se requiere reposo médico en domicilio por {diasReposo} ({diasEnTexto}) {pluralDia}." +
+                                      $"DESDE: {fechaEmision:dd/MM/yyyy} {diaSemanaDesde} {fechaEmision.Day} ({diaEnLetrasDesde}) DE {mesDesde} DE {anioDesde}." +
+                                      $"HASTA: {fechaFin:dd/MM/yyyy} {diaSemanaHasta} {fechaFin.Day} ({diaEnLetrasHasta}) DE {mesHasta} DE {anioHasta}.";
+                    }
+                    else
+                    {
+                        reposoTexto = "No requiere reposo médico";
+                    }
+
+                    formFields.SetField("txt_reposo_medico", reposoTexto);
+
+                    // =========================
+                    // DATOS DEL MÉDICO
+                    // =========================
+                    string datosMedico = $"Dr(a). {consultation.UsersNames ?? ""} {consultation.UsersSurcenames ?? ""}".Trim() + "\n" +                                     
+                                         $"{consultation.UsersDocumentNumber ?? "N/A"}\n" +
+                                         $"{consultation.SpecialityName ?? "Médico General"}\n" +
+                                         $"Email: {consultation.UsersEmail ?? "N/A"}\n" +
+                                         $"Teléfono: {consultation.UsersPhone ?? "N/A"}";
+
+                    formFields.SetField("txt_datos_medico", datosMedico);
+
+                    // =========================
+                    // FINALIZAR PDF
+                    // =========================
+                    pdfStamper.FormFlattening = true;
+                    pdfStamper.Close(); // ✅ CRÍTICO: Cerrar antes de leer el stream
+                }
+
+                pdfBytes = memoryStream.ToArray(); // ✅ Extraer bytes después de cerrar stamper
             }
-            else
-            {
-                formFields.SetField("txt_sintomas_si", "");
-                formFields.SetField("txt_sintomas_no", "X");
-            }
 
-            // Asumimos que ConsultationDiseaseobservation es string
-            bool tieneEnfermedad = consultation.ConsultationHasdisease.GetValueOrDefault();
-            string descripcion = consultation.ConsultationDiseaseobservation ?? "";
-
-            // 1) Marcar sí/no
-            formFields.SetField("txt_enfermedad_si", tieneEnfermedad ? "X" : "");
-            formFields.SetField("txt_enfermedad_no", !tieneEnfermedad ? "X" : "");
-
-            // 2) Enviar descripción solo si tiene enfermedad
-            formFields.SetField("txt_enfermedad_descripcion", tieneEnfermedad ? descripcion : "");
-
-
-
-            formFields.SetField("txt_footer_direccion",
-                string.IsNullOrWhiteSpace(consultation.UsersEstablishmentAddress)
-                    ? "NO ESPECIFICADO"
-                    : consultation.UsersEstablishmentAddress.ToUpper());
-            formFields.SetField("txt_footer_email",
-    string.IsNullOrWhiteSpace(consultation.UsersEmail)
-        ? "NO ESPECIFICADO"
-        : consultation.UsersEmail.ToUpper());
-
-            formFields.SetField("txt_footer_telefono",
-                string.IsNullOrWhiteSpace(consultation.UsersPhone)
-                    ? "NO ESPECIFICADO"
-                    : consultation.UsersPhone.ToUpper());
-
-
-            // Verifica que haya logo
-            InsertImageFromField(pdfStamper, formFields, "txt_imagen_logotipo", consultation.UsersEstablishmentLogo);
-
-
-
-
-
-
-
-            pdfStamper.FormFlattening = true;
-            pdfStamper.Close();
-            pdfReader.Close();
-
-            var random = new Random().Next(1000, 9999);
-            return File(memoryStream.ToArray(), "application/pdf", $"certificado_medico_{random}.pdf");
+            var randomNumber = new Random().Next(1000, 9999);
+            return File(pdfBytes, "application/pdf", $"certificado_medico_{randomNumber}.pdf");
         }
 
 
@@ -2271,6 +2340,11 @@ namespace ExpertMed.Controllers
             return File(memoryStream.ToArray(), "application/pdf", $"formulario_consulta_{randomNumber}.pdf");
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="consultationId"></param>
+        /// <returns></returns>
         public async Task<IActionResult> MedicationRecipe(int consultationId)
         {
             var consultation = _consultationService.GetConsultationDetails(consultationId);
@@ -2289,112 +2363,153 @@ namespace ExpertMed.Controllers
 
             string templatePath = Path.Combine(_webHostEnvironment.WebRootPath, "plantillas", "receta_expermed.pdf");
 
-            using var memoryStream = new MemoryStream();
-            PdfReader pdfReader = new PdfReader(templatePath);
-            PdfStamper pdfStamper = new PdfStamper(pdfReader, memoryStream);
+            byte[] pdfBytes;
 
-            AcroFields formFields = pdfStamper.AcroFields;
-
-            InsertImageFromField(pdfStamper, formFields, "txt_imagen_logo", consultation.UsersEstablishmentLogo);
-            InsertImageFromField(pdfStamper, formFields, "txt_imagen_logo_2", consultation.UsersEstablishmentLogo);
-
-
-            // Asignar valores a campos de la plantilla PDF
-            formFields.SetField("txt_nombre_doctor", consultation.UsersNames + " " + consultation.UsersSurcenames);
-            formFields.SetField("txt_especialidad", consultation.SpecialityName);
-            formFields.SetField("txt_email", consultation.UsersEmail);
-            formFields.SetField("txt_telefono", consultation.UsersPhone);
-
-            formFields.SetField("txt_fecha", consultation.ConsultationCreationdate.HasValue
-                ? consultation.ConsultationCreationdate.Value.ToShortDateString()
-                : "N/A");
-
-            formFields.SetField("txt_apellido", patient.PatientFirstsurname + " " + patient.PatientSecondlastname);
-            formFields.SetField("txt_nombres", patient.PatientFirstname + " " + patient.PatientMiddlename);
-            formFields.SetField("txt_edad", patient.PatientAge.ToString());
-            formFields.SetField("txt_cedula", patient.PatientDocumentnumber);
-
-            var diagnosisList = await _selectService.GetAllDiagnosisAsync();
-
-            // Diagnóstico Definitivo
-            var definitiveDiagnosis = consultation.DiagnosisConsultations?
-                .Where(d => d.DiagnosisDefinitive == true)
-                .OrderByDescending(d => d.DiagnosisDiagnosisid)
-                .FirstOrDefault();
-
-            var diagnosisDefName = definitiveDiagnosis != null
-                ? diagnosisList.FirstOrDefault(d => d.DiagnosisId == definitiveDiagnosis.DiagnosisDiagnosisid)?.DiagnosisName ?? "N/A"
-                : "N/A";
-
-            // Diagnóstico Presuntivo
-            var presumptiveDiagnosis = consultation.DiagnosisConsultations?
-                .Where(d => d.DiagnosisPresumptive == true)
-                .OrderByDescending(d => d.DiagnosisDiagnosisid)
-                .FirstOrDefault();
-
-            var diagnosisPresumptiveName = presumptiveDiagnosis != null
-                ? diagnosisList.FirstOrDefault(d => d.DiagnosisId == presumptiveDiagnosis.DiagnosisDiagnosisid)?.DiagnosisName ?? "N/A"
-                : "N/A";
-
-            formFields.SetField("txt_diagnosticos", $"Definitivo: {diagnosisDefName} | Presuntivo: {diagnosisPresumptiveName}");
-
-            // Medicamentos
-            var allMedications = await _selectService.GetAllMedicationsAsync();
-            var medicationsInfo = string.Join("\n", consultation.MedicationsConsultations.Select(mc =>
+            using (var memoryStream = new MemoryStream())
             {
-                var medication = allMedications.FirstOrDefault(m => m.MedicationsId == mc.MedicationsMedicationsid);
-                return medication != null ? $"({medication.MedicationsCie10}) {medication.MedicationsName} - Cantidad: {mc.MedicationsAmount}" : "N/A";
-            }));
+                using (var pdfReader = new PdfReader(templatePath))
+                using (var pdfStamper = new PdfStamper(pdfReader, memoryStream))
+                {
+                    AcroFields formFields = pdfStamper.AcroFields;
 
-            formFields.SetField("txt_prescripcion", medicationsInfo);
+                    InsertImageFromField(pdfStamper, formFields, "txt_imagen_logo", consultation.UsersEstablishmentLogo);
+                    InsertImageFromField(pdfStamper, formFields, "txt_imagen_logo_2", consultation.UsersEstablishmentLogo);
 
-            // Indicaciones
-            var indications = string.Join("\n", consultation.MedicationsConsultations.Select(mc =>
-            {
-                var medication = allMedications.FirstOrDefault(m => m.MedicationsId == mc.MedicationsMedicationsid);
-                return medication != null ? $"({medication.MedicationsCie10}) {medication.MedicationsName} - Observaciones: {mc.MedicationsObservation}" : "N/A";
-            }));
+                    // Asignar valores a campos de la plantilla PDF
 
-            formFields.SetField("txt_observacion", indications);
+             
+                    string datosMedico = ConstruirDatosMedico(consultation);
+                    formFields.SetField("txt_datos_medico", datosMedico);
 
-            var allergiesList = await _selectService.GetAllergiesTypeAsync();
+                    formFields.SetField("txt_fecha", consultation.ConsultationCreationdate.HasValue
+                        ? consultation.ConsultationCreationdate.Value.ToShortDateString()
+                        : "N/A");
 
-            // Obtenemos los IDs de alergias asociados a la consulta
-            var consultationAllergyIds = consultation.AllergiesConsultations?
-                .Select(ac => ac.AllergiesCatalogid)
-                .ToList();
+                    formFields.SetField("txt_apellido", patient.PatientFirstsurname + " " + patient.PatientSecondlastname);
+                    formFields.SetField("txt_nombres", patient.PatientFirstname + " " + patient.PatientMiddlename);
+                    formFields.SetField("txt_edad", patient.PatientAge.ToString());
+                    formFields.SetField("txt_cedula", patient.PatientDocumentnumber);
+                    formFields.SetField("txt_cedula_medico", consultation.UsersDocumentNumber);
 
-            // Filtramos el catálogo para quedarnos solo con los que tengan un ID presente en la consulta
-            var filteredAllergies = (consultationAllergyIds != null && consultationAllergyIds.Any())
-                ? allergiesList.Where(c => consultationAllergyIds.Contains(c.CatalogId))
-                : Enumerable.Empty<Catalog>();
+                    // =========================
+                    // DIAGNÓSTICOS - LISTAR TODOS
+                    // =========================
+                    var diagnosisList = await _selectService.GetAllDiagnosisAsync();
 
-            var allergiesText = filteredAllergies.Any()
-                ? string.Join(", ", filteredAllergies.Select(a => a.CatalogName))
-                : "N/A";
+                    // Diagnósticos Definitivos (TODOS)
+                    var diagnosisDefNames = consultation.DiagnosisConsultations?
+                        .Where(d => d.DiagnosisDefinitive == true)
+                        .Select(d => diagnosisList.FirstOrDefault(x => x.DiagnosisId == d.DiagnosisDiagnosisid)?.DiagnosisName ?? "N/A")
+                        .ToList() ?? new List<string>();
 
-            formFields.SetField("txt_alergias_cirugias", allergiesText);
+                    // Diagnósticos Presuntivos (TODOS)
+                    var diagnosisPreNames = consultation.DiagnosisConsultations?
+                        .Where(d => d.DiagnosisPresumptive == true)
+                        .Select(d => diagnosisList.FirstOrDefault(x => x.DiagnosisId == d.DiagnosisDiagnosisid)?.DiagnosisName ?? "N/A")
+                        .ToList() ?? new List<string>();
 
-            var sequential = consultation.MedicationsConsultations.FirstOrDefault()?.MedicationsSequential ?? 0;
-            formFields.SetField("txt_secuencial", sequential.ToString());
+                    // Formatear diagnósticos
+                    string diagnosticosTexto = "";
 
+                    if (diagnosisDefNames.Any() || diagnosisPreNames.Any())
+                    {
+                        var partes = new List<string>();
 
-            formFields.SetField("txt_rec_no_farma", consultation.ConsultationNonpharmacologycal ?? "N/A");
+                        if (diagnosisDefNames.Any())
+                            partes.Add($"Definitivo: {string.Join(", ", diagnosisDefNames)}");
 
-            formFields.SetField("txt_direccion", consultation.UsersEstablishmentAddress);
-            formFields.SetField("txt_direccion", consultation.EstablishmentAddress);
-            // Finalizar la edición y cerrar el stamper
-            pdfStamper.FormFlattening = true;
-            pdfStamper.Close();
-            pdfReader.Close();
+                        if (diagnosisPreNames.Any())
+                            partes.Add($"Presuntivo: {string.Join(", ", diagnosisPreNames)}");
 
-            // Genera un número aleatorio único
+                        diagnosticosTexto = string.Join(" | ", partes);
+                    }
+                    else
+                    {
+                        diagnosticosTexto = "N/A";
+                    }
+
+                    formFields.SetField("txt_diagnosticos", diagnosticosTexto);
+
+                    // =========================
+                    // MEDICAMENTOS
+                    // =========================
+                    var allMedications = await _selectService.GetAllMedicationsAsync();
+
+                    var medicationsInfo = consultation.MedicationsConsultations?.Any() == true
+                        ? string.Join("\n", consultation.MedicationsConsultations.Select(mc =>
+                        {
+                            var medication = allMedications.FirstOrDefault(m => m.MedicationsId == mc.MedicationsMedicationsid);
+                            return medication != null
+                                ? $"({medication.MedicationsCie10}) {medication.MedicationsDescription} - Cantidad: {mc.MedicationsAmount}"
+                                : "N/A";
+                        }))
+                        : "No se prescribieron medicamentos";
+
+                    formFields.SetField("txt_prescripcion", medicationsInfo);
+
+                    // =========================
+                    // INDICACIONES
+                    // =========================
+                    var indications = consultation.MedicationsConsultations?.Any() == true
+                        ? string.Join("\n", consultation.MedicationsConsultations.Select(mc =>
+                        {
+                            var medication = allMedications.FirstOrDefault(m => m.MedicationsId == mc.MedicationsMedicationsid);
+                            return medication != null
+                                ? $"({medication.MedicationsCie10}) {medication.MedicationsDescription} - Observaciones: {mc.MedicationsObservation ?? "Sin observaciones"}"
+                                : "N/A";
+                        }))
+                        : "Sin indicaciones";
+
+                    formFields.SetField("txt_observacion", indications);
+
+                    // =========================
+                    // ALERGIAS
+                    // =========================
+                    var allergiesList = await _selectService.GetAllergiesTypeAsync();
+
+                    var consultationAllergyIds = consultation.AllergiesConsultations?
+                        .Select(ac => ac.AllergiesCatalogid)
+                        .ToList();
+
+                    var filteredAllergies = (consultationAllergyIds != null && consultationAllergyIds.Any())
+                        ? allergiesList.Where(c => consultationAllergyIds.Contains(c.CatalogId))
+                        : Enumerable.Empty<Catalog>();
+
+                    var allergiesText = filteredAllergies.Any()
+                        ? string.Join(", ", filteredAllergies.Select(a => a.CatalogName))
+                        : "N/A";
+
+                    formFields.SetField("txt_alergias_cirugias", allergiesText);
+
+                    // =========================
+                    // OTROS CAMPOS
+                    // =========================
+                    var sequential = consultation.MedicationsConsultations?.FirstOrDefault()?.MedicationsSequential ?? 0;
+                    formFields.SetField("txt_secuencial", sequential.ToString());
+
+                    formFields.SetField("txt_rec_no_farma", consultation.ConsultationNonpharmacologycal ?? "N/A");
+                    formFields.SetField("txt_direccion", consultation.EstablishmentAddress ?? consultation.UsersEstablishmentAddress ?? "N/A");
+
+                    // Finalizar PDF
+                    pdfStamper.FormFlattening = true;
+                    pdfStamper.Close();
+                }
+
+                pdfBytes = memoryStream.ToArray();
+            }
+
             var randomNumber = new Random().Next(1000, 9999);
-
-            // Devuelve el archivo PDF generado
-            return File(memoryStream.ToArray(), "application/pdf", $"receta_medicacion_{randomNumber}.pdf");
+            return File(pdfBytes, "application/pdf", $"receta_medicacion_{randomNumber}.pdf");
         }
 
+
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="consultationId"></param>
+        /// <returns></returns>
 
         public async Task<IActionResult> LaboratoryDoc(int consultationId)
         {
@@ -2414,83 +2529,112 @@ namespace ExpertMed.Controllers
 
             string templatePath = Path.Combine(_webHostEnvironment.WebRootPath, "plantillas", "laboratorio_expermed.pdf");
 
-            using var memoryStream = new MemoryStream();
-            PdfReader pdfReader = new PdfReader(templatePath);
-            PdfStamper pdfStamper = new PdfStamper(pdfReader, memoryStream);
+            byte[] pdfBytes;
 
-            AcroFields formFields = pdfStamper.AcroFields;
-            InsertImageFromField(pdfStamper, formFields, "txt_imagen_logo_2", consultation.UsersEstablishmentLogo);
-
-            // Asignar valores a campos de la plantilla PDF
-            formFields.SetField("txt_nombre_doctor", consultation.UsersNames + " " + consultation.UsersSurcenames);
-            formFields.SetField("txt_especialidad", consultation.SpecialityName);
-            formFields.SetField("txt_email", consultation.UsersEmail);
-            formFields.SetField("txt_telefono", consultation.UsersPhone);
-
-            formFields.SetField("txt_fecha", consultation.ConsultationCreationdate.HasValue
-                ? consultation.ConsultationCreationdate.Value.ToShortDateString()
-                : "N/A");
-
-            formFields.SetField("txt_apellido", patient.PatientFirstsurname + " " + patient.PatientSecondlastname);
-            formFields.SetField("txt_nombres", patient.PatientFirstname + " " + patient.PatientMiddlename);
-            formFields.SetField("txt_edad", patient.PatientAge.ToString());
-            formFields.SetField("txt_cedula", patient.PatientDocumentnumber);
-
-            var diagnosisList = await _selectService.GetAllDiagnosisAsync();
-
-            // Diagnóstico Definitivo
-            var definitiveDiagnosis = consultation.DiagnosisConsultations?
-                .Where(d => d.DiagnosisDefinitive == true)
-                .OrderByDescending(d => d.DiagnosisDiagnosisid)
-                .FirstOrDefault();
-
-            var diagnosisDefName = definitiveDiagnosis != null
-                ? diagnosisList.FirstOrDefault(d => d.DiagnosisId == definitiveDiagnosis.DiagnosisDiagnosisid)?.DiagnosisName ?? "N/A"
-                : "N/A";
-
-            // Diagnóstico Presuntivo
-            var presumptiveDiagnosis = consultation.DiagnosisConsultations?
-                .Where(d => d.DiagnosisPresumptive == true)
-                .OrderByDescending(d => d.DiagnosisDiagnosisid)
-                .FirstOrDefault();
-
-            var diagnosisPresumptiveName = presumptiveDiagnosis != null
-                ? diagnosisList.FirstOrDefault(d => d.DiagnosisId == presumptiveDiagnosis.DiagnosisDiagnosisid)?.DiagnosisName ?? "N/A"
-                : "N/A";
-
-            formFields.SetField("txt_diagnosticos", $"Definitivo: {diagnosisDefName} | Presuntivo: {diagnosisPresumptiveName}");
-
-            // Laboratorios
-            var allLabs = await _selectService.GetAllLaboratoriesAsync();
-            var laboratoriesInfo = string.Join("\n", consultation.LaboratoriesConsultations.Select(lc =>
+            using (var memoryStream = new MemoryStream())
             {
-                var lab = allLabs.FirstOrDefault(l => l.LaboratoriesId == lc.LaboratoriesLaboratoriesid);
-                return lab != null ? $"({lab.LaboratoriesCie10}) {lab.LaboratoriesName} - Cantidad: {lc.LaboratoriesAmount}" : "N/A";
-            }));
+                using (var pdfReader = new PdfReader(templatePath))
+                using (var pdfStamper = new PdfStamper(pdfReader, memoryStream))
+                {
+                    AcroFields formFields = pdfStamper.AcroFields;
+                    InsertImageFromField(pdfStamper, formFields, "txt_imagen_logo_2", consultation.UsersEstablishmentLogo);
 
-            formFields.SetField("txt_laboratorios", laboratoriesInfo);
+                    // Asignar valores a campos de la plantilla PDF
+                    string datosMedico = ConstruirDatosMedico(consultation);
+                    formFields.SetField("txt_datos_medico", datosMedico);
 
-            // Obtener solo la primera observación de los laboratorios
-            var firstLaboratoryObservation = consultation.LaboratoriesConsultations
-                .Select(lc => lc.LaboratoriesObservation)
-                .FirstOrDefault(obs => !string.IsNullOrEmpty(obs));
+                    formFields.SetField("txt_fecha", consultation.ConsultationCreationdate.HasValue
+                        ? consultation.ConsultationCreationdate.Value.ToShortDateString()
+                        : "N/A");
 
-            formFields.SetField("txt_observaciones", firstLaboratoryObservation ?? string.Empty);
-            Console.WriteLine($"Primera observación encontrada: {firstLaboratoryObservation}");
+                    formFields.SetField("txt_apellido", $"{patient.PatientFirstsurname ?? ""} {patient.PatientSecondlastname ?? ""}".Trim());
+                    formFields.SetField("txt_nombres", $"{patient.PatientFirstname ?? ""} {patient.PatientMiddlename ?? ""}".Trim());
+                    formFields.SetField("txt_edad", patient.PatientAge.ToString() ?? "N/A");
+                    formFields.SetField("txt_cedula", patient.PatientDocumentnumber ?? "N/A");
+                    formFields.SetField("txt_cedula_medico", consultation.UsersDocumentNumber ?? "N/A");
 
-            formFields.SetField("txt_direccion", consultation.UsersEstablishmentAddress);
+                    // =========================
+                    // DIAGNÓSTICOS - LISTAR TODOS
+                    // =========================
+                    var diagnosisList = await _selectService.GetAllDiagnosisAsync();
 
+                    // Diagnósticos Definitivos (TODOS)
+                    var diagnosisDefNames = consultation.DiagnosisConsultations?
+                        .Where(d => d.DiagnosisDefinitive == true)
+                        .Select(d => diagnosisList.FirstOrDefault(x => x.DiagnosisId == d.DiagnosisDiagnosisid)?.DiagnosisName ?? "N/A")
+                        .ToList() ?? new List<string>();
 
-            // Finalizar la edición y cerrar el stamper
-            pdfStamper.FormFlattening = true;
-            pdfStamper.Close();
-            pdfReader.Close();
+                    // Diagnósticos Presuntivos (TODOS)
+                    var diagnosisPreNames = consultation.DiagnosisConsultations?
+                        .Where(d => d.DiagnosisPresumptive == true)
+                        .Select(d => diagnosisList.FirstOrDefault(x => x.DiagnosisId == d.DiagnosisDiagnosisid)?.DiagnosisName ?? "N/A")
+                        .ToList() ?? new List<string>();
 
-            // Genera un número aleatorio único
+                    // Formatear diagnósticos
+                    string diagnosticosTexto = "";
+
+                    if (diagnosisDefNames.Any() || diagnosisPreNames.Any())
+                    {
+                        var partes = new List<string>();
+
+                        if (diagnosisDefNames.Any())
+                            partes.Add($"Definitivo: {string.Join(", ", diagnosisDefNames)}");
+
+                        if (diagnosisPreNames.Any())
+                            partes.Add($"Presuntivo: {string.Join(", ", diagnosisPreNames)}");
+
+                        diagnosticosTexto = string.Join(" | ", partes);
+                    }
+                    else
+                    {
+                        diagnosticosTexto = "N/A";
+                    }
+
+                    formFields.SetField("txt_diagnosticos", diagnosticosTexto);
+
+                    // =========================
+                    // LABORATORIOS
+                    // =========================
+                    var allLabs = await _selectService.GetAllLaboratoriesAsync();
+
+                    var laboratoriesInfo = consultation.LaboratoriesConsultations?.Any() == true
+                        ? string.Join("\n", consultation.LaboratoriesConsultations.Select(lc =>
+                        {
+                            var lab = allLabs.FirstOrDefault(l => l.LaboratoriesId == lc.LaboratoriesLaboratoriesid);
+                            return lab != null
+                                ? $"({lab.LaboratoriesCie10}) {lab.LaboratoriesName} - Cantidad: {lc.LaboratoriesAmount}"
+                                : "N/A";
+                        }))
+                        : "No se solicitaron laboratorios";
+
+                    formFields.SetField("txt_laboratorios", laboratoriesInfo);
+
+                    // =========================
+                    // OBSERVACIONES - TODAS LAS OBSERVACIONES
+                    // =========================
+                    var observaciones = consultation.LaboratoriesConsultations?
+                        .Where(lc => !string.IsNullOrWhiteSpace(lc.LaboratoriesObservation))
+                        .Select(lc => lc.LaboratoriesObservation)
+                        .ToList() ?? new List<string>();
+
+                    string observacionesTexto = observaciones.Any()
+                        ? string.Join("\n", observaciones)
+                        : "Sin observaciones";
+
+                    formFields.SetField("txt_observaciones", observacionesTexto);
+
+                    formFields.SetField("txt_direccion", consultation.UsersEstablishmentAddress ?? "N/A");
+
+                    // Finalizar PDF
+                    pdfStamper.FormFlattening = true;
+                    pdfStamper.Close();
+                }
+
+                pdfBytes = memoryStream.ToArray();
+            }
+
             var randomNumber = new Random().Next(1000, 9999);
-
-            // Devuelve el archivo PDF generado
-            return File(memoryStream.ToArray(), "application/pdf", $"pedido_laboratorio_{randomNumber}.pdf");
+            return File(pdfBytes, "application/pdf", $"pedido_laboratorio_{randomNumber}.pdf");
         }
 
         public async Task<IActionResult> ImageDoc(int consultationId)
@@ -2511,80 +2655,146 @@ namespace ExpertMed.Controllers
 
             string templatePath = Path.Combine(_webHostEnvironment.WebRootPath, "plantillas", "imagenologia_expermed.pdf");
 
-            using var memoryStream = new MemoryStream();
-            PdfReader pdfReader = new PdfReader(templatePath);
-            PdfStamper pdfStamper = new PdfStamper(pdfReader, memoryStream);
+            byte[] pdfBytes;
 
-            AcroFields formFields = pdfStamper.AcroFields;
-            InsertImageFromField(pdfStamper, formFields, "txt_imagen_logo_2", consultation.UsersEstablishmentLogo);
-
-            // Asignar valores a campos de la plantilla PDF
-            formFields.SetField("txt_nombre_doctor", consultation.UsersNames + " " + consultation.UsersSurcenames);
-            formFields.SetField("txt_especialidad", consultation.SpecialityName);
-            formFields.SetField("txt_email", consultation.UsersEmail);
-            formFields.SetField("txt_telefono", consultation.UsersPhone);
-
-            formFields.SetField("txt_fecha", consultation.ConsultationCreationdate.HasValue
-                ? consultation.ConsultationCreationdate.Value.ToShortDateString()
-                : "N/A");
-
-            formFields.SetField("txt_apellido", patient.PatientFirstsurname + " " + patient.PatientSecondlastname);
-            formFields.SetField("txt_nombres", patient.PatientFirstname + " " + patient.PatientMiddlename);
-            formFields.SetField("txt_edad", patient.PatientAge.ToString());
-            formFields.SetField("txt_cedula", patient.PatientDocumentnumber);
-
-            var diagnosisList = await _selectService.GetAllDiagnosisAsync();
-
-            // Diagnóstico Definitivo
-            var definitiveDiagnosis = consultation.DiagnosisConsultations?
-                .Where(d => d.DiagnosisDefinitive == true)
-                .OrderByDescending(d => d.DiagnosisDiagnosisid)
-                .FirstOrDefault();
-
-            var diagnosisDefName = definitiveDiagnosis != null
-                ? diagnosisList.FirstOrDefault(d => d.DiagnosisId == definitiveDiagnosis.DiagnosisDiagnosisid)?.DiagnosisName ?? "N/A"
-                : "N/A";
-
-            // Diagnóstico Presuntivo
-            var presumptiveDiagnosis = consultation.DiagnosisConsultations?
-                .Where(d => d.DiagnosisPresumptive == true)
-                .OrderByDescending(d => d.DiagnosisDiagnosisid)
-                .FirstOrDefault();
-
-            var diagnosisPresumptiveName = presumptiveDiagnosis != null
-                ? diagnosisList.FirstOrDefault(d => d.DiagnosisId == presumptiveDiagnosis.DiagnosisDiagnosisid)?.DiagnosisName ?? "N/A"
-                : "N/A";
-
-            formFields.SetField("txt_diagnosticos", $"Definitivo: {diagnosisDefName} | Presuntivo: {diagnosisPresumptiveName}");
-
-            // Imágenes
-            var allImages = await _selectService.GetAllImagesAsync();
-            var imagesInfo = string.Join("\n", consultation.ImagesConsultations.Select(ic =>
+            using (var memoryStream = new MemoryStream())
             {
-                var image = allImages.FirstOrDefault(i => i.ImagesId == ic.ImagesImagesid);
-                return image != null ? $"({image.ImagesCie10}) {image.ImagesName} - Cantidad: {ic.ImagesAmount}" : "N/A";
-            }));
+                using (var pdfReader = new PdfReader(templatePath))
+                using (var pdfStamper = new PdfStamper(pdfReader, memoryStream))
+                {
+                    AcroFields formFields = pdfStamper.AcroFields;
+                    InsertImageFromField(pdfStamper, formFields, "txt_imagen_logo_2", consultation.UsersEstablishmentLogo);
 
-            formFields.SetField("txt_imagenes", imagesInfo);
+                    // Asignar valores a campos de la plantilla PDF
+                    string datosMedico = ConstruirDatosMedico(consultation);
+                    formFields.SetField("txt_datos_medico", datosMedico);
 
-            // Obtener solo la primera observación de las imágenes
-            var firstImageObservation = consultation.ImagesConsultations
-                .Select(ic => ic.ImagesObservation)
-                .FirstOrDefault(obs => !string.IsNullOrEmpty(obs));
+                    formFields.SetField("txt_fecha", consultation.ConsultationCreationdate.HasValue
+                        ? consultation.ConsultationCreationdate.Value.ToShortDateString()
+                        : "N/A");
 
-            formFields.SetField("txt_observaciones", firstImageObservation ?? string.Empty);
-            formFields.SetField("txt_direccion", consultation.UsersEstablishmentAddress);
+                    formFields.SetField("txt_apellido", $"{patient.PatientFirstsurname ?? ""} {patient.PatientSecondlastname ?? ""}".Trim());
+                    formFields.SetField("txt_nombres", $"{patient.PatientFirstname ?? ""} {patient.PatientMiddlename ?? ""}".Trim());
+                    formFields.SetField("txt_edad", patient.PatientAge.ToString() ?? "N/A");
+                    formFields.SetField("txt_cedula", patient.PatientDocumentnumber ?? "N/A");
 
-            // Finalizar la edición y cerrar el stamper
-            pdfStamper.FormFlattening = true;
-            pdfStamper.Close();
-            pdfReader.Close();
+                    // =========================
+                    // DIAGNÓSTICOS - LISTAR TODOS
+                    // =========================
+                    var diagnosisList = await _selectService.GetAllDiagnosisAsync();
 
-            // Genera un número aleatorio único
+                    // Diagnósticos Definitivos (TODOS)
+                    var diagnosisDefNames = consultation.DiagnosisConsultations?
+                        .Where(d => d.DiagnosisDefinitive == true)
+                        .Select(d => diagnosisList.FirstOrDefault(x => x.DiagnosisId == d.DiagnosisDiagnosisid)?.DiagnosisName ?? "N/A")
+                        .ToList() ?? new List<string>();
+
+                    // Diagnósticos Presuntivos (TODOS)
+                    var diagnosisPreNames = consultation.DiagnosisConsultations?
+                        .Where(d => d.DiagnosisPresumptive == true)
+                        .Select(d => diagnosisList.FirstOrDefault(x => x.DiagnosisId == d.DiagnosisDiagnosisid)?.DiagnosisName ?? "N/A")
+                        .ToList() ?? new List<string>();
+
+                    // Formatear diagnósticos
+                    string diagnosticosTexto = "";
+
+                    if (diagnosisDefNames.Any() || diagnosisPreNames.Any())
+                    {
+                        var partes = new List<string>();
+
+                        if (diagnosisDefNames.Any())
+                            partes.Add($"Definitivo: {string.Join(", ", diagnosisDefNames)}");
+
+                        if (diagnosisPreNames.Any())
+                            partes.Add($"Presuntivo: {string.Join(", ", diagnosisPreNames)}");
+
+                        diagnosticosTexto = string.Join(" | ", partes);
+                    }
+                    else
+                    {
+                        diagnosticosTexto = "N/A";
+                    }
+
+                    formFields.SetField("txt_diagnosticos", diagnosticosTexto);
+
+                    // =========================
+                    // IMÁGENES
+                    // =========================
+                    var allImages = await _selectService.GetAllImagesAsync();
+
+                    var imagesInfo = consultation.ImagesConsultations?.Any() == true
+                        ? string.Join("\n", consultation.ImagesConsultations.Select(ic =>
+                        {
+                            var image = allImages.FirstOrDefault(i => i.ImagesId == ic.ImagesImagesid);
+                            return image != null
+                                ? $"({image.ImagesCie10}) {image.ImagesName} - Cantidad: {ic.ImagesAmount}"
+                                : "N/A";
+                        }))
+                        : "No se solicitaron imágenes";
+
+                    formFields.SetField("txt_imagenes", imagesInfo);
+
+                    // =========================
+                    // OBSERVACIONES - TODAS LAS OBSERVACIONES
+                    // =========================
+                    var observaciones = consultation.ImagesConsultations?
+                        .Where(ic => !string.IsNullOrWhiteSpace(ic.ImagesObservation))
+                        .Select(ic => ic.ImagesObservation)
+                        .ToList() ?? new List<string>();
+
+                    string observacionesTexto = observaciones.Any()
+                        ? string.Join("\n", observaciones)
+                        : "Sin observaciones";
+
+                    formFields.SetField("txt_observaciones", observacionesTexto);
+
+                    formFields.SetField("txt_direccion", consultation.UsersEstablishmentAddress ?? "N/A");
+
+                    // Finalizar PDF
+                    pdfStamper.FormFlattening = true;
+                    pdfStamper.Close();
+                }
+
+                pdfBytes = memoryStream.ToArray();
+            }
+
             var randomNumber = new Random().Next(1000, 9999);
+            return File(pdfBytes, "application/pdf", $"pedido_imagenes_{randomNumber}.pdf");
+        }
 
-            // Devuelve el archivo PDF generado
-            return File(memoryStream.ToArray(), "application/pdf", $"pedido_imagenes_{randomNumber}.pdf");
+        /// <summary>
+        /// Construye la información completa del médico en formato texto
+        /// </summary>
+        private string ConstruirDatosMedico(dynamic consultation)
+        {
+            var datosMedicoBuilder = new StringBuilder();
+
+            // Nombre completo
+            string nombreCompletoMedico = $"Dr(a). {consultation.UsersNames ?? ""} {consultation.UsersSurcenames ?? ""}".Trim();
+            if (!string.IsNullOrWhiteSpace(nombreCompletoMedico) && nombreCompletoMedico != "Dr(a).")
+                datosMedicoBuilder.Append(nombreCompletoMedico + "\n");
+
+            // Especialidad
+            if (!string.IsNullOrWhiteSpace(consultation.SpecialityName))
+                datosMedicoBuilder.Append(consultation.SpecialityName + "\n");
+
+            // Cédula Profesional
+            if (!string.IsNullOrWhiteSpace(consultation.UsersDocumentNumber))
+                datosMedicoBuilder.Append($"{consultation.UsersDocumentNumber}\n");
+
+            // Email
+            if (!string.IsNullOrWhiteSpace(consultation.UsersEmail))
+                datosMedicoBuilder.Append($"{consultation.UsersEmail} / ");
+
+            // Teléfono
+            if (!string.IsNullOrWhiteSpace(consultation.UsersPhone))
+                datosMedicoBuilder.Append($"{consultation.UsersPhone}");
+
+
+
+            return datosMedicoBuilder.Length > 0
+                ? datosMedicoBuilder.ToString().TrimEnd()
+                : "Información del médico no disponible";
         }
     }
 }

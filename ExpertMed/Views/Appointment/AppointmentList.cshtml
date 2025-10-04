@@ -139,7 +139,54 @@
                                     onclick="filterAppointments(-1, true)">
                                 <i class="mdi mdi-cash-check"></i> Pagadas
                             </button>
+                            <div class="card card-body p-2 mt-2">
+                                <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-2">
+                                    <!-- Botones rápidos -->
+                                    <div class="btn-group flex-wrap">
+                                        <button type="button" class="btn btn-outline-primary btn-sm" id="btnHoy">
+                                            <i class="mdi mdi-calendar-today"></i> Hoy
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary btn-sm" id="btnSemana">
+                                            <i class="mdi mdi-calendar-week"></i> Esta semana
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary btn-sm" id="btnMes">
+                                            <i class="mdi mdi-calendar-month"></i> Este mes
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary btn-sm" id="btnAnio">
+                                            <i class="mdi mdi-calendar"></i> Este año
+                                        </button>
+                                    </div>
+
+                                    <!-- Rango personalizado -->
+                                    <div class="d-flex flex-wrap align-items-end gap-2">
+                                        <div>
+                                            <label class="form-label mb-1">Desde</label>
+                                            <input type="date" class="form-control form-control-sm" id="fDesdeFecha" />
+                                        </div>
+                                        <div>
+                                            <label class="form-label mb-1">Hasta</label>
+                                            <input type="date" class="form-control form-control-sm" id="fHastaFecha" />
+                                        </div>
+                                        <div class="d-flex gap-2">
+                                            <button type="button" class="btn btn-soft-success btn-sm" id="btnAplicarRango">
+                                                <i class="mdi mdi-check"></i> Aplicar
+                                            </button>
+                                            <button type="button" class="btn btn-soft-secondary btn-sm" id="btnLimpiarRango">
+                                                <i class="mdi mdi-close"></i> Limpiar
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Estado del filtro -->
+                                    <div class="ms-md-auto">
+                                        <span class="badge bg-soft-info text-dark" id="lblRangoActivo" style="display:none"></span>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
+
+
                     </div>
                 </div>
 
@@ -241,8 +288,16 @@
                                     <span class="badge @cls">@txt</span>
                                 </td>
 
+
                                 <td>
-                                    @if (appt.AppointmentStatus == 2 || appt.AppointmentStatus == 4)
+                                    @if (appt.AppointmentStatus == 4 && appt.AppointmentPaymentStatus == 0)
+                                    {
+                                        <button class="btn btn-sm btn-soft-success"
+                                                onclick="setAppointmentData(@appt.AppointmentId, @appt.AppointmentPatientId); payAppointment();">
+                                            <i class="ri-money-dollar-circle-line"></i> Pagar
+                                        </button>
+                                    }
+                                    else if (appt.AppointmentStatus == 2 || (appt.AppointmentStatus == 4 && appt.AppointmentPaymentStatus == 1))
                                     {
                                         <button class="btn btn-sm btn-soft-secondary" disabled>
                                             <i class="ri-edit-line"></i> Revisar
@@ -256,6 +311,8 @@
                                         </button>
                                     }
                                 </td>
+
+
                             </tr>
                         }
                     </tbody>
@@ -268,6 +325,7 @@
 
 
 <!-- Modal Opciones Cita -->
+<!-- Modal Opciones Cita - Agregar input hidden para el estado de pago -->
 <div class="modal fade" id="optionModal" tabindex="-1"
      aria-labelledby="optionModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -275,6 +333,7 @@
             <input type="hidden" id="appointmentIdInput" />
             <input type="hidden" id="appointmentStatus" />
             <input type="hidden" id="appointmentPatientId" />
+            <input type="hidden" id="appointmentPaymentStatus" /> <!-- NUEVO: Estado de pago -->
             <input type="hidden" id="perfilIdInput" value="@perfilId" />
 
             <div class="modal-header">
@@ -298,12 +357,7 @@
                             <i class="ri-error-warning-fill"></i> Cancelar
                         </button>
                     </div>
-                    <div class="col-4" id="payCol">
-                        <button class="btn btn-soft-success btn-sm w-100"
-                                onclick="payAppointment()">
-                            <i class="ri-secure-payment-line"></i> Pagar cita
-                        </button>
-                    </div>
+
                     <div class="col-4" id="startConsultCol">
                         <button class="btn btn-soft-dark btn-sm w-100"
                                 onclick="startConsultation()">
@@ -322,14 +376,26 @@
                             <i class="ri-whatsapp-fill"></i> Recordatorio
                         </button>
                     </div>
-                    <div class="col-4" id="vitalSignsCol">
-                        <button class="btn btn-soft-primary btn-sm w-100"
-                                data-bs-toggle="offcanvas"
-                                data-bs-target="#vitalSignsCanvas"
-                                onclick="prepareVitalSigns()">
-                            <i class="ri-heart-pulse-line"></i> Signos Vitales
-                        </button>
-                    </div>
+                    @if (perfilId != 2)
+                    {
+                        <!-- MODIFICADO: Solo mostrar si no está pagada -->
+                        <div class="col-4" id="payCol" style="display: none;">
+                            <button class="btn btn-soft-success btn-sm w-100"
+                                    onclick="payAppointment()">
+                                <i class="ri-secure-payment-line"></i> Pagar cita
+                            </button>
+                        </div>
+
+                        <div class="col-4" id="vitalSignsCol">
+                            <button class="btn btn-soft-primary btn-sm w-100"
+                                    data-bs-toggle="offcanvas"
+                                    data-bs-target="#vitalSignsCanvas"
+                                    onclick="prepareVitalSigns()">
+                                <i class="ri-heart-pulse-line"></i> Signos Vitales
+                            </button>
+                        </div>
+                    }
+
                     <div class="col-4" id="viewHistoryCol">
                         <button class="btn btn-soft-primary btn-sm w-100"
                                 onclick="viewPatientHistory()">
@@ -564,7 +630,7 @@
           $('#appointmentTable').DataTable({
             responsive: true,
             pageLength: 10,
-            order: [[3, 'asc']],    // por FECHA (columna índice 3 considerando hidden ID y PATIENT)
+                 order: [[3, 'desc']],   // por FECHA (columna índice 3 considerando hidden ID y PATIENT)
             dom: 'Bfrtip',           // muestra los botones encima de la tabla
             buttons: [
               {
@@ -619,36 +685,42 @@
 
         function openOptionModal(id, status, patientId) {
             $.get('@Url.Action("AppointmentGetById", "Appointment")', { id, userProfile: @perfilId })
-             .done(data => {
-                 console.log('Datos recibidos de AppointmentGetById:', data);
+                .done(data => {
+                    console.log('Datos recibidos de AppointmentGetById:', data);
+                    // Rellenar los hidden
+                    $('#appointmentIdInput').val(data.appointmentId);
+                    $('#appointmentStatus').val(data.status);
+                    $('#appointmentPatientId').val(data.patientId);
+                    $('#appointmentPaymentStatus').val(data.paymentStatus); // NUEVO
 
-                 // Rellenar los hidden
-                 $('#appointmentIdInput').val(data.appointmentId);
-                 $('#appointmentStatus').val(data.status);
-                 $('#appointmentPatientId').val(data.patientId);
+                    // Ocultar siempre los botones de consulta
+                    $('#startConsultCol, #startFollowupCol').hide();
 
-                 // Ocultar siempre los botones de consulta
-                 $('#startConsultCol, #startFollowupCol').hide();
+                    // Mostrar "Empezar Consulta" si está pagada(0) o activa(1) y NO hay consulta
+                    if ((data.status === 0 || data.status === 1 || data.status === 5) && data.hasConsultation === false) {
+                        $('#startConsultCol').show();
+                    }
 
-                 // Mostrar “Empezar Consulta” si está pagada(0) o activa(1) y NO hay consulta
-                 if ((data.status === 0 || data.status === 1 || data.status === 5) && data.hasConsultation === false) {
-                     $('#startConsultCol').show();
-                 }
+                    // Mostrar "Seguimiento" si está en seguimiento(3) y NO hay consulta previa
+                    if (data.status === 3 && data.hasConsultation === false) {
+                        $('#startFollowupCol').show();
+                    }
 
-                 // Mostrar “Seguimiento” si está en seguimiento(3) y NO hay consulta previa
-                 if (data.status === 3 && data.hasConsultation === false) {
-                     $('#startFollowupCol').show();
-                 }
+                    // Mostrar el resto de botones
+                    $('#rescheduleCol, #cancelCol, #reminderCol, #vitalSignsCol').show();
 
-                 // Mostrar el resto de botones
-                 $('#rescheduleCol, #cancelCol, #payCol, #reminderCol, #vitalSignsCol').show();
+                    // Mostrar botón de pago SOLO si NO está pagada (paymentStatus = 0)
+                    if (data.paymentStatus === 0) {
+                        $('#payCol').show();
+                    } else {
+                        $('#payCol').hide();
+                    }
 
-                 // Abrir modal
-                 new bootstrap.Modal($('#optionModal')).show();
-             })
-             .fail(() => alert('Error al obtener datos de la cita.'));
+                    // Abrir modal
+                    new bootstrap.Modal($('#optionModal')).show();
+                })
+                .fail(() => alert('Error al obtener datos de la cita.'));
         }
-
 
 
 
@@ -908,6 +980,11 @@
             const pid = $('#appointmentPatientId').val();
             window.location.href = `@Url.Action("ConsultationFollowUp", "Consultation")?patientid=${pid}`;
         }
+                function setAppointmentData(id, patientId) {
+            $('#appointmentIdInput').val(id);
+            $('#appointmentPatientId').val(patientId);
+        }
+
         //Funcion para realizar el pago
         function payAppointment() {
             const id = $('#appointmentIdInput').val();
@@ -1006,6 +1083,161 @@
         }
     </script>
 
+    <script>
+        // ========= CONFIG =========
+        // Índice de columna FECHA en la tabla (empezando en 0):
+        // 0: hidden ID, 1: hidden ID PATIENT, 2: Consultorio, 3: Fecha, ...
+        const COL_FECHA = 3; // <- Si mueves columnas, ajusta esto
+
+        // ========= HELPERS DE FECHAS =========
+        // Convierte "dd/MM/yyyy" a Date (local).
+        function parseDMY(dmy) {
+          if (!dmy) return null;
+          const parts = dmy.split('/');
+          if (parts.length !== 3) return null;
+          const [dd, mm, yyyy] = parts.map(p => parseInt(p, 10));
+          if (isNaN(dd) || isNaN(mm) || isNaN(yyyy)) return null;
+          // Mes base 0
+          return new Date(yyyy, mm - 1, dd, 0, 0, 0, 0);
+        }
+
+        function atStartOfDay(d) {
+          const x = new Date(d);
+          x.setHours(0, 0, 0, 0);
+          return x;
+        }
+        function atEndOfDay(d) {
+          const x = new Date(d);
+          x.setHours(23, 59, 59, 999);
+          return x;
+        }
+
+        // Rango semana actual (lunes a domingo)
+        function getWeekRange(today = new Date()) {
+          const d = new Date(today);
+          d.setHours(0,0,0,0);
+          // getDay(): 0=Dom,1=Lun,...; queremos lunes como inicio
+          const day = d.getDay(); // 0..6
+          const diffToMonday = (day + 6) % 7; // Dom(0)->6, Lun(1)->0, ...
+          const monday = new Date(d);
+          monday.setDate(d.getDate() - diffToMonday);
+          const sunday = new Date(monday);
+          sunday.setDate(monday.getDate() + 6);
+          return { start: atStartOfDay(monday), end: atEndOfDay(sunday) };
+        }
+
+        function getMonthRange(today = new Date()) {
+          const y = today.getFullYear();
+          const m = today.getMonth(); // 0..11
+          const first = new Date(y, m, 1);
+          const last = new Date(y, m + 1, 0);
+          return { start: atStartOfDay(first), end: atEndOfDay(last) };
+        }
+
+        function getYearRange(today = new Date()) {
+          const y = today.getFullYear();
+          const first = new Date(y, 0, 1);
+          const last = new Date(y, 11, 31);
+          return { start: atStartOfDay(first), end: atEndOfDay(last) };
+        }
+
+        // ========= ESTADO DEL FILTRO =========
+
+        // Iniciar con el rango de HOY
+        const today = new Date();
+        let dateFilterStart = atStartOfDay(today);
+        let dateFilterEnd   = atEndOfDay(today);
+
+        // Mostrar etiqueta desde el arranque
+        $(function () {
+          $('#lblRangoActivo').text('Hoy').show();
+        });
+
+        function setDateRange(start, end, labelText) {
+          dateFilterStart = start ? atStartOfDay(start) : null;
+          dateFilterEnd   = end   ? atEndOfDay(end)   : null;
+
+          // Etiqueta visible
+          const $lbl = $('#lblRangoActivo');
+          if (dateFilterStart || dateFilterEnd) {
+            $lbl.text(labelText || 'Rango aplicado').show();
+          } else {
+            $lbl.hide().text('');
+          }
+
+          // Redibujar DataTable
+          $('#appointmentTable').DataTable().draw();
+        }
+
+        // ========= FILTRO DataTables =========
+        $.fn.dataTable.ext.search.push(function (settings, data /*, dataIndex */) {
+          if (settings.nTable.id !== 'appointmentTable') return true; // por si hay otras tablas
+
+          // Columna FECHA viene como "dd/MM/yyyy"
+          const raw = data[COL_FECHA];
+          const d = parseDMY(raw);
+          if (!d) return true; // Si no parsea, no filtramos esa fila
+
+          if (dateFilterStart && d < dateFilterStart) return false;
+          if (dateFilterEnd && d > dateFilterEnd)     return false;
+          return true;
+        });
+
+        // ========= EVENTOS UI =========
+        $(function () {
+          // Botones rápidos
+          $('#btnHoy').on('click', function () {
+            const today = new Date();
+            setDateRange(today, today, 'Hoy');
+          });
+
+          $('#btnSemana').on('click', function () {
+            const { start, end } = getWeekRange(new Date());
+            setDateRange(start, end, 'Esta semana');
+          });
+
+          $('#btnMes').on('click', function () {
+            const { start, end } = getMonthRange(new Date());
+            setDateRange(start, end, 'Este mes');
+          });
+
+          $('#btnAnio').on('click', function () {
+            const { start, end } = getYearRange(new Date());
+            setDateRange(start, end, 'Este año');
+          });
+
+          // Rango personalizado
+          $('#btnAplicarRango').on('click', function () {
+            const desdeVal = $('#fDesdeFecha').val(); // yyyy-MM-dd
+            const hastaVal = $('#fHastaFecha').val();
+            let start = null, end = null;
+
+            if (desdeVal) {
+              const [y, m, d] = desdeVal.split('-').map(n => parseInt(n, 10));
+              start = new Date(y, m - 1, d);
+            }
+            if (hastaVal) {
+              const [y2, m2, d2] = hastaVal.split('-').map(n => parseInt(n, 10));
+              end = new Date(y2, m2 - 1, d2);
+            }
+
+            // Validaciones básicas
+            if (start && end && end < start) {
+              Swal.fire('Rango inválido', 'La fecha “Hasta” es menor que “Desde”.', 'warning');
+              return;
+            }
+
+            const label = `Del ${desdeVal || '…'} al ${hastaVal || '…'}`;
+            setDateRange(start, end, label);
+          });
+
+          $('#btnLimpiarRango').on('click', function () {
+            $('#fDesdeFecha').val('');
+            $('#fHastaFecha').val('');
+            setDateRange(null, null, '');
+          });
+        });
+    </script>
 
     @if (!string.IsNullOrEmpty(successMessage))
     {

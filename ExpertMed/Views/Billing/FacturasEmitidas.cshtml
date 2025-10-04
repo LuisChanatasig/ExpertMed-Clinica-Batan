@@ -8,82 +8,161 @@
 <div class="row">
     <div class="col-12">
         <div class="card shadow-sm border">
-            <div class="card-header bg-light">
+            <div class="card-header bg-light d-flex align-items-center justify-content-between">
                 <h4 class="card-title mb-0">
                     <i class="mdi mdi-receipt-text-outline me-2"></i> Facturas Emitidas
                 </h4>
+                <small class="text-muted">Se muestran solo facturas con total &gt; 0</small>
             </div>
+
             <div class="card-body">
+                <!-- Toolbar mejorada -->
+                <div class="d-flex flex-wrap align-items-end gap-2 gap-md-3 mb-3">
+                    <!-- Filtros de fecha -->
+                    <div class="d-flex flex-wrap align-items-end gap-2">
+                        <div>
+                            <label for="fDesde" class="form-label mb-1">
+                                <i class="mdi mdi-calendar-range"></i> Desde
+                            </label>
+                            <input id="fDesde" type="date" class="form-control form-control-sm" />
+                        </div>
+                        <div>
+                            <label for="fHasta" class="form-label mb-1">
+                                <i class="mdi mdi-calendar-range"></i> Hasta
+                            </label>
+                            <input id="fHasta" type="date" class="form-control form-control-sm" />
+                        </div>
+                    </div>
+
+                    <!-- Presets de fecha -->
+                    <div class="btn-group" role="group" aria-label="Filtros rápidos de fecha">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-preset="hoy">Hoy</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-preset="7d">Últimos 7 días</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-preset="mes">Este mes</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-preset="mespasado">Mes pasado</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-preset="todo">Todo</button>
+                    </div>
+
+                    <!-- Acciones y búsqueda -->
+                    <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
+                        <div class="input-group input-group-sm" style="max-width: 300px;">
+                            <span class="input-group-text">
+                                <i class="mdi mdi-magnify"></i>
+                            </span>
+                            <input id="dtSearch" type="search" class="form-control"
+                                   placeholder="Buscar factura, paciente, médico…"
+                                   aria-label="Buscar en tabla" />
+                            <button id="btnClearSearch" class="btn btn-outline-secondary" type="button"
+                                    title="Limpiar búsqueda" aria-label="Limpiar búsqueda">
+                                <i class="mdi mdi-close"></i>
+                            </button>
+                        </div>
+
+                        <button id="btnExportExcel" class="btn btn-sm btn-success" type="button"
+                                title="Exportar a Excel">
+                            <i class="mdi mdi-file-excel-outline"></i> Excel
+                        </button>
+
+                        <button id="btnAplicar" class="btn btn-sm btn-primary" type="button">
+                            <i class="mdi mdi-filter-outline"></i> Aplicar
+                        </button>
+                        <button id="btnLimpiar" class="btn btn-sm btn-light" type="button">
+                            <i class="mdi mdi-close-circle-outline"></i> Limpiar
+                        </button>
+
+                        <!-- Contenedor para botones de DataTables -->
+                        <div id="dt-actions" class="btn-toolbar" role="toolbar" aria-label="Acciones de tabla"></div>
+                    </div>
+                </div>
+
+                <!-- Tabla responsive -->
                 <div class="table-responsive">
                     <table id="facturas-table" class="table table-hover table-bordered align-middle table-striped w-100">
                         <thead class="table-light">
                             <tr>
-                                <th><i class="mdi mdi-pound"></i> N° de factura</th>
-                                <th><i class="mdi mdi-calendar-clock-outline"></i> Fecha</th>
-                                <th><i class="mdi mdi-account-outline"></i> Paciente</th>
-                                <th><i class="mdi mdi-shield-account-outline"></i> Aseguradora</th>
-                                <th><i class="mdi mdi-cash-multiple"></i> Subtotal</th>
-                                <th><i class="mdi mdi-bank"></i> Aseguradora</th>
-                                <th><i class="mdi mdi-account-cash-outline"></i> Copago</th>
-                                <th><i class="mdi mdi-credit-card-outline"></i> Pago</th>
-                                <th><i class="mdi mdi-printer"></i> Acción</th>
+                                <th scope="col"><i class="mdi mdi-pound"></i> N° de factura</th>
+                                <th scope="col"><i class="mdi mdi-calendar-clock-outline"></i> Fecha</th>
+                                <th scope="col"><i class="mdi mdi-account-outline"></i> Paciente</th>
+                                <th scope="col"><i class="mdi mdi-stethoscope"></i> Médico</th>
+                                <th scope="col"><i class="mdi mdi-shield-account-outline"></i> Aseguradora</th>
+                                <th scope="col" class="text-end"><i class="mdi mdi-cash-multiple"></i> Subtotal</th>
+                                <th scope="col" class="text-end"><i class="mdi mdi-bank"></i> Total Aseguradora</th>
+                                <th scope="col" class="text-end"><i class="mdi mdi-account-cash-outline"></i> Copago</th>
+                                <th scope="col"><i class="mdi mdi-credit-card-outline"></i> Pago</th>
+                                <th scope="col" class="text-center"><i class="mdi mdi-printer"></i> Acción</th>
                             </tr>
                         </thead>
+                    
                         <tbody>
-                            @if (Model != null && Model.Any())
+                            @if (Model?.Any() == true)
                             {
-                                foreach (var item in Model)
+                                @foreach (var item in Model)
                                 {
                                     <tr>
-                                        <td>@item.SecuencialFormateado</td>
-                                        <td>@item.Fecha.ToString("dd/MM/yyyy")</td>
-                                        <td>@item.Paciente</td>
-                                        <td>@(string.IsNullOrWhiteSpace(item.Aseguradora) ? "—" : item.Aseguradora)</td>
+                                        <td>@Html.DisplayFor(m => item.SecuencialFormateado)</td>
+                                        <td class="text-nowrap" data-order="@item.Fecha.ToString("yyyy-MM-dd")">
+                                            @item.Fecha.ToString("dd/MM/yyyy")
+                                        </td>
+                                        <td>@Html.DisplayFor(m => item.Paciente)</td>
+                                        <td>@(string.IsNullOrWhiteSpace(item.Medico) ? "—" : Html.DisplayFor(m => item.Medico))</td>
+                                        <td>@(string.IsNullOrWhiteSpace(item.Aseguradora) ? "—" : Html.DisplayFor(m => item.Aseguradora))</td>
+
+                                        <!-- Montos con datos para ordenamiento -->
+                                        <td class="text-end" data-raw="@item.Subtotal.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)">
+                                            @item.Subtotal.ToString("0.00")
+                                        </td>
+                                        <td class="text-end" data-raw="@item.TotalAseguradora.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)">
+                                            @item.TotalAseguradora.ToString("0.00")
+                                        </td>
+                                        <td class="text-end" data-raw="@item.TotalCopago.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)">
+                                            @item.TotalCopago.ToString("0.00")
+                                        </td>
+
                                         <td>
-                                            <span class="badge bg-primary-subtle text-primary">
-                                                $@item.Subtotal.ToString("F2")
+                                            <span class="badge bg-primary text-uppercase">
+                                                @Html.DisplayFor(m => item.MetodoPago)
                                             </span>
                                         </td>
-                                        <td>
-                                            <span class="badge bg-success-subtle text-success">
-                                                $@item.TotalAseguradora.ToString("F2")
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-danger-subtle text-danger">
-                                                $@item.TotalCopago.ToString("F2")
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span class="text-uppercase">@item.MetodoPago</span>
-                                        </td>
-                                        <td>
+                                        <td class="text-center">
                                             @if (item.Origen == "LOCAL" && item.FacturaId > 0)
                                             {
                                                 <a href="@Url.Action("NotaVentaConTablaDinamica", "Billing", new { facturaId = item.FacturaId })"
                                                    class="btn btn-sm btn-soft-primary"
-                                                   title="Imprimir Nota de Venta">
-                                                    <i class="mdi mdi-printer"></i>
+                                                   title="Imprimir Nota de Venta"
+                                                   aria-label="Imprimir nota de venta para factura @item.SecuencialFormateado">
+                                                    <i class="mdi mdi-printer" aria-hidden="true"></i>
                                                 </a>
                                             }
                                             else
                                             {
-                                                <span class="text-muted">—</span>
+                                                <span class="text-muted" aria-label="Sin acción disponible">—</span>
                                             }
                                         </td>
                                     </tr>
                                 }
                             }
-                            else
-                            {
-                                <tr>
-                                    <td colspan="9" class="text-center text-muted">
-                                        <i class="mdi mdi-alert-outline me-1"></i> No se encontraron facturas emitidas.
-                                    </td>
-                                </tr>
-                            }
                         </tbody>
+
+                        <tfoot class="table-light">
+                            <tr>
+                                <th colspan="5" class="text-end fw-semibold">Totales:</th>
+                                <th class="text-end fw-semibold" id="ft-subtotal">$0.00</th>
+                                <th class="text-end fw-semibold" id="ft-aseguradora">$0.00</th>
+                                <th class="text-end fw-semibold" id="ft-copago">$0.00</th>
+                                <th colspan="2"></th>
+                            </tr>
+                        </tfoot>
                     </table>
+                </div>
+
+                <!-- Loading overlay -->
+                <div id="loading-overlay" class="position-absolute top-0 start-0 w-100 h-100 d-none"
+                     style="background: rgba(255,255,255,0.8); z-index: 1050;">
+                    <div class="d-flex align-items-center justify-content-center h-100">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -91,44 +170,246 @@
 </div>
 
 @section Scripts {
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"
-            integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
-            crossorigin="anonymous"></script>
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css">
 
-    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.2.2/js/dataTables.buttons.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.html5.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.print.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    <!-- jQuery (solo si no está en _Layout) -->
+    @if (ViewBag.IncludeJQuery != false)
+    {
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+                integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+                crossorigin="anonymous"></script>
+    }
 
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.colVis.min.js"></script>
+
+    <!-- Librerías para exportación -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <script>
-        $(function() {
-            $('#facturas-table').DataTable({
-                language: { url: '//cdn.datatables.net/plug-ins/1.13.1/i18n/es-ES.json' },
-                responsive: true,
-                pageLength: 10,
-                order: [[1, 'desc']],
-                dom: 'Bfrtip',
-                buttons: [
+        // Configuración global generada por el servidor
+        window.APP_CONFIG = {
+            notaVentaUrl: '@Url.Action("NotaVentaConTablaDinamica", "Billing")'
+        };
+    </script>
+<script>
+            /* Configuración global */
+        const FACTURAS_CONFIG = {
+            DEBOUNCE_DELAY: 300,
+            CURRENCY: 'USD',
+            LOCALE: 'es-EC',
+            DATE_FORMAT: 'dd/MM/yyyy'
+        };
+
+        /* Utilidades */
+        const Utils = {
+            debounce(func, wait) {
+                let timeout;
+                return function executedFunction(...args) {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(this, args), wait);
+                };
+            },
+
+            normalizeText(text) {
+                return (text || '').toString()
+                    .toLowerCase()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '');
+            },
+
+            formatCurrency(amount) {
+                return new Intl.NumberFormat(FACTURAS_CONFIG.LOCALE, {
+                    style: 'currency',
+                    currency: FACTURAS_CONFIG.CURRENCY,
+                    minimumFractionDigits: 2
+                }).format(amount || 0);
+            },
+
+            // Parse flexible: acepta dd/MM/yyyy, yyyy-MM-dd, o Date-like strings
+            parseFlexibleDate(dateStr) {
+                if (!dateStr) return null;
+                dateStr = dateStr.toString().trim();
+
+                const dmy = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+                const ymd = /^(\d{4})-(\d{1,2})-(\d{1,2})$/;
+
+                let m;
+                if (m = dateStr.match(dmy)) {
+                    return new Date(parseInt(m[3],10), parseInt(m[2],10)-1, parseInt(m[1],10));
+                } else if (m = dateStr.match(ymd)) {
+                    return new Date(parseInt(m[1],10), parseInt(m[2],10)-1, parseInt(m[3],10));
+                } else {
+                    const dt = new Date(dateStr);
+                    return isNaN(dt.getTime()) ? null : new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+                }
+            },
+
+            showLoading(show = true) {
+                const $overlay = $('#loading-overlay');
+                if ($overlay.length) {
+                    $overlay.toggleClass('d-none', !show);
+                } else if (show) {
+                    // Crear overlay si no existe
+                    $('body').append(`
+                        <div id="loading-overlay" class="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
+                             style="background: rgba(0,0,0,0.3); z-index: 9999;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                        </div>
+                    `);
+                }
+            },
+
+            // Función para obtener el token CSRF
+            getCSRFToken() {
+                return document.querySelector('input[name="__RequestVerificationToken"]')?.value ||
+                       $('meta[name="__RequestVerificationToken"]').attr('content') || '';
+            }
+        };
+
+        /* Clase principal */
+        class FacturasManager {
+            constructor() {
+                this.table = null;
+                this.elements = {
+                    table: $('#facturas-table'),
+                    searchInput: $('#dtSearch'),
+                    clearSearch: $('#btnClearSearch'),
+                    dateFrom: $('#fDesde'),
+                    dateTo: $('#fHasta'),
+                    applyBtn: $('#btnAplicar'),
+                    clearBtn: $('#btnLimpiar'),
+                    presetBtns: $('[data-preset]')
+                };
+                this.isServerMode = false; // Flag para determinar si estamos en modo servidor
+                this.init();
+            }
+
+            init() {
+                try {
+                    this.initDataTable();
+                    this.bindEvents();
+                    this.loadSavedState();
+
+                    console.log('FacturasManager inicializado correctamente');
+                } catch (err) {
+                    console.error('Error init FacturasManager:', err);
+                    this.showNotification('Error al inicializar la tabla', 'error');
+                }
+            }
+
+                  initDataTable() {
+            if ($.fn.dataTable.isDataTable(this.elements.table)) {
+                this.table = this.elements.table.DataTable();
+                return;
+            }
+
+            // Verificar que la tabla existe
+            if (!this.elements.table.length) {
+                console.error('Tabla #facturas-table no encontrada');
+                return;
+            }
+
+            $.fn.dataTable.ext.type.search.string = (data) => Utils.normalizeText(data);
+
+            try {
+                this.table = this.elements.table.DataTable({
+                    language: {
+                        url: '//cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json',
+                        emptyTable: "No se encontraron facturas emitidas",
+                        zeroRecords: "No se encontraron registros coincidentes"
+                    },
+                    responsive: { details: { type: 'column', target: 'tr' } },
+                    stateSave: true,
+                    stateDuration: 60*60*24*7,
+                    pageLength: 10,
+                    lengthMenu: [[10,25,50,100,-1],[10,25,50,100,"Todos"]],
+                    order: [[1,'desc']],
+                    dom: 'rt<"row align-items-center mt-3"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"i><"col-sm-12 col-md-12 d-flex justify-content-end"p>>',
+                    buttons: this.getButtonsConfig(),
+                    columnDefs: [
+                        { targets: [5,6,7], className: 'text-end', render: this.renderCurrency.bind(this) },
+                        { targets: 1, className: 'text-nowrap', responsivePriority: 1 },
+                        { targets: 0, responsivePriority: 2 },
+                        { targets: 9, orderable: false, searchable: false, className: 'text-center table-actions no-export', responsivePriority: 1 }
+                    ],
+                    drawCallback: () => this.updateFooterTotals(),
+                    errorMode: 'throw' // Cambiar a 'throw' para ver errores en consola
+                });
+
+                this.addDateFilter();
+                this.table.buttons().container().appendTo('#dt-actions');
+                window.dtFacturas = this.table;
+
+                console.log('DataTable inicializado correctamente. Filas:', this.table.rows().count());
+            } catch (error) {
+                console.error('Error al inicializar DataTable:', error);
+                throw error; // Re-lanzar para que el catch en init() lo maneje
+            }
+        }
+
+            getButtonsConfig() {
+                return [
                     {
                         extend: 'excelHtml5',
                         text: '<i class="mdi mdi-file-excel-outline"></i> Excel',
                         className: 'btn btn-sm btn-success',
-                      exportOptions: {
-          // Lista todos los índices que quieres exportar:
-          columns: [ 1, 2, 3, 4, 5, 6, 7, 8]
-        }
-                        
+                        title: 'Facturas Emitidas',
+                        filename: () => `Facturas_Emitidas_${new Date().toISOString().slice(0,10)}`,
+                        exportOptions: {
+                            columns: ':visible:not(.no-export)',
+                            format: {
+                                body: (data, row, column, node) => {
+                                    if ([5,6,7].includes(column)) {
+                                        const rawValue = $(node).attr('data-raw');
+                                        return rawValue ? parseFloat(rawValue) : 0;
+                                    }
+                                    if (column === 1) return $(node).text().trim();
+                                    return $('<div>').html(data).text().trim();
+                                },
+                                header: (data) => $('<div>').html(data).text().trim()
+                            },
+                            modifier: { search: 'applied', order: 'current', page: 'all' }
+                        },
+                        customize: (xlsx) => {
+                            const sheet = xlsx.xl.worksheets['sheet1.xml'];
+                            $('row:first c', sheet).attr('s','2');
+                            $('row c[r^="F"], row c[r^="G"], row c[r^="H"]', sheet).attr('s','4');
+                        },
+                        messageTop: () => `Reporte generado el: ${new Date().toLocaleString('es-EC')}`
                     },
                     {
                         extend: 'csvHtml5',
                         text: '<i class="mdi mdi-file-delimited-outline"></i> CSV',
                         className: 'btn btn-sm btn-primary',
-                        exportOptions: { columns: [':visible', ':hidden'] }
+                        filename: () => `Facturas_Emitidas_${new Date().toISOString().slice(0,10)}`,
+                        exportOptions: {
+                            columns: ':visible:not(.no-export)',
+                            format: {
+                                body: (data, row, column, node) => {
+                                    if ([5,6,7].includes(column)) {
+                                        const rawValue = $(node).attr('data-raw');
+                                        return rawValue ? parseFloat(rawValue) : 0;
+                                    }
+                                    return $('<div>').html(data).text().trim();
+                                },
+                                header: (data) => $('<div>').html(data).text().trim()
+                            },
+                            modifier: { search: 'applied', order: 'current', page: 'all' }
+                        }
                     },
                     {
                         extend: 'pdfHtml5',
@@ -136,16 +417,546 @@
                         className: 'btn btn-sm btn-danger',
                         orientation: 'landscape',
                         pageSize: 'LETTER',
-                        exportOptions: { columns: [':visible', ':hidden'] }
+                        exportOptions: { columns: ':visible:not(.no-export)' },
+                        customize: (doc) => {
+                            doc.styles.tableHeader.alignment = 'left';
+                            doc.defaultStyle.fontSize = 8;
+                        }
                     },
                     {
                         extend: 'print',
                         text: '<i class="mdi mdi-printer"></i> Imprimir',
                         className: 'btn btn-sm btn-secondary',
-                        exportOptions: { columns: [':visible', ':hidden'] }
+                        exportOptions: { columns: ':visible:not(.no-export)' }
+                    },
+                    {
+                        extend: 'colvis',
+                        text: '<i class="mdi mdi-eye-settings-outline"></i> Columnas',
+                        className: 'btn btn-sm btn-outline-secondary',
+                        postfixButtons: ['colvisRestore']
                     }
-                ]
+                ];
+            }
+
+            renderCurrency(data, type, row, meta) {
+                const cell = meta.settings.aoData[meta.row].anCells[meta.col];
+                const rawValue = parseFloat($(cell).attr('data-raw') || data || 0);
+                if (['export','sort','type'].includes(type)) return rawValue;
+                return Utils.formatCurrency(rawValue);
+            }
+
+                    // Reemplaza el método bindEvents() con esta versión corregida:
+
+        bindEvents() {
+            const debouncedSearch = Utils.debounce((value) => {
+                this.table.search(Utils.normalizeText(value)).draw();
+            }, FACTURAS_CONFIG.DEBOUNCE_DELAY);
+
+            // Debounce también para los filtros de fecha
+            const debouncedDateFilter = Utils.debounce(() => {
+                this.applyFilters();
+            }, 500); // Usar un debounce más largo para fechas
+
+            this.elements.searchInput.on('input', function() { debouncedSearch($(this).val()); })
+                .on('keydown', (e) => { if (e.key === 'Escape') this.clearSearch(); });
+
+            this.elements.clearSearch.on('click', () => this.clearSearch());
+            this.elements.presetBtns.on('click', (e) => this.applyDatePreset($(e.currentTarget).data('preset')));
+            this.elements.applyBtn.on('click', (e) => { e.preventDefault(); this.applyFilters(); });
+            this.elements.clearBtn.on('click', (e) => { e.preventDefault(); this.clearFilters(); });
+
+            // CORREGIDO: Aplicar filtros cuando cambien las fechas - funciona tanto en modo cliente como servidor
+            this.elements.dateFrom.on('change', () => {
+                console.log('Fecha DESDE cambió:', this.elements.dateFrom.val());
+                debouncedDateFilter();
             });
+
+            this.elements.dateTo.on('change', () => {
+                console.log('Fecha HASTA cambió:', this.elements.dateTo.val());
+                debouncedDateFilter();
+            });
+
+            $('#btnExportExcel').on('click', () => this.exportToExcel());
+        }
+
+        // También actualiza el método applyFilters para mejor debugging:
+
+        async applyFilters() {
+            const fromEl = this.elements.dateFrom[0];
+            const toEl = this.elements.dateTo[0];
+
+            console.log('=== APLICANDO FILTROS ===');
+            console.log('Fecha desde:', fromEl?.value || 'vacía');
+            console.log('Fecha hasta:', toEl?.value || 'vacía');
+            console.log('Modo servidor actual:', this.isServerMode);
+
+            // Validar que ambas fechas estén presentes si se quiere filtrar por rango
+            const hasFromDate = fromEl?.value;
+            const hasToDate = toEl?.value;
+
+            if (hasFromDate && hasToDate) {
+                // Si ambas fechas están presentes, validar el rango
+                const fromDate = new Date(fromEl.value);
+                const toDate = new Date(toEl.value);
+
+                if (fromDate > toDate) {
+                    this.showNotification('La fecha "desde" no puede ser mayor que la fecha "hasta"', 'error');
+                    return;
+                }
+
+                console.log('Rango de fechas válido, aplicando filtro...');
+            } else if (hasFromDate || hasToDate) {
+                console.log('Solo una fecha presente, filtrando...');
+            }
+
+            // Intentar primero el modo servidor, si falla usar modo cliente
+            if (await this.tryServerFilter()) {
+                console.log('Filtro aplicado en modo servidor');
+                return;
+            }
+
+            // Fallback al modo cliente
+            console.log('Aplicando filtro en modo cliente');
+            this.applyClientFilter();
+        }
+
+            loadSavedState() {
+                const savedState = this.table.state.loaded();
+                if (savedState?.search?.search) {
+                    this.elements.searchInput.val(savedState.search.search);
+                }
+            }
+
+            clearSearch() {
+                this.elements.searchInput.val('').trigger('focus');
+                this.table.search('').draw();
+            }
+
+            applyDatePreset(preset) {
+                const now = new Date();
+                let dateFrom = null, dateTo = null;
+
+                switch(preset) {
+                    case 'hoy':
+                        dateFrom = dateTo = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                        break;
+                    case '7d':
+                        dateTo = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                        dateFrom = new Date(dateTo);
+                        dateFrom.setDate(dateFrom.getDate() - 6);
+                        break;
+                    case 'mes':
+                        dateFrom = new Date(now.getFullYear(), now.getMonth(), 1);
+                        dateTo = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                        break;
+                    case 'mespasado':
+                        const prevMonth = now.getMonth() - 1;
+                        const year = prevMonth < 0 ? now.getFullYear() - 1 : now.getFullYear();
+                        const month = prevMonth < 0 ? 11 : prevMonth;
+                        dateFrom = new Date(year, month, 1);
+                        dateTo = new Date(year, month + 1, 0);
+                        break;
+                    case 'todo':
+                        dateFrom = dateTo = null;
+                        break;
+                }
+
+                // Actualizar los inputs
+                [['dateFrom', dateFrom], ['dateTo', dateTo]].forEach(([key, d]) => {
+                    const $el = this.elements[key];
+                    if (!$el || !$el.length) return;
+                    const native = $el[0];
+                    if (native && native.type === 'date') {
+                        if (d) {
+                            // Formato YYYY-MM-DD para input type="date"
+                            const dateStr = d.getFullYear() + '-' +
+                                           String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                                           String(d.getDate()).padStart(2, '0');
+                            native.value = dateStr;
+                        } else {
+                            native.value = '';
+                        }
+                    }
+                });
+
+                // Marcar botón activo
+                this.elements.presetBtns.removeClass('active');
+                this.elements.presetBtns.filter(`[data-preset="${preset}"]`).addClass('active');
+
+                // Aplicar filtros
+                this.applyFilters();
+            }
+
+            addDateFilter() {
+                $.fn.dataTable.ext.search.push((settings, data, dataIndex) => {
+                    if (settings.nTable.id !== 'facturas-table') return true;
+
+                    const dateText = (data && data[1]) ? String(data[1]).trim() : '';
+                    const rowDate = Utils.parseFlexibleDate(dateText);
+
+                    if (!rowDate) {
+                        return true;
+                    }
+
+                    // Mantener fechas locales para comparación
+                    const rowTime = new Date(rowDate.getFullYear(), rowDate.getMonth(), rowDate.getDate()).getTime();
+
+                    const fromEl = this.elements.dateFrom ? this.elements.dateFrom[0] : null;
+                    const toEl = this.elements.dateTo ? this.elements.dateTo[0] : null;
+
+                    let fromTime = null;
+                    let toTime = null;
+
+                    if (fromEl && fromEl.valueAsDate instanceof Date) {
+                        const vd = fromEl.valueAsDate;
+                        fromTime = new Date(vd.getFullYear(), vd.getMonth(), vd.getDate()).getTime();
+                    }
+
+                    if (toEl && toEl.valueAsDate instanceof Date) {
+                        const vd = toEl.valueAsDate;
+                        toTime = new Date(vd.getFullYear(), vd.getMonth(), vd.getDate()).getTime();
+                    }
+
+                    if (fromTime !== null && rowTime < fromTime) {
+                        return false;
+                    }
+
+                    if (toTime !== null && rowTime > toTime) {
+                        return false;
+                    }
+
+                    return true;
+                });
+            }
+
+            async applyFilters() {
+                // Intentar primero el modo servidor, si falla usar modo cliente
+                if (await this.tryServerFilter()) {
+                    return;
+                }
+
+                // Fallback al modo cliente
+                this.applyClientFilter();
+            }
+
+
+                // Reemplaza la función tryServerFilter() con esta versión que limpia filtros
+               async tryServerFilter() {
+            try {
+                Utils.showLoading(true);
+
+                const fromEl = this.elements.dateFrom[0];
+                const toEl = this.elements.dateTo[0];
+
+                let fechaDesde = null;
+                let fechaHasta = null;
+
+                if (fromEl && fromEl.value) {
+                    fechaDesde = fromEl.value;
+                }
+
+                if (toEl && toEl.value) {
+                    fechaHasta = toEl.value;
+                }
+
+                console.log('Intentando filtro del servidor con fechas:', { fechaDesde, fechaHasta });
+
+                const response = await fetch('@Url.Action("Filtrar", "Facturas")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': Utils.getCSRFToken()
+                    },
+                    body: JSON.stringify({
+                        fechaDesde: fechaDesde,
+                        fechaHasta: fechaHasta
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('Respuesta del servidor:', result);
+
+                if (result.success) {
+                    this.isServerMode = true;
+
+                    if (!Array.isArray(result.data)) {
+                        throw new Error('Los datos recibidos no son un array válido');
+                    }
+
+                    // Destruir DataTables completamente
+                    this.table.destroy();
+
+                    // Limpiar TODOS los filtros de DataTables
+                    $.fn.dataTable.ext.search = [];
+
+                    // Limpiar completamente el tbody
+                    const tbody = this.elements.table.find('tbody');
+                    tbody.empty();
+
+                    // CRÍTICO: Construir filas con EXACTAMENTE 10 columnas (igual que thead)
+                    if (result.data.length === 0) {
+                        // Tabla vacía: una fila con colspan que cubra TODAS las columnas
+                        tbody.append(`
+                            <tr>
+                                <td colspan="10" class="text-center text-muted py-4">
+                                    <i class="mdi mdi-alert-outline me-1"></i>
+                                    No se encontraron facturas para el período seleccionado.
+                                </td>
+                            </tr>
+                        `);
+                    } else {
+                        result.data.forEach((factura, index) => {
+                            try {
+                                const fecha = new Date(factura.fecha);
+                                const fechaFormat = !isNaN(fecha.getTime()) ?
+                                    fecha.toLocaleDateString('es-EC') : factura.fecha;
+                                const fechaOrder = !isNaN(fecha.getTime()) ?
+                                    fecha.toISOString().split('T')[0] : factura.fecha;
+
+                                // Asegurar valores por defecto
+        const secuencial = factura.secuencialFormateado ||
+                          factura.secuencial ||
+                          factura.facturaId ||
+                          'N/A';
+                          const paciente = factura.paciente || '(Sin nombre)';
+                                const medico = factura.medico || '—';
+                                const aseguradora = factura.aseguradora || '—';
+                                const subtotal = factura.subtotal || 0;
+                                const totalAseguradora = factura.totalAseguradora || 0;
+                                const totalCopago = factura.totalCopago || 0;
+                                const metodoPago = factura.metodoPago || '-';
+                                const origen = factura.origen || '';
+                                const facturaId = factura.facturaId || 0;
+
+        // Construir acción
+        let accionHtml = '<span class="text-muted">—</span>';
+        if (origen === 'LOCAL' && facturaId > 0) {
+            const url = `${window.APP_CONFIG.notaVentaUrl}?facturaId=${facturaId}`;
+            accionHtml = `
+                <a href="${url}"
+                   class="btn btn-sm btn-soft-primary"
+                   title="Imprimir Nota de Venta">
+                    <i class="mdi mdi-printer"></i>
+                </a>
+            `;
+        }
+                                // IMPORTANTE: Exactamente 10 <td> para coincidir con las 10 columnas del thead
+                                const row = `
+                                    <tr>
+                                        <td>${secuencial}</td>
+                                        <td class="text-nowrap" data-order="${fechaOrder}">${fechaFormat}</td>
+                                        <td>${paciente}</td>
+                                        <td>${medico}</td>
+                                        <td>${aseguradora}</td>
+                                        <td class="text-end" data-raw="${subtotal.toFixed(2)}">${subtotal.toFixed(2)}</td>
+                                        <td class="text-end" data-raw="${totalAseguradora.toFixed(2)}">${totalAseguradora.toFixed(2)}</td>
+                                        <td class="text-end" data-raw="${totalCopago.toFixed(2)}">${totalCopago.toFixed(2)}</td>
+                                        <td>
+                                            <span class="badge bg-primary text-uppercase">
+                                                ${metodoPago}
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            ${accionHtml}
+                                        </td>
+                                    </tr>
+                                `;
+                                tbody.append(row);
+                            } catch (rowError) {
+                                console.error(`Error procesando fila ${index}:`, rowError, factura);
+                            }
+                        });
+                    }
+
+                    console.log('HTML reconstruido, reinicializando DataTable...');
+
+                    // Reinicializar DataTables
+                    this.table = this.elements.table.DataTable({
+                        language: { url: '//cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json' },
+                        responsive: { details: { type: 'column', target: 'tr' } },
+                        stateSave: false,
+                        pageLength: 10,
+                        lengthMenu: [[10,25,50,100,-1],[10,25,50,100,"Todos"]],
+                        order: [[1,'desc']],
+                        dom: 'rt<"row align-items-center mt-3"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"i><"col-sm-12 col-md-12 d-flex justify-content-end"p>>',
+                        buttons: this.getButtonsConfig(),
+                        columnDefs: [
+                            { targets: [5,6,7], className: 'text-end', render: this.renderCurrency.bind(this) },
+                            { targets: 1, className: 'text-nowrap', responsivePriority: 1 },
+                            { targets: 0, responsivePriority: 2 },
+                            { targets: 9, orderable: false, searchable: false, className: 'text-center table-actions no-export', responsivePriority: 1 }
+                        ],
+                        drawCallback: () => this.updateFooterTotals(),
+                        errorMode: 'none'
+                    });
+
+                    this.table.buttons().container().appendTo('#dt-actions');
+                    window.dtFacturas = this.table;
+
+                    // Limpiar búsqueda
+                    this.table.search('').draw();
+                    this.elements.searchInput.val('');
+
+                    console.log('DataTable reinicializado, filas totales:', this.table.rows().count());
+
+                    let mensaje = `${result.count || result.data.length} facturas encontradas`;
+                    if (result.fechaDesde && result.fechaHasta) {
+                        if (result.fechaDesde === result.fechaHasta) {
+                            mensaje = `Facturas del ${result.fechaDesde}: ${result.count || result.data.length} registros`;
+                        } else {
+                            mensaje = `Facturas del ${result.fechaDesde} al ${result.fechaHasta}: ${result.count || result.data.length} registros`;
+                        }
+                    }
+
+                    this.showNotification(mensaje, 'success');
+                    return true;
+                } else {
+                    throw new Error(result.message || 'Error en la respuesta del servidor');
+                }
+
+            } catch (error) {
+                console.error('Error en filtro del servidor:', error);
+                this.isServerMode = false;
+                return false;
+            } finally {
+                Utils.showLoading(false);
+            }
+        }
+
+            applyClientFilter() {
+                console.log('Aplicando filtro del lado cliente');
+                this.table.draw();
+
+                const fromEl = this.elements.dateFrom[0];
+                const toEl = this.elements.dateTo[0];
+
+                let mensaje = 'Filtros aplicados';
+                if (fromEl?.value && toEl?.value) {
+                    const desde = new Date(fromEl.value).toLocaleDateString('es-EC');
+                    const hasta = new Date(toEl.value).toLocaleDateString('es-EC');
+                    if (desde === hasta) {
+                        mensaje = `Filtrado por fecha: ${desde}`;
+                    } else {
+                        mensaje = `Filtrado por fechas: ${desde} - ${hasta}`;
+                    }
+                }
+
+                this.showNotification(mensaje, 'info');
+            }
+
+            clearFilters() {
+                const fromEl = this.elements.dateFrom[0];
+                const toEl = this.elements.dateTo[0];
+
+                if (fromEl && fromEl.type === 'date') {
+                    fromEl.value = '';
+                } else {
+                    this.elements.dateFrom.val('');
+                }
+
+                if (toEl && toEl.type === 'date') {
+                    toEl.value = '';
+                } else {
+                    this.elements.dateTo.val('');
+                }
+
+                // Quitar botones activos
+                this.elements.presetBtns.removeClass('active');
+
+                // Si estamos en modo servidor, redirigir para mostrar datos iniciales
+                if (this.isServerMode) {
+                    window.location.href = window.location.pathname;
+                } else {
+                    this.table.draw();
+                    this.showNotification('Filtros eliminados', 'info');
+                }
+            }
+
+            updateFooterTotals() {
+                const visibleRows = this.table.rows({ page: 'current', search: 'applied' }).nodes();
+                const totals = [0,0,0];
+                const cols = [5,6,7];
+
+                $(visibleRows).each(function() {
+                    cols.forEach((colIdx, idx) => {
+                        const raw = parseFloat($(this).find('td').eq(colIdx).attr('data-raw') || '0');
+                        if (!isNaN(raw)) totals[idx] += raw;
+                    });
+                });
+
+                $('#ft-subtotal').text(Utils.formatCurrency(totals[0]));
+                $('#ft-aseguradora').text(Utils.formatCurrency(totals[1]));
+                $('#ft-copago').text(Utils.formatCurrency(totals[2]));
+            }
+
+            exportToExcel() {
+                Utils.showLoading(true);
+                try {
+                    this.table.button('.buttons-excel').trigger();
+                    setTimeout(() => Utils.showLoading(false), 1000);
+                } catch (err) {
+                    Utils.showLoading(false);
+                    console.error('Error export:', err);
+                    this.showNotification('Error al generar archivo Excel', 'error');
+                }
+            }
+
+            showNotification(message, type = 'info') {
+                const alertClass = type === 'error' ? 'alert-danger' :
+                                  type === 'info' ? 'alert-info' : 'alert-success';
+                const icon = type === 'error' ? 'mdi-alert-circle' :
+                            type === 'info' ? 'mdi-information' : 'mdi-check-circle';
+                const notification = $(`
+                    <div class="alert ${alertClass} alert-dismissible fade show position-fixed"
+                         style="top:20px; right:20px; z-index:9999; min-width:300px;" role="alert">
+                        <i class="mdi ${icon} me-2"></i>${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `);
+                $('body').append(notification);
+                setTimeout(() => notification.alert('close'), 4000);
+            }
+
+            destroy() {
+                if (this.table) {
+                    this.table.destroy();
+                    this.table = null;
+                }
+            }
+
+            // Función de debug
+            debugTableData() {
+                console.log('=== DEBUG DATATABLE ===');
+                console.log('Modo servidor activo:', this.isServerMode);
+                console.log('¿Tabla inicializada?', this.table !== null);
+                if (this.table) {
+                    console.log('Número de filas:', this.table.rows().count());
+                    console.log('Datos visibles:', this.table.rows({filter: 'applied'}).count());
+                    console.log('Primera fila de datos:', this.table.row(0).data());
+                }
+            }
+        }
+
+        /* Inicialización */
+        $(function() {
+            try {
+                window.facturasManager = new FacturasManager();
+            } catch (err) {
+                console.error('Error inicializando FacturasManager:', err);
+                $('#facturas-table').closest('.card-body').prepend(
+                    '<div class="alert alert-danger" role="alert"><i class="mdi mdi-alert-circle me-2"></i>Error al cargar la tabla. Recarga la página.</div>'
+                );
+            }
         });
-    </script>
+
+        /* Manejo de errores DataTables */
+        $(document).on('error.dt', (e, settings, techNote, message) => {
+            console.error('Error en DataTables:', message);
+        });
+</script>
+
 }

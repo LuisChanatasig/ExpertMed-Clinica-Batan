@@ -33,8 +33,8 @@ namespace ExpertMed.Controllers
         /// <returns></returns>
         [HttpGet]
         public async Task<IActionResult> AppointmentList(
-            int appointmentStatus = 5,
-            int? appointmentStatus2 = 1,
+            int? appointmentStatus,      // <- sin defaults
+            int? appointmentStatus2,     // <- sin defaults
             bool isPaidOnly = false)
         {
             try
@@ -47,64 +47,62 @@ namespace ExpertMed.Controllers
                     return RedirectToAction("SignIn", "Authentication");
                 }
 
-                // — Tus ViewBags de siempre —
-                ViewBag.CurrentStatus = appointmentStatus;
+                // Primera carga (no hay QS ni params): Activas + Emergencias
+                if (!appointmentStatus.HasValue && !appointmentStatus2.HasValue && !Request.QueryString.HasValue)
+                {
+                    appointmentStatus = 1;
+                    appointmentStatus2 = 5;
+                }
+
+                // “Todas” => ignora el segundo estado
+                if (appointmentStatus == -1)
+                    appointmentStatus2 = null;
+
+                // ViewBags usados por la vista
+                ViewBag.CurrentStatus = appointmentStatus ?? -1;
                 ViewBag.CurrentStatus2 = appointmentStatus2;
                 ViewBag.IsPaidOnly = isPaidOnly;
                 ViewBag.UserProfile = userProfile.Value;
                 ViewBag.UserId = userId.Value;
 
-                // — Obtén la lista de citas —
+                // Traer citas
                 var appointments = await _appointmentService.GetAllAppointmentAsync(
                     userProfile.Value,
-                    appointmentStatus,
-                    userId,
+                    appointmentStatus ?? -1,  // -1 = todas
+                    userId.Value,
                     isPaidOnly,
-                    appointmentStatus2
-                );
+                    appointmentStatus2        // null => ignora segundo estado
+                ) ?? new List<AppointmentDTO>();
 
-                if (appointments == null)
-                {
-                    appointments = new List<AppointmentDTO>();
-                }
-
-                if (!appointments.Any())
-                {
-                    TempData["Info"] = "No se encontraron citas para los parámetros especificados.";
-                }
-
-                // 3️⃣ Construye el ViewModel completo:
-                var viewModel = new AppointmentListViewModel
+                // Construir VM
+                var vm = new AppointmentListViewModel
                 {
                     Appointments = appointments
                 };
 
-                // Construye los datos del formulario de paciente y asígnalos al ViewModel
+                // Carga de catálogos/form de paciente para el modal de agendar
                 var newPatientForm = await BuildNewPatientViewModelAsync();
+                vm.Users = newPatientForm.Users ?? new List<User>();
+                vm.InsuranceCompanies = newPatientForm.InsuranceCompanies ?? new List<InsuranceCompanyDto>();
+                vm.Patient = newPatientForm.Patient;
+                vm.GenderTypes = newPatientForm.GenderTypes ?? new List<Catalog>();
+                vm.BloodTypes = newPatientForm.BloodTypes ?? new List<Catalog>();
+                vm.CivilTypes = newPatientForm.CivilTypes ?? new List<Catalog>();
+                vm.ProfessionalTrainingTypes = newPatientForm.ProfessionalTrainingTypes ?? new List<Catalog>();
+                vm.SureHealthTypes = newPatientForm.SureHealthTypes ?? new List<Catalog>();
+                vm.Countries = newPatientForm.Countries ?? new List<Country>();
+                vm.Provinces = newPatientForm.Provinces ?? new List<Province>();
+                vm.UsersP = newPatientForm.UsersP ?? new List<MedicDetails>();
 
-                // Asignar los datos del formulario al ViewModel
-                viewModel.Users = newPatientForm.Users ?? new List<User>();
-                viewModel.InsuranceCompanies = newPatientForm.InsuranceCompanies ?? new List<InsuranceCompanyDto>();
-                viewModel.Patient = newPatientForm.Patient;
-                viewModel.GenderTypes = newPatientForm.GenderTypes ?? new List<Catalog>();
-                viewModel.BloodTypes = newPatientForm.BloodTypes ?? new List<Catalog>();
-                viewModel.CivilTypes = newPatientForm.CivilTypes ?? new List<Catalog>();
-                viewModel.ProfessionalTrainingTypes = newPatientForm.ProfessionalTrainingTypes ?? new List<Catalog>();
-                viewModel.SureHealthTypes = newPatientForm.SureHealthTypes ?? new List<Catalog>();
-                viewModel.Countries = newPatientForm.Countries ?? new List<Country>();
-                viewModel.Provinces = newPatientForm.Provinces ?? new List<Province>();
-                viewModel.UsersP = newPatientForm.UsersP ?? new List<MedicDetails>();
-
-                return View(viewModel);
+                return View(vm);
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Unhandled exception in AppointmentList: {ex.Message}");
+                _logger.LogError(ex, "Unhandled exception in AppointmentList");
                 TempData["Error"] = "Ocurrió un error inesperado. Inténtalo de nuevo más tarde.";
-                return View(new AppointmentListViewModel());
+                return View(new AppointmentListViewModel { Appointments = new List<AppointmentDTO>() });
             }
         }
-
         // 2️⃣ Sigue existiendo para cuando quieras devolver SOLO el formulario:
         private async Task<IActionResult> LoadPatientFormAsync(
             Patient patient = null,
@@ -416,6 +414,7 @@ namespace ExpertMed.Controllers
                     status = appt.AppointmentStatus,
                     appointmentReason = appt.AppointmentReason,
                     appointmentInsuranceCompanyId = appt.AppointmentInsuranceCompanyId,
+                    paymentStatus = appt.AppointmentPaymentStatus,
                     hasConsultation = appt.AppointmentConsultationid.HasValue && appt.AppointmentConsultationid.Value > 0
                 };
 
@@ -424,7 +423,7 @@ namespace ExpertMed.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al obtener la cita por ID.");
-                return StatusCode(500, new { message = "Ocurrió un error al procesar la solicitud." });
+                return StatusCode(500, new { message = "Ocurrió un error al procesar la solicitud."+ex });
             }
         }
 

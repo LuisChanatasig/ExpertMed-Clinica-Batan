@@ -21,7 +21,6 @@ namespace ExpertMed.Services
             _logger = logger;
             _httpClient = httpClient; // HttpClient inyectado
         }
-
         public async Task<string> CreateAndSendInvoiceAsync(
             int citaId,
             DateTime fechaFacturacion,
@@ -34,7 +33,9 @@ namespace ExpertMed.Services
             string billingDetailsAddress,
             string billingDetailsPhone,
             string billingDetailsEmail,
-            List<BillingItemDTO> items)
+            int? insuranceCompanyId,
+            List<BillingItemDTO> items,
+            List<PaymentMethodDTO> paymentMethods = null)
         {
             string jsonFactura = string.Empty;
             string xKey = string.Empty;
@@ -46,7 +47,7 @@ namespace ExpertMed.Services
                 {
                     await connection.OpenAsync();
 
-                    // 1. Obtener tarifario para mapear descripciones
+                    // 1. Obtener tarifario
                     var tarifario = new Dictionary<string, string>();
                     using (var cmdTarifa = new SqlCommand("SELECT insurance_tariff_code, insurance_tariff_description FROM insurance_tariff", connection))
                     {
@@ -68,8 +69,16 @@ namespace ExpertMed.Services
                         command.Parameters.AddWithValue("@CitaId", citaId);
                         command.Parameters.AddWithValue("@FechaFacturacion", fechaFacturacion);
                         command.Parameters.AddWithValue("@TotalFactura", totalFactura);
-                        command.Parameters.AddWithValue("@MetodoPago", metodoPago);
-                        command.Parameters.AddWithValue("@ComprobantePago", (object)comprobantePagoFacturacion ?? DBNull.Value);
+                        command.Parameters.AddWithValue("@MetodoPago", (object)metodoPago ?? DBNull.Value);
+
+                        // IMPORTANTE: Especificar el tipo SqlDbType.VarBinary
+                        var comprobanteParam = new SqlParameter("@ComprobantePago", SqlDbType.VarBinary)
+                        {
+                            Value = comprobantePagoFacturacion != null ? (object)comprobantePagoFacturacion : DBNull.Value
+                        };
+                        command.Parameters.Add(comprobanteParam);
+
+                        command.Parameters.AddWithValue("@insurance_company_id", (object)insuranceCompanyId ?? DBNull.Value);
                         command.Parameters.AddWithValue("@billing_details_names", (object)billingDetailsNames ?? DBNull.Value);
                         command.Parameters.AddWithValue("@billing_details_cinumber", (object)billingDetailsCiNumber ?? DBNull.Value);
                         command.Parameters.AddWithValue("@billing_details_documenttype", (object)billingDetailsDocumentType ?? DBNull.Value);
@@ -77,6 +86,7 @@ namespace ExpertMed.Services
                         command.Parameters.AddWithValue("@billing_details_phone", (object)billingDetailsPhone ?? DBNull.Value);
                         command.Parameters.AddWithValue("@billing_details_email", (object)billingDetailsEmail ?? DBNull.Value);
 
+                        // Items
                         var table = new DataTable();
                         table.Columns.Add("billing_item_code", typeof(string));
                         table.Columns.Add("billing_item_description", typeof(string));
@@ -106,6 +116,33 @@ namespace ExpertMed.Services
                         };
                         command.Parameters.Add(itemsParam);
 
+                        // Múltiples métodos de pago
+                        var paymentTable = new DataTable();
+                        paymentTable.Columns.Add("payment_method", typeof(string));
+                        paymentTable.Columns.Add("payment_amount", typeof(decimal));
+                        paymentTable.Columns.Add("payment_proof", typeof(byte[])); // IMPORTANTE: tipo byte[]
+                        paymentTable.Columns.Add("payment_notes", typeof(string));
+
+                        if (paymentMethods != null && paymentMethods.Any())
+                        {
+                            foreach (var pm in paymentMethods)
+                            {
+                                paymentTable.Rows.Add(
+                                    pm.PaymentMethod,
+                                    pm.PaymentAmount,
+                                    pm.PaymentProof ?? (object)DBNull.Value, // Se maneja NULL correctamente
+                                    pm.PaymentNotes ?? (object)DBNull.Value
+                                );
+                            }
+                        }
+
+                        var paymentsParam = new SqlParameter("@PaymentMethods", SqlDbType.Structured)
+                        {
+                            TypeName = "dbo.PaymentMethodsType",
+                            Value = paymentTable
+                        };
+                        command.Parameters.Add(paymentsParam);
+
                         jsonFactura = (string)await command.ExecuteScalarAsync();
                     }
 
@@ -127,12 +164,10 @@ namespace ExpertMed.Services
                     }
                 }
 
-                // Validación final JSON
                 if (string.IsNullOrWhiteSpace(jsonFactura) || !jsonFactura.Trim().StartsWith("{"))
                     throw new Exception("El JSON generado por el SP es inválido o está vacío.");
 
                 _logger.LogDebug("Factura JSON para cita {CitaId}: {JsonFactura}", citaId, jsonFactura);
-                Console.WriteLine($"Factura JSON para cita {citaId}: {jsonFactura}");
 
                 // 4. Envío a Dátil
                 using (var request = new HttpRequestMessage(HttpMethod.Post, "https://link.datil.co/invoices/issue"))
@@ -177,7 +212,6 @@ namespace ExpertMed.Services
             }
         }
 
-
         public async Task<AppointmentBillingDTO?> GetAppointmentBillingDataAsync(int appointmentId)
         {
             var parameters = new[]
@@ -194,9 +228,24 @@ namespace ExpertMed.Services
             return await Task.FromResult(cita);
         }
 
-        public async Task<List<FacturaEmitidaDTO>> ObtenerFacturasEmitidasAsync()
+        public async Task<List<FacturaEmitidaDTO>> ObtenerFacturasEmitidasAsync(DateTime? fechaDesde = null, DateTime? fechaHasta = null)
         {
             var facturas = new List<FacturaEmitidaDTO>();
+
+            // Si no se especifican fechas, usar el día actual por defecto
+            if (!fechaDesde.HasValue && !fechaHasta.HasValue)
+            {
+                fechaDesde = DateTime.Today;
+                fechaHasta = DateTime.Today;
+            }
+            else if (!fechaDesde.HasValue)
+            {
+                fechaDesde = fechaHasta.Value.Date;
+            }
+            else if (!fechaHasta.HasValue)
+            {
+                fechaHasta = fechaDesde.Value.Date;
+            }
 
             // 1. Traer desde base de datos local (notas de venta)
             using (var connection = new SqlConnection(_context.Database.GetConnectionString()))
@@ -205,6 +254,16 @@ namespace ExpertMed.Services
                 using (var command = new SqlCommand("sp_ListarFacturasEmitidas", connection))
                 {
                     command.CommandType = CommandType.StoredProcedure;
+
+                    // Agregar parámetros de fecha al stored procedure
+                    command.Parameters.Add(new SqlParameter("@FechaDesde", SqlDbType.Date)
+                    {
+                        Value = fechaDesde.Value.Date
+                    });
+                    command.Parameters.Add(new SqlParameter("@FechaHasta", SqlDbType.Date)
+                    {
+                        Value = fechaHasta.Value.Date
+                    });
 
                     using (var reader = await command.ExecuteReaderAsync())
                     {
@@ -238,39 +297,55 @@ namespace ExpertMed.Services
                 }
             }
 
-            // 2. Traer desde Dátil (facturas autorizadas)
+            // 2. Traer desde Dátil (facturas autorizadas) - también filtrar por fechas
             var client = new HttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", "token=7278cc50a72640eea6384a075b8e8335");
 
-            var url = "https://link.datil.co/invoices?from=2025-06-01&to=2025-06-30";
-            var response = await client.GetAsync(url);
+            // Formatear fechas para la API de Dátil (formato YYYY-MM-DD)
+            var fromDate = fechaDesde.Value.ToString("yyyy-MM-dd");
+            var toDate = fechaHasta.Value.ToString("yyyy-MM-dd");
+            var url = $"https://link.datil.co/invoices?from={fromDate}&to={toDate}";
 
-            if (response.IsSuccessStatusCode)
+            try
             {
-                var content = await response.Content.ReadAsStringAsync();
-                var json = JsonDocument.Parse(content);
-
-                foreach (var f in json.RootElement.EnumerateArray())
+                var response = await client.GetAsync(url);
+                if (response.IsSuccessStatusCode)
                 {
-                    facturas.Add(new FacturaEmitidaDTO
+                    var content = await response.Content.ReadAsStringAsync();
+                    var json = JsonDocument.Parse(content);
+
+                    foreach (var f in json.RootElement.EnumerateArray())
                     {
-                        FacturaId = 0,
-                        Fecha = f.GetProperty("issued_at").GetDateTime(),
-                        Paciente = f.GetProperty("client").GetProperty("name").GetString(),
-                        Subtotal = f.GetProperty("totals").GetProperty("subtotal_without_tax").GetDecimal(),
-                        TotalAseguradora = 0,
-                        TotalCopago = f.GetProperty("totals").GetProperty("total").GetDecimal(),
-                        MetodoPago = "-", // Dátil no da forma de pago
-                        Aseguradora = f.GetProperty("client").GetProperty("identification").GetString(),
-                        TotalItems = f.GetProperty("items").GetArrayLength(),
-                        Origen = "DATIL"
-                    });
+                        var fechaEmision = f.GetProperty("issued_at").GetDateTime().Date;
+
+                        // Verificar que la fecha esté en el rango (doble verificación)
+                        if (fechaEmision >= fechaDesde.Value.Date && fechaEmision <= fechaHasta.Value.Date)
+                        {
+                            facturas.Add(new FacturaEmitidaDTO
+                            {
+                                FacturaId = 0,
+                                Fecha = f.GetProperty("issued_at").GetDateTime(),
+                                Paciente = f.GetProperty("client").GetProperty("name").GetString(),
+                                Subtotal = f.GetProperty("totals").GetProperty("subtotal_without_tax").GetDecimal(),
+                                TotalAseguradora = 0,
+                                TotalCopago = f.GetProperty("totals").GetProperty("total").GetDecimal(),
+                                MetodoPago = "-", // Dátil no da forma de pago
+                                Aseguradora = f.GetProperty("client").GetProperty("identification").GetString(),
+                                TotalItems = f.GetProperty("items").GetArrayLength(),
+                                Origen = "DATIL"
+                            });
+                        }
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                // Log del error con Dátil, pero continúa con los datos locales
+                Console.WriteLine($"Error al obtener facturas de Dátil: {ex.Message}");
             }
 
             return facturas.OrderByDescending(f => f.Fecha).ToList();
         }
-
 
 
         public async Task<FacturaDetalleDTO?> GetFacturaConDetalleAsync(int facturaId)
@@ -281,32 +356,53 @@ namespace ExpertMed.Services
             FacturaDetalleDTO? factura = null;
 
             var commandText = @"
-        SELECT
-            b.billing_id,                      -- 0
-            b.billing_creationdate,            -- 1
-            ISNULL(p.patient_firstname, '') + ' ' +
-            ISNULL(p.patient_middlename, '') + ' ' +
-            ISNULL(p.patient_firstsurname, '') + ' ' +
-            ISNULL(p.patient_secondlastname, '') AS paciente, -- 2
-            p.patient_landline_phone,          -- 3
-            p.patient_cellular_phone,          -- 4
-            p.patient_email,                   -- 5
-            p.patient_address,                 -- 6
-            b.billing_payment_method,          -- 7
-            ic.insurance_company_name,         -- 8
-            bi.billing_item_description,       -- 9
-            bi.billing_item_quantity,          -- 10
-            bi.billing_item_unit_price         -- 11
-        FROM billing b
-        INNER JOIN appointment a ON b.appointment_id = a.appointment_id
-        INNER JOIN patient p ON a.appointment_patientid = p.patient_id
-        LEFT JOIN insurance_company ic ON a.appointment_insurance_company_id = ic.insurance_company_id
-        LEFT JOIN billing_item bi ON bi.billing_id = b.billing_id
-        WHERE b.billing_id = @FacturaId
-    ";
+SELECT
+    b.billing_id,                      -- 0
+    b.billing_creationdate,            -- 1
+    ISNULL(p.patient_firstname, '') + ' ' +
+    ISNULL(p.patient_middlename, '') + ' ' +
+    ISNULL(p.patient_firstsurname, '') + ' ' +
+    ISNULL(p.patient_secondlastname, '')              AS paciente,          -- 2
+    p.patient_landline_phone,                                              -- 3
+    p.patient_cellular_phone,                                             -- 4
+    p.patient_email,                                                      -- 5
+    p.patient_address,                                                    -- 6
+    -- Método de pago mejorado para manejar múltiples
+    CASE 
+        WHEN LOWER(b.billing_payment_method) = 'multiple' THEN 
+            ISNULL(metodos_pago.MetodosPago, 'Multiple (sin detalle)')
+        ELSE b.billing_payment_method 
+    END AS metodo_pago,                                                   -- 7
+    ic.insurance_company_name,                                            -- 8
+    bi.billing_item_description,                                          -- 9
+    bi.billing_item_quantity,                                             -- 10
+    bi.billing_item_unit_price,                                           -- 11
+    CONCAT('001-003-', RIGHT(REPLICATE('0', 9) + CAST(COALESCE(b.billing_sequential, 0) AS VARCHAR(9)), 9))
+                                                              AS numero_factura -- 12
+FROM billing b
+INNER JOIN appointment a ON b.appointment_id = a.appointment_id
+INNER JOIN patient    p ON a.appointment_patientid = p.patient_id
+LEFT  JOIN insurance_company ic ON a.appointment_insurance_company_id = ic.insurance_company_id
+LEFT  JOIN billing_item      bi ON bi.billing_id = b.billing_id
+-- Obtener métodos de pago cuando es multiple
+OUTER APPLY (
+    SELECT STRING_AGG(
+        CASE 
+            WHEN bpm.payment_method IS NOT NULL THEN 
+                bpm.payment_method + ' ($' + FORMAT(bpm.payment_amount, 'N2') + ')'
+            ELSE 'N/A'
+        END, 
+        ', '
+    ) AS MetodosPago
+    FROM billing_payment_methods bpm
+    WHERE bpm.billing_id = b.billing_id
+      AND LOWER(b.billing_payment_method) = 'multiple'
+) metodos_pago
+WHERE b.billing_id = @FacturaId;
+";
 
             using var command = new SqlCommand(commandText, connection);
-            command.Parameters.AddWithValue("@FacturaId", facturaId);
+            command.Parameters.Add("@FacturaId", System.Data.SqlDbType.Int).Value = facturaId;
 
             using var reader = await command.ExecuteReaderAsync();
 
@@ -325,11 +421,12 @@ namespace ExpertMed.Services
                         PacienteDireccion = reader.IsDBNull(6) ? null : reader.GetString(6),
                         MetodoPago = reader.IsDBNull(7) ? "No especificado" : reader.GetString(7),
                         Aseguradora = reader.IsDBNull(8) ? "Particular" : reader.GetString(8),
+                        NumeroFactura = reader.IsDBNull(12) ? null : reader.GetString(12),
                         Items = new List<FacturaItemDTO>()
                     };
                 }
 
-                // Validar si hay ítems
+                // Si hay ítems (LEFT JOIN puede traer NULLs)
                 if (!reader.IsDBNull(9))
                 {
                     var item = new FacturaItemDTO
@@ -344,13 +441,12 @@ namespace ExpertMed.Services
 
             if (factura != null)
             {
-                factura.Subtotal = factura.Items.Sum(i => i.Total);
+                // Calcula subtotal de forma robusta por si Total no es propiedad calculada en el DTO
+                factura.Subtotal = factura.Items.Sum(i => (decimal)i.Cantidad * i.PrecioUnitario);
 
-                // Lógica provisional: puedes ajustarla según cómo se calcule aseguradora/copago
-                factura.TotalAseguradora = factura.MetodoPago.ToLower().Contains("seguro")
-                    ? factura.Subtotal
-                    : 0;
-
+                // Ejemplo simple: todo a aseguradora si método menciona "seguro"
+                var metodo = factura.MetodoPago?.ToLowerInvariant() ?? string.Empty;
+                factura.TotalAseguradora = metodo.Contains("seguro") ? factura.Subtotal : 0m;
                 factura.TotalCopago = factura.Subtotal - factura.TotalAseguradora;
             }
 
@@ -368,6 +464,7 @@ namespace ExpertMed.Services
         public string? PacienteNumeroCelular { get; set; } // Added '?' for nullability
         public string? PacienteNumeroFijo { get; set; } // Added '?' for nullability
         public string? PacienteEmail { get; set; } // NEW: Added patient email
+        public string? NumeroFactura { get; set; }     // ← aquí
 
         public decimal Subtotal { get; set; }
         public decimal TotalAseguradora { get; set; }

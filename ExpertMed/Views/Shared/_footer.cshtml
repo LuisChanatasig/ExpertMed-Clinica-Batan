@@ -1,14 +1,24 @@
-﻿<footer class="footer">
+﻿<footer class="footer bg-light border-top py-3 mt-auto">
     <div class="container-fluid">
-        <div class="row">
-            <div class="col-sm-6">
-                <script>document.write(new Date().getFullYear())</script> © Expermed.
+        <div class="row align-items-center">
+            <!-- Columna izquierda -->
+            <div class="col-sm-6 text-center text-sm-start mb-2 mb-sm-0">
+                <small>
+                    © <span id="exp-year"></span> Expermed — v1.2
+                </small>
             </div>
-            <div class="col-sm-6">
-                <div class="text-sm-end d-none d-sm-block">
-                   
-                </div>
+
+            <!-- Columna derecha -->
+            <div class="col-sm-6 text-center text-sm-end">
+                <small class="text-muted">
+                    Todos los derechos reservados
+                </small>
             </div>
         </div>
     </div>
 </footer>
+
+<script>
+    // Inserta el año dinámicamente
+    document.getElementById("exp-year").textContent = new Date().getFullYear();
+</script>

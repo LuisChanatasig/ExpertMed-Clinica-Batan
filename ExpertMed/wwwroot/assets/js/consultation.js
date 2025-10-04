@@ -89,14 +89,16 @@ document.addEventListener("click", function (event) {
 
     const button = event.target.closest(".add-favorite");
     const row = button.closest("tr");
+
     if (!row) {
         console.warn("No se encontró la fila del medicamento (tr).");
         return;
     }
 
-    const medicationsId = row.getAttribute("data-medication-id");
-    const amount = row.querySelector(".medication-amount").value;
-    const observation = row.querySelector(".medication-observation").value;
+    // CAMBIO: Usar dataset.id en lugar de getAttribute("data-medication-id")
+    const medicationsId = row.dataset.id;  // ← CORRECCIÓN AQUÍ
+    const amount = row.querySelector(".medication-amount")?.value || "";
+    const observation = row.querySelector(".medication-observation")?.value || "";
 
     const medicoInput = document.getElementById("medicoId");
     if (!medicoInput || !medicoInput.value || !medicationsId) {
@@ -116,7 +118,12 @@ document.addEventListener("click", function (event) {
             observacion: observation || null
         })
     })
-        .then(res => res.ok ? res.json() : Promise.reject(res))
+        .then(res => {
+            if (!res.ok) {
+                return res.json().then(err => Promise.reject(err));
+            }
+            return res.json();
+        })
         .then(res => {
             Swal.fire("Guardado", res.message || "Medicamento agregado a favoritos.", "success");
             button.classList.remove("btn-outline-warning");
@@ -125,11 +132,11 @@ document.addEventListener("click", function (event) {
             button.disabled = true;
         })
         .catch(err => {
-            console.error(err);
-            Swal.fire("Error", "No se pudo guardar el favorito.", "error");
+            console.error("Error al guardar favorito:", err);
+            const errorMsg = err.message || "No se pudo guardar el favorito.";
+            Swal.fire("Error", errorMsg, "error");
         });
 });
-
 // Cargar favoritos en el offcanvas
 document.addEventListener("DOMContentLoaded", function () {
     const medicoId = document.getElementById("medicoId").value;
@@ -188,13 +195,13 @@ document.getElementById("buscarFavorito").addEventListener("input", function () 
 function insertarFavorito(medicationsId, medicationsName, cantidad, observacion) {
     const tableBody = document.querySelector("#selectedMedicationsTable tbody");
 
-    if (document.querySelector(`[data-medication-id="${medicationsId}"]`)) {
+    if (document.querySelector(`[data-id="${medicationsId}"]`)) {
         Swal.fire("Aviso", "El medicamento ya está en la tabla.", "info");
         return;
     }
 
     const row = document.createElement("tr");
-    row.setAttribute("data-medication-id", medicationsId);
+    row.dataset.id = medicationsId;   // ✅ usar data-id consistente
 
     row.innerHTML = `
         <td hidden>${medicationsId}</td>
@@ -887,7 +894,110 @@ async function submitFormManually() {
         startAutoSave();
     }
 }
+// ============================================
+// FUNCIONES DE PRE-CARGA PARA EDICIÓN
+// ============================================
 
+function preloadDiagnosis(id, name, presumptive, definitive) {
+    const tableBody = document.querySelector("#selectedDiagnosesTable tbody");
+    if (!tableBody) return;
+
+    const row = document.createElement("tr");
+    row.dataset.id = id;
+
+    const nameCell = document.createElement("td");
+    nameCell.textContent = name;
+
+    const presCell = document.createElement("td");
+    presCell.innerHTML = `<input type="checkbox" name="presumptive_${id}" ${presumptive ? 'checked' : ''}>`;
+
+    const defCell = document.createElement("td");
+    defCell.innerHTML = `<input type="checkbox" name="definitive_${id}" ${definitive ? 'checked' : ''}>`;
+
+    const actionCell = document.createElement("td");
+    actionCell.innerHTML = `
+        <button type="button" class="btn btn-outline-danger btn-icon" onclick="removeDiagnosisRow(this)">
+            <i class="ri-delete-bin-5-line"></i>
+        </button>`;
+
+    row.append(nameCell, presCell, defCell, actionCell);
+    tableBody.appendChild(row);
+}
+
+function preloadMedication(id, name, amount, observation) {
+    const tableBody = document.querySelector("#selectedMedicationsTable tbody");
+    if (!tableBody) return;
+
+    const row = document.createElement("tr");
+    row.dataset.id = id;
+
+    row.innerHTML = `
+        <td hidden>${id}</td>
+        <td>${name}</td>
+        <td><input type="number" name="amount_${id}" value="${amount || ''}" class="form-control medication-amount" min="1"></td>
+        <td><input type="text" name="observation_${id}" value="${observation || ''}" class="form-control medication-observation"></td>
+        <td>
+            <button type="button" class="btn btn-outline-warning btn-sm add-favorite" title="Guardar como favorito">
+                <i class="mdi mdi-star-outline"></i>
+            </button>
+            <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeMedicationsRow(this)">
+                <i class="ri-delete-bin-5-line"></i>
+            </button>
+        </td>
+    `;
+
+    tableBody.appendChild(row);
+}
+
+function preloadLaboratory(id, name, amount, observation) {
+    const tableBody = document.querySelector("#selectedLaboratoriesTable tbody");
+    if (!tableBody) return;
+
+    const row = document.createElement("tr");
+    row.dataset.id = id;
+
+    row.innerHTML = `
+        <td hidden>${id}</td>
+        <td>${name}</td>
+        <td><input type="number" name="amount_${id}" value="${amount || '1'}" class="form-control" min="1"></td>
+        <td><input type="hidden" name="observation_${id}" value="${observation || ''}"></td>
+        <td>
+            <button type="button" class="btn btn-outline-danger btn-icon waves-effect waves-light" onclick="removeLaboratoriesRow(this)">
+                <i class="ri-delete-bin-5-line"></i>
+            </button>
+        </td>
+    `;
+
+    tableBody.appendChild(row);
+}
+
+function preloadImage(id, name, amount, observation) {
+    const tableBody = document.querySelector("#selectedImagesTable tbody");
+    if (!tableBody) return;
+
+    const row = document.createElement("tr");
+    row.dataset.id = id;
+
+    row.innerHTML = `
+        <td hidden>${id}</td>
+        <td>${name}</td>
+        <td><input type="number" name="amount_${id}" value="${amount || ''}" class="form-control" min="1"></td>
+        <td><input type="hidden" name="observation_${id}" value="${observation || ''}"></td>
+        <td>
+            <button type="button" class="btn btn-outline-danger btn-icon waves-effect waves-light" onclick="removeImagesRow(this)">
+                <i class="ri-delete-bin-5-line"></i>
+            </button>
+        </td>
+    `;
+
+    tableBody.appendChild(row);
+}
+
+// Exponer las funciones globalmente
+window.preloadDiagnosis = preloadDiagnosis;
+window.preloadMedication = preloadMedication;
+window.preloadLaboratory = preloadLaboratory;
+window.preloadImage = preloadImage;
 // Inicialización
 document.addEventListener("DOMContentLoaded", () => {
     startAutoSave();

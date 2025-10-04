@@ -1635,32 +1635,7 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                @if (Model.Consultation.DiagnosisConsultations != null)
-                                                {
-                                                    foreach (var diag in Model.Consultation.DiagnosisConsultations)
-                                                    {
-                                                        <tr>
-                                                            <td hidden>@diag.DiagnosisDiagnosisid</td>
-                                                            <!-- Suponiendo que tienes el nombre en alguna propiedad, por ejemplo diag.DiagnosisName,
-                                                                 de lo contrario, podrías hacer una búsqueda en Model.Diagnoses -->
-                                                            <td>
-                                                                @* Si no cuentas con el nombre directamente, puedes buscarlo:
-                               Model.Diagnoses.FirstOrDefault(d => d.DiagnosisId == diag.DiagnosisDiagnosisid)?.DiagnosisName
-                             *@
-                                                                @(Model.Diagnoses.FirstOrDefault(d => d.DiagnosisId == diag.DiagnosisDiagnosisid)?.DiagnosisName ?? "N/A")
-                                                            </td>
-                                                            <td>
-                                                                <input type="checkbox"  @(diag.DiagnosisPresumptive == true ? "checked" : "") />
-                                                            </td>
-                                                            <td>
-                                                                <input type="checkbox"  @(diag.DiagnosisDefinitive == true ? "checked" : "") />
-                                                            </td>
-                                                            <td>
-                                                                <button class="btn btn-danger btn-sm">Eliminar</button>
-                                                            </td>
-                                                        </tr>
-                                                    }
-                                                }
+                                               
                                             </tbody>
                                         </table>
                                     </div>
@@ -1712,49 +1687,47 @@
                         <!-- #region Medicamentos -->
 
                         <div class="row">
-
                             <div class="col-xxl-12">
-
                                 <div class="card" id="baccard">
-
                                     <div class="card-header" id="card-header-color">
                                         <h6 class="card-title mb-0">Medicamentos</h6>
                                     </div>
-                                    <select name="MedicationsConsultation" id="MedicationsConsultation"
-                                            class="form-control">
-                                        <option value="">Escriba y seleccione un medicamento</option>
-                                        @foreach (var medications in Model.Medications)
-                                        {
-                                            <option value="@medications.MedicationsId" data-name="@medications.MedicationsDescription">
-                                                @medications.MedicationsDescription
-                                            </option>
-                                        }
-                                    </select>
-                                    <div class="card-body">
+
+                                    <!-- Input group con select y botón para agregar -->
+                                    <div class="card-body pt-2">
+                                        <div class="input-group mb-3">
+                                            <select name="MedicationsConsultation" id="MedicationsConsultation" class="form-control">
+                                                <option value="">Escriba y seleccione un medicamento</option>
+                                                @foreach (var medications in Model.Medications)
+                                                {
+                                                    <option value="@medications.MedicationsId" data-name="@medications.MedicationsDescription">
+                                                        @medications.MedicationsDescription
+                                                    </option>
+                                                }
+                                            </select>
+                                            <button class="btn btn-outline-primary" type="button" id="btnNuevoMedicamento" data-bs-toggle="tooltip" title="Agregar nuevo medicamento">
+                                                <i class="mdi mdi-plus-circle"></i> Nuevo
+                                            </button>
+                                        </div>
+
                                         <div class="row">
                                             <div class="col-lg-12">
-                                                <div class="mb-3">
-                                                </div>
+                                                <div class="mb-3"></div>
                                             </div>
 
                                             <div class="col-lg-3 d-flex gap-2 align-items-start mb-3">
                                                 <button type="button" class="btn btn-soft-success waves-effect waves-light" id="selectMedications">
-                                                    Seleccionar
                                                     <i class="mdi mdi-plus-box-outline"></i> Agregar medicamento
                                                 </button>
                                                 <button type="button" class="btn btn-warning" data-bs-toggle="offcanvas" data-bs-target="#offcanvasFavoritos">
                                                     <i class="mdi mdi-star-outline"></i> Ver favoritos
                                                 </button>
                                             </div>
-
                                         </div>
 
                                         <input type="hidden" id="medicoId" value="@ViewContext.HttpContext.Session.GetInt32("UsuarioId")" />
 
-
-                                        <!--inicio offcanvas de la los medicamentos-->
-
-
+                                        <!-- Offcanvas de favoritos -->
                                         <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasFavoritos" aria-labelledby="offcanvasFavoritosLabel">
                                             <div class="offcanvas-header">
                                                 <h5 id="offcanvasFavoritosLabel">Medicamentos Favoritos</h5>
@@ -1762,15 +1735,11 @@
                                             </div>
                                             <div class="offcanvas-body">
                                                 <input type="text" class="form-control mb-3" id="buscarFavorito" placeholder="Buscar medicamento favorito...">
-                                                <ul class="list-group" id="favoritosList">
-                                                    <!-- Los favoritos se insertan aquí -->
-                                                </ul>
+                                                <ul class="list-group" id="favoritosList"></ul>
                                             </div>
-
                                         </div>
 
-                                        <!--fin offcanvas de la los medicamentos-->
-
+                                        <!-- Tabla de medicamentos seleccionados -->
                                         <table class="table table-nowrap" id="selectedMedicationsTable">
                                             <thead>
                                                 <tr>
@@ -1781,65 +1750,36 @@
                                                     <th scope="col" style="font-size: 12px;">Acciones</th>
                                                 </tr>
                                             </thead>
-                                            <tbody id="medicationsTableBody">
-                                                @if (Model.Consultation.MedicationsConsultations != null)
-                                                {
-                                                    foreach (var med in Model.Consultation.MedicationsConsultations)
-                                                    {
-                                                        <tr>
-                                                            <td hidden>@med.MedicationsMedicationsid</td>
-                                                            <td>
-                                                                @* Buscamos la descripción en la lista de medicamentos, en caso de que el DTO no la tenga directamente *@
-                                                                @(Model.Medications.FirstOrDefault(m => m.MedicationsId == med.MedicationsMedicationsid)?.MedicationsDescription ?? "N/A")
-                                                            </td>
-                                                            <td>@med.MedicationsAmount</td>
-                                                            <td>@med.MedicationsObservation</td>
-                                                            <td>
-                                                                <button class="btn btn-danger btn-sm">Eliminar</button>
-                                                            </td>
-                                                        </tr>
-                                                    }
-                                                }
-                                            </tbody>
+                                            <tbody id="medicationsTableBody"></tbody>
                                         </table>
 
+                                        <!-- Recomendaciones y signos de alarma -->
                                         <div class="row">
                                             <div class="col-lg-12">
                                                 <div class="mb-3">
                                                     <label>Recomendaciones no farmacológicas</label>
-                                                    <textarea class="form-control" id="consultation_nonpharmacologycal"
-                                                              rows="3" asp-for="Consultation.ConsultationNonpharmacologycal"
-                                                              placeholder="Escriba una descripción, o si prefiere pude ocupar el micrófono"></textarea>
-                                                    <i id="dictationIcon4" class=" ri-mic-fill position-absolute" style="top: 35px; right: 15px; cursor: pointer;"></i>
-
+                                                    <textarea class="form-control" id="consultation_nonpharmacologycal" rows="3"
+                                                              placeholder="Escriba una descripción, o si prefiere pude ocupar el micrófono" asp-for="Consultation.ConsultationNonpharmacologycal"></textarea>
+                                                    <i id="dictationIcon4" class="ri-mic-fill position-absolute" style="top: 35px; right: 15px; cursor: pointer;"></i>
                                                 </div>
                                             </div>
-
                                         </div>
 
                                         <div class="row">
                                             <div class="col-lg-12">
                                                 <div class="mb-3">
                                                     <label>Signos de alarma</label>
-                                                    <textarea class="form-control" id="consultation_warningsings"
-                                                              rows="3" asp-for="Consultation.ConsultationWarningsings"
-                                                              placeholder="Escriba una descripción, o si prefiere pude ocupar el micrófono"></textarea>
-                                                    <i id="dictationIcon5" class=" ri-mic-fill position-absolute" style="top: 35px; right: 15px; cursor: pointer;"></i>
-
+                                                    <textarea class="form-control" id="consultation_warningsings" rows="3"
+                                                              placeholder="Escriba una descripción, o si prefiere pude ocupar el micrófono" asp-for="Consultation.ConsultationWarningsings"></textarea>
+                                                    <i id="dictationIcon5" class="ri-mic-fill position-absolute" style="top: 35px; right: 15px; cursor: pointer;"></i>
                                                 </div>
                                             </div>
-
                                         </div>
-
                                     </div>
-
-
-
                                 </div>
-
                             </div>
-
                         </div>
+
 
                         <!-- #endregion Medicamentos-->
                         <!-- #region Imagenes-->
@@ -1885,22 +1825,7 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                @if (Model.Consultation.ImagesConsultations != null)
-                                                {
-                                                    foreach (var labConsulta in Model.Consultation.ImagesConsultations)
-                                                    {
-                                                        <tr>
-                                                            <td hidden>@labConsulta.ImagesImagesid</td>
-                                                            <td>
-                                                                @(Model.Images.FirstOrDefault(l => l.ImagesId == labConsulta.ImagesImagesid)?.ImagesDescription ?? "N/A")
-                                                            </td>
-                                                            <td>@labConsulta.ImagesAmount</td>
-                                                            <td>
-                                                                <button class="btn btn-danger btn-sm">Eliminar</button>
-                                                            </td>
-                                                        </tr>
-                                                    }
-                                                }
+                                               
                                             </tbody>
                                         </table>
                                         <div class="mb-3 mt-4">
@@ -1919,36 +1844,29 @@
                         <!-- #endregion Imagenes-->
                         <!-- #region Laboratories-->
                         <div class="row">
-
                             <div class="col-xxl-12 col-lg-12">
-
                                 <div class="card" id="baccard">
-
                                     <div class="card-header" id="card-header-color">
-                                        <h6 class="card-title mb-0">Laboratorios(Test)</h6>
+                                        <h6 class="card-title mb-0">Laboratorios (Test)</h6>
                                     </div>
-                                    <select name="LaboratoriesConsultation" id="LaboratoriesConsultation"
-                                            class="form-control">
+                                    <select name="LaboratoriesConsultation" id="LaboratoriesConsultation" class="form-control">
                                         <option value="">Escriba y seleccione un laboratorio</option>
-                                        @foreach (var images in Model.Laboratories)
+                                        @foreach (var lab in Model.Laboratories)
                                         {
-                                            <option value="@images.LaboratoriesId" data-name="@images.LaboratoriesDescription">
-                                                @images.LaboratoriesDescription
+                                            <option value="@lab.LaboratoriesId" data-name="@lab.LaboratoriesDescription">
+                                                @lab.LaboratoriesDescription
                                             </option>
                                         }
                                     </select>
                                     <div class="card-body">
                                         <div class="row">
                                             <div class="col-lg-12">
-                                                <div class="mb-3">
-                                                </div>
+                                                <div class="mb-3"></div>
                                             </div>
-
                                             <div class="col-lg-2">
                                                 <button type="button" class="btn btn-soft-success waves-effect waves-light" id="selectLaboratories">Seleccionar</button>
                                             </div>
                                         </div>
-
 
                                         <table class="table table-nowrap" id="selectedLaboratoriesTable">
                                             <thead>
@@ -1960,41 +1878,20 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                @if (Model.Consultation.LaboratoriesConsultations != null)
-                                                {
-                                                    foreach (var labConsulta in Model.Consultation.LaboratoriesConsultations)
-                                                    {
-                                                        <tr>
-                                                            <td hidden>@labConsulta.LaboratoriesLaboratoriesid</td>
-                                                            <td>
-                                                                @(Model.Laboratories.FirstOrDefault(l => l.LaboratoriesId == labConsulta.LaboratoriesLaboratoriesid)?.LaboratoriesDescription ?? "N/A")
-                                                            </td>
-                                                            <td>@labConsulta.LaboratoriesAmount</td>
-                                                            <td>@labConsulta.LaboratoriesObservation</td>
-                                                            <td>
-                                                                <button class="btn btn-danger btn-sm">Eliminar</button>
-                                                            </td>
-                                                        </tr>
-                                                    }
-                                                }
+                                                <!-- Los datos se cargarán aquí dinámicamente con JavaScript -->
                                             </tbody>
-
                                         </table>
+
                                         <div class="mb-3 mt-4">
                                             <label for="laboratoriesGeneralObservation" class="form-label">Observación general</label>
-                                            <textarea id="laboratoriesGeneralObservation" name="laboratoriesGeneralObservation" class="form-control" rows="3" placeholder="Escribe una observación para todos los laboratorios..."></textarea>
+                                            <textarea id="laboratoriesGeneralObservation" name="laboratoriesGeneralObservation"
+                                                      class="form-control" rows="3"
+                                                      placeholder="Escribe una observación para todos los laboratorios..."></textarea>
                                         </div>
-
                                     </div>
-
-
-
                                 </div>
-
                             </div>
-
-                        </div>
-                        <!-- #endregion Laboratories-->
+                        </div>                        <!-- #endregion Laboratories-->
                         <!--region certificado medico-->
                         <div class="row">
                             <div class="col-xxl-12 col-lg-12">
@@ -2008,10 +1905,13 @@
                                             <div class="col-md-6">
                                                 <div class="mb-3">
                                                     <label for="cert_dias_incapacidad" class="form-label">Días de incapacidad</label>
-                                                    <input type="number" class="form-control" name="dias_incapacidad" id="cert_dias_incapacidad" />
+                                                    <input type="text"
+                                                           class="form-control"
+                                                           name="dias_incapacidad"
+                                                           id="consultation_disablilitydays"
+                                                           value="@(Model.Consultation?.ConsultationDisablilitydays ?? 0)" />
                                                 </div>
                                             </div>
-
                                             <!-- Procedimientos -->
                                             <!-- Procedimientos múltiples -->
                                             <div class="col-md-12">
@@ -2122,6 +2022,146 @@
         </div>
     </div>
 </div>
+<!-- Modal para agregar nuevo medicamento -->
+<div class="modal fade" id="modalNuevoMedicamento" tabindex="-1" aria-labelledby="modalNuevoMedicamentoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="modalNuevoMedicamentoLabel">
+                    <i class="mdi mdi-pill me-2"></i>Agregar Nuevo Medicamento
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info alert-dismissible fade show" role="alert">
+                    <i class="mdi mdi-information me-2"></i>
+                    <strong>Instrucciones:</strong> Complete los campos siguiendo el formato indicado.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <form id="formNuevoMedicamento" novalidate>
+                    <!-- Nombre del medicamento -->
+                    <div class="mb-3">
+                        <label for="medications_name" class="form-label">
+                            Nombre del Medicamento <span class="text-danger">*</span>
+                        </label>
+                        <input type="text"
+                               class="form-control text-uppercase"
+                               id="medications_name"
+                               name="medications_name"
+                               placeholder="Ej: PARACETAMOL"
+                               required
+                               maxlength="255">
+                        <div class="form-text">
+                            <i class="mdi mdi-lightbulb-on-outline text-warning"></i>
+                            Se convertirá automáticamente a MAYÚSCULAS
+                        </div>
+                        <div class="invalid-feedback">
+                            Por favor ingrese el nombre del medicamento
+                        </div>
+                    </div>
+
+                    <!-- Descripción -->
+                    <div class="mb-3">
+                        <label for="medications_description" class="form-label">
+                            Descripción completa
+                        </label>
+                        <input type="text"
+                               class="form-control"
+                               id="medications_description"
+                               name="medications_description"
+                               placeholder="Ej: PARACETAMOL TABLETA 500mg"
+                               maxlength="255">
+                        <div class="form-text">
+                            <i class="mdi mdi-information-outline"></i>
+                            Incluya presentación y concentración (opcional)
+                        </div>
+                    </div>
+
+                    <!-- Concentración -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="medications_concentration" class="form-label">
+                                    Concentración
+                                </label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="medications_concentration"
+                                       name="medications_concentration"
+                                       placeholder="500 mg"
+                                       maxlength="255">
+                                <div class="form-text">
+                                    <i class="mdi mdi-information-outline"></i>
+                                    Use formato: número + unidad
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Código CIE10 -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="medications_cie10" class="form-label">
+                                    Código de referencia
+                                </label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="medications_cie10"
+                                       name="medications_cie10"
+                                       placeholder="3381"
+                                       maxlength="20">
+                                <div class="form-text">
+                                    <i class="mdi mdi-information-outline"></i>
+                                    Código interno o CIE10
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ejemplos visuales -->
+                    <div class="alert alert-light border" role="alert">
+                        <h6 class="alert-heading">
+                            <i class="mdi mdi-file-document-outline me-1"></i>Ejemplo de registro correcto:
+                        </h6>
+                        <table class="table table-sm table-borderless mb-0">
+                            <tbody>
+                                <tr>
+                                    <td class="text-muted" style="width: 140px;">Nombre:</td>
+                                    <td><strong>PARACETAMOL</strong></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Descripción:</td>
+                                    <td>PARACETAMOL TABLETA 500mg</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Concentración:</td>
+                                    <td>500 mg</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Código:</td>
+                                    <td>3381</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Alerta de errores -->
+                    <div id="alertMedicamento" class="alert d-none" role="alert"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                    <i class="mdi mdi-close me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" id="btnGuardarMedicamento">
+                    <span id="spinnerGuardar" class="spinner-border spinner-border-sm d-none me-1" role="status" aria-hidden="true"></span>
+                    <i class="mdi mdi-content-save me-1" id="iconGuardar"></i>
+                    Guardar Medicamento
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 <!-- #endregion Formulario-->
 @section Scripts {
     <script>
@@ -2130,24 +2170,19 @@
         const addFavoriteUrl = '@Url.Action("AddOrUpdate", "FavoriteMedication")';
         const getFavoritesUrl = '@Url.Action("List", "FavoriteMedication")';
         const deleteFavoriteUrl = '@Url.Action("Delete", "FavoriteMedication")';
-
-
+        const createMedicationUrl = '@Url.Action("CreateMedication", "Consultation")';
     </script>
-
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const switches = document.querySelectorAll(".form-check-input");
-
             switches.forEach(switchElement => {
                 switchElement.addEventListener("change", function () {
                     const parentDiv = this.closest(".form-check");
                     const nextSibling = parentDiv?.nextElementSibling;
                     const nextNextSibling = nextSibling?.nextElementSibling;
-
                     const selectField = nextSibling?.querySelector("select");
                     const observationField = nextNextSibling?.querySelector("input");
-
                     if (this.checked) {
                         if (selectField) {
                             const selectContainer = selectField.closest(".col-lg-5");
@@ -2168,20 +2203,15 @@
                         }
                     }
                 });
-
-                // Oculta inicialmente los campos asociados
                 const parentDiv = switchElement.closest(".form-check");
                 const nextSibling = parentDiv?.nextElementSibling;
                 const nextNextSibling = nextSibling?.nextElementSibling;
-
                 const selectField = nextSibling?.querySelector("select");
                 const observationField = nextNextSibling?.querySelector("input");
-
                 if (selectField) {
                     const selectContainer = selectField.closest(".col-lg-5");
                     if (selectContainer) selectContainer.style.display = "none";
                 }
-
                 if (observationField) {
                     const obsContainer = observationField.closest(".col-lg-5");
                     if (obsContainer) obsContainer.style.display = "none";
@@ -2190,48 +2220,13 @@
         });
     </script>
 
-
-
-    <script>
-
-        document.addEventListener("DOMContentLoaded", function () {
-            // Selecciona todos los switches
-            const switches = document.querySelectorAll(".form-check-input");
-
-            switches.forEach(switchElement => {
-                // Asocia un evento de cambio a cada switch
-                switchElement.addEventListener("change", function () {
-                    // Obtén el campo de observación asociado al switch
-                    const parentDiv = this.closest(".form-check");
-                    const observationField = parentDiv.nextElementSibling.querySelector("input");
-
-                    // Muestra u oculta el campo de observación según el estado del switch
-                    if (this.checked) {
-                        observationField.closest(".col-lg-5").style.display = "block";
-                    } else {
-                        observationField.closest(".col-lg-5").style.display = "none";
-                    }
-                });
-
-                // Oculta inicialmente los campos de observación
-                const parentDiv = switchElement.closest(".form-check");
-                const observationField = parentDiv.nextElementSibling.querySelector("input");
-                observationField.closest(".col-lg-5").style.display = "none";
-            });
-        });
-
-    </script>
-
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             Array.from(document.querySelectorAll(".form-steps")).forEach(function (form) {
-                // Botones "Next"
                 Array.from(form.querySelectorAll(".nexttab")).forEach(function (nextButton) {
                     nextButton.addEventListener("click", function () {
                         var currentTab = nextButton.closest(".tab-pane");
                         var inputs = currentTab.querySelectorAll(".form-control");
-
-                        // Validar campos en el paso actual
                         var isValid = true;
                         inputs.forEach(function (input) {
                             if (!input.checkValidity()) {
@@ -2242,7 +2237,6 @@
                                 input.classList.add("is-valid");
                             }
                         });
-
                         if (isValid) {
                             var nextTabId = nextButton.getAttribute('data-nexttab');
                             var nextTab = document.getElementById(nextTabId);
@@ -2250,16 +2244,12 @@
                                 var tab = new bootstrap.Tab(nextTab);
                                 tab.show();
                                 form.classList.remove("was-validated");
-                            } else {
-                                console.error("No se encontró el siguiente tab:", nextTabId);
                             }
                         } else {
                             form.classList.add("was-validated");
                         }
                     });
                 });
-
-                // Botones "Previous"
                 Array.from(form.querySelectorAll(".previestab")).forEach(function (prevButton) {
                     prevButton.addEventListener("click", function () {
                         var prevTabId = prevButton.getAttribute('data-previous');
@@ -2267,56 +2257,31 @@
                         if (prevTab) {
                             var tab = new bootstrap.Tab(prevTab);
                             tab.show();
-                        } else {
-                            console.error("No se encontró el tab anterior:", prevTabId);
                         }
                     });
                 });
             });
         });
-
-
     </script>
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const allergiesSelect = document.getElementById('allergiesSelect');
             const selectedAllergiesIdsInput = document.getElementById('selectallergiesId');
-
-            // Actualiza el input oculto cada vez que cambie la selección
-            allergiesSelect.addEventListener('change', function () {
-                const selectedOptions = Array.from(allergiesSelect.selectedOptions).map(option => option.value);
-                selectedAllergiesIdsInput.value = selectedOptions.join(','); // Convierte los valores en una lista separada por comas
-            });
-
+            if (allergiesSelect && selectedAllergiesIdsInput) {
+                allergiesSelect.addEventListener('change', function () {
+                    const selectedOptions = Array.from(allergiesSelect.selectedOptions).map(option => option.value);
+                    selectedAllergiesIdsInput.value = selectedOptions.join(',');
+                });
+            }
             const surgeriesSelect = document.getElementById('surgeriesSelect');
             const selectSurgeriesIdsInput = document.getElementById('selectSurgeriesId');
-
-            // Actualiza el input oculto cada vez que cambie la selección
-            surgeriesSelect.addEventListener('change', function () {
-                const selectedOptions = Array.from(surgeriesSelect.selectedOptions).map(option => option.value);
-                selectSurgeriesIdsInput.value = selectedOptions.join(','); // Convierte los valores en una lista separada por comas
-            });
-        });
-
-    </script>
-    <script>
-            // 6. Inicializar Select2
-        const selects = [
-          "#DiagnosisConsultation",
-          "#MedicationsConsultation",
-          "#LaboratoriesConsultation",
-          "#ImagesConsultation"
-        ];
-        selects.forEach(sel => {
-          const $el = $(sel);
-          if ($el.length && $.fn.select2) {
-            $el.select2({
-              placeholder: "Busque y seleccione",
-              allowClear:  true,
-              width:       "100%",
-              language:    "es"
-            });
-          }
+            if (surgeriesSelect && selectSurgeriesIdsInput) {
+                surgeriesSelect.addEventListener('change', function () {
+                    const selectedOptions = Array.from(surgeriesSelect.selectedOptions).map(option => option.value);
+                    selectSurgeriesIdsInput.value = selectedOptions.join(',');
+                });
+            }
         });
     </script>
 
@@ -2324,12 +2289,313 @@
         document.addEventListener("DOMContentLoaded", function () {
             const checkbox = document.getElementById("cert_tiene_enfermedad");
             const obsContainer = document.getElementById("observacion_container");
-
-            checkbox.addEventListener("change", function () {
-                obsContainer.style.display = this.checked ? "block" : "none";
-            });
+            if (checkbox && obsContainer) {
+                checkbox.addEventListener("change", function () {
+                    obsContainer.style.display = this.checked ? "block" : "none";
+                });
+            }
         });
     </script>
+
+    <!-- Esperar a jQuery, Bootstrap y Select2 -->
+    <script>
+        (function waitForDependencies() {
+            // Verificar TODAS las dependencias necesarias
+            if (typeof window.jQuery === 'undefined' ||
+                typeof window.jQuery.fn.select2 === 'undefined' ||
+                typeof window.bootstrap === 'undefined') {
+                setTimeout(waitForDependencies, 50);
+                return;
+            }
+
+            jQuery(document).ready(function($) {
+                // Inicializar selects normales
+                const selects = [
+                    { id: 'DiagnosisConsultation', placeholder: 'Buscar diagnóstico...' },
+                    { id: 'LaboratoriesConsultation', placeholder: 'Buscar laboratorio...' },
+                    { id: 'ImagesConsultation', placeholder: 'Buscar imagen...' }
+                ];
+
+                selects.forEach(function(config) {
+                    const elem = document.getElementById(config.id);
+                    if (elem) {
+                        $(elem).select2({
+                            placeholder: config.placeholder,
+                            allowClear: true,
+                            width: '100%'
+                        });
+                    }
+                });
+
+                // Medicamentos con opción de agregar
+                const medElem = document.getElementById('MedicationsConsultation');
+                if (medElem) {
+                    $(medElem).select2({
+                        placeholder: 'Escriba y seleccione un medicamento',
+                        allowClear: true,
+                        width: '100%',
+                        language: {
+                            noResults: function() {
+                                return "No encontrado. <button type='button' class='btn btn-sm btn-link p-0' id='agregarDesdeSelect'>¿Agregar nuevo?</button>";
+                            }
+                        },
+                        escapeMarkup: function(m) { return m; }
+                    });
+                }
+
+                // Eventos del modal - AHORA CON BOOTSTRAP DISPONIBLE
+                $(document).on('click', '#btnNuevoMedicamento, #agregarDesdeSelect', function(e) {
+                    e.preventDefault();
+                    let searchTerm = '';
+
+                    if (this.id === 'agregarDesdeSelect') {
+                        try {
+                            searchTerm = $('.select2-search__field').last().val() || '';
+                        } catch(err) {
+                            console.warn('No se pudo obtener término de búsqueda');
+                        }
+                    }
+
+                    // Usar la API nativa de Bootstrap
+                    const modalEl = document.getElementById('modalNuevoMedicamento');
+                    if (modalEl) {
+                        const modal = new bootstrap.Modal(modalEl);
+                        modal.show();
+                    }
+
+                    $('#formNuevoMedicamento')[0].reset();
+                    $('#alertMedicamento').addClass('d-none');
+
+                    if (searchTerm) {
+                        $('#medications_name').val(searchTerm.toUpperCase());
+                    }
+                });
+
+                $('#medications_name').on('input', function() {
+                    this.value = this.value.toUpperCase();
+                });
+
+                $('#btnGuardarMedicamento').on('click', function() {
+                    const form = $('#formNuevoMedicamento')[0];
+                    if (!form.checkValidity()) {
+                        form.classList.add('was-validated');
+                        return;
+                    }
+
+                    $(this).prop('disabled', true);
+                    $('#spinnerGuardar').removeClass('d-none');
+
+                    $.ajax({
+                        url: createMedicationUrl,
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            medications_name: $('#medications_name').val().trim(),
+                            medications_description: $('#medications_description').val().trim(),
+                            medications_concentration: $('#medications_concentration').val().trim(),
+                            medications_cie10: $('#medications_cie10').val().trim(),
+                            medications_status: 1
+                        }),
+                        success: function(res) {
+                            if (res.success) {
+                                const text = res.data.medications_description || res.data.medications_name;
+                                const opt = new Option(text, res.data.medications_id, true, true);
+                                $('#MedicationsConsultation').append(opt).trigger('change');
+
+                                // Cerrar modal usando Bootstrap nativo
+                                const modalEl = document.getElementById('modalNuevoMedicamento');
+                                if (modalEl) {
+                                    const modal = bootstrap.Modal.getInstance(modalEl);
+                                    if (modal) modal.hide();
+                                }
+
+                                if (typeof Swal !== 'undefined') {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Agregado',
+                                        text: 'Medicamento listo',
+                                        timer: 2000,
+                                        showConfirmButton: false
+                                    });
+                                }
+                            } else {
+                                $('#alertMedicamento').removeClass('d-none').addClass('alert-danger')
+                                    .text(res.message || 'Error');
+                            }
+                        },
+                        error: function(xhr) {
+                            $('#alertMedicamento').removeClass('d-none').addClass('alert-danger')
+                                .text(xhr.responseJSON?.message || 'Error del servidor');
+                        },
+                        complete: function() {
+                            $('#btnGuardarMedicamento').prop('disabled', false);
+                            $('#spinnerGuardar').addClass('d-none');
+                        }
+                    });
+                });
+            });
+        })();
+    </script>
+
     <script src="~/assets/js/consultation.js"></script>
 
+    <!-- SCRIPT DE PRE-CARGA - Debe ir DESPUÉS de consultation.js -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Iniciando pre-carga de datos...');
+
+            // Pre-cargar diagnósticos
+            @if (Model?.Consultation?.DiagnosisConsultations != null)
+            {
+                    @foreach (var diag in Model.Consultation.DiagnosisConsultations)
+                    {
+                            var diagInfo = Model.Diagnoses?.FirstOrDefault(d => d.DiagnosisId == diag.DiagnosisDiagnosisid);
+                            if (diagInfo != null)
+                            {
+                                    var diagName = diagInfo.DiagnosisName?.Replace("'", "\\'").Replace("\n", " ").Replace("\r", " ") ?? "";
+                                    <text>
+                                    if (typeof window.preloadDiagnosis === 'function') {
+                                        window.preloadDiagnosis(@diag.DiagnosisDiagnosisid, '@diagName', @diag.DiagnosisPresumptive.ToString().ToLower(), @diag.DiagnosisDefinitive.ToString().ToLower());
+                                    }
+                                    </text>
+                            }
+                    }
+            }
+
+            // Pre-cargar medicamentos
+            @if (Model?.Consultation?.MedicationsConsultations != null)
+            {
+                    @foreach (var med in Model.Consultation.MedicationsConsultations)
+                    {
+                            if (med.MedicationsMedicationsid.HasValue)
+                            {
+                                    var medInfo = Model.Medications?.FirstOrDefault(m => m.MedicationsId == med.MedicationsMedicationsid.Value);
+                                    if (medInfo != null)
+                                    {
+                                            var medName = (medInfo.MedicationsDescription ?? medInfo.MedicationsName)?.Replace("'", "\\'").Replace("\n", " ").Replace("\r", " ") ?? "";
+                                            var amount = (med.MedicationsAmount ?? "")?.Replace("'", "\\'") ?? "";
+                                            var obs = (med.MedicationsObservation ?? "")?.Replace("'", "\\'") ?? "";
+                                            <text>
+                                            if (typeof window.preloadMedication === 'function') {
+                                                window.preloadMedication(@med.MedicationsMedicationsid.Value, '@medName', '@amount', '@obs');
+                                            }
+                                            </text>
+                                    }
+                            }
+                    }
+            }
+
+            // Pre-cargar laboratorios
+            @if (Model?.Consultation?.LaboratoriesConsultations != null)
+            {
+                    @foreach (var lab in Model.Consultation.LaboratoriesConsultations)
+                    {
+                            var labInfo = Model.Laboratories?.FirstOrDefault(l => l.LaboratoriesId == lab.LaboratoriesLaboratoriesid);
+                            if (labInfo != null)
+                            {
+                                    var labName = labInfo.LaboratoriesName?.Replace("'", "\\'").Replace("\n", " ").Replace("\r", " ") ?? "";
+                                    var amount = (lab.LaboratoriesAmount ?? "")?.Replace("'", "\\'") ?? "";
+                                    var obs = (lab.LaboratoriesObservation ?? "")?.Replace("'", "\\'") ?? "";
+                                    <text>
+                                    if (typeof window.preloadLaboratory === 'function') {
+                                        window.preloadLaboratory(@lab.LaboratoriesLaboratoriesid, '@labName', '@amount', '@obs');
+                                    }
+                                    </text>
+                            }
+                    }
+            }
+
+            // Pre-cargar imágenes
+            @if (Model?.Consultation?.ImagesConsultations != null)
+            {
+                    @foreach (var img in Model.Consultation.ImagesConsultations)
+                    {
+                            var imgInfo = Model.Images?.FirstOrDefault(i => i.ImagesId == img.ImagesImagesid);
+                            if (imgInfo != null)
+                            {
+                                    var imgName = imgInfo.ImagesName?.Replace("'", "\\'").Replace("\n", " ").Replace("\r", " ") ?? "";
+                                    var amount = (img.ImagesAmount ?? "")?.Replace("'", "\\'") ?? "";
+                                    var obs = (img.ImagesObservation ?? "")?.Replace("'", "\\'") ?? "";
+                                    <text>
+                                    if (typeof window.preloadImage === 'function') {
+                                        window.preloadImage(@img.ImagesImagesid, '@imgName', '@amount', '@obs');
+                                    }
+                                    </text>
+                            }
+                    }
+            }
+
+            console.log('Pre-carga completada');
+        });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Cargando datos del certificado médico...');
+
+            @if (Model?.Consultation != null)
+            {
+                    <text>
+                    // Cargar días de incapacidad
+                    const certDias = @(Model.Consultation.ConsultationDisablilitydays ?? 0);
+                    const inputDias = document.getElementById('cert_dias_incapacidad');
+                    if (inputDias && certDias > 0) {
+                        inputDias.value = certDias;
+                    }
+
+                    // Cargar tipo de contingencia
+                    const certContingencia = '@Html.Raw(Model.Consultation.ConsultationContingencytype ?? "")';
+                    const selectContingencia = document.getElementById('cert_tipo_contingencia');
+                    if (selectContingencia && certContingencia) {
+                        selectContingencia.value = certContingencia;
+                    }
+
+                    // Cargar checkbox de enfermedad
+                    const certEnfermedad = @(Model.Consultation.ConsultationHasdisease?.ToString().ToLower() ?? "false");
+                    const checkEnfermedad = document.getElementById('cert_tiene_enfermedad');
+                    const obsContainer = document.getElementById('observacion_container');
+
+                    if (checkEnfermedad) {
+                        checkEnfermedad.checked = certEnfermedad;
+                        if (certEnfermedad && obsContainer) {
+                            obsContainer.style.display = 'block';
+                        }
+                    }
+
+                    // Cargar observación de enfermedad
+                    const certObservacion = '@Html.Raw(Model.Consultation.ConsultationDiseaseobservation?.Replace("'", "\\'").Replace("\n", "\\n").Replace("\r", "") ?? "")';
+                    const textareaObs = document.getElementById('cert_observacion');
+                    if (textareaObs && certObservacion) {
+                        textareaObs.value = certObservacion;
+                    }
+                    </text>
+            }
+
+            // Pre-cargar procedimientos existentes
+            @if (Model?.Consultation?.Procedures != null && Model.Consultation.Procedures.Any())
+            {
+                    <text>
+                    const tbody = document.querySelector('#procedimientosTable tbody');
+                    if (tbody) {
+                        @for (int i = 0; i < Model.Consultation.Procedures.Count; i++)
+                        {
+                                var proc = Model.Consultation.Procedures[i];
+                                var procName = (proc.Procedure_Name ?? "").Replace("'", "\\'").Replace("\"", "&quot;");
+                                var procDate = proc.Procedure_Date?.ToString("yyyy-MM-dd") ?? "";
+                                <text>
+                                const row@(i) = document.createElement('tr');
+                                row@(i).innerHTML = `
+                                    <td><input type="text" name="Procedures[@i].procedure_name" class="form-control" value="@Html.Raw(procName)" /></td>
+                                    <td><input type="date" name="Procedures[@i].procedure_date" class="form-control" value="@procDate" /></td>
+                                    <td class="text-center"><button type="button" class="btn btn-sm btn-danger removeRow">−</button></td>
+                                `;
+                                tbody.appendChild(row@(i));
+                                </text>
+                        }
+                    }
+                    </text>
+            }
+
+            console.log('Certificado médico cargado');
+        });
+    </script>
 }

@@ -1,137 +1,224 @@
 ﻿@model ResumenConsultasDto
 @using System.Text.Json
 @using Microsoft.AspNetCore.Http
+@using System.Linq
 
 @{
     ViewData["Title"] = "Resumen de Consultas";
     Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var ocup = Model?.OcupacionConsultorios ?? Enumerable.Empty<dynamic>();
+    var tipos = Model?.TiposPacientes ?? Enumerable.Empty<dynamic>();
+
+    int totalConsultas = tipos.Any() ? tipos.Sum(t => (int)t.Total) : 0;
+    int totalConsultorios = ocup.Count();
+    int totalMedicosAsignados = ocup.Any() ? ocup.Sum(o => (int)o.MedicosAsignados) : 0;
+
+    var qDesde = Context.Request.Query["fechaDesde"].ToString();
+    var qHasta = Context.Request.Query["fechaHasta"].ToString();
+
+    string SafeJson<T>(T obj) => JsonSerializer.Serialize(obj, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 }
 
-<div class="container-fluid mt-4">
-    <!-- Título y botones -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="mdi mdi-chart-box"></i> Resumen de Consultas</h2>
-        <div>
-            <a href="@Url.Action("ResumenConsultas")" class="btn btn-light me-2">
-                <i class="mdi mdi-filter-remove"></i> Limpiar Filtros
+
+<div class="container-fluid mt-3">
+    <div class="toolbar-sticky d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2 pb-2 mb-2 border-bottom">
+        <h2 class="h4 mb-0"><i class="mdi mdi-chart-box me-1"></i> Resumen de Consultas</h2>
+        <div class="d-flex flex-wrap gap-2">
+            <!-- NUEVO: Exportar Excel (preserva filtros) -->
+            <a class="btn btn-success"
+               href="@Url.Action("ExportarResumenConsultasExcel", "Reportes", new { fechaDesde = qDesde, fechaHasta = qHasta })">
+                <i class="mdi mdi-file-excel"></i> Exportar Excel
+            </a>
+            <a href="@Url.Action("ResumenConsultas", "Reportes")" class="btn btn-light">
+                <i class="mdi mdi-filter-remove"></i> Limpiar
             </a>
             <button class="btn btn-outline-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasFiltros">
-                <i class="mdi mdi-filter-outline"></i> Filtrar por Fecha
+                <i class="mdi mdi-filter-outline"></i> Filtros
             </button>
         </div>
     </div>
-    @if (Context.Session.GetInt32("PerfilId") == 4 && !string.IsNullOrEmpty(Model.NombreEstablecimiento))
+
+    @if (Context.Session.GetInt32("PerfilId") == 4 && !string.IsNullOrWhiteSpace(Model?.NombreEstablecimiento))
     {
-        <div class="alert alert-primary border-start border-4 px-3 py-2 mb-4">
+        <div class="alert alert-primary border-start border-4 px-3 py-2 mb-3">
             <i class="mdi mdi-office-building"></i>
             Reporte filtrado por establecimiento: <strong>@Model.NombreEstablecimiento</strong>
         </div>
     }
 
-    <!-- Filtros activos -->
-    @if (!string.IsNullOrEmpty(Context.Request.Query["fechaDesde"]) || !string.IsNullOrEmpty(Context.Request.Query["fechaHasta"]))
+    @if (!string.IsNullOrEmpty(qDesde) || !string.IsNullOrEmpty(qHasta))
     {
-        <div class="alert alert-light border d-inline-block mb-4">
+        <div class="alert alert-light border d-inline-flex align-items-center gap-2 mb-3">
             <i class="mdi mdi-calendar-range"></i>
-            Mostrando resultados
-            @if (!string.IsNullOrEmpty(Context.Request.Query["fechaDesde"]))
-            {
-                <strong>desde</strong> @Context.Request.Query["fechaDesde"]
-            }
-            @if (!string.IsNullOrEmpty(Context.Request.Query["fechaHasta"]))
-            {
-                <strong> hasta</strong> @Context.Request.Query["fechaHasta"]
-            }
+            <span>
+                Mostrando resultados
+                @if (!string.IsNullOrEmpty(qDesde))
+                {
+                    <text><strong>desde</strong> @qDesde</text>
+                }
+                @if (!string.IsNullOrEmpty(qHasta))
+                {
+                    <text> <strong>hasta</strong> @qHasta</text>
+                }
+            </span>
         </div>
     }
 
-    <!-- Tarjeta: Ocupación por Consultorio -->
-    <div class="card mb-4 shadow-sm">
-        <div class="card-header bg-primary text-white">
+    <!-- KPIs -->
+    <div class="row g-3 mb-3">
+        <div class="col-6 col-lg-3">
+            <div class="card kpi-card shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small">Total Consultas</div>
+                    <div class="display-6 fw-semibold">@totalConsultas</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="card kpi-card shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small">Consultorios</div>
+                    <div class="display-6 fw-semibold">@totalConsultorios</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="card kpi-card shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small">Médicos asignados</div>
+                    <div class="display-6 fw-semibold">@totalMedicosAsignados</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="card kpi-card shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small">Rango</div>
+                    <div class="fw-semibold">@(!string.IsNullOrEmpty(qDesde) || !string.IsNullOrEmpty(qHasta) ? $"{qDesde} — {qHasta}" : "Sin filtro")</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla: Ocupación por Consultorio -->
+    <div class="card mb-3 shadow-sm">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <strong><i class="mdi mdi-office-building-marker"></i> Ocupación por Consultorio</strong>
+            <div class="chip-group">
+                <button class="btn btn-sm btn-light" type="button" id="btnExportConsultorios" title="Exportar CSV">
+                    <i class="mdi mdi-file-delimited"></i> CSV
+                </button>
+            </div>
         </div>
         <div class="card-body p-2">
-            <table class="table table-sm table-bordered mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>Consultorio</th>
-                        <th>Médicos Asignados</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in Model.OcupacionConsultorios)
-                    {
-                        <tr>
-                            <td>@item.Consultorio</td>
-                            <td>@item.MedicosAsignados</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+            @if (!ocup.Any())
+            {
+                <div class="empty-state"><i class="mdi mdi-database-off"></i> Sin datos para mostrar.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Consultorio</th>
+                                <th class="text-end">Médicos Asignados</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in ocup)
+                            {
+                                <tr>
+                                    <td>@item.Consultorio</td>
+                                    <td class="text-end">@item.MedicosAsignados</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
         </div>
     </div>
 
     <!-- Tarjeta: Médico con mayor atención -->
-    <div class="card mb-4 shadow-sm">
+    <div class="card mb-3 shadow-sm">
         <div class="card-header bg-success text-white">
             <strong><i class="mdi mdi-doctor"></i> Médico con Mayor Índice de Atención</strong>
         </div>
         <div class="card-body">
-            @if (Model.MedicoTop != null)
+            @if (Model?.MedicoTop != null)
             {
-                <p><strong>Nombre:</strong> @Model.MedicoTop.Medico</p>
-                <p><strong>Total de Consultas:</strong> @Model.MedicoTop.TotalConsultas</p>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="avatar-title rounded-circle bg-success-subtle text-success">
+                        <i class="mdi mdi-stethoscope"></i>
+                    </div>
+                    <div>
+                        <div><strong>Nombre:</strong> @Model.MedicoTop.Medico</div>
+                        <div><strong>Total de Consultas:</strong> @Model.MedicoTop.TotalConsultas</div>
+                    </div>
+                </div>
             }
             else
             {
-                <p>No se encontraron datos.</p>
+                <div class="empty-state"><i class="mdi mdi-account-alert-outline"></i> No se encontraron datos.</div>
             }
         </div>
     </div>
 
-    <!-- Tarjeta: Tipo de Paciente -->
-    <div class="card mb-4 shadow-sm">
-        <div class="card-header bg-info text-white">
+    <!-- Tabla: Consultas por Tipo de Paciente -->
+    <div class="card mb-3 shadow-sm">
+        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
             <strong><i class="mdi mdi-account-group-outline"></i> Consultas por Tipo de Paciente</strong>
+            <div class="chip-group">
+                <button class="btn btn-sm btn-light" type="button" id="btnExportPacientes" title="Exportar CSV">
+                    <i class="mdi mdi-file-delimited"></i> CSV
+                </button>
+            </div>
         </div>
         <div class="card-body p-2">
-            <table class="table table-sm table-bordered mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>Tipo de Paciente</th>
-                        <th>Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var tipo in Model.TiposPacientes)
-                    {
-                        <tr>
-                            <td>@tipo.TipoPaciente</td>
-                            <td>@tipo.Total</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+            @if (!tipos.Any())
+            {
+                <div class="empty-state"><i class="mdi mdi-database-off"></i> Sin datos para mostrar.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Tipo de Paciente</th>
+                                <th class="text-end">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var t in tipos)
+                            {
+                                <tr>
+                                    <td>@t.TipoPaciente</td>
+                                    <td class="text-end">@t.Total</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
         </div>
     </div>
 
-    <!-- Gráficos en dos columnas -->
-    <div class="row">
-        <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-header bg-primary text-white">Gráfico: Ocupación por Consultorio</div>
-                <div class="card-body">
-                    <div id="graficoConsultorios" style="height: 300px;"></div>
-                </div>
+    <!-- Gráficos -->
+    <div class="charts-2col mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">Gráfico: Ocupación por Consultorio</div>
+            <div class="card-body">
+                <div id="graficoConsultorios" style="height: 320px;" role="img" aria-label="Gráfico de barras de ocupación por consultorio"></div>
             </div>
         </div>
 
-        <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-header bg-info text-white">Gráfico: Tipo de Paciente</div>
-                <div class="card-body">
-                    <div id="graficoPacientes" style="height: 300px;"></div>
-                </div>
+        <div class="card">
+            <div class="card-header bg-info text-white">Gráfico: Tipo de Paciente</div>
+            <div class="card-body">
+                <div id="graficoPacientes" style="height: 320px;" role="img" aria-label="Gráfico de pastel de consultas por tipo de paciente"></div>
             </div>
         </div>
     </div>
@@ -141,67 +228,141 @@
 <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasFiltros" aria-labelledby="offcanvasFiltrosLabel">
     <div class="offcanvas-header">
         <h5 id="offcanvasFiltrosLabel" class="offcanvas-title">Filtrar Consultas</h5>
-        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas"></button>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
     </div>
     <div class="offcanvas-body">
-        <form method="get" asp-action="ResumenConsultas">
+        <form method="get" asp-action="ResumenConsultas" asp-controller="Reportes" id="formFiltros">
             <div class="mb-3">
                 <label for="fechaDesde" class="form-label">Desde</label>
-                <input type="date" class="form-control" id="fechaDesde" name="fechaDesde" value="@Context.Request.Query["fechaDesde"]" />
+                <input type="date" class="form-control" id="fechaDesde" name="fechaDesde" value="@qDesde" />
             </div>
             <div class="mb-3">
                 <label for="fechaHasta" class="form-label">Hasta</label>
-                <input type="date" class="form-control" id="fechaHasta" name="fechaHasta" value="@Context.Request.Query["fechaHasta"]" />
+                <input type="date" class="form-control" id="fechaHasta" name="fechaHasta" value="@qHasta" />
             </div>
+
+            <div class="d-flex gap-2 flex-wrap mb-3 chip-group">
+                <button type="button" class="btn btn-outline-secondary" data-range="today">Hoy</button>
+                <button type="button" class="btn btn-outline-secondary" data-range="week">Esta semana</button>
+                <button type="button" class="btn btn-outline-secondary" data-range="month">Este mes</button>
+            </div>
+
             <div class="d-grid">
-                <button type="submit" class="btn btn-primary"><i class="mdi mdi-magnify"></i> Aplicar Filtros</button>
+                <button type="submit" class="btn btn-primary"><i class="mdi mdi-magnify"></i> Aplicar</button>
             </div>
         </form>
     </div>
 </div>
 
 @section scripts {
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js" defer></script>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const chartConsultorios = echarts.init(document.getElementById('graficoConsultorios'));
-            const chartPacientes = echarts.init(document.getElementById('graficoPacientes'));
+            const dataConsultorios = @Html.Raw(SafeJson(ocup));
+            const dataPacientes = @Html.Raw(SafeJson(tipos));
 
-            const dataConsultorios = @Html.Raw(JsonSerializer.Serialize(Model.OcupacionConsultorios));
-            const dataPacientes = @Html.Raw(JsonSerializer.Serialize(Model.TiposPacientes));
-
-            chartConsultorios.setOption({
-                tooltip: { trigger: 'axis' },
-                xAxis: { type: 'value' },
-                yAxis: {
-                    type: 'category',
-                    data: dataConsultorios.map(x => x.Consultorio)
-                },
-                series: [{
-                    type: 'bar',
-                    data: dataConsultorios.map(x => x.MedicosAsignados),
-                    label: { show: true, position: 'right' }
-                }]
+            // Validación simple de fechas
+            const form = document.getElementById('formFiltros');
+            form?.addEventListener('submit', (e) => {
+                const d = document.getElementById('fechaDesde').value;
+                const h = document.getElementById('fechaHasta').value;
+                if (d && h && d > h) {
+                    e.preventDefault();
+                    alert('El rango de fechas es inválido: Desde no puede ser mayor que Hasta.');
+                }
             });
 
-            chartPacientes.setOption({
-                tooltip: { trigger: 'item' },
-                legend: { orient: 'vertical', left: 'left' },
-                series: [{
-                    type: 'pie',
-                    radius: '70%',
-                    data: dataPacientes.map(x => ({
-                        name: x.TipoPaciente,
-                        value: x.Total
-                    })),
-                    label: { formatter: '{b}: {c} ({d}%)' }
-                }]
+            // Atajos de rango
+            const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+            const fmt = (d) => d.toISOString().slice(0,10);
+            document.querySelectorAll('[data-range]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const now = new Date();
+                    const id = document.getElementById('fechaDesde');
+                    const ih = document.getElementById('fechaHasta');
+                    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    const wd = (today.getDay() + 6) % 7; // Lunes=0
+                    const ranges = {
+                        today: [today, today],
+                        week: [new Date(today.getFullYear(), today.getMonth(), today.getDate() - wd), new Date(today.getFullYear(), today.getMonth(), today.getDate() - wd + 6)],
+                        month: [new Date(today.getFullYear(), today.getMonth(), 1), new Date(today.getFullYear(), today.getMonth()+1, 0)]
+                    };
+                    const r = ranges[btn.dataset.range];
+                    id.value = fmt(r[0]); ih.value = fmt(r[1]);
+                });
             });
 
-            window.addEventListener('resize', function () {
-                chartConsultorios.resize();
-                chartPacientes.resize();
+            // ===== ECharts =====
+            const startCharts = () => {
+                const elBar = document.getElementById('graficoConsultorios');
+                const elPie = document.getElementById('graficoPacientes');
+                if (!window.echarts || !elBar || !elPie) return;
+
+                const chartBar = echarts.init(elBar);
+                const chartPie = echarts.init(elPie);
+
+                const isEmptyOcup = !Array.isArray(dataConsultorios) || dataConsultorios.length === 0;
+                const isEmptyTipos = !Array.isArray(dataPacientes) || dataPacientes.length === 0;
+
+                chartBar.setOption({
+                    aria: { enabled: true },
+                    toolbox: { feature: { saveAsImage: {}, dataView: {}, restore: {} }, right: 10 },
+                    grid: { left: 10, right: 10, top: 20, bottom: 10, containLabel: true },
+                    dataset: isEmptyOcup ? { source: [] } : {
+                        dimensions: ['Consultorio', 'MedicosAsignados'],
+                        source: dataConsultorios.map(x => ({ Consultorio: x.consultorio ?? x.Consultorio, MedicosAsignados: x.medicosAsignados ?? x.MedicosAsignados }))
+                    },
+                    xAxis: { type: 'value', name: 'Médicos', minInterval: 1 },
+                    yAxis: { type: 'category', axisLabel: { interval: 0 } },
+                    series: [{ type: 'bar', encode: { x: 'MedicosAsignados', y: 'Consultorio' }, label: { show: true, position: 'right' } }],
+                    title: isEmptyOcup ? { text: 'Sin datos', left: 'center', top: 'middle', textStyle: { color: '#999', fontSize: 14 } } : undefined
+                });
+
+                chartPie.setOption({
+                    aria: { enabled: true },
+                    toolbox: { feature: { saveAsImage: {}, dataView: {}, restore: {} }, right: 10 },
+                    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+                    legend: { type: 'scroll', bottom: 0 },
+                    series: [{
+                        type: 'pie',
+                        radius: ['35%', '70%'],
+                        label: { show: true, formatter: '{b}: {c} ({d}%)' },
+                        data: isEmptyTipos ? [] : dataPacientes.map(x => ({ name: x.tipoPaciente ?? x.TipoPaciente, value: x.total ?? x.Total }))
+                    }],
+                    title: isEmptyTipos ? { text: 'Sin datos', left: 'center', top: 'middle', textStyle: { color: '#999', fontSize: 14 } } : undefined
+                });
+
+                const ro = new ResizeObserver(() => { chartBar.resize(); chartPie.resize(); });
+                ro.observe(elBar); ro.observe(elPie);
+            };
+            if (window.echarts) startCharts(); else window.addEventListener('load', startCharts);
+
+            // ===== Export CSV por tabla (opcional) =====
+            function toCSV(rows){
+                if (!rows?.length) return '';
+                const keys = Object.keys(rows[0]);
+                const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+                return [keys.join(','), ...rows.map(r => keys.map(k => esc(r[k])).join(','))].join('\n');
+            }
+            function download(name, content){
+                const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = name; a.click();
+                URL.revokeObjectURL(url);
+            }
+            document.getElementById('btnExportConsultorios')?.addEventListener('click', () => {
+                const rows = dataConsultorios.map(x => ({
+                    Consultorio: x.consultorio ?? x.Consultorio,
+                    MedicosAsignados: x.medicosAsignados ?? x.MedicosAsignados
+                }));
+                download('ocupacion_consultorios.csv', toCSV(rows));
+            });
+            document.getElementById('btnExportPacientes')?.addEventListener('click', () => {
+                const rows = dataPacientes.map(x => ({
+                    TipoPaciente: x.tipoPaciente ?? x.TipoPaciente,
+                    Total: x.total ?? x.Total
+                }));
+                download('consultas_por_tipo_paciente.csv', toCSV(rows));
             });
         });
     </script>

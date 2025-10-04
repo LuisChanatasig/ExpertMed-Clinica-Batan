@@ -1,12 +1,15 @@
 ﻿@using Microsoft.AspNetCore.Http
+@using System.Text.Json
 @{
     ViewBag.Title = "Home";
     ViewBag.pTitle = "Home";
     ViewBag.pageTitle = "Dashboards";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var perfilId = Context.Session.GetInt32("PerfilId") ?? 0;
+
+    var perfilId = ViewContext.HttpContext.Session.GetInt32("PerfilId") ?? 0;
     var successMessage = TempData["SuccessMessage"] as string;
     var errorMessage = TempData["ErrorMessage"] as string;
+
     string mensajeBot = perfilId switch
     {
         1 => "Hola administrador, ¿qué área quieres revisar hoy?",
@@ -17,78 +20,104 @@
         2 => "Bienvenido doctor, tienes acceso a tus pacientes y consultas.",
         _ => "Pronto me tendrás como tu asistente inteligente!"
     };
+
+    var acciones = new List<(string Texto, string Icono, string Ctrl, string Accion, string Clase)>();
+    void Add(string t, string ic, string c, string a, string clase) => acciones.Add((t, ic, c, a, clase));
+
+    switch (perfilId)
+    {
+        case 3:
+            Add("VER TODAS MIS CITAS", "ri-file-search-line", "Appointment", "AppointmentList", "btn-primary");
+            Add("REGISTRAR PACIENTE", "ri-user-add-line", "Patient", "Create", "btn-secondary");
+            break;
+        case 5:
+            Add("SOLICITUDES DE LABORATORIO", "mdi mdi-flask-outline", "Laboratorio", "LaboratoryList", "btn-primary");
+            Add("REGISTRAR RESULTADOS", "mdi mdi-pencil-box-outline", "Laboratorio", "RegistrarResultado", "btn-secondary");
+            break;
+        case 6:
+            Add("SOLICITUDES DE IMÁGENES", "mdi mdi-image-multiple-outline", "Imagenes", "ListaImagenes", "btn-primary");
+            Add("REGISTRAR RESULTADOS", "mdi mdi-pencil-box-outline", "Imagenes", "RegistrarResultadoImagen", "btn-secondary");
+            break;
+        case 1:
+        case 4:
+            Add("CITAS", "ri-file-search-line", "Appointment", "AppointmentList", "btn-primary");
+            Add("CONSULTAS MÉDICAS", "ri-newspaper-line", "Consultation", "NewConsultation", "btn-secondary");
+            Add("VER REPORTES", "mdi mdi-chart-bar", "ReportesConsultas", "ResumenConsultas", "btn-outline-success");
+            break;
+        default:
+            Add("CITAS", "ri-file-search-line", "Appointment", "AppointmentList", "btn-primary");
+            Add("CONSULTAS", "ri-newspaper-line", "Consultation", "ConsultationList", "btn-secondary");
+            break;
+    }
+
+    // Pasos del tour de esta pantalla
+    var steps = new[]
+    {
+        new { selector = "#heroContent",    html = "<div class='mb-2 fw-bold'>📋 Panel principal</div><div>Información y accesos rápidos, pensado para móviles.</div>", position = "bottom" },
+        new { selector = "#accionesWrap",   html = "<div class='mb-2 fw-bold'>🎯 Acciones por perfil</div><div>Los accesos se adaptan a tu rol actual.</div>", position = "bottom" },
+        new { selector = "#expertbotGuide", html = "<div class='mb-2 fw-bold'>🤖 ExpertBot</div><div>Haz clic para chatear, usar <code>/tour</code> o pedir ayuda contextual.</div>", position = "left" }
+    };
+
+    var funciones = acciones.Select(a => a.Texto).ToList();
+
+    string perfilTexto = perfilId switch
+    {
+        1 => "Administrador: control total sobre el sistema, usuarios, consultorios, citas, consultas y reportes.",
+        2 => "Doctor: accede a tus pacientes y consultas.",
+        3 => "Recepción: gestiona citas y registra pacientes.",
+        4 => "Gestión: citas, consultas y reportes de la clínica.",
+        5 => "Lab: solicitudes y registro de resultados.",
+        6 => "Imágenes: estudios e informes radiológicos.",
+        _ => "Perfil no identificado."
+    };
+
+    // Serializa para JS (todo crudo con Html.Raw)
+    var stepsJs = JsonSerializer.Serialize(steps);
+    var funcionesJs = JsonSerializer.Serialize(funciones);
+    var mensajeBotJs = JsonSerializer.Serialize(mensajeBot);
+    var perfilTextoJs = JsonSerializer.Serialize(perfilTexto);
 }
 
 @section styles {
-    <link href="~/assets/libs/swiper/swiper-bundle.min.css" rel="stylesheet" />
-    <link href="~/assets/libs/jsvectormap/css/jsvectormap.min.css" rel="stylesheet" />
+    <!-- Define valores que el Layout leerá ANTES de inicializar el bot -->
+    <script>
+        window.EBG_STEPS = @Html.Raw(stepsJs);
+        window.EBG_FUNCS = @Html.Raw(funcionesJs);
+
+        // Overrides opcionales por pantalla:
+        window.EBG_OPTIONS = { greetMessage: @Html.Raw(mensajeBotJs) };
+    </script>
+
+    <style>
+        #accionesWrap a.btn {
+            border-radius: 999px;
+        }
+    </style>
 }
 
-<div class="row dash-nft">
-    <div class="col-xxl-12">
-        <div class="row">
-            <div class="col-xl-12">
-                <div class="card overflow-hidden">
-                    <div class="card-body bg-marketplace d-flex">
-                        <div class="flex-grow-1">
-                            <h4 class="fs-18 lh-base mb-0">
-                                Otras opciones <br> para <span class="text-success">ti.</span>
-                            </h4>
-                            <p class="mb-0 mt-2 pt-1 text-muted">¿Qué desea hacer hoy?</p>
-                            <div class="d-flex gap-3 mt-4">
-                                @if (perfilId == 3)
-                                {
-                                    <a href="@Url.Action("AppointmentList","Appointment")" class="btn btn-primary">
-                                        <i class="ri-file-search-line"></i> VER TODAS MIS CITAS
-                                    </a>
-                                    <a href="@Url.Action("Create","Patient")" class="btn btn-secondary">
-                                        <i class="ri-user-add-line"></i> REGISTRAR PACIENTE
-                                    </a>
-                                }
-                                else if (perfilId == 5)
-                                {
-                                    <a href="@Url.Action("LaboratoryList","Laboratorio")" class="btn btn-primary">
-                                        <i class="mdi mdi-flask-outline"></i> SOLICITUDES DE LABORATORIO
-                                    </a>
-                                    <a href="@Url.Action("RegistrarResultado","Laboratorio")" class="btn btn-secondary">
-                                        <i class="mdi mdi-pencil-box-outline"></i> REGISTRAR RESULTADOS
-                                    </a>
-                                }
-                                else if (perfilId == 6)
-                                {
-                                    <a href="@Url.Action("ListaImagenes","Imagenes")" class="btn btn-primary">
-                                        <i class="mdi mdi-image-multiple-outline"></i> SOLICITUDES DE IMÁGENES
-                                    </a>
-                                    <a href="@Url.Action("RegistrarResultadoImagen","Imagenes")" class="btn btn-secondary">
-                                        <i class="mdi mdi-pencil-box-outline"></i> REGISTRAR RESULTADOS
-                                    </a>
-                                }
-                                else if (perfilId == 1 || perfilId == 4)
-                                {
-                                    <a href="@Url.Action("AppointmentList","Appointment")" class="btn btn-primary">
-                                        <i class="ri-file-search-line"></i> CITAS
-                                    </a>
-                                    <a href="@Url.Action("NewConsultation","Consultation")" class="btn btn-secondary">
-                                        <i class="ri-newspaper-line"></i> CONSULTAS MÉDICAS
-                                    </a>
-                                    <a href="@Url.Action("ResumenConsultas","ReportesConsultas")" class="btn btn-outline-success">
-                                        <i class="mdi mdi-chart-bar"></i> VER REPORTES
-                                    </a>
-                                }
-                                else
-                                {
-                                    <a href="@Url.Action("AppointmentList","Appointment")" class="btn btn-primary">
-                                        <i class="ri-file-search-line"></i> CITAS
-                                    </a>
-                                    <a href="@Url.Action("ConsultationList","Consultation")" class="btn btn-secondary">
-                                        <i class="ri-newspaper-line"></i> CONSULTAS
-                                    </a>
-                                }
-                            </div>
+<div class="row">
+    <div class="col-12">
+        <div class="card hero-card border-0 shadow-sm rounded-3 overflow-hidden" id="heroCard">
+            <div class="card-body bg-marketplace d-flex align-items-center gap-3">
+                <div class="flex-grow-1" id="heroContent">
+                    <div class="d-flex align-items-center justify-content-between gap-2">
+                        <div>
+                            <h1 class="fs-18 lh-base mb-1">
+                                Otras opciones <br /> para <span class="text-success">ti.</span>
+                            </h1>
+                            <p class="mb-0 mt-2 pt-1 text-muted">¿Qué deseas hacer hoy?</p>
                         </div>
+                    </div>
 
-                        <img src="~/assets/images/ExpermedBotGif.gif" alt="Imagen" style="height: 80px;"
-                             class="img-fluid" role="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBot" />
+                    <div class="acciones d-flex flex-wrap gap-2 gap-sm-3 mt-3" id="accionesWrap">
+                        @foreach (var a in acciones)
+                        {
+                            var url = Url.Action(a.Accion, a.Ctrl);
+                            <a href="@url" class="btn @a.Clase">
+                                <i class="@a.Icono"></i>
+                                <span class="ms-1">@a.Texto</span>
+                            </a>
+                        }
                     </div>
                 </div>
             </div>
@@ -96,96 +125,21 @@
     </div>
 </div>
 
-<!-- Offcanvas tipo asistente -->
-<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasBot">
-    <div class="offcanvas-header">
-        <h5 class="offcanvas-title"><i class="mdi mdi-robot"></i> ExpertBot</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
-    </div>
-    <div class="offcanvas-body">
-        <p class="text-muted">@mensajeBot</p>
-        <form id="chatForm">
-            <div class="input-group mb-3">
-                <input type="text" id="chatPrompt" class="form-control" placeholder="¿En qué puedo ayudarte?" />
-                <button type="submit" class="btn btn-primary"><i class="mdi mdi-send"></i></button>
-                <button type="button" id="btnVoz" class="btn btn-outline-secondary" title="Usar micrófono">
-                    <i class="mdi mdi-microphone"></i>
-                </button>
-            </div>
-        </form>
-        <div id="chatResponse" class="border rounded p-3 bg-light" style="min-height: 150px;"></div>
-    </div>
-</div>
-
 @section scripts {
-    <script>
-        document.getElementById("chatForm").addEventListener("submit", async function (e) {
-            e.preventDefault();
-            const prompt = document.getElementById("chatPrompt").value;
-            const responseDiv = document.getElementById("chatResponse");
-            responseDiv.innerHTML = "<em>Consultando a ExpertBot...</em>";
-            try {
-                const res = await fetch("@Url.Action("Ask", "Chat")", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ prompt })
-                });
-                const data = await res.json();
-                responseDiv.innerHTML = `<p>${data.response}</p>`;
-            } catch {
-                responseDiv.innerHTML = "<span class='text-danger'>Error al consultar.</span>";
-            }
-        });
-
-        const micBtn = document.getElementById("btnVoz");
-        const input = document.getElementById("chatPrompt");
-        if ('webkitSpeechRecognition' in window) {
-            const recognition = new webkitSpeechRecognition();
-            recognition.lang = "es-ES";
-            recognition.continuous = false;
-            recognition.interimResults = false;
-            micBtn.addEventListener("click", () => {
-                recognition.start();
-                micBtn.innerHTML = '<i class="mdi mdi-microphone-off"></i>';
-            });
-            recognition.onresult = function (event) {
-                const result = event.results[0][0].transcript;
-                input.value = result;
-                recognition.stop();
-                micBtn.innerHTML = '<i class="mdi mdi-microphone"></i>';
-            };
-            recognition.onerror = function () {
-                recognition.stop();
-                micBtn.innerHTML = '<i class="mdi mdi-microphone-alert"></i>';
-            };
-        } else {
-            micBtn.disabled = true;
-            micBtn.title = "Tu navegador no soporta reconocimiento de voz";
-        }
-    </script>
+    @* No re-inicialices el bot aquí. El Layout ya lo hace. *@
 
     @if (!string.IsNullOrEmpty(successMessage))
     {
+        var successJs = JsonSerializer.Serialize(successMessage);
         <script>
-            Swal.fire({
-                title: '¡Éxito!',
-                text: '@successMessage',
-                icon: 'success',
-                confirmButtonText: 'OK',
-                timer: 3000
-            });
+            Swal.fire({ title: '¡Éxito!', text: @Html.Raw(successJs), icon: 'success', timer: 3000, confirmButtonText: 'OK' });
         </script>
     }
-
     @if (!string.IsNullOrEmpty(errorMessage))
     {
+        var errorJs = JsonSerializer.Serialize(errorMessage);
         <script>
-            Swal.fire({
-                title: 'Error',
-                text: '@errorMessage',
-                icon: 'error',
-                confirmButtonText: 'OK'
-            });
+            Swal.fire({ title: 'Error', text: @Html.Raw(errorJs), icon: 'error', confirmButtonText: 'OK' });
         </script>
     }
 }

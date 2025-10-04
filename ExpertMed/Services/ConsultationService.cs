@@ -537,12 +537,16 @@ namespace ExpertMed.Services
                         {
                             consulta.MedicationsConsultations.Add(new ConsultaMedicamentoDTO
                             {
-                                MedicationsMedicationsid = reader.GetInt32(reader.GetOrdinal("medications_medicationsid")),
+                                MedicationsMedicationsid = reader.IsDBNull(reader.GetOrdinal("medications_medicationsid"))
+         ? (int?)null : reader.GetInt32(reader.GetOrdinal("medications_medicationsid")),
                                 MedicationsAmount = GetStringOrEmpty("medications_amount"),
                                 MedicationsObservation = GetStringOrEmpty("medications_observation"),
-                                MedicationsSequential = reader.GetInt32(reader.GetOrdinal("medications_sequential")),
-                                MedicationsStatus = reader.GetInt32(reader.GetOrdinal("medications_status"))
+                                MedicationsSequential = reader.IsDBNull(reader.GetOrdinal("medications_sequential"))
+         ? (int?)null : reader.GetInt32(reader.GetOrdinal("medications_sequential")),
+                                MedicationsStatus = reader.IsDBNull(reader.GetOrdinal("medications_status"))
+         ? (int?)null : reader.GetInt32(reader.GetOrdinal("medications_status"))
                             });
+
                         }
 
                         // 7) Procedimientos - inicializar lista vacía
