@@ -142,7 +142,7 @@ namespace ExpertMed.Controllers
                 // Llamar al servicio
                 string response = await _facturacion.CreateAndSendInvoiceAsync(
                     viewModel.CitaId ?? 0,
-                    DateTime.UtcNow,
+                    DateTime.Now,
                     viewModel.TotalFactura,
                     usarMultiplesPagos ? null : viewModel.MetodoPago,
                     usarMultiplesPagos ? null : viewModel.ComprobantePagoFacturacion,

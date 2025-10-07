@@ -598,653 +598,81 @@
     </div>
 </div>
 
+
 @section scripts {
+    <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"
             integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 
-
-    <!--datatable js-->
+    <!-- DataTables -->
     <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.2.2/js/dataTables.buttons.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.print.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.html5.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.html5.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.print.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
-    <script src="~/assets/js/pages/datatables.init.js"></script>
 
+    <!-- Export libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+
+    <!-- Variables del servidor (deben estar antes de los módulos) -->
     <script>
+        // Variables inyectadas desde el servidor
         const perfilId = @perfilId;
-
+        const usuarioId = @usuarioId;
     </script>
 
+    <!-- Módulos de la aplicación (en orden de dependencia) -->
+    <script src="~/js/appointments/config.js"></script>
+    <script src="~/js/appointments/helpers.js"></script>
+    <script src="~/js/appointments/api.js"></script>
+    <script src="~/js/appointments/date-filter.js"></script>
+    <script src="~/js/appointments/datatable-init.js"></script>
+    <script src="~/js/appointments/schedule-manager.js"></script>
+    <script src="~/js/appointments/vital-signs.js"></script>
+    <script src="~/js/appointments/appointment-manager.js"></script>
+    <script src="~/js/appointments/appointment-list-main.js"></script>
+
+    <!-- Configuración específica de esta vista -->
     <script>
-        $(document).ready(function () {
-          $('#appointmentTable').DataTable({
-            responsive: true,
-            pageLength: 10,
-                 order: [[3, 'desc']],   // por FECHA (columna índice 3 considerando hidden ID y PATIENT)
-            dom: 'Bfrtip',           // muestra los botones encima de la tabla
-            buttons: [
-              {
-                extend: 'excelHtml5',
-                text: '<i class="mdi mdi-file-excel-outline"></i> Excel',
-                titleAttr: 'Exportar a Excel',
-                className: 'btn btn-sm btn-success',
-                 exportOptions: {
-          // Lista todos los índices que quieres exportar:
-          columns: [  2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-        }
-              },
-             
-              {
-                extend: 'pdfHtml5',
-                text: '<i class="mdi mdi-file-pdf-outline"></i> PDF',
-                titleAttr: 'Exportar a PDF',
-                className: 'btn btn-sm btn-danger',
-                exportOptions: { columns: ':visible' },
-                orientation: 'landscape',
-                pageSize: 'LETTER'
-              },
-              {
-                extend: 'print',
-                text: '<i class="mdi mdi-printer"></i> Imprimir',
-                titleAttr: 'Imprimir',
-                className: 'btn btn-sm btn-secondary',
-        exportOptions: {
-              // Lista todos los índices que quieres exportar:
-              columns: [  2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-            }              }
-            ]
-          });
-        });
-    </script>
-    <script>
-
-                    function filterAppointments(status, isPaidOnly = false, status2 = null) {
-            const baseUrl = '@Url.Action("AppointmentList", "Appointment")';
-            let url = `${baseUrl}?appointmentStatus=${status}&isPaidOnly=${isPaidOnly}`;
-
-            // Si 'status2' no es nulo, lo añadimos a la URL.
-            // Esto te permitirá mandar un segundo estado solo cuando sea necesario.
-            if (status2 !== null) {
-                url += `&appointmentStatus2=${status2}`;
-            }
-
-            window.location.href = url;
-        }
-
-
-
-        function openOptionModal(id, status, patientId) {
-            $.get('@Url.Action("AppointmentGetById", "Appointment")', { id, userProfile: @perfilId })
-                .done(data => {
-                    console.log('Datos recibidos de AppointmentGetById:', data);
-                    // Rellenar los hidden
-                    $('#appointmentIdInput').val(data.appointmentId);
-                    $('#appointmentStatus').val(data.status);
-                    $('#appointmentPatientId').val(data.patientId);
-                    $('#appointmentPaymentStatus').val(data.paymentStatus); // NUEVO
-
-                    // Ocultar siempre los botones de consulta
-                    $('#startConsultCol, #startFollowupCol').hide();
-
-                    // Mostrar "Empezar Consulta" si está pagada(0) o activa(1) y NO hay consulta
-                    if ((data.status === 0 || data.status === 1 || data.status === 5) && data.hasConsultation === false) {
-                        $('#startConsultCol').show();
-                    }
-
-                    // Mostrar "Seguimiento" si está en seguimiento(3) y NO hay consulta previa
-                    if (data.status === 3 && data.hasConsultation === false) {
-                        $('#startFollowupCol').show();
-                    }
-
-                    // Mostrar el resto de botones
-                    $('#rescheduleCol, #cancelCol, #reminderCol, #vitalSignsCol').show();
-
-                    // Mostrar botón de pago SOLO si NO está pagada (paymentStatus = 0)
-                    if (data.paymentStatus === 0) {
-                        $('#payCol').show();
-                    } else {
-                        $('#payCol').hide();
-                    }
-
-                    // Abrir modal
-                    new bootstrap.Modal($('#optionModal')).show();
-                })
-                .fail(() => alert('Error al obtener datos de la cita.'));
-        }
-
-
-
-
-
-
-        // Abre el modal de reprogramación y limpia campos de hora/consultorio
-        function openRescheduleModal() {
-            const id = $('#appointmentIdInput').val();
-            const perfil = $('#perfilIdInput').val();
-            if (!id) return alert('ID de cita no hallado.');
-
-            $.get('@Url.Action("AppointmentGetById", "Appointment")', { id, userProfile: perfil })
-                     .done(data => {
-                           console.log('payload AppointmentGetById →', data);
-
-            $('#appointment').val(data.appointmentId);
-            $('#patientId').val(data.patientId);
-            $('#selectedDate').val(data.date);
-            $('#appointmentTime').val(data.time);
-
-            // Médico
-            if (data.doctorUserId) {
-              $('#doctorUserId').val(data.doctorUserId).trigger('change');
-            }
-
-            // Motivo
-            $('#appointmentReason').val(data.appointmentReason);
-
-            // Aseguradora
-            $('#appointmentInsuranceCompanyId')
-              .val(data.appointmentInsuranceCompanyId || '')
-              .trigger('change');
-
-            // Consultorios (si usas radiobuttons)
-            if (data.medicalOfficeId) {
-              $(`#office-${data.medicalOfficeId}`).prop('checked', true);
-            }
-
-            // Habilita botón y abre modal
-            $('#confirmAppointmentBtn')
-              .prop('disabled', false)
-              .show();
-            new bootstrap.Modal($('#appointmentModalgrid')).show();
-        })
-        .fail(() => alert('Error al obtener datos de la cita.'));
-
-
-
-        }
-
-        // Carga consultorios según fecha, hora y doctor
-        function loadAvailableOffices() {
-            const date = $('#selectedDate').val();
-            const time = $('#appointmentTime').val();
-            const doctorUserId = $('#doctorUserId').val();
-            if (!date || !time) return;
-
-            $.get('@Url.Action("GetAvailableOffices", "Appointment")', {
-                date: date,
-                hour: time,
-                doctorUserId: doctorUserId
-            })
-            .done(resp => {
-                const $cnt = $('#consultoriosContainer').empty();
-                const officesList = Array.isArray(resp.offices) ? resp.offices : [];
-                        if (resp.success && officesList.length > 0) {
-            // Autoasignar el primer consultorio disponible
-            const firstOffice = officesList[0];
-            $('#AppointmentMedicalofficeid').val(firstOffice.medicalOfficeId);
-            $('#confirmAppointmentBtn').show().prop('disabled', false);
-
-            // Si quieres mostrar visualmente cuál se asignó (opcional)
-            $cnt.append(`
-                <div class="col">
-                  <div class="card consultorio-card selected" data-id="${firstOffice.medicalOfficeId}">
-                    <span class="checkmark"><i class="ri-check-line"></i></span>
-                    <div class="card-body text-center">
-                      <h5>${firstOffice.medicalOfficeName}</h5>
-                      <p><i class="mdi mdi-hospital-building"></i> #${firstOffice.medicalOfficeId}</p>
-                    </div>
-                  </div>
-                </div>
-            `);
-        } else {
-            $cnt.append('<div class="col-12 text-center text-muted">No hay consultorios disponibles.</div>');
-        }
-
-            })
-            .fail(() => Swal.fire('Error', 'No cargó consultorios.', 'error'));
-        }
-
-        // Cuando cambian fecha u hora, recargar consultorios
-        $('#selectedDate, #appointmentTime').on('change', loadAvailableOffices);
-
-        // Mostrar horas disponibles
-        $('#viewHoursButton').click(() => {
-            const userId = @usuarioId;
-            const date = $('#selectedDate').val();
-            const docId = $('#doctorUserId').val();
-            if (!date) return alert('Seleccione una fecha.');
-
-            $.get('@Url.Action("GetAvailableHours", "Appointment")', { userId, date, doctorUserId: docId })
-                .done(response => {
-                    const hoursList = Array.isArray(response.hours) ? response.hours : response;
-                    const cnt = $('#availableHoursContainer').empty();
-                    if (hoursList.length > 0) {
-                        hoursList.forEach(h => {
-                            cnt.append(`<button class="btn btn-outline-primary btn-sm m-1" data-hour="${h}">${h}</button>`);
-                        });
-                    } else {
-                        cnt.append('<p>No hay horas disponibles.</p>');
-                    }
-                    new bootstrap.Modal($('#hoursModalgrid')).show();
-                })
-                .fail((_, __, e) => alert('Error al cargar horas: ' + e));
-        });
-
-              // 1) Click en una hora disponible: pre-rellenar y abrir el modal
-        $('#availableHoursContainer').on('click', 'button', function () {
-          const selectedHour = $(this).data('hour');
-          const date         = $('#selectedDate').val();
-          const doctorId     = $('#doctorUserId').val();
-
-          // Cierra el modal de horas
-          $('#hoursModalgrid').modal('hide');
-
-          // Pide consultorios libres
-          $.get('@Url.Action("GetAvailableOffices", "Appointment")', {
-            date: date,
-            hour: selectedHour,
-            doctorUserId: doctorId
-          })
-          .done(resp => {
-            if (!resp.success || !Array.isArray(resp.offices) || resp.offices.length === 0) {
-              return Swal.fire('Sin consultorio', 'No hay consultorios disponibles para esa hora.', 'warning');
-            }
-
-            const firstOffice = resp.offices[0];
-
-            // Pre-rellena campos del modal
-            $('#appointmentTime').val(selectedHour);
-            $('#selectedDate').val(date);
-
-            $('#doctorUserId')
-              .val(doctorId)
-              .trigger('change');
-
-            // Rellena consultorio oculto
-            $('#AppointmentMedicalofficeid').val(firstOffice.medicalOfficeId);
-            $('#consultoriosContainer').closest('.col-xxl-12').removeAttr('hidden');
-
-            // Limpia los demás campos
-            $('#appointmentReason').val('');
-            $('#appointmentInsuranceCompanyId').val('').trigger('change');
-            $('#appointmentInsuranceAuthCode').val('');
-
-            // Activa botón y abre modal completo
-            $('#confirmAppointmentBtn')
-              .prop('disabled', false)
-              .show();
-
-            new bootstrap.Modal($('#appointmentModalgrid')).show();
-          })
-          .fail(() => {
-            Swal.fire('Error', 'No se pudieron cargar los consultorios.', 'error');
-          });
-        });
-
-
-        // 2) Al pulsar “Confirmar cita”: envía todos los campos al servidor
-        $('#confirmAppointmentBtn').on('click', function () {
-          const payload = {
-            AppointmentId:                    $('#appointment').val(),
-            AppointmentPatientid:             $('#patientId').val(),
-            AppointmentDate:                  $('#selectedDate').val(),
-            AppointmentHour:                  $('#appointmentTime').val(),
-            AppointmentMedicalofficeid:       $('#AppointmentMedicalofficeid').val(),
-            AppointmentStatus:                $('#appointmentStatus').val(),
-            DoctorUserId:                     $('#doctorUserId').val() || null,
-            AppointmentInsuranceCompanyId:    $('#appointmentInsuranceCompanyId').val() || null,
-            AppointmentInsuranceAuthCode:     $('#appointmentInsuranceAuthCode').val() || null,
-            AppointmentReason:                $('#appointmentReason').val() || null
-          };
-
-          console.log('Enviando payload ModifyAppointment:', payload);
-
-          $.ajax({
-            url: '@Url.Action("ModifyAppointment", "Appointment")',
-            type: 'POST',
-            contentType: 'application/json; charset=utf-8',
-            dataType: 'json',
-            data: JSON.stringify(payload)
-          })
-          .done(resp => {
-            if (resp.success) {
-              Swal.fire('¡Listo!', resp.message, 'success')
-                .then(() => window.location = '@Url.Action("AppointmentList", "Appointment")');
-            } else {
-              Swal.fire('Error', resp.message || 'No se pudo reprogramar.', 'error');
-            }
-          })
-          .fail((jq, status, err) => {
-            console.error('ModifyAppointment falló:', status, err, jq.responseText);
-            Swal.fire('Error', 'La petición de reprogramación falló.', 'error');
-          });
-        });
-
-
-
-        //Funcion para cancelar la cita
-        function cancelAppointment() {
-            Swal.fire({
-                title: '¿Seguro de cancelar?',
-                text: 'Esto desactivará la cita.',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Sí, cancelar',
-                cancelButtonText: 'No'
-            }).then(result => {
-                if (result.isConfirmed) {
-                    const data = {
-                        AppointmentId: $('#appointmentIdInput').val(),
-                        AppointmentModifyuser: @usuarioId
-                    };
-                    fetch('@Url.Action("DesactivateAppointment", "Appointment")', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data)
-                    })
-                    .then(res => res.json())
-                    .then(resp => {
-                        Swal.fire('Cancelada', resp.message, 'success')
-                            .then(() => location.href = '@Url.Action("AppointmentList", "Appointment")');
-                    })
-                    .catch(() => Swal.fire('Error', 'No se pudo cancelar', 'error'));
-                }
-            });
-        }
-
-        //Funcion para empezar una consulta
-        function startConsultation() {
-            const id = $('#appointmentIdInput').val();
-            fetch(`@Url.Action("AppointmentGetById", "Appointment")?id=${id}&userProfile=${perfilId}`)
-                .then(res => res.json())
-                .then(data => {
-                        console.log(data);
-
-                    if (!data.patientId) return alert('Paciente no encontrado.');
-                    window.location.href = `@Url.Action("NewConsultation", "Consultation")?patientId=${data.patientId}`;
-                })
-                .catch(() => alert('Error al iniciar consulta'));
-        }
-
-        //Funcion para empezar una consulta seguimiento
-        function startFollowupConsultation() {
-            const pid = $('#appointmentPatientId').val();
-            window.location.href = `@Url.Action("ConsultationFollowUp", "Consultation")?patientid=${pid}`;
-        }
-                function setAppointmentData(id, patientId) {
-            $('#appointmentIdInput').val(id);
-            $('#appointmentPatientId').val(patientId);
-        }
-
-        //Funcion para realizar el pago
-        function payAppointment() {
-            const id = $('#appointmentIdInput').val();
-            const pid = $('#appointmentPatientId').val();
-            if (!id || !pid) return alert('Faltan IDs de cita o paciente.');
-            window.location.href = `@Url.Action("Facturacion", "Billing")?appointmentId=${id}&patientId=${pid}`;
-        }
-        //Funcion para enviar el envio de recordatorio
-        function sendReminderMessage() {
-            const id = $('#appointmentIdInput').val();
-            window.location.href = `@Url.Action("SendWhatsAppReminder", "Appointment")?appointmentId=${id}&userProfile=@ViewBag.UserProfile`;
-        }
-        //Funcion para tomar los signos vitales
-        function prepareVitalSigns() {
-            $('#vsAppointmentId').val($('#appointmentIdInput').val());
-            $('#vsPatientId').val($('#appointmentPatientId').val());
-        }
-        //Funcion pra controlar el formato de la presion
-        function submitVitalSigns() {
-            const rawBP = $('#bloodPressure').val().replace(/[^\d/]/g, '');
-            const parts = rawBP.split('/');
-            if (parts.length !== 2 || parts[0].length !== 3 || parts[1].length < 2 || parts[1].length > 3) {
-                return Swal.fire('Error', 'Formato presión debe ser 3 dígitos/2-3 dígitos', 'warning');
-            }
-            const data = {
-                appointmentId: parseInt($('#vsAppointmentId').val()),
-                patientId:    parseInt($('#vsPatientId').val()),
-                temperature:  parseFloat($('#temperature').val()),
-                respiratoryRate: parseInt($('#respiratoryRate').val()),
-                bloodPressureAS: parts[0],
-                bloodPressureDIS: parts[1],
-                pulse: $('#heartRate').val(),
-
-                weight:            $('#weight').val(),
-                size:              $('#height').val(),
-                createdBy:         @usuarioId
-            };
-            console.log("Datos a enviar:", data);
-
-            fetch('@Url.Action("InsertVitalSigns", "Appointment")', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            })
-            .then(res => res.json())
-            .then(resp => {
-                if (resp.success) {
-                    Swal.fire('¡Guardado!', resp.message, 'success');
-                    $('#vitalSignsForm')[0].reset();
-                    bootstrap.Offcanvas.getInstance($('#vitalSignsCanvas')).hide();
-                } else {
-                    Swal.fire('Error', resp.message, 'error');
-                }
-            })
-            .catch(() => Swal.fire('Error', 'No se pudo guardar', 'error'));
-        }
-
-        // Formato automático de presión arterial
-        $('#bloodPressure').on('input', function () {
-            let v = this.value.replace(/[^\d]/g, '').slice(0, 6);
-            if (v.length > 3) v = v.slice(0, 3) + '/' + v.slice(3);
-            this.value = v;
-        });
-
-        // Evitar que queden backdrops/residuos al cerrar modal
-        $('#optionModal').on('hidden.bs.modal', () => {
-            $('.modal-backdrop').remove();
-            document.body.classList.remove('modal-open');
-            document.body.style.paddingRight = '';
-        });
-        //Funcion para ver el histori
-        function viewPatientHistory() {
-            // Obtener el ID del paciente desde el input oculto en el modal de opciones de cita
-            var patientId = document.getElementById('appointmentPatientId').value;
-
-            if (!patientId) {
-                Swal.fire({
-                    title: 'Error',
-                    text: 'No se pudo obtener el ID del paciente para ver el historial.',
-                    icon: 'error',
-                    confirmButtonText: 'OK'
-                });
-                return;
-            }
-
-            // Cerrar el modal actual si está abierto
-            var optionModalEl = document.getElementById('optionModal');
-            var optionModal = bootstrap.Modal.getInstance(optionModalEl);
-            if (optionModal) {
-                optionModal.hide();
-            }
-
-            // Redirigir a la acción ConsultationList en el controlador Consultation,
-            // pasando el patientId como parámetro de query string
-            window.location.href = '@Url.Action("ConsultationList", "Consultation")' + '?patientId=' + encodeURIComponent(patientId);
-        }
+        // Sobrescribir endpoints con URLs reales del servidor
+        AppConfig.ENDPOINTS = {
+            APPOINTMENT_GET_BY_ID: '@Url.Action("AppointmentGetById", "Appointment")',
+            APPOINTMENT_LIST: '@Url.Action("AppointmentList", "Appointment")',
+            MODIFY_APPOINTMENT: '@Url.Action("ModifyAppointment", "Appointment")',
+            DESACTIVATE_APPOINTMENT: '@Url.Action("DesactivateAppointment", "Appointment")',
+            GET_AVAILABLE_OFFICES: '@Url.Action("GetAvailableOffices", "Appointment")',
+            GET_AVAILABLE_HOURS: '@Url.Action("GetAvailableHours", "Appointment")',
+            INSERT_VITAL_SIGNS: '@Url.Action("InsertVitalSigns", "Appointment")',
+            SEND_WHATSAPP_REMINDER: '@Url.Action("SendWhatsAppReminder", "Appointment")',
+            NEW_CONSULTATION: '@Url.Action("NewConsultation", "Consultation")',
+            CONSULTATION_FOLLOWUP: '@Url.Action("ConsultationFollowUp", "Consultation")',
+            CONSULTATION_LIST: '@Url.Action("ConsultationList", "Consultation")',
+            BILLING: '@Url.Action("Facturacion", "Billing")'
+        };
     </script>
 
-    <script>
-        // ========= CONFIG =========
-        // Índice de columna FECHA en la tabla (empezando en 0):
-        // 0: hidden ID, 1: hidden ID PATIENT, 2: Consultorio, 3: Fecha, ...
-        const COL_FECHA = 3; // <- Si mueves columnas, ajusta esto
-
-        // ========= HELPERS DE FECHAS =========
-        // Convierte "dd/MM/yyyy" a Date (local).
-        function parseDMY(dmy) {
-          if (!dmy) return null;
-          const parts = dmy.split('/');
-          if (parts.length !== 3) return null;
-          const [dd, mm, yyyy] = parts.map(p => parseInt(p, 10));
-          if (isNaN(dd) || isNaN(mm) || isNaN(yyyy)) return null;
-          // Mes base 0
-          return new Date(yyyy, mm - 1, dd, 0, 0, 0, 0);
-        }
-
-        function atStartOfDay(d) {
-          const x = new Date(d);
-          x.setHours(0, 0, 0, 0);
-          return x;
-        }
-        function atEndOfDay(d) {
-          const x = new Date(d);
-          x.setHours(23, 59, 59, 999);
-          return x;
-        }
-
-        // Rango semana actual (lunes a domingo)
-        function getWeekRange(today = new Date()) {
-          const d = new Date(today);
-          d.setHours(0,0,0,0);
-          // getDay(): 0=Dom,1=Lun,...; queremos lunes como inicio
-          const day = d.getDay(); // 0..6
-          const diffToMonday = (day + 6) % 7; // Dom(0)->6, Lun(1)->0, ...
-          const monday = new Date(d);
-          monday.setDate(d.getDate() - diffToMonday);
-          const sunday = new Date(monday);
-          sunday.setDate(monday.getDate() + 6);
-          return { start: atStartOfDay(monday), end: atEndOfDay(sunday) };
-        }
-
-        function getMonthRange(today = new Date()) {
-          const y = today.getFullYear();
-          const m = today.getMonth(); // 0..11
-          const first = new Date(y, m, 1);
-          const last = new Date(y, m + 1, 0);
-          return { start: atStartOfDay(first), end: atEndOfDay(last) };
-        }
-
-        function getYearRange(today = new Date()) {
-          const y = today.getFullYear();
-          const first = new Date(y, 0, 1);
-          const last = new Date(y, 11, 31);
-          return { start: atStartOfDay(first), end: atEndOfDay(last) };
-        }
-
-        // ========= ESTADO DEL FILTRO =========
-
-        // Iniciar con el rango de HOY
-        const today = new Date();
-        let dateFilterStart = atStartOfDay(today);
-        let dateFilterEnd   = atEndOfDay(today);
-
-        // Mostrar etiqueta desde el arranque
-        $(function () {
-          $('#lblRangoActivo').text('Hoy').show();
-        });
-
-        function setDateRange(start, end, labelText) {
-          dateFilterStart = start ? atStartOfDay(start) : null;
-          dateFilterEnd   = end   ? atEndOfDay(end)   : null;
-
-          // Etiqueta visible
-          const $lbl = $('#lblRangoActivo');
-          if (dateFilterStart || dateFilterEnd) {
-            $lbl.text(labelText || 'Rango aplicado').show();
-          } else {
-            $lbl.hide().text('');
-          }
-
-          // Redibujar DataTable
-          $('#appointmentTable').DataTable().draw();
-        }
-
-        // ========= FILTRO DataTables =========
-        $.fn.dataTable.ext.search.push(function (settings, data /*, dataIndex */) {
-          if (settings.nTable.id !== 'appointmentTable') return true; // por si hay otras tablas
-
-          // Columna FECHA viene como "dd/MM/yyyy"
-          const raw = data[COL_FECHA];
-          const d = parseDMY(raw);
-          if (!d) return true; // Si no parsea, no filtramos esa fila
-
-          if (dateFilterStart && d < dateFilterStart) return false;
-          if (dateFilterEnd && d > dateFilterEnd)     return false;
-          return true;
-        });
-
-        // ========= EVENTOS UI =========
-        $(function () {
-          // Botones rápidos
-          $('#btnHoy').on('click', function () {
-            const today = new Date();
-            setDateRange(today, today, 'Hoy');
-          });
-
-          $('#btnSemana').on('click', function () {
-            const { start, end } = getWeekRange(new Date());
-            setDateRange(start, end, 'Esta semana');
-          });
-
-          $('#btnMes').on('click', function () {
-            const { start, end } = getMonthRange(new Date());
-            setDateRange(start, end, 'Este mes');
-          });
-
-          $('#btnAnio').on('click', function () {
-            const { start, end } = getYearRange(new Date());
-            setDateRange(start, end, 'Este año');
-          });
-
-          // Rango personalizado
-          $('#btnAplicarRango').on('click', function () {
-            const desdeVal = $('#fDesdeFecha').val(); // yyyy-MM-dd
-            const hastaVal = $('#fHastaFecha').val();
-            let start = null, end = null;
-
-            if (desdeVal) {
-              const [y, m, d] = desdeVal.split('-').map(n => parseInt(n, 10));
-              start = new Date(y, m - 1, d);
-            }
-            if (hastaVal) {
-              const [y2, m2, d2] = hastaVal.split('-').map(n => parseInt(n, 10));
-              end = new Date(y2, m2 - 1, d2);
-            }
-
-            // Validaciones básicas
-            if (start && end && end < start) {
-              Swal.fire('Rango inválido', 'La fecha “Hasta” es menor que “Desde”.', 'warning');
-              return;
-            }
-
-            const label = `Del ${desdeVal || '…'} al ${hastaVal || '…'}`;
-            setDateRange(start, end, label);
-          });
-
-          $('#btnLimpiarRango').on('click', function () {
-            $('#fDesdeFecha').val('');
-            $('#fHastaFecha').val('');
-            setDateRange(null, null, '');
-          });
-        });
-    </script>
-
+    <!-- Mensajes de éxito/error -->
     @if (!string.IsNullOrEmpty(successMessage))
     {
-        <script>Swal.fire('¡Éxito!', '@successMessage', 'success');</script>
+        <script>
+            Swal.fire({
+                icon: 'success',
+                title: '¡Éxito!',
+                text: '@successMessage'
+            });
+        </script>
     }
     @if (!string.IsNullOrEmpty(errorMessage))
     {
-        <script>Swal.fire('Error', '@errorMessage', 'error');</script>
+        <script>
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: '@errorMessage'
+            });
+        </script>
     }
 }
