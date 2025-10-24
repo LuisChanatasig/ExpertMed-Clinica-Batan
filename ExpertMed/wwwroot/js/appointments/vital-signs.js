@@ -39,7 +39,7 @@ const VitalSignsManager = {
                 return;
             }
 
-            // Construir datos
+            // 🔹 Construcción del payload
             const data = {
                 appointmentId: parseInt(FormHelper.getValue('vsAppointmentId')),
                 patientId: parseInt(FormHelper.getValue('vsPatientId')),
@@ -50,6 +50,14 @@ const VitalSignsManager = {
                 pulse: FormHelper.getValue('heartRate'),
                 weight: FormHelper.getValue('weight'),
                 size: FormHelper.getValue('height'),
+
+                // *** ✅ Nuevos campos ***
+                bmi: parseFloat(FormHelper.getValue('bmi')),
+                abdominalPerimeter: parseFloat(FormHelper.getValue('abdominalPerimeter')),
+                capillaryHemoglobin: parseFloat(FormHelper.getValue('capillaryHemoglobin')),
+                capillaryGlucose: parseFloat(FormHelper.getValue('capillaryGlucose')),
+                spo2: parseFloat(FormHelper.getValue('spo2')),
+
                 createdBy: AppConfig.USER_ID
             };
 
@@ -88,6 +96,19 @@ const VitalSignsManager = {
         // Formato automático de presión arterial
         $('#bloodPressure').on('input', function () {
             this.value = ValidationHelper.formatBloodPressure(this.value);
+        });
+
+        // ✅ Calcula IMC en vivo
+        $('#weight, #height').on('input', function () {
+            const peso = parseFloat($('#weight').val());
+            const talla = parseFloat($('#height').val()) / 100;
+
+            if (!isNaN(peso) && !isNaN(talla) && talla > 0) {
+                const imc = peso / (talla * talla);
+                $('#bmi').val(imc.toFixed(2));
+            } else {
+                $('#bmi').val('');
+            }
         });
     }
 };

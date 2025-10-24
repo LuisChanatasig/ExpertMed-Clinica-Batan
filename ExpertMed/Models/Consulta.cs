@@ -106,6 +106,7 @@ namespace ExpertMed.Models
         public OrgansSystem OrgansSystem { get; set; } // Órganos y sistemas asociados
         public PhysicalExamination PhysicalExamination { get; set; } // Examen físico asociado
         public FamiliaryBackground FamiliaryBackground { get; set; } // Antecedentes familiares asociados
+        public PersonalBackground PersonalBackground { get; set; } // Antecedentes personales asociados
 
         public virtual User? ConsultationUsercreateNavigation { get; set; }
         public virtual Patient? PacienteConsultaPNavigation { get; set; }

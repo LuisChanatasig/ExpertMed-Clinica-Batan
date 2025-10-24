@@ -568,32 +568,69 @@
             <input type="hidden" id="vsAppointmentId" />
             <input type="hidden" id="vsPatientId" />
             <div class="row g-3">
+
                 <div class="col-6">
                     <label class="form-label">Temperatura °C</label>
                     <input type="number" step="0.1" class="form-control" id="temperature" required>
                 </div>
+
                 <div class="col-6">
                     <label class="form-label">Frecuencia respiratoria</label>
                     <input type="number" class="form-control" id="respiratoryRate" required>
                 </div>
+
                 <div class="col-6">
                     <label class="form-label">Presión Arterial</label>
                     <input type="text" class="form-control" id="bloodPressure" placeholder="046/123" required>
                 </div>
+
                 <div class="col-6">
                     <label class="form-label">Pulso</label>
                     <input type="number" class="form-control" id="heartRate" required>
                 </div>
+
                 <div class="col-6">
                     <label class="form-label">Peso (kg)</label>
                     <input type="number" step="0.1" class="form-control" id="weight" required>
                 </div>
+
                 <div class="col-6">
                     <label class="form-label">Altura (cm)</label>
                     <input type="number" class="form-control" id="height" required>
                 </div>
+
+                <!-- NUEVOS CAMPOS -->
+                <div class="col-6">
+                    <label class="form-label">IMC (Kg/m²)</label>
+                    <input type="number" step="0.1" class="form-control" id="bmi" readonly>
+                </div>
+
+                <div class="col-6">
+                    <label class="form-label">Perímetro Abdominal (cm)</label>
+                    <input type="number" step="0.1" class="form-control" id="abdominalPerimeter">
+                </div>
+
+                <div class="col-6">
+                    <label class="form-label">Hemoglobina Capilar (g/dl)</label>
+                    <input type="number" step="0.1" class="form-control" id="capillaryHemoglobin">
+                </div>
+
+                <div class="col-6">
+                    <label class="form-label">Glucosa Capilar (mg/dl)</label>
+                    <input type="number" step="0.1" class="form-control" id="capillaryGlucose">
+                </div>
+
+                <div class="col-6">
+                    <label class="form-label">Pulsioximetría (%)</label>
+                    <input type="number" step="0.1" class="form-control" id="spo2">
+                </div>
+
             </div>
-            <button type="button" class="btn btn-primary w-100 mt-3" onclick="submitVitalSigns()">Guardar Signos</button>
+
+            <button type="button" class="btn btn-primary w-100 mt-3"
+                    onclick="VitalSignsManager.submit()">
+                Guardar Signos
+            </button>
         </form>
     </div>
 </div>
@@ -652,6 +689,24 @@
             CONSULTATION_LIST: '@Url.Action("ConsultationList", "Consultation")',
             BILLING: '@Url.Action("Facturacion", "Billing")'
         };
+    </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const peso = document.getElementById("weight");
+            const altura = document.getElementById("height");
+            const imc = document.getElementById("bmi");
+
+            function calcularIMC(){
+                const p = parseFloat(peso.value);
+                const t = parseFloat(altura.value) / 100;
+                if(!isNaN(p) && !isNaN(t) && t > 0){
+                    imc.value = (p / (t * t)).toFixed(2);
+                }
+            }
+
+            peso.addEventListener("input", calcularIMC);
+            altura.addEventListener("input", calcularIMC);
+        });
     </script>
 
     <!-- Mensajes de éxito/error -->

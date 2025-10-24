@@ -436,12 +436,6 @@ namespace ExpertMed.Services
             return null;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="model"></param>
-        /// <returns></returns>
-
         public async Task<string> InsertVitalSignsAsync(VitalSignInputModel model)
         {
             try
@@ -455,13 +449,24 @@ namespace ExpertMed.Services
                 var pulseParam = new SqlParameter("@pulse", model.Pulse ?? (object)DBNull.Value);
                 var weightParam = new SqlParameter("@weight", model.Weight ?? (object)DBNull.Value);
                 var sizeParam = new SqlParameter("@size", model.Size ?? (object)DBNull.Value);
+
+                // Campos nuevos
+                var bmiParam = new SqlParameter("@bmi", (object?)model.Bmi ?? DBNull.Value);
+                var abdominalPerimeterParam = new SqlParameter("@abdominal_perimeter", (object?)model.AbdominalPerimeter ?? DBNull.Value);
+                var capillaryHemoglobinParam = new SqlParameter("@capillary_hemoglobin", (object?)model.CapillaryHemoglobin ?? DBNull.Value);
+                var capillaryGlucoseParam = new SqlParameter("@capillary_glucose", (object?)model.CapillaryGlucose ?? DBNull.Value);
+                var spo2Param = new SqlParameter("@spo2", (object?)model.Spo2 ?? DBNull.Value);
+
                 var createdByParam = new SqlParameter("@created_by", model.CreatedBy);
 
                 await _dbContext.Database.ExecuteSqlRawAsync(
                     "EXEC sp_InsertVitalSigns @appointment_id, @patient_id, @temperature, @respiratory_rate, " +
-                    "@blood_pressureAS, @blood_pressureDIS, @pulse, @weight, @size, @created_by",
+                    "@blood_pressureAS, @blood_pressureDIS, @pulse, @weight, @size, " +
+                    "@bmi, @abdominal_perimeter, @capillary_hemoglobin, @capillary_glucose, @spo2, @created_by",
                     appointmentIdParam, patientIdParam, temperatureParam, respiratoryRateParam,
-                    bpAsParam, bpDisParam, pulseParam, weightParam, sizeParam, createdByParam
+                    bpAsParam, bpDisParam, pulseParam, weightParam, sizeParam,
+                    bmiParam, abdominalPerimeterParam, capillaryHemoglobinParam, capillaryGlucoseParam, spo2Param,
+                    createdByParam
                 );
 
                 return "Signos vitales insertados correctamente.";

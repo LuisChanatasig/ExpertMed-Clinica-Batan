@@ -1,5 +1,5 @@
-﻿@model IEnumerable<ExpertMed.Models.Consultation>
-@using Microsoft.AspNetCore.Http
+﻿@using Microsoft.AspNetCore.Http
+@model List<ExpertMed.Models.ConsultationGroupViewModel>
 
 @{
     ViewBag.Title = "Listado de Consultas";
@@ -10,24 +10,9 @@
 
     var successMessage = TempData["SuccessMessage"] as string;
     var errorMessage = TempData["ErrorMessage"] as string;
-var consultasAgrupadasPorPaciente = Model
-    .GroupBy(c => c.ConsultationPatientNavigation.PatientFirstname + " " +
-                   c.ConsultationPatientNavigation.PatientMiddlename + " " +
-                   c.ConsultationPatientNavigation.PatientFirstsurname + " " +
-                   c.ConsultationPatientNavigation.PatientSecondlastname)
-    .OrderByDescending(g => g.Max(c => c.ConsultationCreationdate))
-    .Select(g => new
-    {
-        Key = g.Key,
-        Consultas = g.OrderByDescending(c => c.ConsultationCreationdate).ToList()
-    });
 }
 
 @section styles {
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap.min.css" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.dataTables.min.css">
-    
     <style>
         .status-badge {
             font-size: 0.75rem;
@@ -48,10 +33,10 @@ var consultasAgrupadasPorPaciente = Model
         <div class="card">
             <div class="card-header">
                 <div class="row align-items-center g-3">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <h5 class="card-title mb-0">
                             <i class="mdi mdi-clipboard-text-multiple-outline"></i> 
-                            Listado de Consultas Médicas
+                            Consultas Médicas
                         </h5>
                     </div>
                     <div class="col-md-4">
@@ -59,31 +44,32 @@ var consultasAgrupadasPorPaciente = Model
                                class="form-control form-control-sm" 
                                placeholder="🔍 Buscar paciente, médico o especialidad..." />
                     </div>
-                    <div class="col-md-4">
-                        <div class="d-flex justify-content-end gap-2">
-                            <small class="text-muted">
-                                <span class="badge bg-success status-badge">
-                                    <i class="mdi mdi-check-circle"></i> Finalizada
-                                </span>
-                                <span class="mx-1">|</span>
-                                <span class="badge bg-danger status-badge">
-                                    <i class="mdi mdi-alert-circle"></i> Pendiente
-                                </span>
-                            </small>
+                    <div class="col-md-5">
+                        <div class="d-flex justify-content-end gap-3">
+                            <div class="text-center">
+                                <small class="text-muted d-block">Pacientes</small>
+                                <strong class="fs-5 text-primary">@(ViewBag.TotalPacientes ?? Model.Count)</strong>
+                            </div>
+                            <div class="text-center">
+                                <small class="text-muted d-block">Total Consultas</small>
+                                <strong class="fs-5 text-info">@(ViewBag.TotalConsultas ?? Model.Sum(g => g.TotalConsultas))</strong>
+                            </div>
+                            <div class="text-center">
+                                <small class="text-muted d-block">Pendientes</small>
+                                <strong class="fs-5 text-danger">@(ViewBag.ConsultasPendientes ?? Model.Sum(g => g.Consultas.Count(c => c.AppointmentStatus != 4)))</strong>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="card-body">
-                @if (consultasAgrupadasPorPaciente != null && consultasAgrupadasPorPaciente.Any())
+                @if (Model != null && Model.Any())
                 {
                     int grupoId = 1;
-                    foreach (var grupo in consultasAgrupadasPorPaciente)
+                    foreach (var grupo in Model)
                     {
-                        var consultas = grupo.Consultas;  // ← Cambio aquí
-                        var pacienteNombre = grupo.Key;
-                        var firstConsulta = consultas.First();
+                        var firstConsulta = grupo.PrimeraConsulta;
                         var collapseId = $"collapseConsulta{grupoId}";
 
                         <div class="mb-3 border rounded grupo-consulta">
@@ -92,34 +78,45 @@ var consultasAgrupadasPorPaciente = Model
                                     <div class="col-md-8">
                                         <div class="d-flex align-items-center gap-2 mb-1">
                                             <strong>
-                                                <i class="mdi mdi-account"></i> @pacienteNombre
+                                                <i class="mdi mdi-account"></i> @grupo.PacienteNombre
                                             </strong>
-                                            <span class="badge @(firstConsulta.AppointmentStatus == 4 ? "bg-success" : "bg-danger") status-badge">
-                                                @if (firstConsulta.AppointmentStatus == 4)
-                                                {
-                                                    <i class="mdi mdi-check-circle"></i> <text>Finalizada</text>
-                                                }
-                                                else
-                                                {
-                                                    <i class="mdi mdi-alert-circle"></i> <text>Pendiente</text>
-                                                }
+                                            <span class="badge bg-secondary status-badge">
+                                                @grupo.TotalConsultas consulta@(grupo.TotalConsultas > 1 ? "s" : "")
                                             </span>
+                                            @if (firstConsulta != null)
+                                            {
+                                                <span class="badge @(firstConsulta.AppointmentStatus == 4 ? "bg-success" : "bg-danger") status-badge">
+                                                    @if (firstConsulta.AppointmentStatus == 4)
+                                                    {
+                                                        <i class="mdi mdi-check-circle"></i> <text>Finalizada</text>
+                                                    }
+                                                    else
+                                                    {
+                                                        <i class="mdi mdi-alert-circle"></i> <text>Pendiente</text>
+                                                    }
+                                                </span>
+                                            }
                                         </div>
-                                        <div class="text-muted small">
-                                            <i class="mdi mdi-stethoscope"></i>
-                                            Médico: @firstConsulta.ConsultationUsercreateNavigation.UsersNames @firstConsulta.ConsultationUsercreateNavigation.UsersSurcenames
-                                        </div>
-                                        <div class="text-muted small">
-                                            <i class="mdi mdi-calendar-clock"></i>
-                                            Última consulta: @(firstConsulta.ConsultationCreationdate?.ToString("dd/MM/yyyy") ?? "—")
-                                        </div>
+                                        @if (firstConsulta != null)
+                                        {
+                                            <div class="text-muted small">
+                                                <i class="mdi mdi-stethoscope"></i>
+                                                Médico: @grupo.UltimaMedicoNombre
+                                            </div>
+                                            <div class="text-muted small">
+                                                <i class="mdi mdi-calendar-clock"></i>
+                                                Última consulta: @(grupo.UltimaConsulta?.ToString("dd/MM/yyyy HH:mm") ?? "—")
+                                            </div>
+                                        }
                                     </div>
                                     <div class="col-md-4 text-end">
-                                        <a class="btn btn-sm btn-soft-info" data-bs-toggle="collapse" href="#@collapseId" role="button" aria-expanded="false" aria-controls="@collapseId">
+                                        <a class="btn btn-sm btn-soft-info" data-bs-toggle="collapse" 
+                                           href="#@collapseId" role="button" aria-expanded="false" aria-controls="@collapseId">
                                             <i class="mdi mdi-eye-outline"></i> Ver detalles
                                         </a>
-                                        <a href="@Url.Action("AppointmentList", "Appointment")" class="btn btn-sm btn-soft-primary">
-                                            <i class="bx bx-user-plus"></i> Nueva consulta
+                                        <a href="@Url.Action("AppointmentList", "Appointment")" 
+                                           class="btn btn-sm btn-soft-primary">
+                                            <i class="bx bx-user-plus"></i> Nueva
                                         </a>
                                     </div>
                                 </div>
@@ -135,7 +132,7 @@ var consultasAgrupadasPorPaciente = Model
                                                     <th>Secuencial</th>
                                                     <th>Médico</th>
                                                 }
-                                                <th>Historia Clínica</th>
+                                                <th>H. Clínica</th>
                                                 <th>Fecha</th>
                                                 <th>Especialidad</th>
                                                 <th>Motivo</th>
@@ -145,84 +142,72 @@ var consultasAgrupadasPorPaciente = Model
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach (var consulta in consultas)
+                                            @foreach (var consulta in grupo.Consultas)
                                             {
                                                 <tr>
                                                     @if (perfilId == 1 || perfilId == 2)
                                                     {
                                                         <td>@consulta.ConsultationId</td>
                                                         <td>
-                                                            <div class="d-flex align-items-center fw-medium">
-                                                                <img src="~/assets/images/svg/medicUsers.svg" alt="" class="avatar-xxs me-2" />
-                                                                @consulta.ConsultationUsercreateNavigation.UsersNames @consulta.ConsultationUsercreateNavigation.UsersSurcenames
-                                                            </div>
+                                                            @if (consulta.ConsultationUsercreateNavigation != null)
+                                                            {
+                                                                <div class="d-flex align-items-center fw-medium">
+                                                                    <img src="~/assets/images/svg/medicUsers.svg" alt="" class="avatar-xxs me-2" />
+                                                                    @consulta.ConsultationUsercreateNavigation.UsersNames @consulta.ConsultationUsercreateNavigation.UsersSurcenames
+                                                                </div>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="text-muted">No asignado</span>
+                                                            }
                                                         </td>
                                                     }
                                                     <td>@consulta.ConsultationHistoryclinic</td>
                                                     <td>@(consulta.ConsultationCreationdate?.ToString("dd/MM/yyyy") ?? "")</td>
-                                                    <td>@consulta.ConsultationSpecialityNavigation.SpecialityName</td>
-                                                    <td>@consulta.ConsultationReason</td>
+                                                    <td>@(consulta.ConsultationSpecialityNavigation?.SpecialityName ?? "No especificada")</td>
+                                                    <td>@(consulta.ConsultationReason ?? "—")</td>
                                                     <td>
                                                         <span class="badge @(consulta.ConsultationType == 1 ? "bg-success-subtle text-success" : "bg-info-subtle text-info")">
                                                             @(consulta.ConsultationType == 1 ? "Principal" : consulta.ConsultationType == 2 ? "Seguimiento" : "Otro")
                                                         </span>
                                                     </td>
                                                     <td>
-    <span class="badge @(consulta.AppointmentStatus == 4 ? "bg-success" : "bg-danger") status-badge">
-        @if (consulta.AppointmentStatus == 4)
-        {
-            <i class="mdi mdi-check"></i> <text>Finalizada</text>
-        }
-        else
-        {
-            <i class="mdi mdi-clock-outline"></i> <text>Pendiente</text>
-        }
-    </span>
-</td>
-<td>
-    @if (consulta.AppointmentStatus == 4)
-    {
-        if (consulta.ConsultationCreationdate?.Date == DateTime.Today)
-        {
-            <!-- Finalizada hoy → permitir edición -->
-            <a href="@Url.Action("ConsultationUpdate", "Consultation", new { consultationId = consulta.ConsultationId })"
-               class="btn btn-sm btn-soft-warning">
-                <i class="ri-edit-line"></i> Editar
-            </a>
-               <!-- Finalizada otro día → solo revisión -->
-            <a href="#"
-               class="btn btn-sm btn-soft-success"
-               data-bs-toggle="modal"
-               data-bs-target="#optionModal"
-               onclick="openOptionModal(@consulta.ConsultationId, @consulta.AppointmentStatus)">
-                <i class="ri-eye-line"></i> Revisar
-            </a>
-        }
-        else
-        {
-            <!-- Finalizada otro día → solo revisión -->
-            <a href="#"
-               class="btn btn-sm btn-soft-success"
-               data-bs-toggle="modal"
-               data-bs-target="#optionModal"
-               onclick="openOptionModal(@consulta.ConsultationId, @consulta.AppointmentStatus)">
-                <i class="ri-eye-line"></i> Revisar
-            </a>
-        }
-    }
-    else
-    {
-        <!-- Pendiente → completar -->
-        <a href="#"
-           class="btn btn-sm btn-soft-warning"
-           data-bs-toggle="modal"
-           data-bs-target="#optionModal"
-           onclick="openOptionModal(@consulta.ConsultationId, @consulta.AppointmentStatus)">
-            <i class="ri-edit-line"></i> Completar
-        </a>
-    }
-</td>
-
+                                                        <span class="badge @(consulta.AppointmentStatus == 4 ? "bg-success" : "bg-danger") status-badge">
+                                                            @if (consulta.AppointmentStatus == 4)
+                                                            {
+                                                                <i class="mdi mdi-check"></i> <text>Finalizada</text>
+                                                            }
+                                                            else
+                                                            {
+                                                                <i class="mdi mdi-clock-outline"></i> <text>Pendiente</text>
+                                                            }
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        @if (consulta.AppointmentStatus == 4)
+                                                        {
+                                                            if (consulta.ConsultationCreationdate?.Date == DateTime.Today)
+                                                            {
+                                                                <a href="@Url.Action("ConsultationUpdate", "Consultation", new { consultationId = consulta.ConsultationId })"
+                                                                   class="btn btn-sm btn-soft-warning">
+                                                                    <i class="ri-edit-line"></i> Editar
+                                                                </a>
+                                                            }
+                                                            <a href="#" class="btn btn-sm btn-soft-success"
+                                                               data-bs-toggle="modal" data-bs-target="#optionModal"
+                                                               onclick="openOptionModal(@consulta.ConsultationId, @consulta.AppointmentStatus)">
+                                                                <i class="ri-eye-line"></i> Revisar
+                                                            </a>
+                                                        }
+                                                        else
+                                                        {
+                                                            <a href="#" class="btn btn-sm btn-soft-warning"
+                                                               data-bs-toggle="modal" data-bs-target="#optionModal"
+                                                               onclick="openOptionModal(@consulta.ConsultationId, @consulta.AppointmentStatus)">
+                                                                <i class="ri-edit-line"></i> Completar
+                                                            </a>
+                                                        }
+                                                    </td>
                                                 </tr>
                                             }
                                         </tbody>
@@ -283,6 +268,7 @@ var consultasAgrupadasPorPaciente = Model
     </div>
 </div>
 
+<!--Modal opciones documentos-->
 <div class="modal fade" id="optionsDocuments" tabindex="-1" aria-labelledby="optionsDocuments">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -297,6 +283,7 @@ var consultasAgrupadasPorPaciente = Model
                             <option selected>Seleccione un documento</option>
                             <option value="justificante">Certificado Médico</option>
                             <option value="formulario">Formulario Médico</option>
+                            <option value="formulario2">Formulario Médico2</option>
                             <option value="receta">Receta</option>
                             <option value="laboratorio">Laboratorio</option>
                             <option value="imagen">Imagen</option>
@@ -320,26 +307,19 @@ var consultasAgrupadasPorPaciente = Model
     <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.2.2/js/dataTables.buttons.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.print.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.html5.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
-    <script src="~/assets/js/pages/datatables.init.js"></script>
 
     <script>
         function openOptionModal(consultationId, appointmentStatus) {
             console.log('Estado de la cita:', appointmentStatus);
             document.getElementById('consultationId').value = consultationId;
             const btnFinish = document.getElementById('btnFinishConsult');
-            btnFinish.classList.remove('d-none');
+            
             if (appointmentStatus === 4) {
                 btnFinish.classList.add('d-none');
+            } else {
+                btnFinish.classList.remove('d-none');
             }
+            
             new bootstrap.Modal(document.getElementById('optionModal'), { keyboard: false }).show();
         }
 
@@ -399,6 +379,7 @@ var consultasAgrupadasPorPaciente = Model
             const actions = {
                 justificante: '@Url.Action("MedicalCertificate", "Documents")',
                 formulario: '@Url.Action("MedicalForm", "Documents")',
+                formulario2: '@Url.Action("MedicalForm2", "Documents")',
                 receta: '@Url.Action("MedicationRecipe", "Documents")',
                 laboratorio: '@Url.Action("LaboratoryDoc", "Documents")',
                 imagen: '@Url.Action("ImageDoc", "Documents")'
@@ -419,18 +400,14 @@ var consultasAgrupadasPorPaciente = Model
         }
 
         $(document).ready(function () {
+            // Búsqueda en tiempo real
             $('#consultaSearch').on('keyup', function () {
                 var filtro = $(this).val().toLowerCase();
+                
                 $('.grupo-consulta').each(function () {
                     var textoGrupo = $(this).text().toLowerCase();
                     var match = textoGrupo.indexOf(filtro) > -1;
                     $(this).toggle(match);
-                    var collapse = $(this).find('.collapse');
-                    if (match) {
-                        collapse.addClass('show');
-                    } else {
-                        collapse.removeClass('show');
-                    }
                 });
             });
         });

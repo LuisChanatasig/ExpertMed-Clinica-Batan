@@ -91,3 +91,26 @@ public partial class Consultation
 
     public virtual ICollection<SurgeriesConsultation> SurgeriesConsultations { get; set; } = new List<SurgeriesConsultation>();
 }
+
+public class ConsultationGroupViewModel
+{
+    public int PacienteId { get; set; }
+    public string PacienteNombre { get; set; } = string.Empty;
+    public List<Consultation> Consultas { get; set; } = new List<Consultation>();
+    public DateTime? UltimaConsulta { get; set; }
+    public int TotalConsultas { get; set; }
+
+    // Propiedades helper
+    public Consultation? PrimeraConsulta => Consultas?.FirstOrDefault();
+
+    // Información de la última consulta
+    public string? UltimaMedicoNombre => PrimeraConsulta?.ConsultationUsercreateNavigation != null
+        ? $"{PrimeraConsulta.ConsultationUsercreateNavigation.UsersNames} {PrimeraConsulta.ConsultationUsercreateNavigation.UsersSurcenames}".Trim()
+        : "No asignado";
+
+    public string? UltimaEspecialidad => PrimeraConsulta?.ConsultationSpecialityNavigation?.SpecialityName ?? "No especificada";
+
+    public int? UltimoEstado => PrimeraConsulta?.AppointmentStatus;
+
+    public bool TieneConsultasPendientes => Consultas?.Any(c => c.AppointmentStatus != 4) ?? false;
+}

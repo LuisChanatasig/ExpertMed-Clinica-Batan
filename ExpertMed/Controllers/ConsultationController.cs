@@ -31,28 +31,43 @@ namespace ExpertMed.Controllers
 
 
         [HttpGet]
-        public async Task<IActionResult> ConsultationList(int? patientId = null) // Añade patientId como parámetro opcional
+        public async Task<IActionResult> ConsultationList(int? patientId = null)
         {
-            // Obtén el ID del usuario y el perfil desde la sesión
             var userId = HttpContext.Session.GetInt32("UsuarioId");
             var profileId = HttpContext.Session.GetInt32("PerfilId");
 
-            // Asegúrate de que los valores de sesión existan antes de usarlos
             if (!userId.HasValue || !profileId.HasValue)
             {
-                // Redirigir al login o mostrar un error si la sesión no es válida
-                return RedirectToAction("Login", "Account"); // Ejemplo: redirigir a una página de login
+                TempData["ErrorMessage"] = "Sesión expirada. Por favor, inicie sesión nuevamente.";
+                return RedirectToAction("Login", "Account");
             }
 
-            // Obtén las consultas del servicio, pasando patientId si está presente
-            var consultations = await _consultationService.GetConsultationsAsync(
-                userId.Value,
-                profileId.Value,
-                patientId  // Pasa el patientId opcional directamente
-            );
+            try
+            {
+                var consultationsGrouped = await _consultationService.GetConsultationsAsync(
+                    userId.Value,
+                    profileId.Value,
+                    patientId
+                );
 
-            // Pasa las consultas a la vista
-            return View(consultations);
+                // Información adicional para la vista
+                ViewBag.TotalConsultas = consultationsGrouped.Sum(g => g.TotalConsultas);
+                ViewBag.TotalPacientes = consultationsGrouped.Count;
+                ViewBag.ConsultasPendientes = consultationsGrouped.Sum(g => g.Consultas.Count(c => c.AppointmentStatus != 4));
+
+                return View(consultationsGrouped);
+            }
+            catch (ApplicationException appEx)
+            {
+                TempData["ErrorMessage"] = appEx.Message;
+                return View(new List<ConsultationGroupViewModel>());
+            }
+            catch (Exception ex)
+            {
+                // Log el error (usa ILogger si está disponible)
+                TempData["ErrorMessage"] = "Error inesperado al cargar las consultas. Por favor, contacte al administrador.";
+                return View(new List<ConsultationGroupViewModel>());
+            }
         }
 
         [HttpGet]
@@ -202,6 +217,9 @@ namespace ExpertMed.Controllers
                     consultaDto.OrgansSystem?.OrganssystemsLymphaticObs,
                     consultaDto.OrgansSystem?.OrganssystemsNervous,
                     consultaDto.OrgansSystem?.OrganssystemsNervousObs,
+                    consultaDto.OrgansSystem?.OrganssystemsSkin,
+                    consultaDto.OrgansSystem?.OrganssystemsSkinObs,
+
 
                     // Examen físico
                     consultaDto.PhysicalExamination?.PhysicalexaminationHead,
@@ -216,6 +234,29 @@ namespace ExpertMed.Controllers
                     consultaDto.PhysicalExamination?.PhysicalexaminationPelvisObs,
                     consultaDto.PhysicalExamination?.PhysicalexaminationLimbs,
                     consultaDto.PhysicalExamination?.PhysicalexaminationLimbsObs,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationSkinfaneras,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationSkinfanerasObs,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationEyes,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationEyesObs,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationEars,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationEarsObs,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationNose,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationNoseObs,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationMouth,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationMouthObs,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationOropharynx,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationOropharynxObs,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationAxilasmamas,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationAxilasmamasObs,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationSpine,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationSpineObs,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationIngleperine,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationIngleperineObs,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationUpperlimbs,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationUpperlimbsObs,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationLowerlimbs,
+                    consultaDto.PhysicalExamination?.PhysicalexaminationLowerlimbsObs,
+
 
                     // Antecedentes familiares
                     consultaDto.FamiliaryBackground?.FamiliaryBackgroundHeartdisease,
@@ -248,6 +289,27 @@ namespace ExpertMed.Controllers
                     consultaDto.FamiliaryBackground?.FamiliaryBackgroundOther,
                     consultaDto.FamiliaryBackground?.FamiliaryBackgroundOtherObservation,
                     consultaDto.FamiliaryBackground?.FamiliaryBackgroundRelatshcatalogOther,
+
+                    consultaDto.PersonalBackground?.PersonalBackgroundHeartdisease,
+                    consultaDto.PersonalBackground?.PersonalBackgroundHeartdiseaseObservation,
+                    consultaDto.PersonalBackground?.PersonalBackgroundHypertension,
+                    consultaDto.PersonalBackground?.PersonalBackgroundHypertensionObservation,
+                    consultaDto.PersonalBackground?.PersonalBackgroundDxcardiovascular,
+                    consultaDto.PersonalBackground?.PersonalBackgroundDxcardiovascularObservation,
+                    consultaDto.PersonalBackground?.PersonalBackgroundEndometabolic,
+                    consultaDto.PersonalBackground?.PersonalBackgroundEndometabolicObservation,
+                    consultaDto.PersonalBackground?.PersonalBackgroundCancer,
+                    consultaDto.PersonalBackground?.PersonalBackgroundCancerObservation,
+                    consultaDto.PersonalBackground?.PersonalBackgroundTuberculosis,
+                    consultaDto.PersonalBackground?.PersonalBackgroundTuberculosisObservation,
+                    consultaDto.PersonalBackground?.PersonalBackgroundDxmental,
+                    consultaDto.PersonalBackground?.PersonalBackgroundDxmentalObservation,
+                    consultaDto.PersonalBackground?.PersonalBackgroundDxinfectious,
+                    consultaDto.PersonalBackground?.PersonalBackgroundDxinfectiousObservation,
+                    consultaDto.PersonalBackground?.PersonalBackgroundMalformation,
+                    consultaDto.PersonalBackground?.PersonalBackgroundMalformationObservation,
+                    consultaDto.PersonalBackground?.PersonalBackgroundOther,
+                    consultaDto.PersonalBackground?.PersonalBackgroundOtherObservation,
 
                     // TVPs
                     consultaDto.AllergiesConsultations,

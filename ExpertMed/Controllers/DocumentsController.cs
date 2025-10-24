@@ -284,34 +284,28 @@ namespace ExpertMed.Controllers
 
                     string reposoTexto;
 
-                    if (diasReposo > 0)
-                    {
-                        var fechaFin = fechaEmision.AddDays(diasReposo - 1); // -1 porque si pide 1 día, es el mismo día
+                    var fechaFin = fechaEmision.AddDays(Math.Max(diasReposo - 1, 0)); // evita negativos
 
-                        // Convertir número a texto
-                        string diasEnTexto = ConvertirNumeroATexto(diasReposo);
-                        string pluralDia = diasReposo == 1 ? "Día" : "Días";
+                    // Convertir número a texto
+                    string diasEnTexto = ConvertirNumeroATexto(diasReposo);
+                    string pluralDia = diasReposo == 1 ? "Día" : "Días";
 
-                        // Fecha DESDE
-                        string diaSemanaDesde = cultura.DateTimeFormat.GetDayName(fechaEmision.DayOfWeek).ToUpper();
-                        string diaEnLetrasDesde = diasEnLetras[fechaEmision.Day];
-                        string mesDesde = cultura.DateTimeFormat.GetMonthName(fechaEmision.Month).ToUpper();
-                        string anioDesde = ConvertirAnioALetras(fechaEmision.Year);
+                    // Fecha DESDE
+                    string diaSemanaDesde = cultura.DateTimeFormat.GetDayName(fechaEmision.DayOfWeek).ToUpper();
+                    string diaEnLetrasDesde = diasEnLetras[fechaEmision.Day];
+                    string mesDesde = cultura.DateTimeFormat.GetMonthName(fechaEmision.Month).ToUpper();
+                    string anioDesde = ConvertirAnioALetras(fechaEmision.Year);
 
-                        // Fecha HASTA
-                        string diaSemanaHasta = cultura.DateTimeFormat.GetDayName(fechaFin.DayOfWeek).ToUpper();
-                        string diaEnLetrasHasta = diasEnLetras[fechaFin.Day];
-                        string mesHasta = cultura.DateTimeFormat.GetMonthName(fechaFin.Month).ToUpper();
-                        string anioHasta =  ConvertirAnioALetras(fechaFin.Year);
+                    // Fecha HASTA
+                    string diaSemanaHasta = cultura.DateTimeFormat.GetDayName(fechaFin.DayOfWeek).ToUpper();
+                    string diaEnLetrasHasta = diasEnLetras[fechaFin.Day];
+                    string mesHasta = cultura.DateTimeFormat.GetMonthName(fechaFin.Month).ToUpper();
+                    string anioHasta = ConvertirAnioALetras(fechaFin.Year);
 
-                        reposoTexto = $"Se requiere reposo médico en domicilio por {diasReposo} ({diasEnTexto}) {pluralDia}." +
-                                      $"DESDE: {fechaEmision:dd/MM/yyyy} {diaSemanaDesde} {fechaEmision.Day} ({diaEnLetrasDesde}) DE {mesDesde} DE {anioDesde}." +
-                                      $"HASTA: {fechaFin:dd/MM/yyyy} {diaSemanaHasta} {fechaFin.Day} ({diaEnLetrasHasta}) DE {mesHasta} DE {anioHasta}.";
-                    }
-                    else
-                    {
-                        reposoTexto = "No requiere reposo médico";
-                    }
+                    // Texto siempre generado (IESS lo exige)
+                    reposoTexto = $"Se requiere reposo médico en domicilio por {diasReposo} ({diasEnTexto}) {pluralDia}." +
+                                  $" DESDE: {fechaEmision:dd/MM/yyyy} {diaSemanaDesde} {fechaEmision.Day} ({diaEnLetrasDesde}) DE {mesDesde} DE {anioDesde}." +
+                                  $" HASTA: {fechaFin:dd/MM/yyyy} {diaSemanaHasta} {fechaFin.Day} ({diaEnLetrasHasta}) DE {mesHasta} DE {anioHasta}.";
 
                     formFields.SetField("txt_reposo_medico", reposoTexto);
 
@@ -2153,6 +2147,8 @@ namespace ExpertMed.Controllers
             // Example: private void InsertImageFromField(PdfStamper stamper, AcroFields fields, string fieldName, string imagePath) { /* ... */ }
             // If not, you might need to provide its implementation or remove this line if not used.
             // InsertImageFromField(pdfStamper, formFields, "txt_imagen_logo", consultation.UsersEstablishmentLogo); 
+            formFields.SetField("txt_institucion_del_sistema","N/A");
+            formFields.SetField("txt_unicode","N/A");
             formFields.SetField("txt_establecimiento_salud", consultation.EstablishmentName);
             formFields.SetField("txt_numero_historia_clinica", patient.PatientDocumentnumber);
             formFields.SetField("txt_numero_hoja", "1");

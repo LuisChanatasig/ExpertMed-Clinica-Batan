@@ -633,7 +633,7 @@
                                     <label for="allergiesSelect"> Seleccione las alergias</label>
                                     <select class="form-control" id="allergiesSelect"
                                             name="allergiesSelect" data-choices data-choices-removeItem
-                                            multiple required>
+                                            multiple >
                                         <option value="">En caso de no tener, escriba desconoce</option>
                                         @foreach (var allergies in Model.AllergiesTypes)
                                         {
@@ -661,7 +661,7 @@
                                     </label>
                                     <select class="form-control" id="surgeriesSelect"
                                             name="surgeriesSelect" data-choices data-choices-removeItem
-                                            multiple required>
+                                            multiple >
                                         <option value="">En caso de no tener, escriba desconoce</option>
                                         @foreach (var surgeries in Model.SurgeriesTypes)
                                         {
@@ -679,6 +679,160 @@
                                 </div>
                             </div>
                             <!-- #endregion Cirugias-->
+                            <!-- #region Antecedentes personales -->
+                            <div class="divider-with-text">
+                                <i class="ri-user-heart-fill" id="icons"></i>
+                                <span>Antecedentes Patologicos Personales</span>
+                            </div>
+
+                            <!-- 💓 Cardiopatía -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input personal-switch" type="checkbox"
+                                       id="personal_background_heartdisease">
+                                <label for="personal_background_heartdisease">Cardiopatía</label>
+                            </div>
+
+                            <div class="mb-3 personal-wrapper" id="personal_background_heartdisease_wrapper">
+                                <input type="text" class="form-control"
+                                       id="personal_background_heartdisease_observation"
+                                       placeholder="Ingrese una observación">
+                            </div>
+
+                            <!-- 🔥 Hipertensión -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input personal-switch" type="checkbox"
+                                       id="personal_background_hypertension">
+                                <label for="personal_background_hypertension">
+                                    Hipertensión
+                                </label>
+                            </div>
+
+                            <div class="mb-3 personal-wrapper" id="personal_background_hypertension_wrapper">
+                                <input type="text" class="form-control"
+                                       id="personal_background_hypertension_observation"
+                                       placeholder="Observación de hipertensión (opcional)">
+                            </div>
+
+                            <!-- ❤️‍🩹 Enfermedad Cardiovascular -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="personal_background_dxcardiovascular">
+                                <label for="personal_background_dxcardiovascular">
+                                    Enfermedad Cardiovascular
+                                </label>
+                            </div>
+
+                            <div class="mb-3 personal-wrapper" id="personal_background_dxcardiovascular_wrapper">
+                                <input type="text" class="form-control"
+                                       id="personal_background_dxcardiovascular_observation"
+                                       placeholder="Observación (opcional)">
+                            </div>
+
+                            <!-- 🧬 Endócrino Metabólico -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="personal_background_endometabolic">
+                                <label for="personal_background_endometabolic">
+                                    Endócrino Metabólico
+                                </label>
+                            </div>
+
+                            <div class="mb-3 personal-wrapper" id="personal_background_endometabolic_wrapper">
+                                <input type="text" class="form-control"
+                                       id="personal_background_endometabolic_observation"
+                                       placeholder="Observación (opcional)">
+                            </div>
+
+                            <!-- 🎗 Cáncer -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="personal_background_cancer">
+                                <label for="personal_background_cancer">
+                                    Cáncer
+                                </label>
+                            </div>
+
+                            <div class="mb-3 personal-wrapper" id="personal_background_cancer_wrapper">
+                                <input type="text" class="form-control"
+                                       id="personal_background_cancer_observation"
+                                       placeholder="Observación (opcional)">
+                            </div>
+
+                            <!-- 🫁 Tuberculosis -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="personal_background_tuberculosis">
+                                <label for="personal_background_tuberculosis">
+                                    Tuberculosis
+                                </label>
+                            </div>
+
+                            <div class="mb-3 personal-wrapper" id="personal_background_tuberculosis_wrapper">
+                                <input type="text" class="form-control"
+                                       id="personal_background_tuberculosis_observation"
+                                       placeholder="Observación (opcional)">
+                            </div>
+
+                            <!-- 🧠 Enfermedad Mental -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="personal_background_dxmental">
+                                <label for="personal_background_dxmental">
+                                    Enfermedad Mental
+                                </label>
+                            </div>
+
+                            <div class="mb-3 personal-wrapper" id="personal_background_dxmental_wrapper">
+                                <input type="text" class="form-control"
+                                       id="personal_background_dxmental_observation"
+                                       placeholder="Observación (opcional)">
+                            </div>
+
+                            <!-- 🦠 Enfermedad Infecciosa -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="personal_background_dxinfectious">
+                                <label for="personal_background_dxinfectious">
+                                    Enfermedad Infecciosa
+                                </label>
+                            </div>
+
+                            <div class="mb-3 personal-wrapper" id="personal_background_dxinfectious_wrapper">
+                                <input type="text" class="form-control"
+                                       id="personal_background_dxinfectious_observation"
+                                       placeholder="Observación (opcional)">
+                            </div>
+
+                            <!-- 🧬 Malformación -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="personal_background_malformation">
+                                <label for="personal_background_malformation">
+                                    Malformación
+                                </label>
+                            </div>
+
+                            <div class="mb-3 personal-wrapper" id="personal_background_malformation_wrapper">
+                                <input type="text" class="form-control"
+                                       id="personal_background_malformation_observation"
+                                       placeholder="Observación (opcional)">
+                            </div>
+
+                            <!-- ❓ Otros -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="personal_background_other">
+                                <label for="personal_background_other">
+                                    Otros
+                                </label>
+                            </div>
+
+                            <div class="mb-3 personal-wrapper" id="personal_background_other_wrapper">
+                                <input type="text" class="form-control"
+                                       id="personal_background_other_observation"
+                                       placeholder="Especifique">
+                            </div>
+                            <!-- #endregion Antecedentes personales -->
                             <!-- #region Antecedentes familiares-->
                             <div class="divider-with-text">
                                 <i class="ri-arrow-go-back-fill" id="icons"></i> <span>
@@ -1147,159 +1301,117 @@
                             </div>
 
                             <!-- #region Revisión de organos y sistemas-->
-                            <!-- #region organos de los sentidos-->
+                            <!-- Piel – Anexos -->
                             <div class="form-check form-switch">
-                                <input class="form-check-input" name="SwitchCheckSenseOrgans"
-                                       type="checkbox" role="switch" id="organssystems_organsenses">
-                                <label class="form-check-label" for="SwitchCheckSenseOrgans">
-                                    Órganos de los sentidos
-                                </label>
+                                <input class="form-check-input" type="checkbox" id="organssystems_skin">
+                                <label>Piel – Anexos</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="organssystems_skin_wrapper">
+                                <input type="text" class="form-control" id="organssystems_skin_obs"
+                                       placeholder="Ingrese una observación">
                             </div>
 
-
-                            <div class="col-lg-5">
-                                <div class="mb-3">
-                                    <input type="text" class="form-control" id="organssystems_organsenses_Obs"
-                                           name="observationSenseOrgans" placeholder="Ingrese una observación">
-                                </div>
-                            </div>
-                            <!-- #endregion organos de los sentidos-->
-                            <!-- #region Respiratory-->
+                            <!-- Órganos de los sentidos -->
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" role="switch"
-                                       id="organssystems_respiratory" name="SwitchCheckRespiratory">
-                                <label class="form-check-label" for="SwitchCheckRespiratory">Respiratorio</label>
+                                <input class="form-check-input" type="checkbox" id="organssystems_organsenses">
+                                <label>Órganos de los sentidos</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="organssystems_organsenses_wrapper">
+                                <input type="text" class="form-control" id="organssystems_organsenses_Obs"
+                                       placeholder="Ingrese una observación">
                             </div>
 
 
-                            <div class="col-lg-5">
-                                <div class="mb-3">
-                                    <input type="text" class="form-control" id="organssystems_respiratory_obs"
-                                           name="observationRespiratory" placeholder="Ingrese una observación">
-                                </div>
-                            </div>
-                            <!-- #endregion Respiratory-->
-                            <!-- #region Cardiovascular-->
+                            <!-- Respiratorio -->
                             <div class="form-check form-switch">
-                                <input class="form-check-input" name="SwitchCheckCardiovascular"
-                                       type="checkbox" role="switch" id="organssystems_cardiovascular">
-                                <label class="form-check-label" for="SwitchCheckCardiovascular">Cardiovascular</label>
+                                <input class="form-check-input" type="checkbox" id="organssystems_respiratory">
+                                <label>Respiratorio</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="organssystems_respiratory_wrapper">
+                                <input type="text" class="form-control" id="organssystems_respiratory_obs"
+                                       placeholder="Ingrese una observación">
                             </div>
 
-
-                            <div class="col-lg-5">
-                                <div class="mb-3">
-                                    <input type="text" class="form-control" id="organssystems_cardiovascular_obs"
-                                           name="observationCardiovascular" placeholder="Ingrese una observación">
-                                </div>
-                            </div>
-                            <!-- #endregion Cardiovascular-->
-                            <!-- #region Digestive-->
+                            <!-- Cardiovascular -->
                             <div class="form-check form-switch">
-                                <input class="form-check-input" name="SwitchCheckDigestive"
-                                       type="checkbox" role="switch" id="organssystems_digestive">
-                                <label class="form-check-label" for="SwitchCheckDigestive">Digestivo</label>
+                                <input class="form-check-input" type="checkbox" id="organssystems_cardiovascular">
+                                <label>Cardiovascular</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="organssystems_cardiovascular_wrapper">
+                                <input type="text" class="form-control" id="organssystems_cardiovascular_obs"
+                                       placeholder="Ingrese una observación">
                             </div>
 
-
-                            <div class="col-lg-5">
-                                <div class="mb-3">
-                                    <input type="text" class="form-control" id="organssystems_digestive_obs"
-                                           name="observationDigestive" placeholder="Ingrese una observación">
-                                </div>
-                            </div>
-                            <!-- #endregion Digestive-->
-                            <!-- #region Genital-->
+                            <!-- Digestivo -->
                             <div class="form-check form-switch">
-                                <input class="form-check-input" name="SwitchCheckGenital"
-                                       type="checkbox" role="switch" id="organssystems_genital">
-                                <label class="form-check-label" for="SwitchCheckGenital">Genital</label>
+                                <input class="form-check-input" type="checkbox" id="organssystems_digestive">
+                                <label>Digestivo</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="organssystems_digestive_wrapper">
+                                <input type="text" class="form-control" id="organssystems_digestive_obs"
+                                       placeholder="Ingrese una observación">
                             </div>
 
-
-                            <div class="col-lg-5">
-                                <div class="mb-3">
-                                    <input type="text" class="form-control" id="organssystems_genital_obs"
-                                           name="observationGenital" placeholder="Ingrese una observación">
-                                </div>
-                            </div>
-                            <!-- #endregion Genital-->
-                            <!-- #region Urinary-->
+                            <!-- Genital -->
                             <div class="form-check form-switch">
-                                <input class="form-check-input" name="SwitchCheckUrinary"
-                                       type="checkbox" role="switch" id="organssystems_urinary">
-                                <label class="form-check-label" for="SwitchCheckUrinary">Urinario</label>
+                                <input class="form-check-input" type="checkbox" id="organssystems_genital">
+                                <label>Genital</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="organssystems_genital_wrapper">
+                                <input type="text" class="form-control" id="organssystems_genital_obs"
+                                       placeholder="Ingrese una observación">
                             </div>
 
-
-                            <div class="col-lg-5">
-                                <div class="mb-3">
-                                    <input type="text" class="form-control" id="organssystems_urinary_obs"
-                                           name="observationUrinary" placeholder="Ingrese una observación">
-                                </div>
-                            </div>
-                            <!-- #endregion Urinary-->
-                            <!-- #region Skeletal Muscle-->
+                            <!-- Urinario -->
                             <div class="form-check form-switch">
-                                <input class="form-check-input" name="SwitchCheckSkeletalMuscle"
-                                       type="checkbox" role="switch" id="organssystems_skeletal_m">
-                                <label class="form-check-label" for="SwitchCheckSkeletalMuscle"> Musculoesquelético</label>
+                                <input class="form-check-input" type="checkbox" id="organssystems_urinary">
+                                <label>Urinario</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="organssystems_urinary_wrapper">
+                                <input type="text" class="form-control" id="organssystems_urinary_obs"
+                                       placeholder="Ingrese una observación">
                             </div>
 
-
-                            <div class="col-lg-5">
-                                <div class="mb-3">
-                                    <input type="text" class="form-control" id="organssystems_skeletal_m_obs"
-                                           name="observationSkeletalMuscle" placeholder="Ingrese una observación">
-                                </div>
-                            </div>
-                            <!-- #endregion Skeletal Muscle-->
-                            <!-- #region Endocrine-->
+                            <!-- Musculoesquelético -->
                             <div class="form-check form-switch">
-                                <input class="form-check-input" name="SwitchCheckEndocrine"
-                                       type="checkbox" role="switch" id="organssystems_endrocrine">
-                                <label class="form-check-label" for="SwitchCheckEndocrine">Endocrino</label>
+                                <input class="form-check-input" type="checkbox" id="organssystems_skeletal_m">
+                                <label>Musculoesquelético</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="organssystems_skeletal_m_wrapper">
+                                <input type="text" class="form-control" id="organssystems_skeletal_m_obs"
+                                       placeholder="Ingrese una observación">
                             </div>
 
-
-                            <div class="col-lg-5">
-                                <div class="mb-3">
-                                    <input type="text" class="form-control" id="organssystems_endocrine"
-                                           name="observationEndocrine" placeholder="Ingrese una observación">
-                                </div>
-                            </div>
-                            <!-- #endregion Endocrine-->
-                            <!-- #region Lymphatic Heme-->
+                            <!-- Endocrino -->
                             <div class="form-check form-switch">
-                                <input class="form-check-input" name="SwitchCheckLymphaticHeme"
-                                       type="checkbox" role="switch" id="organssystems_lymphatic">
-                                <label class="form-check-label" for="SwitchCheckLymphaticHeme">Hemolinfático</label>
+                                <input class="form-check-input" type="checkbox" id="organssystems_endocrine">
+                                <label>Endocrino</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="organssystems_endocrine_wrapper">
+                                <input type="text" class="form-control" id="organssystems_endocrine_obs"
+                                       placeholder="Ingrese una observación">
                             </div>
 
-
-
-                            <div class="col-lg-5">
-                                <div class="mb-3">
-                                    <input type="text" class="form-control" id="organssystems_lymphatic_obs"
-                                           name="observationLymphaticHeme" placeholder="Ingrese una observación">
-                                </div>
-                            </div>
-                            <!-- #endregion Lymphatic Heme-->
-                            <!-- #region Nervous System-->
+                            <!-- Hemolinfático -->
                             <div class="form-check form-switch">
-                                <input class="form-check-input" name="SwitchCheckHighlystrung"
-                                       type="checkbox" role="switch" id="organssystems_nervous">
-                                <label class="form-check-label" for="SwitchCheckHighlystrung">Sistema Nervioso</label>
+                                <input class="form-check-input" type="checkbox" id="organssystems_lymphatic">
+                                <label>Hemolinfático</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="organssystems_lymphatic_wrapper">
+                                <input type="text" class="form-control" id="organssystems_lymphatic_obs"
+                                       placeholder="Ingrese una observación">
                             </div>
 
-
-                            <div class="col-lg-5">
-                                <div class="mb-3">
-                                    <input type="text" class="form-control" id="organssystems_nervous_obs"
-                                           name="observationHighlystrung" placeholder="Ingrese una observación">
-                                </div>
+                            <!-- Sistema Nervioso -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="organssystems_nervous">
+                                <label>Sistema Nervioso</label>
                             </div>
-                            <!-- #endregion Nervous System-->
+                            <div class="mb-3 organs-wrapper" id="organssystems_nervous_wrapper">
+                                <input type="text" class="form-control" id="organssystems_nervous_obs"
+                                       placeholder="Ingrese una observación">
+                            </div>
+
                             <!-- #endregion Revisión de organos y sistemas-->
 
                             <br /> <br />
@@ -1366,133 +1478,214 @@
                                     <input type="text" class="form-control" id="consultation_size" name="weightInput" placeholder="160" value="@Model.DetailsPatient.Weight" >
                                 </div>
                             </div>
+                            <!-- IMC (Kg/m²) -->
+                            <div class="col-lg-4">
+                                <div class="mb-3">
+                                    <label for="consultation_bmi" class="form-label">IMC (Kg/m²)</label>
+                                    <input type="text" class="form-control" id="consultation_bmi" name="consultation_bmi" placeholder="22.5" value="@Model.DetailsPatient.Imc">
+                                    <span>Se calcula automáticamente usando peso y talla.</span>
+                                </div>
+                            </div>
+
+                            <!-- Perímetro Abdominal (cm) -->
+                            <div class="col-lg-4">
+                                <div class="mb-3">
+                                    <label for="consultation_abdominal_perimeter" class="form-label">Perímetro Abdominal (cm)</label>
+                                    <input type="text" class="form-control" id="consultation_abdominal_perimeter" name="consultation_abdominal_perimeter" value="@Model.DetailsPatient.AbdominalPerimeter" placeholder="85">
+                                </div>
+                            </div>
+
+                            <!-- Hemoglobina capilar (g/dl) -->
+                            <div class="col-lg-4">
+                                <div class="mb-3">
+                                    <label for="consultation_capillary_hemoglobin" class="form-label">Hemoglobina capilar (g/dl)</label>
+                                    <input type="text" class="form-control" id="consultation_capillary_hemoglobin" name="consultation_capillary_hemoglobin" value="@Model.DetailsPatient.CapillaryHemoglobin" placeholder="13.5">
+                                </div>
+                            </div>
+
+                            <!-- Glucosa capilar (mg/dl) -->
+                            <div class="col-lg-4">
+                                <div class="mb-3">
+                                    <label for="consultation_capillary_glucose" class="form-label">Glucosa capilar (mg/dl)</label>
+                                    <input type="text" class="form-control" id="consultation_capillary_glucose" name="consultation_capillary_glucose" value="@Model.DetailsPatient.CapillaryGlucose" placeholder="105">
+                                </div>
+                            </div>
+
+                            <!-- Pulsioximetría (%) -->
+                            <div class="col-lg-4">
+                                <div class="mb-3">
+                                    <label for="consultation_spo2" class="form-label">Pulsioximetría (%)</label>
+                                    <input type="text" class="form-control" id="consultation_spo2" name="consultation_spo2" value="@Model.DetailsPatient.Spo2" placeholder="98">
+                                </div>
+                            </div>
+
                             <!-- #endregion Signos Vitales-->
-                            <!-- #region Examen Fisico Regional-->
+                            <!-- #region Examen Físico Regional -->
 
                             <div class="divider-with-text">
-                                 <span>
-                                    Examen fisico regional
-                                </span>
-                                
+                                <span>Examen físico regional</span>
                             </div>
-                            <!-- Contenedor flex para alinear icono y texto -->
+
                             <div id="mensajeSwitch" style="display: flex; align-items: center; color: #555; font-style: italic; margin-top: 5px; font-size: 0.9em;">
-                                <!-- Icono MDI a la izquierda -->
                                 <i class="mdi mdi-information-outline" style="margin-left: 8px; font-size: 1.2em;"></i>
                                 <span>
                                     Si necesita colocar un comentario pero sin patología, active el switch correspondiente, coloque la observación y luego desactívelo.
                                 </span>
                             </div>
 
-                            <!-- #region  Head-->
+                            <br />
+
+                            <!-- ✅ 1R - Piel – Faneras -->
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" role="switch"
-                                       id="physicalexamination_head">
-                                <label class="form-check-label" for="SwitchCheckHead">Cabeza</label>
+                                <input class="form-check-input" type="checkbox" id="physicalexamination_skinfaneras">
+                                <label>Piel – Faneras</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="physicalexamination_skinfaneras_wrapper">
+                                <input type="text" class="form-control" id="physicalexamination_skinfaneras_obs"
+                                       placeholder="Ingrese una observación">
                             </div>
 
-
-                            <div class="col-lg-5">
-                                <div class="mb-3">
-
-                                    <input type="text" class="form-control" id="physicalexamination_head_obs"
-                                           name="observationHead" placeholder="Ingrese una observación">
-
-                                </div>
-                            </div>
-
-                            <!-- #endregion Head-->
-                            <!-- #region Neck-->
-
+                            <!-- ✅ 2R - Cabeza -->
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" role="switch"
-                                       id="physicalexamination_neck">
-                                <label class="form-check-label" for="SwitchCheckNeck">Cuello</label>
+                                <input class="form-check-input" type="checkbox" id="physicalexamination_head">
+                                <label>Cabeza</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="physicalexamination_head_wrapper">
+                                <input type="text" class="form-control" id="physicalexamination_head_obs"
+                                       placeholder="Ingrese una observación">
                             </div>
 
-                            <div class="col-lg-5">
-                                <div class="mb-3">
-
-                                    <input type="text" class="form-control" id="physicalexamination_neck_obs"
-                                           name="observationNeck" placeholder="Ingrese una observación">
-
-                                </div>
-                            </div>
-
-                            <!-- #endregion Neck-->
-                            <!-- #region Chest-->
-
+                            <!-- ✅ 3R - Ojos -->
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" role="switch"
-                                       id="physicalexamination_chest">
-                                <label class="form-check-label" for="SwitchCheckNeck">Tórax</label>
+                                <input class="form-check-input" type="checkbox" id="physicalexamination_eyes">
+                                <label>Ojos</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="physicalexamination_eyes_wrapper">
+                                <input type="text" class="form-control" id="physicalexamination_eyes_obs"
+                                       placeholder="Ingrese una observación">
                             </div>
 
-                            <div class="col-lg-5">
-                                <div class="mb-3">
-
-                                    <input type="text" class="form-control" id="physicalexamination_chest_obs"
-                                           name="observationChest" placeholder="Ingrese una observación">
-
-                                </div>
-                            </div>
-
-                            <!--#endRegion Chest-->
-                            <!-- #region Abdome-->
-
+                            <!-- ✅ 4R - Oídos -->
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" role="switch"
-                                       id="physicalexamination_abdomen">
-                                <label class="form-check-label" for="SwitchCheckAbdomen">Abdomen</label>
+                                <input class="form-check-input" type="checkbox" id="physicalexamination_ears">
+                                <label>Oídos</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="physicalexamination_ears_wrapper">
+                                <input type="text" class="form-control" id="physicalexamination_ears_obs"
+                                       placeholder="Ingrese una observación">
                             </div>
 
-                            <div class="col-lg-5">
-                                <div class="mb-3">
-
-                                    <input type="text" class="form-control" id="physicalexamination_abdomen_obs"
-                                           name="observationAbdomen" placeholder="Ingrese una observación">
-
-                                </div>
-                            </div>
-
-                            <!-- #endregion Abdomen-->
-                            <!-- #region Pelvis-->
-
+                            <!-- ✅ 5R - Nariz -->
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" role="switch"
-                                       id="physicalexamination_pelvis">
-                                <label class="form-check-label" for="SwitchCheckPelvis">Pelvis</label>
+                                <input class="form-check-input" type="checkbox" id="physicalexamination_nose">
+                                <label>Nariz</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="physicalexamination_nose_wrapper">
+                                <input type="text" class="form-control" id="physicalexamination_nose_obs"
+                                       placeholder="Ingrese una observación">
                             </div>
 
-                            <div class="col-lg-5">
-                                <div class="mb-3">
-
-                                    <input type="text" class="form-control" id="physicalexamination_pelvis_obs"
-                                           name="observationPelvis" placeholder="Ingrese una observación">
-
-                                </div>
-                            </div>
-
-                            <!-- #endregion Pelvis-->
-                            <!-- #region Extremidades-->
-
+                            <!-- ✅ 6R - Boca -->
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" role="switch"
-                                       id="physicalexamination_limbs">
-                                <label class="form-check-label" for="SwitchCheckExtremities">Extremidades</label>
+                                <input class="form-check-input" type="checkbox" id="physicalexamination_mouth">
+                                <label>Boca</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="physicalexamination_mouth_wrapper">
+                                <input type="text" class="form-control" id="physicalexamination_mouth_obs"
+                                       placeholder="Ingrese una observación">
                             </div>
 
-                            <div class="col-lg-5">
-                                <div class="mb-3">
-
-                                    <input type="text" class="form-control" id="physicalexamination_limbs_obs"
-                                           name="observationExtremities" placeholder="Ingrese una observación">
-
-                                </div>
+                            <!-- ✅ 7R - Orofaringe -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="physicalexamination_oropharynx">
+                                <label>Orofaringe</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="physicalexamination_oropharynx_wrapper">
+                                <input type="text" class="form-control" id="physicalexamination_oropharynx_obs"
+                                       placeholder="Ingrese una observación">
                             </div>
 
-                            <!-- #endregion Extremidades-->
-                            <!-- #endregion Examen Fisico Regional-->
+                            <!-- ✅ 8R - Cuello -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="physicalexamination_neck">
+                                <label>Cuello</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="physicalexamination_neck_wrapper">
+                                <input type="text" class="form-control" id="physicalexamination_neck_obs"
+                                       placeholder="Ingrese una observación">
+                            </div>
+
+                            <!-- ✅ 9R - Axilas – Mamas -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="physicalexamination_axilasmamas">
+                                <label>Axilas – Mamas</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="physicalexamination_axilasmamas_wrapper">
+                                <input type="text" class="form-control" id="physicalexamination_axilasmamas_obs"
+                                       placeholder="Ingrese una observación">
+                            </div>
+
+                            <!-- ✅ 10R - Tórax -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="physicalexamination_chest">
+                                <label>Tórax</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="physicalexamination_chest_wrapper">
+                                <input type="text" class="form-control" id="physicalexamination_chest_obs"
+                                       placeholder="Ingrese una observación">
+                            </div>
+
+                            <!-- ✅ 11R - Abdomen -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="physicalexamination_abdomen">
+                                <label>Abdomen</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="physicalexamination_abdomen_wrapper">
+                                <input type="text" class="form-control" id="physicalexamination_abdomen_obs"
+                                       placeholder="Ingrese una observación">
+                            </div>
+
+                            <!-- ✅ 12R - Columna Vertebral -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="physicalexamination_spine">
+                                <label>Columna Vertebral</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="physicalexamination_spine_wrapper">
+                                <input type="text" class="form-control" id="physicalexamination_spine_obs"
+                                       placeholder="Ingrese una observación">
+                            </div>
+
+                            <!-- ✅ 13R - Ingle – Periné -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="physicalexamination_ingleperine">
+                                <label>Ingle – Periné</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="physicalexamination_ingleperine_wrapper">
+                                <input type="text" class="form-control" id="physicalexamination_ingleperine_obs"
+                                       placeholder="Ingrese una observación">
+                            </div>
+
+                            <!-- ✅ 14R - Miembros Superiores -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="physicalexamination_upperlimbs">
+                                <label>Miembros Superiores</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="physicalexamination_upperlimbs_wrapper">
+                                <input type="text" class="form-control" id="physicalexamination_upperlimbs_obs"
+                                       placeholder="Ingrese una observación">
+                            </div>
+
+                            <!-- ✅ 15R - Miembros Inferiores -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="physicalexamination_lowerlimbs">
+                                <label>Miembros Inferiores</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="physicalexamination_lowerlimbs_wrapper">
+                                <input type="text" class="form-control" id="physicalexamination_lowerlimbs_obs"
+                                       placeholder="Ingrese una observación">
+                            </div>
+
+                            <!-- #endregion Examen Físico Regional -->
 
                             <div class="d-flex align-items-start gap-3 mt-4">
                                 <button type="button" class="btn btn-light previestab"
@@ -2229,6 +2422,98 @@
                     if (obsContainer) obsContainer.style.display = "none";
                 }
             });
+        });
+    </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+          const requireOn = true;
+
+          const groups = {
+            personal_background: [
+              "heartdisease",
+              "hypertension",
+              "dxcardiovascular",
+              "endometabolic",
+              "cancer",
+              "tuberculosis",
+              "dxmental",
+              "dxinfectious",
+              "malformation",
+              "other"
+            ],
+            organssystems: [
+              "skin",
+              "organsenses",
+              "respiratory",
+              "cardiovascular",
+              "digestive",
+              "genital",
+              "urinary",
+              "skeletal_m",
+              "endocrine",
+              "lymphatic",
+              "nervous"
+            ],
+            physicalexamination: [
+              "skinfaneras",
+              "head",
+              "eyes",
+              "ears",
+              "nose",
+              "mouth",
+              "oropharynx",
+              "neck",
+              "axilasmamas",
+              "chest",
+              "abdomen",
+              "spine",
+              "ingleperine",
+              "upperlimbs",
+              "lowerlimbs",
+              "pelvis"
+            ]
+          };
+
+          const bind = (prefix, keys) => {
+            keys.forEach(key => {
+              const chk = document.getElementById(`${prefix}_${key}`);
+              const wrap = document.getElementById(`${prefix}_${key}_wrapper`);
+              const obs =
+                document.getElementById(`${prefix}_${key}_obs`) ||
+                document.getElementById(`${prefix}_${key}_Obs`);
+
+              if (!chk || !wrap) return;
+
+              const update = () => {
+                wrap.style.display = chk.checked ? "block" : "none";
+                if (obs && requireOn) obs.required = chk.checked;
+              };
+
+              update();
+              chk.addEventListener("change", update);
+            });
+          };
+
+          Object.entries(groups).forEach(([prefix, keys]) => bind(prefix, keys));
+        });
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const peso = document.getElementById("consultation_weight");
+            const talla = document.getElementById("consultation_size");
+            const imc = document.getElementById("consultation_bmi");
+
+            function calcIMC(){
+                const p = parseFloat(peso.value);
+                const t = parseFloat(talla.value) / 100;
+                if(!isNaN(p) && !isNaN(t) && t > 0){
+                    imc.value = (p / (t*t)).toFixed(2);
+                }
+            }
+
+            peso.addEventListener("input", calcIMC);
+            talla.addEventListener("input", calcIMC);
         });
     </script>
 

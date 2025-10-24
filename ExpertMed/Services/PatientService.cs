@@ -621,6 +621,13 @@ namespace ExpertMed.Services
                                     VitalCreatedAt = GetNullable<DateTime>(reader, "vital_created_at"),
                                     VitalCreatedBy = GetNullable<int>(reader, "vital_created_by"),
 
+                                    // ✅ Nuevos campos
+                                    Imc = GetNullable<decimal>(reader, "imc"),
+                                    AbdominalPerimeter = GetNullable<decimal>(reader, "abdominal_perimeter"),
+                                    CapillaryHemoglobin = GetNullable<decimal>(reader, "capillary_hemoglobin"),
+                                    CapillaryGlucose = GetNullable<decimal>(reader, "capillary_glucose"),
+                                    Spo2 = GetNullable<decimal>(reader, "spo2"),
+
                                 };
                             }
                         }

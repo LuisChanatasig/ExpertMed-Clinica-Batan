@@ -52,6 +52,12 @@ namespace ExpertMed.Models
         public string Size { get; set; }
         public DateTime? VitalCreatedAt { get; set; }
         public int? VitalCreatedBy { get; set; }
+        public decimal? Imc { get; set; }
+        public decimal? AbdominalPerimeter { get; set; }
+        public decimal? CapillaryHemoglobin { get; set; }
+        public decimal? CapillaryGlucose { get; set; }
+        public decimal? Spo2 { get; set; }
+
         public List<DoctorPatient> Doctors { get; set; } = new List<DoctorPatient>();
 
         public static implicit operator DetailsPatientConsult(Task<DetailsPatientConsult> v)

@@ -480,17 +480,32 @@ document
         e.target.value = value; // Actualiza el campo de entrada con el nuevo valor
 
         // Opcional: Si deseas actualizar los campos ocultos para diastólica y sistólica
-        if (value.length >= 5) {
-            document.getElementById("consultation_bloodpresuredDIS").value =
-                value.slice(4, 6);
-            document.getElementById("consultation_bloodpressuredAS").value =
-                value.slice(0, 3);
-        } else {
-            document.getElementById("consultation_bloodpresuredDIS").value = "";
-            document.getElementById("consultation_bloodpressuredAS").value =
-                value.slice(0, 3);
-        }
+        const parts = value.split("/");
+
+        document.getElementById("consultation_bloodpressuredAS").value =
+            parts[0] || "";
+
+        document.getElementById("consultation_bloodpresuredDIS").value =
+            parts[1] || "";
+
     });
+
+function formatBloodPressureOnLoad() {
+    const input = document.getElementById("bloodPressureInput");
+    let v = input.value.replace(/\D/g, ""); // solo dígitos
+
+    if (v.length >= 4) {
+        v = v.slice(0, 3) + "/" + v.slice(3);
+        input.value = v;
+    }
+
+    // ✅ Cargar hidden al inicio
+    const parts = input.value.split("/");
+    document.getElementById("consultation_bloodpressuredAS").value = parts[0] || "";
+    document.getElementById("consultation_bloodpresuredDIS").value = parts[1] || "";
+}
+
+
 
 document.addEventListener("DOMContentLoaded", function () {
     const tabla = document.getElementById("procedimientosTable").querySelector("tbody");
@@ -527,6 +542,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 });
+document.addEventListener("DOMContentLoaded", formatBloodPressureOnLoad);
 
 
 // Helper functions
@@ -564,19 +580,16 @@ function getFormData(isFinal = false) {
     // 1) Obtener el consultationId del input hidden
     const hiddenInput = document.getElementById("consultationId");
     let currentConsultationId = null;
-    console.log(hiddenInput);
+
     if (hiddenInput && hiddenInput.value) {
         currentConsultationId = hiddenInput.value;
-        console.log("Usando consultationId del input hidden:", currentConsultationId);
     } else {
-        // Si no se encuentra, usar el valor de la variable global
         currentConsultationId = consultationId;
-        console.log("Usando consultationId de la variable global:", currentConsultationId);
     }
 
-    // 1) Construye primero el DTO con los campos simples
+    // ---- DTO base ----
     const dto = {
-        ConsultationId: currentConsultationId, 
+        ConsultationId: currentConsultationId,
         ConsultationDate: getValue("consultation_date"),
         ConsultationUsercreate: getInt("consultation_usercreate", null),
         ConsultationPatient: getInt("consultation_patient", null),
@@ -608,44 +621,44 @@ function getFormData(isFinal = false) {
         ConsultationDiseaseobservation: getValue("cert_observacion"),
         ConsultationContingencytype: getValue("cert_tipo_contingencia"),
         ConsutationHasSymptoms: getChecked("cert_tiene_sintomas") ?? false,
-
-        // Flag para el SP
         ConsultationIsFinal: isFinal
     };
 
-    // 2) Alergias directo desde el <select multiple>
-    const allergyOpts = Array.from(
-        document.getElementById("allergiesSelect").selectedOptions
-    );
+    // ---- Alergias ----
+    let allergyOpts = Array.from(document.getElementById("allergiesSelect").selectedOptions);
+    if (allergyOpts.length === 0) {
+        allergyOpts = [{ value: "66" }];
+    }
+
     dto.AllergiesConsultations = allergyOpts.map(opt => ({
         AllergiesCatalogid: parseInt(opt.value, 10),
-        AllergiesObservation: "",
+        AllergiesObservation: opt.value === "66" ? "SIN REGISTRO DE ALERGIAS" : "",
         AllergiesStatus: 1
     }));
 
-    // 3) Cirugías directo desde el <select multiple>
-    const surgeryOpts = Array.from(
-        document.getElementById("surgeriesSelect").selectedOptions
-    );
+    // ---- Cirugías ----
+    let surgeryOpts = Array.from(document.getElementById("surgeriesSelect").selectedOptions);
+    if (surgeryOpts.length === 0) {
+        surgeryOpts = [{ value: "93" }];
+    }
+
     dto.SurgeriesConsultations = surgeryOpts.map(opt => ({
         SurgeriesCatalogid: parseInt(opt.value, 10),
-        SurgeriesObservation: "",
+        SurgeriesObservation: opt.value === "93" ? "SIN REGISTRO DE CIRUGÍAS" : "",
         SurgeriesStatus: 1
     }));
 
-    // 4) El resto de TVPs como antes, usando mapTable si usas tablas dinámicas
-    // Medicamentos
+    // ---- Medicamentos ----
     dto.MedicationsConsultations = Array.from(
         document.querySelectorAll("#selectedMedicationsTable tbody tr")
     ).map(tr => ({
-        // Aquí debería haberse asignado tr.dataset.id al crear la fila
         MedicationsMedicationsid: parseInt(tr.dataset.id, 10),
         MedicationsAmount: tr.querySelector('input[name^="amount_"]')?.value ?? null,
         MedicationsObservation: tr.querySelector('input[name^="observation_"]')?.value ?? null,
         MedicationsStatus: 1
     }));
 
-    // Laboratorios
+    // ---- Laboratorios ----
     dto.LaboratoriesConsultations = Array.from(
         document.querySelectorAll("#selectedLaboratoriesTable tbody tr")
     ).map(tr => ({
@@ -655,7 +668,7 @@ function getFormData(isFinal = false) {
         LaboratoriesStatus: 1
     }));
 
-    // Imágenes
+    // ---- Imágenes ----
     dto.ImagesConsultations = Array.from(
         document.querySelectorAll("#selectedImagesTable tbody tr")
     ).map(tr => ({
@@ -665,105 +678,183 @@ function getFormData(isFinal = false) {
         ImagesStatus: 1
     }));
 
-    // Diagnósticos (para referencia)
+    // ---- Diagnósticos ----
     dto.DiagnosisConsultations = Array.from(
-        document.querySelectorAll(
-            "#selectedDiagnosesTable tbody tr[data-id]"
-        )
+        document.querySelectorAll("#selectedDiagnosesTable tbody tr[data-id]")
     ).map(tr => {
         const id = tr.dataset.id;
         return {
             DiagnosisDiagnosisid: parseInt(id, 10),
-            DiagnosisPresumptive: tr.querySelector(`input[name="presumptive_${id}"]`)
-                ?.checked ?? false,
-            DiagnosisDefinitive: tr.querySelector(`input[name="definitive_${id}"]`)
-                ?.checked ?? false,
+            DiagnosisPresumptive: tr.querySelector(`input[name="presumptive_${id}"]`)?.checked ?? false,
+            DiagnosisDefinitive: tr.querySelector(`input[name="definitive_${id}"]`)?.checked ?? false,
             DiagnosisObservation: null,
             DiagnosisStatus: 1
         };
     });
 
-
+    // ---- Procedimientos ----
     dto.Procedures = mapTable("#procedimientosTable", tr => ({
-        procedure_name:
-            tr.querySelector('input[name*="procedure_name"]')?.value ?? null,
-        procedure_date:
-            tr.querySelector('input[name*="procedure_date"]')?.value ?? null
+        procedure_name: tr.querySelector('input[name*="procedure_name"]')?.value ?? null,
+        procedure_date: tr.querySelector('input[name*="procedure_date"]')?.value ?? null
     }));
 
-    // Órganos y sistemas
-    const organDefs = [
-        { key: "Organsenses", obs: "organssystems_organsenses_Obs" },
-        { key: "Respiratory", obs: "organssystems_respiratory_obs" },
-        { key: "Cardiovascular", obs: "organssystems_cardiovascular_obs" },
-        { key: "Digestive", obs: "organssystems_digestive_obs" },
-        { key: "Genital", obs: "organssystems_genital_obs" },
-        { key: "Urinary", obs: "organssystems_urinary_obs" },
-        { key: "SkeletalM", obs: "organssystems_skeletal_m_obs" },
-        { key: "Endocrine", obs: "organssystems_endocrine_obs" },
-        { key: "Lymphatic", obs: "organssystems_lymphatic_obs" },
-        { key: "Nervous", obs: "organssystems_nervous_obs" }
-    ];
+    // ---- Órganos y sistemas ----
+    dto.OrgansSystem = {
+        OrganssystemsOrgansenses: getChecked("organssystems_organsenses"),
+        OrganssystemsOrgansensesObs: getValue("organssystems_organsenses_obs"),
+        OrganssystemsRespiratory: getChecked("organssystems_respiratory"),
+        OrganssystemsRespiratoryObs: getValue("organssystems_respiratory_obs"),
+        OrganssystemsCardiovascular: getChecked("organssystems_cardiovascular"),
+        OrganssystemsCardiovascularObs: getValue("organssystems_cardiovascular_obs"),
+        OrganssystemsDigestive: getChecked("organssystems_digestive"),
+        OrganssystemsDigestiveObs: getValue("organssystems_digestive_obs"),
+        OrganssystemsGenital: getChecked("organssystems_genital"),
+        OrganssystemsGenitalObs: getValue("organssystems_genital_obs"),
+        OrganssystemsUrinary: getChecked("organssystems_urinary"),
+        OrganssystemsUrinaryObs: getValue("organssystems_urinary_obs"),
+        OrganssystemsSkeletalM: getChecked("organssystems_skeletal_m"),
+        OrganssystemsSkeletalMObs: getValue("organssystems_skeletal_m_obs"),
+        OrganssystemsEndrocrine: getChecked("organssystems_endrocrine"),
+        OrganssystemsEndocrine: getValue("organssystems_endocrine_obs"),
+        OrganssystemsLymphatic: getChecked("organssystems_lymphatic"),
+        OrganssystemsLymphaticObs: getValue("organssystems_lymphatic_obs"),
+        OrganssystemsNervous: getChecked("organssystems_nervous"),
+        OrganssystemsNervousObs: getValue("organssystems_nervous_obs"),
 
-    dto.OrgansSystem = {};
-    organDefs.forEach(({ key, obs }) => {
-        if (key === "Endocrine") {
-            dto.OrgansSystem["OrganssystemsEndrocrine"] = getChecked("organssystems_endocrine");
-            dto.OrgansSystem["OrganssystemsEndocrine"] = getValue(obs);
-        } else {
-            dto.OrgansSystem[`Organssystems${key}`] = getChecked(`organssystems_${key.toLowerCase()}`);
-            dto.OrgansSystem[`Organssystems${key}Obs`] = getValue(obs);
-        }
-    });
+        // ✅ Nuevos
+        OrganssystemsSkin: getChecked("organssystems_skin"),
+        OrganssystemsSkinObs: getValue("organssystems_skin_obs")
+    };
 
-    // Examen físico completo
+    // ---- Examen físico completo ----
     dto.PhysicalExamination = {
         PhysicalexaminationHead: getChecked("physicalexamination_head"),
         PhysicalexaminationHeadObs: getValue("physicalexamination_head_obs"),
+
         PhysicalexaminationNeck: getChecked("physicalexamination_neck"),
         PhysicalexaminationNeckObs: getValue("physicalexamination_neck_obs"),
+
         PhysicalexaminationChest: getChecked("physicalexamination_chest"),
         PhysicalexaminationChestObs: getValue("physicalexamination_chest_obs"),
+
         PhysicalexaminationAbdomen: getChecked("physicalexamination_abdomen"),
         PhysicalexaminationAbdomenObs: getValue("physicalexamination_abdomen_obs"),
+
         PhysicalexaminationPelvis: getChecked("physicalexamination_pelvis"),
         PhysicalexaminationPelvisObs: getValue("physicalexamination_pelvis_obs"),
+
         PhysicalexaminationLimbs: getChecked("physicalexamination_limbs"),
-        PhysicalexaminationLimbsObs: getValue("physicalexamination_limbs_obs")
+        PhysicalexaminationLimbsObs: getValue("physicalexamination_limbs_obs"),
+
+        // ✅ Nuevos campos:
+        PhysicalexaminationSkinfaneras: getChecked("physicalexamination_skinfaneras"),
+        PhysicalexaminationSkinfanerasObs: getValue("physicalexamination_skinfaneras_obs"),
+
+        PhysicalexaminationEyes: getChecked("physicalexamination_eyes"),
+        PhysicalexaminationEyesObs: getValue("physicalexamination_eyes_obs"),
+
+        PhysicalexaminationEars: getChecked("physicalexamination_ears"),
+        PhysicalexaminationEarsObs: getValue("physicalexamination_ears_obs"),
+
+        PhysicalexaminationNose: getChecked("physicalexamination_nose"),
+        PhysicalexaminationNoseObs: getValue("physicalexamination_nose_obs"),
+
+        PhysicalexaminationMouth: getChecked("physicalexamination_mouth"),
+        PhysicalexaminationMouthObs: getValue("physicalexamination_mouth_obs"),
+
+        PhysicalexaminationOropharynx: getChecked("physicalexamination_oropharynx"),
+        PhysicalexaminationOropharynxObs: getValue("physicalexamination_oropharynx_obs"),
+
+        PhysicalexaminationAxilasmamas: getChecked("physicalexamination_axilasmamas"),
+        PhysicalexaminationAxilasmamasObs: getValue("physicalexamination_axilasmamas_obs"),
+
+        PhysicalexaminationSpine: getChecked("physicalexamination_spine"),
+        PhysicalexaminationSpineObs: getValue("physicalexamination_spine_obs"),
+
+        PhysicalexaminationIngleperine: getChecked("physicalexamination_ingleperine"),
+        PhysicalexaminationIngleperineObs: getValue("physicalexamination_ingleperine_obs"),
+
+        PhysicalexaminationUpperlimbs: getChecked("physicalexamination_upperlimbs"),
+        PhysicalexaminationUpperlimbsObs: getValue("physicalexamination_upperlimbs_obs"),
+
+        PhysicalexaminationLowerlimbs: getChecked("physicalexamination_lowerlimbs"),
+        PhysicalexaminationLowerlimbsObs: getValue("physicalexamination_lowerlimbs_obs")
     };
 
-    // Antecedentes familiares completo
+    // ---- Antecedentes familiares ----
     dto.FamiliaryBackground = {
         FamiliaryBackgroundHeartdisease: getChecked("familiary_background_heartdisease"),
         FamiliaryBackgroundHeartdiseaseObservation: getValue("familiary_background_heartdisease_observation"),
         FamiliaryBackgroundRelatshcatalogHeartdisease: getInt("familiary_background_relatshcatalog_heartdisease", null),
+
         FamiliaryBackgroundDiabetes: getChecked("familiary_background_diabetes"),
         FamiliaryBackgroundDiabetesObservation: getValue("familiary_background_diabetes_observation"),
         FamiliaryBackgroundRelatshcatalogDiabetes: getInt("familiary_background_relatshcatalog_diabetes", null),
+
         FamiliaryBackgroundDxcardiovascular: getChecked("familiary_background_dxcardiovascular"),
         FamiliaryBackgroundDxcardiovascularObservation: getValue("familiary_background_dxcardiovascular_observation"),
         FamiliaryBackgroundRelatshcatalogDxcardiovascular: getInt("familiary_background_relatshcatalog_dxcardiovascular", null),
+
         FamiliaryBackgroundHypertension: getChecked("familiary_background_hypertension"),
         FamiliaryBackgroundHypertensionObservation: getValue("familiary_background_hypertension_observation"),
         FamiliaryBackgroundRelatshcatalogHypertension: getInt("familiary_background_relatshcatalog_hypertension", null),
+
         FamiliaryBackgroundCancer: getChecked("familiary_background_cancer"),
         FamiliaryBackgroundCancerObservation: getValue("familiary_background_cancer_observation"),
         FamiliaryBackgroundRelatshcatalogCancer: getInt("familiary_background_relatshcatalog_cancer", null),
+
         FamiliaryBackgroundTuberculosis: getChecked("familiary_background_tuberculosis"),
         FamiliaryBackgroundTuberculosisObservation: getValue("familiary_background_tuberculosis_observation"),
         FamiliaryBackgroundRelatshcatalogTuberculosis: getInt("familiary_background_relatshcatalog_tuberculosis", null),
+
         FamiliaryBackgroundDxmental: getChecked("familiary_background_dxmental"),
         FamiliaryBackgroundDxmentalObservation: getValue("familiary_background_dxmental_observation"),
         FamiliaryBackgroundRelatshcatalogDxmental: getInt("familiary_background_relatshcatalog_dxmental", null),
+
         FamiliaryBackgroundDxinfectious: getChecked("familiary_background_dxinfectious"),
         FamiliaryBackgroundDxinfectiousObservation: getValue("familiary_background_dxinfectious_observation"),
         FamiliaryBackgroundRelatshcatalogDxinfectious: getInt("familiary_background_relatshcatalog_dxinfectious", null),
+
         FamiliaryBackgroundMalformation: getChecked("familiary_background_malformation"),
         FamiliaryBackgroundMalformationObservation: getValue("familiary_background_malformation_observation"),
         FamiliaryBackgroundRelatshcatalogMalformation: getInt("familiary_background_relatshcatalog_malformation", null),
+
         FamiliaryBackgroundOther: getChecked("familiary_background_other"),
         FamiliaryBackgroundOtherObservation: getValue("familiary_background_other_observation"),
         FamiliaryBackgroundRelatshcatalogOther: getInt("familiary_background_relatshcatalog_other", null)
+    };
+
+    // ---- Antecedentes personales ----
+    dto.PersonalBackground = {
+        PersonalBackgroundHeartdisease: getChecked("personal_background_heartdisease"),
+        PersonalBackgroundHeartdiseaseObservation: getValue("personal_background_heartdisease_observation"),
+
+        PersonalBackgroundHypertension: getChecked("personal_background_hypertension"),
+        PersonalBackgroundHypertensionObservation: getValue("personal_background_hypertension_observation"),
+
+        PersonalBackgroundDxcardiovascular: getChecked("personal_background_dxcardiovascular"),
+        PersonalBackgroundDxcardiovascularObservation: getValue("personal_background_dxcardiovascular_observation"),
+
+        PersonalBackgroundEndometabolic: getChecked("personal_background_endometabolic"),
+        PersonalBackgroundEndometabolicObservation: getValue("personal_background_endometabolic_observation"),
+
+        PersonalBackgroundCancer: getChecked("personal_background_cancer"),
+        PersonalBackgroundCancerObservation: getValue("personal_background_cancer_observation"),
+
+        PersonalBackgroundTuberculosis: getChecked("personal_background_tuberculosis"),
+        PersonalBackgroundTuberculosisObservation: getValue("personal_background_tuberculosis_observation"),
+
+        PersonalBackgroundDxmental: getChecked("personal_background_dxmental"),
+        PersonalBackgroundDxmentalObservation: getValue("personal_background_dxmental_observation"),
+
+        PersonalBackgroundDxinfectious: getChecked("personal_background_dxinfectious"),
+        PersonalBackgroundDxinfectiousObservation: getValue("personal_background_dxinfectious_observation"),
+
+        PersonalBackgroundMalformation: getChecked("personal_background_malformation"),
+        PersonalBackgroundMalformationObservation: getValue("personal_background_malformation_observation"),
+
+        PersonalBackgroundOther: getChecked("personal_background_other"),
+        PersonalBackgroundOtherObservation: getValue("personal_background_other_observation")
     };
 
     return dto;

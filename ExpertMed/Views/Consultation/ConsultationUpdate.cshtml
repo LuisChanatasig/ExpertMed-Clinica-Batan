@@ -634,7 +634,7 @@
                                     <label for="allergiesSelect"> Seleccione las alergias</label>
                                     <select class="form-control" id="allergiesSelect"
                                             name="allergiesSelect" data-choices data-choices-removeItem
-                                            multiple required>
+                                            multiple >
                                         <option value="">En caso de no tener, escriba desconoce</option>
                                         @foreach (var allergies in Model.AllergiesTypes)
                                         {
@@ -666,7 +666,7 @@
                                     </label>
                                     <select class="form-control" id="surgeriesSelect"
                                             name="surgeriesSelect" data-choices data-choices-removeItem
-                                            multiple required>
+                                            multiple >
                                         <option value="">En caso de no tener, escriba desconoce</option>
                                         @foreach (var surgeries in Model.SurgeriesTypes)
                                         {
@@ -689,6 +689,160 @@
                                 </div>
                             </div>
                             <!-- #endregion Cirugias-->
+                            <!-- #region Antecedentes personales -->
+                            <div class="divider-with-text">
+                                <i class="ri-user-heart-fill" id="icons"></i>
+                                <span>Antecedentes Patologicos Personales</span>
+                            </div>
+
+                            <!-- 💓 Cardiopatía -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input personal-switch" type="checkbox"
+                                       id="personal_background_heartdisease" @(Model.Consultation.PersonalBackground.PersonalBackgroundHeartdisease == true ? "checked" : "")>
+                                <label for="personal_background_heartdisease">Cardiopatía</label>
+                            </div>
+
+                            <div class="mb-3 personal-wrapper" id="personal_background_heartdisease_wrapper">
+                                <input type="text" class="form-control"
+                                       id="personal_background_heartdisease_observation" value="@Model.Consultation.PersonalBackground.PersonalBackgroundHeartdiseaseObservation"
+                                       placeholder="Ingrese una observación">
+                            </div>
+
+                            <!-- 🔥 Hipertensión -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input personal-switch" type="checkbox"
+                                       id="personal_background_hypertension" @(Model.Consultation.PersonalBackground.PersonalBackgroundHypertension == true ? "checked" : "")>
+                                <label for="personal_background_hypertension">
+                                    Hipertensión
+                                </label>
+                            </div>
+
+                            <div class="mb-3 personal-wrapper" id="personal_background_hypertension_wrapper">
+                                <input type="text" class="form-control"
+                                       id="personal_background_hypertension_observation" value="@Model.Consultation.PersonalBackground.PersonalBackgroundHypertensionObservation"
+                                       placeholder="Observación de hipertensión (opcional)">
+                            </div>
+
+                            <!-- ❤️‍🩹 Enfermedad Cardiovascular -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="personal_background_dxcardiovascular" @(Model.Consultation.PersonalBackground.PersonalBackgroundDxcardiovascular == true ? "checked" : "")>
+                                <label for="personal_background_dxcardiovascular">
+                                    Enfermedad Cardiovascular
+                                </label>
+                            </div>
+
+                            <div class="mb-3 personal-wrapper" id="personal_background_dxcardiovascular_wrapper">
+                                <input type="text" class="form-control"
+                                       id="personal_background_dxcardiovascular_observation" value="@Model.Consultation.PersonalBackground.PersonalBackgroundDxcardiovascularObservation"
+                                       placeholder="Observación (opcional)">
+                            </div>
+
+                            <!-- 🧬 Endócrino Metabólico -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="personal_background_endometabolic" @(Model.Consultation.PersonalBackground.PersonalBackgroundEndometabolic == true ? "checked" : "")>
+                                <label for="personal_background_endometabolic">
+                                    Endócrino Metabólico
+                                </label>
+                            </div>
+
+                            <div class="mb-3 personal-wrapper" id="personal_background_endometabolic_wrapper">
+                                <input type="text" class="form-control"
+                                       id="personal_background_endometabolic_observation" value="@Model.Consultation.PersonalBackground.PersonalBackgroundEndometabolic"
+                                       placeholder="Observación (opcional)">
+                            </div>
+
+                            <!-- 🎗 Cáncer -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="personal_background_cancer" @(Model.Consultation.PersonalBackground.PersonalBackgroundCancer == true ? "checked" : "")>
+                                <label for="personal_background_cancer">
+                                    Cáncer
+                                </label>
+                            </div>
+
+                            <div class="mb-3 personal-wrapper" id="personal_background_cancer_wrapper">
+                                <input type="text" class="form-control"
+                                       id="personal_background_cancer_observation" value="@Model.Consultation.PersonalBackground.PersonalBackgroundCancerObservation"
+                                       placeholder="Observación (opcional)">
+                            </div>
+
+                            <!-- 🫁 Tuberculosis -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="personal_background_tuberculosis" @(Model.Consultation.PersonalBackground.PersonalBackgroundTuberculosis == true ? "checked" : "")>
+                                <label for="personal_background_tuberculosis">
+                                    Tuberculosis
+                                </label>
+                            </div>
+
+                            <div class="mb-3 personal-wrapper" id="personal_background_tuberculosis_wrapper">
+                                <input type="text" class="form-control"
+                                       id="personal_background_tuberculosis_observation" value="@Model.Consultation.PersonalBackground.PersonalBackgroundTuberculosisObservation"
+                                       placeholder="Observación (opcional)">
+                            </div>
+
+                            <!-- 🧠 Enfermedad Mental -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="personal_background_dxmental" @(Model.Consultation.PersonalBackground.PersonalBackgroundDxmental == true ? "checked" : "")>
+                                <label for="personal_background_dxmental">
+                                    Enfermedad Mental
+                                </label>
+                            </div>
+
+                            <div class="mb-3 personal-wrapper" id="personal_background_dxmental_wrapper">
+                                <input type="text" class="form-control"
+                                       id="personal_background_dxmental_observation" value="@Model.Consultation.PersonalBackground.PersonalBackgroundDxmentalObservation"
+                                       placeholder="Observación (opcional)">
+                            </div>
+
+                            <!-- 🦠 Enfermedad Infecciosa -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="personal_background_dxinfectious" @(Model.Consultation.PersonalBackground.PersonalBackgroundDxinfectious == true ? "checked" : "")>
+                                <label for="personal_background_dxinfectious">
+                                    Enfermedad Infecciosa
+                                </label>
+                            </div>
+
+                            <div class="mb-3 personal-wrapper" id="personal_background_dxinfectious_wrapper">
+                                <input type="text" class="form-control"
+                                       id="personal_background_dxinfectious_observation" value="@Model.Consultation.PersonalBackground.PersonalBackgroundDxinfectiousObservation"
+                                       placeholder="Observación (opcional)">
+                            </div>
+
+                            <!-- 🧬 Malformación -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="personal_background_malformation" @(Model.Consultation.PersonalBackground.PersonalBackgroundMalformation == true ? "checked" : "")>
+                                <label for="personal_background_malformation">
+                                    Malformación
+                                </label>
+                            </div>
+
+                            <div class="mb-3 personal-wrapper" id="personal_background_malformation_wrapper">
+                                <input type="text" class="form-control"
+                                       id="personal_background_malformation_observation" value="@Model.Consultation.PersonalBackground.PersonalBackgroundMalformationObservation"
+                                       placeholder="Observación (opcional)">
+                            </div>
+
+                            <!-- ❓ Otros -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="personal_background_other" @(Model.Consultation.PersonalBackground.PersonalBackgroundOther == true ? "checked" : "")>
+                                <label for="personal_background_other">
+                                    Otros
+                                </label>
+                            </div>
+
+                            <div class="mb-3 personal-wrapper" id="personal_background_other_wrapper">
+                                <input type="text" class="form-control" 
+                                       id="personal_background_other_observation" value="@Model.Consultation.PersonalBackground.PersonalBackgroundOtherObservation"
+                                       placeholder="Especifique">
+                            </div>
+                            <!-- #endregion Antecedentes personales -->
                             <!-- #region Antecedentes familiares-->
                             <div class="divider-with-text">
                                 <i class="ri-arrow-go-back-fill" id="icons"></i> <span>
@@ -1157,159 +1311,116 @@
                             </div>
 
                             <!-- #region Revisión de organos y sistemas-->
-                            <!-- #region organos de los sentidos-->
+
                             <div class="form-check form-switch">
-                                <input class="form-check-input" name="SwitchCheckSenseOrgans"
-                                       type="checkbox" role="switch" id="organssystems_organsenses" @(Model.Consultation.OrgansSystem.OrganssystemsOrgansenses == true ? "checked" : "")>
-                                <label class="form-check-label" for="SwitchCheckSenseOrgans">
-                                    Órganos de los sentidos
-                                </label>
+                                <input class="form-check-input" type="checkbox" id="organssystems_skin" @(Model.Consultation.OrgansSystem.OrganssystemsSkin == true ? "checked" : "")>
+                                <label>Piel – Anexos</label>
                             </div>
-
-
-                            <div class="col-lg-5">
-                                <div class="mb-3">
-                                    <input type="text" class="form-control" id="organssystems_organsenses_Obs"
-                                           name="observationSenseOrgans" placeholder="Ingrese una observación" value="@Model.Consultation.OrgansSystem.OrganssystemsOrgansensesObs" >
-                                </div>
+                            <div class="mb-3 organs-wrapper" id="organssystems_skin_wrapper">
+                                <input type="text" class="form-control" id="organssystems_skin_obs" value="@Model.Consultation.OrgansSystem.OrganssystemsSkinObs"
+                                       placeholder="Ingrese una observación">
                             </div>
-                            <!-- #endregion organos de los sentidos-->
-                            <!-- #region Respiratory-->
+                            <!-- Órganos de los sentidos -->
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" role="switch"
-                                       id="organssystems_respiratory" name="SwitchCheckRespiratory" @(Model.Consultation.OrgansSystem.OrganssystemsRespiratory == true ? "checked" : "")>
-                                <label class="form-check-label" for="SwitchCheckRespiratory">Respiratorio</label>
+                                <input class="form-check-input" type="checkbox" id="organssystems_organsenses" @(Model.Consultation.OrgansSystem.OrganssystemsOrgansenses == true ? "checked" : "")>
+                                <label>Órganos de los sentidos</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="organssystems_organsenses_wrapper">
+                                <input type="text" class="form-control" id="organssystems_organsenses_Obs" value="@Model.Consultation.OrgansSystem.OrganssystemsOrgansensesObs"
+                                       placeholder="Ingrese una observación">
                             </div>
 
 
-                            <div class="col-lg-5">
-                                <div class="mb-3">
-                                    <input type="text" class="form-control" id="organssystems_respiratory_obs"
-                                           name="observationRespiratory" placeholder="Ingrese una observación" value="@Model.Consultation.OrgansSystem.OrganssystemsRespiratoryObs">
-                                </div>
-                            </div>
-                            <!-- #endregion Respiratory-->
-                            <!-- #region Cardiovascular-->
+                            <!-- Respiratorio -->
                             <div class="form-check form-switch">
-                                <input class="form-check-input" name="SwitchCheckCardiovascular"
-                                       type="checkbox" role="switch" id="organssystems_cardiovascular" @(Model.Consultation.OrgansSystem.OrganssystemsCardiovascular == true ? "checked" : "")>
-                                <label class="form-check-label" for="SwitchCheckCardiovascular">Cardiovascular</label>
+                                <input class="form-check-input" type="checkbox" id="organssystems_respiratory" @(Model.Consultation.OrgansSystem.OrganssystemsRespiratory == true ? "checked" : "")>
+                                <label>Respiratorio</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="organssystems_respiratory_wrapper">
+                                <input type="text" class="form-control" id="organssystems_respiratory_obs" value="@Model.Consultation.OrgansSystem.OrganssystemsRespiratory"
+                                       placeholder="Ingrese una observación">
                             </div>
 
-
-                            <div class="col-lg-5">
-                                <div class="mb-3">
-                                    <input type="text" class="form-control" id="organssystems_cardiovascular_obs"
-                                           name="observationCardiovascular" placeholder="Ingrese una observación" value="@Model.Consultation.OrgansSystem.OrganssystemsCardiovascularObs">
-                                </div>
-                            </div>
-                            <!-- #endregion Cardiovascular-->
-                            <!-- #region Digestive-->
+                            <!-- Cardiovascular -->
                             <div class="form-check form-switch">
-                                <input class="form-check-input" name="SwitchCheckDigestive"
-                                       type="checkbox" role="switch" id="organssystems_digestive" @(Model.Consultation.OrgansSystem.OrganssystemsDigestive == true ? "checked" : "")>
-                                <label class="form-check-label" for="SwitchCheckDigestive">Digestivo</label>
+                                <input class="form-check-input" type="checkbox" id="organssystems_cardiovascular" @(Model.Consultation.OrgansSystem.OrganssystemsCardiovascular == true ? "checked" : "")>
+                                <label>Cardiovascular</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="organssystems_cardiovascular_wrapper">
+                                <input type="text" class="form-control" id="organssystems_cardiovascular_obs" value="@Model.Consultation.OrgansSystem.OrganssystemsCardiovascularObs"
+                                       placeholder="Ingrese una observación">
                             </div>
 
-
-                            <div class="col-lg-5">
-                                <div class="mb-3">
-                                    <input type="text" class="form-control" id="organssystems_digestive_obs"
-                                           name="observationDigestive" placeholder="Ingrese una observación" value="@Model.Consultation.OrgansSystem.OrganssystemsDigestiveObs" >
-                                </div>
-                            </div>
-                            <!-- #endregion Digestive-->
-                            <!-- #region Genital-->
+                            <!-- Digestivo -->
                             <div class="form-check form-switch">
-                                <input class="form-check-input" name="SwitchCheckGenital"
-                                       type="checkbox" role="switch" id="organssystems_genital" @(Model.Consultation.OrgansSystem.OrganssystemsGenital == true ? "checked" : "")>
-                                <label class="form-check-label" for="SwitchCheckGenital">Genital</label>
+                                <input class="form-check-input" type="checkbox" id="organssystems_digestive" @(Model.Consultation.OrgansSystem.OrganssystemsDigestive == true ? "checked" : "")>
+                                <label>Digestivo</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="organssystems_digestive_wrapper">
+                                <input type="text" class="form-control" id="organssystems_digestive_obs" value="@Model.Consultation.OrgansSystem.OrganssystemsDigestiveObs"
+                                       placeholder="Ingrese una observación">
                             </div>
 
-
-                            <div class="col-lg-5">
-                                <div class="mb-3">
-                                    <input type="text" class="form-control" id="organssystems_genital_obs"
-                                           name="observationGenital" placeholder="Ingrese una observación" value="@Model.Consultation.OrgansSystem.OrganssystemsGenitalObs">
-                                </div>
-                            </div>
-                            <!-- #endregion Genital-->
-                            <!-- #region Urinary-->
+                            <!-- Genital -->
                             <div class="form-check form-switch">
-                                <input class="form-check-input" name="SwitchCheckUrinary"
-                                       type="checkbox" role="switch" id="organssystems_urinary" @(Model.Consultation.OrgansSystem.OrganssystemsUrinary == true ? "checked" : "")>
-                                <label class="form-check-label" for="SwitchCheckUrinary">Urinario</label>
+                                <input class="form-check-input" type="checkbox" id="organssystems_genital" @(Model.Consultation.OrgansSystem.OrganssystemsGenital == true ? "checked" : "")>
+                                <label>Genital</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="organssystems_genital_wrapper">
+                                <input type="text" class="form-control" id="organssystems_genital_obs" value="@Model.Consultation.OrgansSystem.OrganssystemsGenitalObs"
+                                       placeholder="Ingrese una observación">
                             </div>
 
-
-                            <div class="col-lg-5">
-                                <div class="mb-3">
-                                    <input type="text" class="form-control" id="organssystems_urinary_obs"
-                                           name="observationUrinary" placeholder="Ingrese una observación" value="@Model.Consultation.OrgansSystem.OrganssystemsUrinaryObs">
-                                </div>
-                            </div>
-                            <!-- #endregion Urinary-->
-                            <!-- #region Skeletal Muscle-->
+                            <!-- Urinario -->
                             <div class="form-check form-switch">
-                                <input class="form-check-input" name="SwitchCheckSkeletalMuscle"
-                                       type="checkbox" role="switch" id="organssystems_skeletal_m" @(Model.Consultation.OrgansSystem.OrganssystemsSkeletalM == true ? "checked" : "")>
-                                <label class="form-check-label" for="SwitchCheckSkeletalMuscle"> Musculoesquelético</label>
+                                <input class="form-check-input" type="checkbox" id="organssystems_urinary" @(Model.Consultation.OrgansSystem.OrganssystemsUrinary == true ? "checked" : "")>
+                                <label>Urinario</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="organssystems_urinary_wrapper">
+                                <input type="text" class="form-control" id="organssystems_urinary_obs" value="@Model.Consultation.OrgansSystem.OrganssystemsUrinaryObs"
+                                       placeholder="Ingrese una observación">
                             </div>
 
-
-                            <div class="col-lg-5">
-                                <div class="mb-3">
-                                    <input type="text" class="form-control" id="organssystems_skeletal_m_obs" 
-                                           name="observationSkeletalMuscle" placeholder="Ingrese una observación" value="@Model.Consultation.OrgansSystem.OrganssystemsSkeletalMObs">
-                                </div>
-                            </div>
-                            <!-- #endregion Skeletal Muscle-->
-                            <!-- #region Endocrine-->
+                            <!-- Musculoesquelético -->
                             <div class="form-check form-switch">
-                                <input class="form-check-input" name="SwitchCheckEndocrine"
-                                       type="checkbox" role="switch" id="organssystems_endrocrine" @(Model.Consultation.OrgansSystem.OrganssystemsEndrocrine == true ? "checked" : "")>
-                                <label class="form-check-label" for="SwitchCheckEndocrine">Endocrino</label>
+                                <input class="form-check-input" type="checkbox" id="organssystems_skeletal_m" @(Model.Consultation.OrgansSystem.OrganssystemsSkeletalM == true ? "checked" : "")>
+                                <label>Musculoesquelético</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="organssystems_skeletal_m_wrapper">
+                                <input type="text" class="form-control" id="organssystems_skeletal_m_obs" value="@Model.Consultation.OrgansSystem.OrganssystemsSkeletalMObs"
+                                       placeholder="Ingrese una observación">
                             </div>
 
-
-                            <div class="col-lg-5">
-                                <div class="mb-3">
-                                    <input type="text" class="form-control" id="organssystems_endocrine"
-                                           name="observationEndocrine" placeholder="Ingrese una observación" value="@Model.Consultation.OrgansSystem.OrganssystemsEndocrine">
-                                </div>
-                            </div>
-                            <!-- #endregion Endocrine-->
-                            <!-- #region Lymphatic Heme-->
+                            <!-- Endocrino -->
                             <div class="form-check form-switch">
-                                <input class="form-check-input" name="SwitchCheckLymphaticHeme"
-                                       type="checkbox" role="switch" id="organssystems_lymphatic" @(Model.Consultation.OrgansSystem.OrganssystemsLymphatic == true ? "checked" : "")>
-                                <label class="form-check-label" for="SwitchCheckLymphaticHeme">Hemolinfático</label>
+                                <input class="form-check-input" type="checkbox" id="organssystems_endocrine" @(Model.Consultation.OrgansSystem.OrganssystemsEndrocrine == true ? "checked" : "")>
+                                <label>Endocrino</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="organssystems_endocrine_wrapper">
+                                <input type="text" class="form-control" id="organssystems_endocrine_obs" value="@Model.Consultation.OrgansSystem.OrganssystemsEndocrine"
+                                       placeholder="Ingrese una observación">
                             </div>
 
-
-
-                            <div class="col-lg-5">
-                                <div class="mb-3">
-                                    <input type="text" class="form-control" id="organssystems_lymphatic_obs"
-                                           name="observationLymphaticHeme" placeholder="Ingrese una observación" value="@Model.Consultation.OrgansSystem.OrganssystemsLymphaticObs">
-                                </div>
-                            </div>
-                            <!-- #endregion Lymphatic Heme-->
-                            <!-- #region Nervous System-->
+                            <!-- Hemolinfático -->
                             <div class="form-check form-switch">
-                                <input class="form-check-input" name="SwitchCheckHighlystrung"
-                                       type="checkbox" role="switch" id="organssystems_nervous"   @(Model.Consultation.OrgansSystem.OrganssystemsNervous == true ? "checked" : "")>
-                                <label class="form-check-label" for="SwitchCheckHighlystrung">Sistema Nervioso</label>
+                                <input class="form-check-input" type="checkbox" id="organssystems_lymphatic" @(Model.Consultation.OrgansSystem.OrganssystemsLymphatic == true ? "checked" : "")>
+                                <label>Hemolinfático</label>
+                            </div>
+                            <div class="mb-3 organs-wrapper" id="organssystems_lymphatic_wrapper">
+                                <input type="text" class="form-control" id="organssystems_lymphatic_obs" value="@Model.Consultation.OrgansSystem.OrganssystemsLymphaticObs"
+                                       placeholder="Ingrese una observación">
                             </div>
 
-
-                            <div class="col-lg-5">
-                                <div class="mb-3">
-                                    <input type="text" class="form-control" id="organssystems_nervous_obs"
-                                           name="observationHighlystrung" placeholder="Ingrese una observación" value="@Model.Consultation.OrgansSystem.OrganssystemsNervousObs">
-                                </div>
+                            <!-- Sistema Nervioso -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="organssystems_nervous" @(Model.Consultation.OrgansSystem.OrganssystemsNervous == true ? "checked" : "")>
+                                <label>Sistema Nervioso</label>
                             </div>
-                            <!-- #endregion Nervous System-->
+                            <div class="mb-3 organs-wrapper" id="organssystems_nervous_wrapper">
+                                <input type="text" class="form-control" id="organssystems_nervous_obs" value="@Model.Consultation.OrgansSystem.OrganssystemsNervousObs"
+                                       placeholder="Ingrese una observación">
+                            </div>
+
                             <!-- #endregion Revisión de organos y sistemas-->
 
                             <br /> <br />
@@ -1376,8 +1487,49 @@
                                     <input type="text" class="form-control" id="consultation_size" name="weightInput" placeholder="160" value="@Model.DetailsPatient.Weight">
                                 </div>
                             </div>
+                            <!-- IMC (Kg/m²) -->
+                            <div class="col-lg-4">
+                                <div class="mb-3">
+                                    <label for="consultation_bmi" class="form-label">IMC (Kg/m²)</label>
+                                    <input type="text" class="form-control" id="consultation_bmi" name="consultation_bmi" placeholder="22.5" value="@Model.DetailsPatient.Imc">
+                                    <span>Se calcula automáticamente usando peso y talla.</span>
+                                </div>
+                            </div>
+
+                            <!-- Perímetro Abdominal (cm) -->
+                            <div class="col-lg-4">
+                                <div class="mb-3">
+                                    <label for="consultation_abdominal_perimeter" class="form-label">Perímetro Abdominal (cm)</label>
+                                    <input type="text" class="form-control" id="consultation_abdominal_perimeter" name="consultation_abdominal_perimeter" value="@Model.DetailsPatient.AbdominalPerimeter" placeholder="85">
+                                </div>
+                            </div>
+
+                            <!-- Hemoglobina capilar (g/dl) -->
+                            <div class="col-lg-4">
+                                <div class="mb-3">
+                                    <label for="consultation_capillary_hemoglobin" class="form-label">Hemoglobina capilar (g/dl)</label>
+                                    <input type="text" class="form-control" id="consultation_capillary_hemoglobin" name="consultation_capillary_hemoglobin" value="@Model.DetailsPatient.CapillaryHemoglobin" placeholder="13.5">
+                                </div>
+                            </div>
+
+                            <!-- Glucosa capilar (mg/dl) -->
+                            <div class="col-lg-4">
+                                <div class="mb-3">
+                                    <label for="consultation_capillary_glucose" class="form-label">Glucosa capilar (mg/dl)</label>
+                                    <input type="text" class="form-control" id="consultation_capillary_glucose" name="consultation_capillary_glucose" value="@Model.DetailsPatient.CapillaryGlucose" placeholder="105">
+                                </div>
+                            </div>
+
+                            <!-- Pulsioximetría (%) -->
+                            <div class="col-lg-4">
+                                <div class="mb-3">
+                                    <label for="consultation_spo2" class="form-label">Pulsioximetría (%)</label>
+                                    <input type="text" class="form-control" id="consultation_spo2" name="consultation_spo2" value="@Model.DetailsPatient.Spo2" placeholder="98">
+                                </div>
+                            </div>
+
                             <!-- #endregion Signos Vitales-->
-                            <!-- #region Examen Fisico Regional-->
+                            <!-- #region Examen Físico Regional -->
 
                             <div class="divider-with-text">
                                 <span>
@@ -2436,7 +2588,79 @@
             });
         })();
     </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+          const requireOn = true;
 
+          const groups = {
+            personal_background: [
+              "heartdisease",
+              "hypertension",
+              "dxcardiovascular",
+              "endometabolic",
+              "cancer",
+              "tuberculosis",
+              "dxmental",
+              "dxinfectious",
+              "malformation",
+              "other"
+            ],
+            organssystems: [
+              "skin",
+              "organsenses",
+              "respiratory",
+              "cardiovascular",
+              "digestive",
+              "genital",
+              "urinary",
+              "skeletal_m",
+              "endocrine",
+              "lymphatic",
+              "nervous"
+            ],
+            physicalexamination: [
+              "skinfaneras",
+              "head",
+              "eyes",
+              "ears",
+              "nose",
+              "mouth",
+              "oropharynx",
+              "neck",
+              "axilasmamas",
+              "chest",
+              "abdomen",
+              "spine",
+              "ingleperine",
+              "upperlimbs",
+              "lowerlimbs",
+              "pelvis"
+            ]
+          };
+
+          const bind = (prefix, keys) => {
+            keys.forEach(key => {
+              const chk = document.getElementById(`${prefix}_${key}`);
+              const wrap = document.getElementById(`${prefix}_${key}_wrapper`);
+              const obs =
+                document.getElementById(`${prefix}_${key}_obs`) ||
+                document.getElementById(`${prefix}_${key}_Obs`);
+
+              if (!chk || !wrap) return;
+
+              const update = () => {
+                wrap.style.display = chk.checked ? "block" : "none";
+                if (obs && requireOn) obs.required = chk.checked;
+              };
+
+              update();
+              chk.addEventListener("change", update);
+            });
+          };
+
+          Object.entries(groups).forEach(([prefix, keys]) => bind(prefix, keys));
+        });
+    </script>
     <script src="~/assets/js/consultation.js"></script>
 
     <!-- SCRIPT DE PRE-CARGA - Debe ir DESPUÉS de consultation.js -->
