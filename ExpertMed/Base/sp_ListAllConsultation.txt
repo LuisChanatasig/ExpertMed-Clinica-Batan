@@ -1,0 +1,98 @@
+sp_ListAllConsultation
+
+
+/****** Object:  Table [dbo].[personal_background]    Script Date: 27/10/2025 9:54:00 ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[personal_background](
+	[personal_background_id] [int] IDENTITY(1,1) NOT NULL,
+	[personal_background_consultationid] [int] NOT NULL,
+	[personal_background_heartdisease] [bit] NULL,
+	[personal_background_heartdisease_observation] [nvarchar](255) NULL,
+	[personal_background_hypertension] [bit] NULL,
+	[personal_background_hypertension_observation] [nvarchar](255) NULL,
+	[personal_background_dxcardiovascular] [bit] NULL,
+	[personal_background_dxcardiovascular_observation] [nvarchar](255) NULL,
+	[personal_background_endometabolic] [bit] NULL,
+	[personal_background_endometabolic_observation] [nvarchar](255) NULL,
+	[personal_background_cancer] [bit] NULL,
+	[personal_background_cancer_observation] [nvarchar](255) NULL,
+	[personal_background_tuberculosis] [bit] NULL,
+	[personal_background_tuberculosis_observation] [nvarchar](255) NULL,
+	[personal_background_dxmental] [bit] NULL,
+	[personal_background_dxmental_observation] [nvarchar](255) NULL,
+	[personal_background_dxinfectious] [bit] NULL,
+	[personal_background_dxinfectious_observation] [nvarchar](255) NULL,
+	[personal_background_malformation] [bit] NULL,
+	[personal_background_malformation_observation] [nvarchar](255) NULL,
+	[personal_background_other] [bit] NULL,
+	[personal_background_other_observation] [nvarchar](255) NULL,
+ CONSTRAINT [PK_personal_background] PRIMARY KEY CLUSTERED 
+(
+	[personal_background_id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
+ALTER TABLE [dbo].[personal_background]  WITH CHECK ADD  CONSTRAINT [FK_personal_background_consultationid] FOREIGN KEY([personal_background_consultationid])
+REFERENCES [dbo].[consultation] ([consultation_id])
+GO
+
+ALTER TABLE [dbo].[personal_background] CHECK CONSTRAINT [FK_personal_background_consultationid]
+GO
+
+
+alter table organs_systems add organssystems_skin INT
+alter table organs_systems add organssystems_skin_obs NVARCHAR(1000)
+
+
+
+ALTER TABLE physical_examination ADD
+    physicalexamination_skinfaneras BIT NULL,
+    physicalexamination_skinfaneras_obs NVARCHAR(255) NULL,
+    physicalexamination_eyes BIT NULL,
+    physicalexamination_eyes_obs NVARCHAR(255) NULL,
+    physicalexamination_ears BIT NULL,
+    physicalexamination_ears_obs NVARCHAR(255) NULL,
+    physicalexamination_nose BIT NULL,
+    physicalexamination_nose_obs NVARCHAR(255) NULL,
+    physicalexamination_mouth BIT NULL,
+    physicalexamination_mouth_obs NVARCHAR(255) NULL,
+    physicalexamination_oropharynx BIT NULL,
+    physicalexamination_oropharynx_obs NVARCHAR(255) NULL,
+    physicalexamination_axilasmamas BIT NULL,
+    physicalexamination_axilasmamas_obs NVARCHAR(255) NULL,
+    physicalexamination_spine BIT NULL,
+    physicalexamination_spine_obs NVARCHAR(255) NULL,
+    physicalexamination_ingleperine BIT NULL,
+    physicalexamination_ingleperine_obs NVARCHAR(255) NULL,
+    physicalexamination_upperlimbs BIT NULL,
+    physicalexamination_upperlimbs_obs NVARCHAR(255) NULL,
+    physicalexamination_lowerlimbs BIT NULL,
+    physicalexamination_lowerlimbs_obs NVARCHAR(255) NULL;
+
+
+
+ALTER TABLE vital_signs ADD
+    imc DECIMAL(5,2) NULL,
+    abdominal_perimeter DECIMAL(5,2) NULL,
+    capillary_hemoglobin DECIMAL(5,2) NULL,
+    capillary_glucose DECIMAL(5,2) NULL,
+    spo2 DECIMAL(5,2) NULL;
+
+sp_GetConsultationDetails
+
+sp_GetPatientFullData
+
+
+sp_CreateConsultation
+
+[sp_InsertVitalSigns]
+
+sp_CreatePatient
+
+sp_UpdatePatient

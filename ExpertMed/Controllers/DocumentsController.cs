@@ -186,7 +186,7 @@ namespace ExpertMed.Controllers
                                            $"{diaSemana} {fechaEmision.Day} ({diaEnLetras}) DE {mes} DE {fechaEmision.Year}";
 
                     formFields.SetField("txt_cabecera_certificado", textoCabecera);
-                    formFields.SetField("txt_fecha_emision", fechaEmision.ToString("dd/MM/yyyy"));
+                    formFields.SetField("txt_fecha_emision", DateTime.Now.ToString("dd/MM/yyyy"));
 
                     // =========================
                     // DATOS DEL PACIENTE

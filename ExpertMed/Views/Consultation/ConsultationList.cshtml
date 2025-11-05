@@ -62,8 +62,31 @@
                     </div>
                 </div>
             </div>
+             <!-- Paginación arriba -->
+            <div class="d-flex justify-content-between align-items-center p-2">
+                <span class="text-muted">Página @ViewBag.Page</span>
 
+                <div class="btn-group">
+                    <a asp-action="ConsultationList"
+                       asp-route-patientId="@Context.Request.Query["patientId"]"
+                       asp-route-page="@(ViewBag.Page - 1)"
+                       asp-route-pageSize="@ViewBag.PageSize"
+                        class="btn btn-sm btn-outline-secondary @((ViewBag.HasPrevious ?? false) ? "" : "disabled")">
+                        ← Anterior
+                    </a>
+
+                    <a asp-action="ConsultationList"
+                       asp-route-patientId="@Context.Request.Query["patientId"]"
+                       asp-route-page="@(ViewBag.Page + 1)"
+                       asp-route-pageSize="@ViewBag.PageSize"
+class="btn btn-sm btn-outline-primary @((ViewBag.HasNext ?? false) ? "" : "disabled")">
+                        Siguiente →
+                    </a>
+                </div>
+            </div>
             <div class="card-body">
+
+
                 @if (Model != null && Model.Any())
                 {
                     int grupoId = 1;
@@ -225,6 +248,28 @@
                         No hay consultas registradas.
                     </div>
                 }
+            </div>
+            <!-- Paginación abajo -->
+            <div class="d-flex justify-content-between align-items-center p-3">
+                <span class="text-muted">Página @ViewBag.Page</span>
+
+                <div class="btn-group">
+                    <a asp-action="ConsultationList"
+                       asp-route-patientId="@Context.Request.Query["patientId"]"
+                       asp-route-page="@(ViewBag.Page - 1)"
+                       asp-route-pageSize="@ViewBag.PageSize"
+class="btn btn-sm btn-outline-secondary @((ViewBag.HasPrevious ?? false) ? "" : "disabled")">
+                        ← Anterior
+                    </a>
+
+                    <a asp-action="ConsultationList"
+                       asp-route-patientId="@Context.Request.Query["patientId"]"
+                       asp-route-page="@(ViewBag.Page + 1)"
+                       asp-route-pageSize="@ViewBag.PageSize"
+class="btn btn-sm btn-outline-primary @((ViewBag.HasNext ?? false) ? "" : "disabled")">
+                        Siguiente →
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -399,6 +444,11 @@
             }, 2000);
         }
 
+         function changePageSize() {
+            const size = document.getElementById("pageSizeSelect").value;
+            window.location.href = '@Url.Action("ConsultationList", "Consultation")'
+                + '?page=1&pageSize=' + size;
+        }
         $(document).ready(function () {
             // Búsqueda en tiempo real
             $('#consultaSearch').on('keyup', function () {

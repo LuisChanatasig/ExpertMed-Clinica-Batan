@@ -20,85 +20,83 @@ namespace ExpertMed.Services
         }
 
 
-        public async Task<List<ConsultationGroupViewModel>> GetConsultationsAsync(int userId, int profileId, int? patientId = null)
+        public async Task<List<ConsultationGroupViewModel>> GetConsultationsAsync(
+        int userId,
+        int profileId,
+        int? patientId = null,
+        int page = 1,
+        int pageSize = 15)
         {
             try
             {
-                // Construir la consulta SQL dinámica
+                // Timeout extendido para evitar excepciones por rendimiento momentáneo
+                _dbContext.Database.SetCommandTimeout(120);
+
                 string sqlQuery;
-                List<object> parameters = new List<object> { userId, profileId };
+                List<object> parameters = new() { userId, profileId, page, pageSize };
 
                 if (patientId.HasValue)
                 {
-                    sqlQuery = "EXEC sp_ListAllConsultation @user_id = {0}, @profile_id = {1}, @patient_id = {2}";
-                    parameters.Add(patientId.Value);
+                    sqlQuery = "EXEC sp_ListAllConsultation @user_id = {0}, @profile_id = {1}, @patient_id = {2}, @page = {3}, @pagesize = {4}";
+                    parameters.Insert(2, patientId.Value);
                 }
                 else
                 {
-                    sqlQuery = "EXEC sp_ListAllConsultation @user_id = {0}, @profile_id = {1}";
+                    sqlQuery = "EXEC sp_ListAllConsultation @user_id = {0}, @profile_id = {1}, @page = {2}, @pagesize = {3}";
                 }
 
-                // Ejecutar el stored procedure
                 var consultations = await _dbContext.Consultations
                     .FromSqlRaw(sqlQuery, parameters.ToArray())
                     .AsNoTracking()
                     .ToListAsync();
 
-                // Si no hay consultas, retornar lista vacía
                 if (!consultations.Any())
-                {
                     return new List<ConsultationGroupViewModel>();
-                }
 
-                // OPTIMIZACIÓN: Pre-cargar todas las entidades relacionadas en 3 consultas
+                // IDs necesarios
                 var patientIds = consultations.Select(c => c.ConsultationPatient).Distinct().ToList();
-                var userIds = consultations.Select(c => c.ConsultationUsercreate).Where(u => u.HasValue).Select(u => u.Value).Distinct().ToList();
-                var specialityIds = consultations.Select(c => c.ConsultationSpeciality).Where(s => s.HasValue).Select(s => s.Value).Distinct().ToList();
+                var userIds = consultations.Where(c => c.ConsultationUsercreate.HasValue)
+                                           .Select(c => c.ConsultationUsercreate.Value)
+                                           .Distinct()
+                                           .ToList();
+                var specialityIds = consultations.Where(c => c.ConsultationSpeciality.HasValue)
+                                                 .Select(c => c.ConsultationSpeciality.Value)
+                                                 .Distinct()
+                                                 .ToList();
 
-                // Cargar todos los pacientes en un diccionario
+                // Carga diccionarios
                 var patients = await _dbContext.Patients
                     .Where(p => patientIds.Contains(p.PatientId))
                     .AsNoTracking()
                     .ToDictionaryAsync(p => p.PatientId);
 
-                // Cargar todos los usuarios en un diccionario
                 var users = await _dbContext.Users
                     .Where(u => userIds.Contains(u.UsersId))
                     .AsNoTracking()
                     .ToDictionaryAsync(u => u.UsersId);
 
-                // Cargar todas las especialidades en un diccionario
                 var specialities = await _dbContext.Specialities
                     .Where(s => specialityIds.Contains(s.SpecialityId))
                     .AsNoTracking()
                     .ToDictionaryAsync(s => s.SpecialityId);
 
-                // Asignar las navegaciones manualmente (muy rápido en memoria)
-                foreach (var consultation in consultations)
+                // Asignación manual
+                foreach (var c in consultations)
                 {
-                    // Asignar paciente
-                    if (patients.TryGetValue(consultation.ConsultationPatient, out var patient))
-                    {
-                        consultation.ConsultationPatientNavigation = patient;
-                    }
+                    if (patients.TryGetValue(c.ConsultationPatient, out var pt))
+                        c.ConsultationPatientNavigation = pt;
 
-                    // Asignar usuario/médico
-                    if (consultation.ConsultationUsercreate.HasValue &&
-                        users.TryGetValue(consultation.ConsultationUsercreate.Value, out var user))
-                    {
-                        consultation.ConsultationUsercreateNavigation = user;
-                    }
+                    if (c.ConsultationUsercreate.HasValue &&
+                        users.TryGetValue(c.ConsultationUsercreate.Value, out var us))
+                        c.ConsultationUsercreateNavigation = us;
 
-                    // Asignar especialidad
-                    if (consultation.ConsultationSpeciality.HasValue &&
-                        specialities.TryGetValue(consultation.ConsultationSpeciality.Value, out var speciality))
-                    {
-                        consultation.ConsultationSpecialityNavigation = speciality;
-                    }
+                    if (c.ConsultationSpeciality.HasValue &&
+                        specialities.TryGetValue(c.ConsultationSpeciality.Value, out var sp))
+                        c.ConsultationSpecialityNavigation = sp;
                 }
 
-                // Agrupar por paciente y crear el ViewModel
-                var consultasAgrupadas = consultations
+                // Agrupar
+                var grouped = consultations
                     .GroupBy(c => new
                     {
                         PacienteId = c.ConsultationPatient,
@@ -115,20 +113,17 @@ namespace ExpertMed.Services
                     .OrderByDescending(g => g.UltimaConsulta)
                     .ToList();
 
-                return consultasAgrupadas;
+                return grouped;
             }
             catch (SqlException sqlEx)
             {
-                // Log específico para errores SQL
-                Console.WriteLine($"Error SQL en GetConsultationsAsync: {sqlEx.Message}");
-                Console.WriteLine($"StackTrace: {sqlEx.StackTrace}");
-                throw new ApplicationException($"Error al ejecutar el stored procedure: {sqlEx.Message}", sqlEx);
+                Console.WriteLine($"Error SQL: {sqlEx.Message}");
+                throw new ApplicationException($"Error al ejecutar el SP: {sqlEx.Message}", sqlEx);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error en GetConsultationsAsync: {ex.Message}");
-                Console.WriteLine($"StackTrace: {ex.StackTrace}");
-                throw new ApplicationException("Error al obtener las consultas", ex);
+                Console.WriteLine($"Error general: {ex.Message}");
+                throw new ApplicationException("Error al obtener consultas", ex);
             }
         }
 

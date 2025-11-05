@@ -31,7 +31,7 @@ namespace ExpertMed.Controllers
 
 
         [HttpGet]
-        public async Task<IActionResult> ConsultationList(int? patientId = null)
+        public async Task<IActionResult> ConsultationList(int? patientId = null, int page = 1, int pageSize = 30)
         {
             var userId = HttpContext.Session.GetInt32("UsuarioId");
             var profileId = HttpContext.Session.GetInt32("PerfilId");
@@ -47,13 +47,25 @@ namespace ExpertMed.Controllers
                 var consultationsGrouped = await _consultationService.GetConsultationsAsync(
                     userId.Value,
                     profileId.Value,
-                    patientId
+                    patientId,
+                    page,
+                    pageSize
                 );
 
-                // Información adicional para la vista
+                // Cuenta total por página (se está devolviendo paginado)
                 ViewBag.TotalConsultas = consultationsGrouped.Sum(g => g.TotalConsultas);
+
+                // Pacientes únicos en esta página (correcto)
                 ViewBag.TotalPacientes = consultationsGrouped.Count;
+
+                // Consultas pendientes en esta página
                 ViewBag.ConsultasPendientes = consultationsGrouped.Sum(g => g.Consultas.Count(c => c.AppointmentStatus != 4));
+
+                // Información de paginación para la vista
+                ViewBag.Page = page;
+                ViewBag.PageSize = pageSize;
+                ViewBag.HasPrevious = page > 1;
+                ViewBag.HasNext = consultationsGrouped.Any(); // si trajo filas, puede haber siguiente página
 
                 return View(consultationsGrouped);
             }
@@ -62,10 +74,9 @@ namespace ExpertMed.Controllers
                 TempData["ErrorMessage"] = appEx.Message;
                 return View(new List<ConsultationGroupViewModel>());
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                // Log el error (usa ILogger si está disponible)
-                TempData["ErrorMessage"] = "Error inesperado al cargar las consultas. Por favor, contacte al administrador.";
+                TempData["ErrorMessage"] = "Error inesperado al cargar las consultas.";
                 return View(new List<ConsultationGroupViewModel>());
             }
         }
