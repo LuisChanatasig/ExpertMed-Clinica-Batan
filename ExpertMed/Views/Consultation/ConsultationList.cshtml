@@ -321,21 +321,21 @@ class="btn btn-sm btn-outline-primary @((ViewBag.HasNext ?? false) ? "" : "disab
                 <h5 class="modal-title" id="optionsDocuments">¿Qué documento desea generar?</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <form action="javascript:void(0);">
-                    <div class="row g-3">
-                        <select class="form-select mb-3" id="documentType" aria-label="Seleccione un documento" onchange="enableDownloadButton()">
-                            <option selected>Seleccione un documento</option>
-                            <option value="justificante">Certificado Médico</option>
-                            <option value="formulario">Formulario Médico</option>
-                            <option value="formulario2">Formulario Médico2</option>
-                            <option value="receta">Receta</option>
-                            <option value="laboratorio">Laboratorio</option>
-                            <option value="imagen">Imagen</option>
-                        </select>
-                    </div>
-                </form>
-            </div>
+<div class="modal-body">
+    <form action="javascript:void(0);">
+        <div class="row g-3">
+            <select class="form-select mb-3" id="documentType" aria-label="Seleccione un documento" onchange="enableDownloadButton()">
+                <option selected>Seleccione un documento</option>
+                <option value="justificante">Certificado Médico</option>
+                <option value="formulario">Formulario Médico antiguo</option>
+                <option value="formulario2" class="new-form-highlight">Formulario Médico 2026</option> 
+                <option value="receta">Receta</option>
+                <option value="laboratorio">Laboratorio</option>
+                <option value="imagen">Imagen</option>
+            </select>
+        </div>
+    </form>
+</div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                 <button type="button" class="btn btn-primary" id="downloadButton" onclick="downloadDocument()" disabled>

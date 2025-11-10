@@ -148,7 +148,7 @@ namespace ExpertMed.Controllers
                 return View();
             }
         }
-        
+
         /// <summary>
         /// 
         /// </summary>
@@ -193,7 +193,7 @@ namespace ExpertMed.Controllers
                     consultaDto.ConsultationPulse,
                     consultaDto.ConsultationWeight,
                     consultaDto.ConsultationSize,
-                    consultaDto.ConsultationTreatmentplan, 
+                    consultaDto.ConsultationTreatmentplan,
                     consultaDto.ConsultationObservation,
                     consultaDto.ConsultationPersonalbackground,
                     consultaDto.ConsultationDisablilitydays ?? 0,
@@ -206,7 +206,12 @@ namespace ExpertMed.Controllers
                     consultaDto.ConsultationContingencytype,
                     consultaDto.ConsutationHasSymptoms,
                     consultaDto.ConsultationIsFinal,
-
+                    // === Nuevos campos clínicos (2025-11-07) ===
+                    consultaDto.ConsultationImc,
+                    consultaDto.ConsultationAbdominalPerimeter,
+                    consultaDto.ConsultationCapillaryHemoglobin,
+                    consultaDto.ConsultationCapillaryGlucose,
+                    consultaDto.ConsultationSpo2,
                     // Órganos y sistemas
                     consultaDto.OrgansSystem?.OrganssystemsOrgansenses,
                     consultaDto.OrgansSystem?.OrganssystemsOrgansensesObs,

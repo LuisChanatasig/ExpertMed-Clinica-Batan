@@ -18681,3 +18681,10 @@ div#baccard {
 #accionesWrap a.btn {
     border-radius: 999px
 }
+
+/* CSS para resaltar solo la opción del formulario nuevo */
+.new-form-highlight {
+    background-color: #d4edda; /* Verde pálido */
+    color: #155724; /* Texto verde oscuro */
+    font-weight: bold;
+}

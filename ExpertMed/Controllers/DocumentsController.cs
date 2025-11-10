@@ -2110,14 +2110,7 @@ namespace ExpertMed.Controllers
 
 
         // Helper class for Family Conditions (can be placed inside your controller or as a private static nested class)
-        public class FamilyCondition
-        {
-            public bool? IsTrue { get; set; }
-            public string Observation { get; set; }
-            public string RelationshipName { get; set; }
-            public string FieldName { get; set; }
-            public string DisplayName { get; set; }
-        }
+  
 
         public async Task<IActionResult> MedicalForm2(int consultationId)
         {
@@ -2147,8 +2140,8 @@ namespace ExpertMed.Controllers
             // Example: private void InsertImageFromField(PdfStamper stamper, AcroFields fields, string fieldName, string imagePath) { /* ... */ }
             // If not, you might need to provide its implementation or remove this line if not used.
             // InsertImageFromField(pdfStamper, formFields, "txt_imagen_logo", consultation.UsersEstablishmentLogo); 
-            formFields.SetField("txt_institucion_del_sistema","N/A");
-            formFields.SetField("txt_unicode","N/A");
+            formFields.SetField("txt_institucion_sistema", consultation.EstablishmentName);
+            formFields.SetField("txt_unicode",consultation.EstablishmentUnicode);
             formFields.SetField("txt_establecimiento_salud", consultation.EstablishmentName);
             formFields.SetField("txt_numero_historia_clinica", patient.PatientDocumentnumber);
             formFields.SetField("txt_numero_hoja", "1");
@@ -2175,8 +2168,25 @@ namespace ExpertMed.Controllers
             // MOTIVO Y ENFERMEDAD
             formFields.SetField("txt_motivo_consulta", consultation.ConsultationReason ?? "N/A");
             formFields.SetField("txt_enfermedad_problema", consultation.ConsultationDisease ?? "N/A");
+            // ======================
+            // FECHA Y HORA DE CONSULTA
+            // ======================
+            if (consultation.ConsultationCreationdate.HasValue)
+            {
+                var fecha = consultation.ConsultationCreationdate.Value.ToString("dd/MM/yyyy");
+                var hora = consultation.ConsultationCreationdate.Value.ToString("HH:mm");
+
+                formFields.SetField("txt_fecha_sig", fecha);
+                formFields.SetField("txt_hora_sig", hora);
+            }
+            else
+            {
+                formFields.SetField("txt_fecha_sig", "N/A");
+                formFields.SetField("txt_hora_sig", "N/A");
+            }
 
             // CONSTANTES VITALES
+
             formFields.SetField("txt_temp_sig", consultation.ConsultationTemperature ?? "N/A");
             formFields.SetField("txt_art_sis_sig", consultation.ConsultationBloodpressuredAs ?? "N/A");
             formFields.SetField("txt_art_dis_sig", consultation.ConsultationBloodpresuredDis ?? "N/A");
@@ -2184,145 +2194,473 @@ namespace ExpertMed.Controllers
             formFields.SetField("txt_frecuencia_sig", consultation.ConsultationRespirationrate ?? "N/A");
             formFields.SetField("txt_peso_sig", consultation.ConsultationWeight ?? "N/A");
             formFields.SetField("txt_talla_sig", consultation.ConsultationSize ?? "N/A");
+            formFields.SetField("txt_ICM_sig", consultation.ConsultationImc?.ToString() ?? "N/A");
+            formFields.SetField("txt_perimetro_abdominal_sig", consultation.ConsultationAbdominalPerimeter?.ToString() ?? "N/A");
+            formFields.SetField("txt_hemoglobina_capilar_sig", consultation.ConsultationCapillaryHemoglobin?.ToString() ?? "N/A");
+            formFields.SetField("txt_glucosa_capilar_sig", consultation.ConsultationCapillaryGlucose?.ToString() ?? "N/A");
+            formFields.SetField("txt_pulsioximetria_sig", consultation.ConsultationSpo2?.ToString() ?? "N/A");
 
+            // ======================
             // ANTECEDENTES PERSONALES
-            formFields.SetField("txt_cardiopatia", consultation.ConsultationPersonalbackground ?? "N/A"); // Note: This field name "txt_cardiopatia" seems to reuse "ConsultationPersonalbackground" and might be redundant if the combined "txt_antecedentes_personales" is used.
-            formFields.SetField("txt_antecedentes_personales", consultation.ConsultationPersonalbackground ?? "N/A");
+            // ======================
+            var pb = consultation.PersonalBackground;
+            var antecedentesPersonales = new List<string>();
 
-            // ---
-            // FAMILIARES - Refactored for linearity
-            // ---
-            var fam = consultation.FamiliaryBackground;
-            var antecedentesFamiliares = new StringBuilder(); // Use StringBuilder for efficient string concatenation
+            void SetPersonalField(string pdfField, string displayName, bool? flag, string obs)
+            {
+                // Marca con "X" si está activo
+                formFields.SetField(pdfField, flag == true ? "X" : "");
 
-            // Define all family conditions in a list for linear processing
-            var familyConditions = new List<FamilyCondition>
-        {
-            new FamilyCondition
-            {
-                IsTrue = fam?.FamiliaryBackgroundHeartdisease,
-                Observation = fam?.FamiliaryBackgroundHeartdiseaseObservation,
-                RelationshipName = fam?.FamiliaryBackgroundRelatshcatalogHeartdiseaseNavigation?.CatalogName,
-                FieldName = "txt_cardiopatia_familiar",
-                DisplayName = "Cardiopatía"
-            },
-            new FamilyCondition
-            {
-                IsTrue = fam?.FamiliaryBackgroundHypertension,
-                Observation = fam?.FamiliaryBackgroundHypertensionObservation,
-                RelationshipName = fam?.FamiliaryBackgroundRelatshcatalogHypertensionNavigation?.CatalogName,
-                FieldName = "txt_hipertension_familiar",
-                DisplayName = "Hipertensión"
-            },
-            new FamilyCondition
-            {
-                IsTrue = fam?.FamiliaryBackgroundDxcardiovascular,
-                Observation = fam?.FamiliaryBackgroundDxcardiovascularObservation,
-                RelationshipName = fam?.FamiliaryBackgroundRelatshcatalogDxcardiovascularNavigation?.CatalogName,
-                FieldName = "txt_enf_cardiovascular_familiar",
-                DisplayName = "Enfermedad Cardiovascular"
-            },
-            new FamilyCondition
-            {
-                IsTrue = fam?.FamiliaryBackgroundCancer,
-                Observation = fam?.FamiliaryBackgroundCancerObservation,
-                RelationshipName = fam?.FamiliaryBackgroundRelatshcatalogCancerNavigation?.CatalogName,
-                FieldName = "txt_cancer_familiar",
-                DisplayName = "Cáncer"
-            },
-            new FamilyCondition
-            {
-                IsTrue = fam?.FamiliaryBackgroundTuberculosis,
-                Observation = fam?.FamiliaryBackgroundTuberculosisObservation,
-                RelationshipName = fam?.FamiliaryBackgroundRelatshTuberculosisNavigation?.CatalogName, // Ensure this matches your model
-                FieldName = "txt_tuberculosis_familiar",
-                DisplayName = "Tuberculosis"
-            },
-            new FamilyCondition
-            {
-                IsTrue = fam?.FamiliaryBackgroundDxmental,
-                Observation = fam?.FamiliaryBackgroundDxmentalObservation,
-                RelationshipName = fam?.FamiliaryBackgroundRelatshcatalogDxmentalNavigation?.CatalogName,
-                FieldName = "txt_enf_mental_familiar",
-                DisplayName = "Enfermedad Mental"
-            },
-            new FamilyCondition
-            {
-                IsTrue = fam?.FamiliaryBackgroundDxinfectious,
-                Observation = fam?.FamiliaryBackgroundDxinfectiousObservation,
-                RelationshipName = fam?.FamiliaryBackgroundRelatshcatalogDxinfectiousNavigation?.CatalogName,
-                FieldName = "txt_enf_infecciosa_familiar",
-                DisplayName = "Enfermedad Infecciosa"
-            },
-            new FamilyCondition
-            {
-                IsTrue = fam?.FamiliaryBackgroundMalformation,
-                Observation = fam?.FamiliaryBackgroundMalformationObservation,
-                RelationshipName = fam?.FamiliaryBackgroundRelatshcatalogMalformationNavigation?.CatalogName,
-                FieldName = "txt_mal_formacion_familiar",
-                DisplayName = "Malformación"
-            },
-            new FamilyCondition
-            {
-                IsTrue = fam?.FamiliaryBackgroundOther,
-                Observation = fam?.FamiliaryBackgroundOtherObservation,
-                RelationshipName = fam?.FamiliaryBackgroundRelatshcatalogOtherNavigation?.CatalogName,
-                FieldName = "txt_otro_familiar",
-                DisplayName = "Otro"
+                // Si está activo y tiene observación, la añadimos a la lista
+                if (flag == true && !string.IsNullOrWhiteSpace(obs))
+                    antecedentesPersonales.Add($"{displayName}: {obs}");
             }
-        };
 
-            // Loop through the defined conditions to process each one linearly.
-            foreach (var condition in familyConditions)
+            // Condiciones personales
+            SetPersonalField("txt_cardiopatia", "Cardiopatía", pb?.PersonalBackgroundHeartdisease, pb?.PersonalBackgroundHeartdiseaseObservation);
+            SetPersonalField("txt_hipertension", "Hipertensión", pb?.PersonalBackgroundHypertension, pb?.PersonalBackgroundHypertensionObservation);
+            SetPersonalField("txt_enf_cardiovascular", "Enfermedad cardiovascular", pb?.PersonalBackgroundDxcardiovascular, pb?.PersonalBackgroundDxcardiovascularObservation);
+            SetPersonalField("txt_end_metabolico", "Endocrino-metabólico", pb?.PersonalBackgroundEndometabolic, pb?.PersonalBackgroundEndometabolicObservation);
+            SetPersonalField("txt_cancer", "Cáncer", pb?.PersonalBackgroundCancer, pb?.PersonalBackgroundCancerObservation);
+            SetPersonalField("txt_tuberculosis", "Tuberculosis", pb?.PersonalBackgroundTuberculosis, pb?.PersonalBackgroundTuberculosisObservation);
+            SetPersonalField("txt_enf_mental", "Enfermedad mental", pb?.PersonalBackgroundDxmental, pb?.PersonalBackgroundDxmentalObservation);
+            SetPersonalField("txt_enf_infecciosa", "Enfermedad infecciosa", pb?.PersonalBackgroundDxinfectious, pb?.PersonalBackgroundDxinfectiousObservation);
+            SetPersonalField("txt_mal_formacion", "Malformación", pb?.PersonalBackgroundMalformation, pb?.PersonalBackgroundMalformationObservation);
+            SetPersonalField("txt_otro", "Otro", pb?.PersonalBackgroundOther, pb?.PersonalBackgroundOtherObservation);
+
+            // ======================
+            // ALERGIAS Y CIRUGÍAS
+            // ======================
+            var alergiasCirugias = new List<string>();
+
+            // Alergias
+            if (consultation.AllergiesConsultations != null && consultation.AllergiesConsultations.Count > 0)
             {
-                // Set "X" for the individual checkbox-like field
-                formFields.SetField(condition.FieldName, condition.IsTrue == true ? "X" : "");
-
-                // If the condition is true, append its details to the main antecedentesFamiliares field
-                if (condition.IsTrue == true)
+                foreach (var a in consultation.AllergiesConsultations)
                 {
-                    antecedentesFamiliares.AppendLine($"{condition.DisplayName}: {condition.RelationshipName ?? "N/A"} - {condition.Observation}");
+                    // Si tiene observación, la mostramos
+                    if (!string.IsNullOrWhiteSpace(a.AllergiesObservation))
+                        alergiasCirugias.Add($"Alergia: {a.AllergiesObservation}");
                 }
             }
 
-            // Set the accumulated text to the antecedentes_familiares field
-            formFields.SetField("txt_antecedentes_familiares", antecedentesFamiliares.ToString());
-            // formFields.SetField("txt_end_metabolico_familiar", fam?.FamiliaryBackgroundDxinfectious == true ? "X" : ""); // This line was commented out in your snippet, so it's kept out.
-
-            // ---
-            // End of Refactored FAMILIARES section
-            // ---
-
-            // REVISIÓN DE ÓRGANOS Y SISTEMAS
-            var organs = consultation.OrgansSystem;
-            formFields.SetField("txt_respiratorio_organos_sistemas", organs?.OrganssystemsRespiratoryObs ?? "N/A");
-            formFields.SetField("txt_digestivo_organos_sistemas", organs?.OrganssystemsDigestiveObs ?? "N/A");
-            formFields.SetField("txt_nervioso_sistemas", organs?.OrganssystemsNervousObs ?? "N/A");
-
-            // EXAMEN FÍSICO
-            var ex = consultation.PhysicalExamination;
-            formFields.SetField("txt_cabeza_examenfisico", ex?.PhysicalexaminationHeadObs ?? "N/A");
-            formFields.SetField("txt_abdomen_examenfisico", ex?.PhysicalexaminationAbdomenObs ?? "N/A");
-            formFields.SetField("txt_torax_examenfisico", ex?.PhysicalexaminationChestObs ?? "N/A");
-
-            // DIAGNÓSTICOS (primeros 3)
-            for (int i = 0; i < Math.Min(3, consultation.DiagnosisConsultations?.Count ?? 0); i++)
+            // Cirugías
+            if (consultation.SurgeriesConsultations != null && consultation.SurgeriesConsultations.Count > 0)
             {
-                var diag = consultation.DiagnosisConsultations[i];
-                formFields.SetField($"txt_diganostico_{i + 1}", diag.DiagnosisObservation ?? "N/A");
-                formFields.SetField($"txt_pre_{i + 1}", diag.DiagnosisPresumptive == true ? "X" : "");
-                formFields.SetField($"txt_def_{i + 1}", diag.DiagnosisDefinitive == true ? "X" : "");
+                foreach (var c in consultation.SurgeriesConsultations)
+                {
+                    if (!string.IsNullOrWhiteSpace(c.SurgeriesObservation))
+                        alergiasCirugias.Add($"Cirugía: {c.SurgeriesObservation}");
+                }
+            }
+
+            // Construimos texto horizontal y línea visual debajo
+            var textoAlergiasCirugias = alergiasCirugias.Count > 0
+                ? string.Join(", ", alergiasCirugias) // Une todas las entradas separadas por ", "
+                : "N/A"; // Si no hay nada, muestra "N/A"
+
+            // ======================
+            // ASIGNACIÓN AL PDF 
+            // ======================
+            formFields.SetField("txt_alergias_cirugias", textoAlergiasCirugias);
+
+       
+            // Resumen horizontal separado por comas
+            formFields.SetField("txt_antecedentes_personales",
+                antecedentesPersonales.Count > 0 ? string.Join(", ", antecedentesPersonales) : "N/A");
+
+            // ======================
+            // ANTECEDENTES FAMILIARES
+            // ======================
+            var fam = consultation.FamiliaryBackground;
+            var antecedentesFamiliares = new List<string>();
+
+            void SetFamilyField(
+                string pdfField,
+                string displayName,
+                bool? flag,
+                string? obs,
+                string? relatshName
+            )
+            {
+                // Marca con "X" el campo del PDF si hay antecedente
+                formFields.SetField(pdfField, flag == true ? "X" : "");
+
+                // Solo agregamos al resumen si está activo
+                if (flag == true)
+                {
+                    var texto = displayName;
+
+                    // Agregar parentesco si viene de catálogo
+                    if (!string.IsNullOrWhiteSpace(relatshName))
+                        texto += $" ({relatshName})";
+
+                    // Agregar observación si existe
+                    if (!string.IsNullOrWhiteSpace(obs))
+                        texto += $": {obs}";
+
+                    antecedentesFamiliares.Add(texto);
+                }
+            }
+
+            // Campos individuales del PDF
+            SetFamilyField(
+                "txt_cardiopatia_familiar",
+                "Cardiopatía",
+                fam?.FamiliaryBackgroundHeartdisease,
+                fam?.FamiliaryBackgroundHeartdiseaseObservation,
+                fam?.RelatshHeartdiseaseName
+            );
+
+            SetFamilyField(
+                "txt_hipertension_familiar",
+                "Hipertensión",
+                fam?.FamiliaryBackgroundHypertension,
+                fam?.FamiliaryBackgroundHypertensionObservation,
+                fam?.RelatshHypertensionName
+            );
+
+            SetFamilyField(
+                "txt_enf_cardiovascular_familiar",
+                "Enfermedad cardiovascular",
+                fam?.FamiliaryBackgroundDxcardiovascular,
+                fam?.FamiliaryBackgroundDxcardiovascularObservation,
+                fam?.RelatshDxcardiovascularName
+            );
+
+            SetFamilyField(
+                "txt_end_metabolico_familiar",
+                "Endocrino–metabólico",
+                fam?.FamiliaryBackgroundDiabetes,
+                fam?.FamiliaryBackgroundDiabetesObservation,
+                fam?.RelatshDiabetesName
+            );
+
+            SetFamilyField(
+                "txt_cancer_familiar",
+                "Cáncer",
+                fam?.FamiliaryBackgroundCancer,
+                fam?.FamiliaryBackgroundCancerObservation,
+                fam?.RelatshCancerName
+            );
+
+            SetFamilyField(
+                "txt_tuberculosis_familiar",
+                "Tuberculosis",
+                fam?.FamiliaryBackgroundTuberculosis,
+                fam?.FamiliaryBackgroundTuberculosisObservation,
+                fam?.RelatshTuberculosisName
+            );
+
+            SetFamilyField(
+                "txt_enf_mental_familiar",
+                "Enfermedad mental",
+                fam?.FamiliaryBackgroundDxmental,
+                fam?.FamiliaryBackgroundDxmentalObservation,
+                fam?.RelatshDxmentalName
+            );
+
+            SetFamilyField(
+                "txt_enf_infecciosa_familiar",
+                "Enfermedad infecciosa",
+                fam?.FamiliaryBackgroundDxinfectious,
+                fam?.FamiliaryBackgroundDxinfectiousObservation,
+                fam?.RelatshDxinfectiousName
+            );
+
+            SetFamilyField(
+                "txt_mal_formacion_familiar",
+                "Malformación",
+                fam?.FamiliaryBackgroundMalformation,
+                fam?.FamiliaryBackgroundMalformationObservation,
+                fam?.RelatshMalformationName
+            );
+
+            SetFamilyField(
+                "txt_otro_familiar",
+                "Otro",
+                fam?.FamiliaryBackgroundOther,
+                fam?.FamiliaryBackgroundOtherObservation,
+                fam?.RelatshOtherName
+            );
+
+            // Resumen horizontal en txt_antecedentes_familiares
+            var textoFamiliares = antecedentesFamiliares.Count > 0
+                ? string.Join(", ", antecedentesFamiliares)
+                : "N/A";
+
+            formFields.SetField("txt_antecedentes_familiares", textoFamiliares);
+
+
+
+            // ==============================
+            // REVISIÓN DE ÓRGANOS Y SISTEMAS
+            // ==============================
+            var organs = consultation.OrgansSystem;
+            var revisionOrganos = new List<string>();
+
+            void SetOrganField(string pdfField, string displayName, string? obs)
+            {
+                var textoCampo = string.IsNullOrWhiteSpace(obs) ? "N/A" : obs.Trim();
+
+                // Campo individual del PDF
+                formFields.SetField(pdfField, textoCampo);
+
+                // Para el resumen solo si hay contenido
+                if (!string.IsNullOrWhiteSpace(obs))
+                    revisionOrganos.Add($"{displayName}: {obs.Trim()}");
+            }
+
+            // Campos individuales
+            SetOrganField(
+                "txt_piel_organos_sistemas",
+                "Piel y anexos",
+                organs?.OrganssystemsSkinObs
+            );
+
+            SetOrganField(
+                "txt_respiratorio_organos_sistemas",
+                "Respiratorio",
+                organs?.OrganssystemsRespiratoryObs
+            );
+
+            SetOrganField(
+                "txt_digestivo_organos_sistemas",
+                "Digestivo",
+                organs?.OrganssystemsDigestiveObs
+            );
+
+            SetOrganField(
+                "txt_musculo_esqueletico_organos_sistemas",
+                "Músculo–esquelético",
+                organs?.OrganssystemsSkeletalMObs
+            );
+
+            SetOrganField(
+                "txt_hemo_linfatico_organos_sistemas",
+                "Hemo–linfático",
+                organs?.OrganssystemsLymphaticObs
+            );
+
+            SetOrganField(
+                "txt_osentidos_organos_sistemas",  // ajusta al nombre real del campo
+                "Órganos de los sentidos",
+                organs?.OrganssystemsOrgansensesObs
+            );
+
+            SetOrganField(
+                "txt_cardio_vascular_sistemas",
+                "Cardio-vascular",
+                organs?.OrganssystemsCardiovascularObs
+            );
+
+            SetOrganField(
+                "txt_genito_urinario_sistemas",
+                "Genito-urinario",
+                organs?.OrganssystemsGenitalObs
+            );
+
+            SetOrganField(
+                "txt_endocrino_sistemas",
+                "Endocrino",
+                organs?.OrganssystemsEndocrine
+            );
+
+            SetOrganField(
+                "txt_nervioso_sistemas",
+                "Nervioso",
+                organs?.OrganssystemsNervousObs
+            );
+
+            // Resumen horizontal
+            var textoRevision = revisionOrganos.Count > 0
+                ? string.Join(" | ", revisionOrganos)
+                : "N/A";
+
+            formFields.SetField("txt_revision_organos_sistemas", textoRevision);
+
+
+            // ======================
+            // EXAMEN FÍSICO
+            // ======================
+            var ex = consultation.PhysicalExamination;
+            var examenFisico = new List<string>();
+
+            // Usa el mismo 'organs' que ya definiste en la sección de
+            // REVISIÓN DE ÓRGANOS Y SISTEMAS:
+            // var organs = consultation.OrgansSystem;
+
+            void SetPhysicalField(string pdfField, string displayName, string? obs)
+            {
+                var textoCampo = string.IsNullOrWhiteSpace(obs) ? "N/A" : obs.Trim();
+                formFields.SetField(pdfField, textoCampo);
+
+                if (!string.IsNullOrWhiteSpace(obs))
+                    examenFisico.Add($"{displayName}: {obs.Trim()}");
+            }
+
+            // Parte “anatómica” del examen físico (usa PhysicalExamination)
+            SetPhysicalField("txt_piel_faneras_examenfisico", "Piel y faneras", ex?.PhysicalexaminationSkinfanerasObs);
+            SetPhysicalField("txt_cabeza_examenfisico", "Cabeza", ex?.PhysicalexaminationHeadObs);
+            SetPhysicalField("txt_ojos_examenfisico", "Ojos", ex?.PhysicalexaminationEyesObs);
+            SetPhysicalField("txt_oidos_examenfisico", "Oídos", ex?.PhysicalexaminationEarsObs);
+            SetPhysicalField("txt_nariz_examenfisico", "Nariz", ex?.PhysicalexaminationNoseObs);
+            SetPhysicalField("txt_boca_examenfisico", "Boca", ex?.PhysicalexaminationMouthObs);
+            SetPhysicalField("txt_orofaringe_examenfisico", "Orofaringe", ex?.PhysicalexaminationOropharynxObs);
+            SetPhysicalField("txt_cuello_examenfisico", "Cuello", ex?.PhysicalexaminationNeckObs);
+            SetPhysicalField("txt_axilas_examenfisico", "Axilas", ex?.PhysicalexaminationAxilasmamasObs);
+            SetPhysicalField("txt_torax_examenfisico", "Tórax", ex?.PhysicalexaminationChestObs);
+            SetPhysicalField("txt_abdomen_examenfisico", "Abdomen", ex?.PhysicalexaminationAbdomenObs);
+            SetPhysicalField("txt_columna_vertebral_examenfisico", "Columna vertebral", ex?.PhysicalexaminationSpineObs);
+            SetPhysicalField("txt_ingle_perine_examenfisico", "Ingle y periné", ex?.PhysicalexaminationIngleperineObs);
+            SetPhysicalField("txt_miembros_superiores_examenfisico", "Miembros superiores", ex?.PhysicalexaminationUpperlimbsObs);
+            SetPhysicalField("txt_miembros_inferiores_examenfisico", "Miembros inferiores", ex?.PhysicalexaminationLowerlimbsObs);
+
+            // Parte “por sistemas” del examen físico (reutiliza OrgansSystem)
+            SetPhysicalField("txt_organos_sentidos_examenfisico", "Órganos de los sentidos",
+                organs?.OrganssystemsOrgansensesObs);
+
+            SetPhysicalField("txt_respiratorio_examenfisico", "Respiratorio",
+                organs?.OrganssystemsRespiratoryObs);
+
+            SetPhysicalField("txt_cardioascular_examenfisico", "Cardio-vascular",
+                organs?.OrganssystemsCardiovascularObs);
+
+            SetPhysicalField("txt_digestivo_examenfisico", "Digestivo",
+                organs?.OrganssystemsDigestiveObs);
+
+            SetPhysicalField("txt_genital_examenfisico", "Genital",
+                organs?.OrganssystemsGenitalObs);
+
+            // Si no tienes campo específico urinario, se puede mapear al mismo “Genito-urinario”
+            SetPhysicalField("txt_urinario_examenfisico", "Urinario",
+                organs?.OrganssystemsGenitalObs);
+
+            SetPhysicalField("txt_musculo_esqueletico_examenfisico", "Músculo-esquelético",
+                organs?.OrganssystemsSkeletalMObs);
+
+            SetPhysicalField("txt_endocrino_examenfisico", "Endocrino",
+                organs?.OrganssystemsEndocrine);
+
+            SetPhysicalField("txt_hemo_linfatico_examenfisico", "Hemo-linfático",
+                organs?.OrganssystemsLymphaticObs);
+
+            SetPhysicalField("txt_neurologico_examenfisico", "Neurológico",
+                organs?.OrganssystemsNervousObs);
+
+            // Resumen horizontal
+            var textoExamenFisico = examenFisico.Count > 0
+                ? string.Join(" | ", examenFisico)
+                : "N/A";
+
+            formFields.SetField("txt_examen_fisico", textoExamenFisico);
+
+
+            // Obtener todos los IDs de diagnóstico relacionados con la consulta
+            var relatedDiagIds = consultation.DiagnosisConsultations
+                .Select(dc => dc.DiagnosisDiagnosisid)
+                .Distinct()
+                .ToList();
+
+
+            // =======================================
+            // 1. CARGA DE DATOS
+            // =======================================
+            // Carga todos los diagnósticos disponibles para lookup (esto resuelve el error 'diagnosisList' no existe)
+            var diagnosisList = await _selectService.GetAllDiagnosisAsync();
+
+
+            // =======================================
+            // 2. PREPARACIÓN DE LA LISTA FINAL (Máx. 6)
+            // =======================================
+
+            // Combina el estado de la consulta (Presuntivo/Definitivo) con los detalles del diagnóstico (Nombre/CIE10)
+            // Los diagnósticos originales d.DiagnosisName y d.DiagnosisCie10 provienen de la lista cargada.
+            var finalDiags = (from dc in consultation.DiagnosisConsultations // Tiene el estado Presuntivo/Definitivo
+                              join d in diagnosisList on dc.DiagnosisDiagnosisid equals d.DiagnosisId // Obtiene los detalles
+                              select new
+                              {
+                                  DiagnosisName = d.DiagnosisName,
+                                  DiagnosisCie10 = d.DiagnosisCie10,
+                                  IsPresumptive = dc.DiagnosisPresumptive,
+                                  IsDefinitive = dc.DiagnosisDefinitive
+                              })
+                              .Take(6) // Limitar a los 6 slots del PDF
+                              .ToList();
+
+
+            // =======================================
+            // 3. LLENADO DEL FORMULARIO PDF
+            // =======================================
+
+            // Nombres EXACTOS de los campos del PDF
+            string[] diagFields = { "txt_diganostico_1", "txt_diganostico_2", "txt_diganostico_3", "txt_diganostico_4", "txt_diganostico_5", "txt_diganostico_6" };
+            string[] cie10Fields = { "txt_cie10_1", "txt_cie10_2", "txt_cie10_3", "txt_cie10_4", "txt_cie10_5", "txt_cie10_6" };
+            string[] preFields = { "txt_pre_1", "txt_pre_2", "txt_pre_3", "txt_pre_4", "txt_pre_5", "txt_pre_6" };
+            string[] defFields = { "txt_def_1", "txt_def_2", "txt_def_3", "txt_def_4", "txt_def_5", "txt_def_6" };
+
+            int totalSlots = diagFields.Length;
+
+            for (int i = 0; i < totalSlots; i++)
+            {
+                if (i < finalDiags.Count)
+                {
+                    var d = finalDiags[i];
+
+                    // Rellenar con los datos combinados
+                    formFields.SetField(diagFields[i], d.DiagnosisName ?? "");
+                    formFields.SetField(cie10Fields[i], d.DiagnosisCie10?.ToString() ?? "");
+
+                    // Presuntivo / Definitivo (marcar con 'X')
+                    formFields.SetField(preFields[i], d.IsPresumptive == true ? "X" : "");
+                    formFields.SetField(defFields[i], d.IsDefinitive == true ? "X" : "");
+                }
+                else
+                {
+                    // Limpiar los slots no utilizados
+                    formFields.SetField(diagFields[i], "");
+                    formFields.SetField(cie10Fields[i], "");
+                    formFields.SetField(preFields[i], "");
+                    formFields.SetField(defFields[i], "");
+                }
             }
 
             // PLAN DE TRATAMIENTO
             formFields.SetField("txt_plan_tratamiento", consultation.ConsultationTreatmentplan ?? "N/A");
 
             // MÉDICO
-            formFields.SetField("txt_primer_nombre_medico", consultation.UsersNames ?? "N/A");
-            formFields.SetField("txt_primer_apellido_medico", consultation.UsersSurcenames ?? "N/A");
+            // Obtener nombres y apellidos del usuario (médico)
+            string fullNames = consultation.UsersNames?.Trim() ?? string.Empty;
+            string fullSurnames = consultation.UsersSurcenames?.Trim() ?? string.Empty;
+
+            // --- 1. PROCESAR NOMBRES (txt_primer_nombre_medico) ---
+            // Dividir la cadena de nombres por el espacio.
+            string[] namesArray = fullNames.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+            // Asignar el primer nombre. Si no hay nombres, será vacío.
+            string primerNombre = namesArray.Length > 0 ? namesArray[0] : string.Empty;
+
+            // Asignar al PDF (el PDF solo pide el primer nombre, así que ignoramos el segundo nombre)
+            formFields.SetField("txt_primer_nombre_medico", primerNombre);
+
+            // --- 2. PROCESAR APELLIDOS (txt_primer_apellido_medico y txt_segundo_apellido_medico) ---
+            // Dividir la cadena de apellidos por el espacio.
+            string[] surnamesArray = fullSurnames.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+            // Asignar el primer apellido.
+            string primerApellido = surnamesArray.Length > 0 ? surnamesArray[0] : string.Empty;
+
+            // Asignar el segundo apellido.
+            // Si hay un segundo elemento en el array, tómalo; de lo contrario, deja la cadena vacía.
+            string segundoApellido = surnamesArray.Length > 1 ? surnamesArray[1] : string.Empty;
+
+            // Asignar al PDF
+            formFields.SetField("txt_primer_apellido_medico", primerApellido);
+            formFields.SetField("txt_segundo_apellido_medico", segundoApellido);
             formFields.SetField("txt_email", consultation.UsersEmail ?? "");
             formFields.SetField("txt_telefono", consultation.UsersPhone ?? "");
             formFields.SetField("txt_direccion", consultation.EstablishmentAddress ?? "");
+            formFields.SetField("txt_identificacion_medico", consultation.UsersDocumentNumber ?? "");
 
             // FECHA Y HORA
             formFields.SetField("txt_fecha_final", consultation.ConsultationCreationdate?.ToString("yyyy-MM-dd") ?? "N/A");
@@ -2475,7 +2813,7 @@ namespace ExpertMed.Controllers
                         ? string.Join(", ", filteredAllergies.Select(a => a.CatalogName))
                         : "N/A";
 
-                    formFields.SetField("txt_alergias_cirugias", allergiesText);
+                    formFields.SetField("txt_alergias", allergiesText);
 
                     // =========================
                     // OTROS CAMPOS

@@ -184,7 +184,14 @@ namespace ExpertMed.Services
             string consultation_contingencytype,
             bool? consultation_hassymptoms,
             bool consultation_is_final,
-
+    // ==============================
+    // NUEVOS CAMPOS CLÍNICOS (2025-11-07)
+    // ==============================
+    decimal? consultation_imc,
+    decimal? consultation_abdominal_perimeter,
+    decimal? consultation_capillary_hemoglobin,
+    decimal? consultation_capillary_glucose,
+    decimal? consultation_spo2,
             // Órganos y sistemas
             bool? organssystems_organsenses,
             string organssystems_organsenses_Obs,
@@ -357,6 +364,12 @@ namespace ExpertMed.Services
             AddSqlParameter(command, "@consultation_hassymptoms", consultation_hassymptoms);
             AddSqlParameter(command, "@consultation_is_final", consultation_is_final);
 
+            // === Nuevos campos clínicos (2025-11-07) ===
+            AddSqlParameter(command, "@consultation_imc", consultation_imc);
+            AddSqlParameter(command, "@consultation_abdominal_perimeter", consultation_abdominal_perimeter);
+            AddSqlParameter(command, "@consultation_capillary_hemoglobin", consultation_capillary_hemoglobin);
+            AddSqlParameter(command, "@consultation_capillary_glucose", consultation_capillary_glucose);
+            AddSqlParameter(command, "@consultation_spo2", consultation_spo2);
             // === Órganos y sistemas ===
             AddSqlParameter(command, "@organssystems_organsenses", organssystems_organsenses);
             AddSqlParameter(command, "@organssystems_organsenses_Obs", organssystems_organsenses_Obs);
@@ -583,6 +596,14 @@ namespace ExpertMed.Services
                 consulta.ConsultationPulse = S("consultation_pulse");
                 consulta.ConsultationWeight = S("consultation_weight");
                 consulta.ConsultationSize = S("consultation_size");
+
+                // **Campos Fisiológicos Adicionales (decimal(5, 2) NULL)**
+                consulta.ConsultationImc = GetValueOrDefault<decimal?>("imc");
+                consulta.ConsultationAbdominalPerimeter = GetValueOrDefault<decimal?>("abdominal_perimeter");
+                consulta.ConsultationCapillaryHemoglobin = GetValueOrDefault<decimal?>("capillary_hemoglobin");
+                consulta.ConsultationCapillaryGlucose = GetValueOrDefault<decimal?>("capillary_glucose");
+                consulta.ConsultationSpo2 = GetValueOrDefault<decimal?>("spo2");
+
                 consulta.ConsultationTreatmentplan = S("consultation_treatmentplan");
                 consulta.ConsultationObservation = S("consultation_observation");
                 consulta.ConsultationPersonalbackground = S("consultation_personalbackground");
@@ -610,6 +631,8 @@ namespace ExpertMed.Services
                 consulta.UsersDocumentNumber = S("users_document_number");
                 consulta.SpecialityName = S("speciality_name");
                 consulta.EstablishmentName = S("establishment_name");
+                consulta.EstablishmentUnicode = S("establishment_unicode");
+                consulta.EstablishmentType = I("establishment_type");
 
                 if (!reader.IsDBNull(reader.GetOrdinal("establishment_logo")))
                 {
@@ -620,7 +643,6 @@ namespace ExpertMed.Services
 
                 consulta.EstablishmentAddress = S("establishment_address");
             }
-
             reader.NextResult();
             while (reader.Read())
                 consulta.DiagnosisConsultations.Add(new ConsultaDiagnosticoDTO
@@ -699,35 +721,55 @@ namespace ExpertMed.Services
                     FamiliaryBackgroundHeartdisease = B("familiary_background_heartdisease"),
                     FamiliaryBackgroundHeartdiseaseObservation = S("familiary_background_heartdisease_observation"),
                     FamiliaryBackgroundRelatshcatalogHeartdisease = I("familiary_background_relatshcatalog_heartdisease"),
+                    RelatshHeartdiseaseName = S("relatsh_heartdisease_name"),
+
                     FamiliaryBackgroundDiabetes = B("familiary_background_diabetes"),
                     FamiliaryBackgroundDiabetesObservation = S("familiary_background_diabetes_observation"),
                     FamiliaryBackgroundRelatshcatalogDiabetes = I("familiary_background_relatshcatalog_diabetes"),
+                    RelatshDiabetesName = S("relatsh_diabetes_name"),
+
                     FamiliaryBackgroundDxcardiovascular = B("familiary_background_dxcardiovascular"),
                     FamiliaryBackgroundDxcardiovascularObservation = S("familiary_background_dxcardiovascular_observation"),
                     FamiliaryBackgroundRelatshcatalogDxcardiovascular = I("familiary_background_relatshcatalog_dxcardiovascular"),
+                    RelatshDxcardiovascularName = S("relatsh_dxcardiovascular_name"),
+
                     FamiliaryBackgroundHypertension = B("familiary_background_hypertension"),
                     FamiliaryBackgroundHypertensionObservation = S("familiary_background_hypertension_observation"),
                     FamiliaryBackgroundRelatshcatalogHypertension = I("familiary_background_relatshcatalog_hypertension"),
+                    RelatshHypertensionName = S("relatsh_hypertension_name"),
+
                     FamiliaryBackgroundCancer = B("familiary_background_cancer"),
                     FamiliaryBackgroundCancerObservation = S("familiary_background_cancer_observation"),
                     FamiliaryBackgroundRelatshcatalogCancer = I("familiary_background_relatshcatalog_cancer"),
+                    RelatshCancerName = S("relatsh_cancer_name"),
+
                     FamiliaryBackgroundTuberculosis = B("familiary_background_tuberculosis"),
                     FamiliaryBackgroundTuberculosisObservation = S("familiary_background_tuberculosis_observation"),
                     FamiliaryBackgroundRelatshTuberculosis = I("familiary_background_relatsh_tuberculosis"),
+                    RelatshTuberculosisName = S("relatsh_tuberculosis_name"),
+
                     FamiliaryBackgroundDxmental = B("familiary_background_dxmental"),
                     FamiliaryBackgroundDxmentalObservation = S("familiary_background_dxmental_observation"),
                     FamiliaryBackgroundRelatshcatalogDxmental = I("familiary_background_relatshcatalog_dxmental"),
+                    RelatshDxmentalName = S("relatsh_dxmental_name"),
+
                     FamiliaryBackgroundDxinfectious = B("familiary_background_dxinfectious"),
                     FamiliaryBackgroundDxinfectiousObservation = S("familiary_background_dxinfectious_observation"),
                     FamiliaryBackgroundRelatshcatalogDxinfectious = I("familiary_background_relatshcatalog_dxinfectious"),
+                    RelatshDxinfectiousName = S("relatsh_dxinfectious_name"),
+
                     FamiliaryBackgroundMalformation = B("familiary_background_malformation"),
                     FamiliaryBackgroundMalformationObservation = S("familiary_background_malformation_observation"),
                     FamiliaryBackgroundRelatshcatalogMalformation = I("familiary_background_relatshcatalog_malformation"),
+                    RelatshMalformationName = S("relatsh_malformation_name"),
+
                     FamiliaryBackgroundOther = B("familiary_background_other"),
                     FamiliaryBackgroundOtherObservation = S("familiary_background_other_observation"),
-                    FamiliaryBackgroundRelatshcatalogOther = I("familiary_background_relatshcatalog_other")
+                    FamiliaryBackgroundRelatshcatalogOther = I("familiary_background_relatshcatalog_other"),
+                    RelatshOtherName = S("relatsh_other_name")
                 };
             }
+
 
             reader.NextResult();
             if (reader.Read())

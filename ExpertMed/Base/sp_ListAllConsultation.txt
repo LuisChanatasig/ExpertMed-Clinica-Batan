@@ -3,7 +3,7 @@ sp_ListAllConsultation
 
 /****** Object:  Table [dbo].[personal_background]    Script Date: 27/10/2025 9:54:00 ******/
 SET ANSI_NULLS ON
-GO
+GO 
 
 SET QUOTED_IDENTIFIER ON
 GO

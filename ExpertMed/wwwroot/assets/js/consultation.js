@@ -561,6 +561,20 @@ const debounce = (fn, ms = 300) => {
         timer = setTimeout(() => fn.apply(this, args), ms);
     };
 };
+function getDecimal(id, def = null) {
+    const el = document.getElementById(id);
+    if (!el) return def;
+
+    let v = (el.value || "").trim();
+    if (!v) return def;              // <- si está vacío, devuelve null
+
+    v = v.replace(",", ".");         // soporte coma decimal
+    const n = parseFloat(v);
+    if (isNaN(n)) return def;
+
+    return n;
+}
+
 
 // Estado global
 let autoSaveInterval = null;
@@ -621,7 +635,17 @@ function getFormData(isFinal = false) {
         ConsultationDiseaseobservation: getValue("cert_observacion"),
         ConsultationContingencytype: getValue("cert_tipo_contingencia"),
         ConsutationHasSymptoms: getChecked("cert_tiene_sintomas") ?? false,
-        ConsultationIsFinal: isFinal
+        ConsultationIsFinal: isFinal,
+
+        // ===========================
+        // NUEVOS CAMPOS CLÍNICOS (2025-11-07)
+        // ===========================
+   
+        ConsultationImc: getDecimal("consultation_bmi"),
+        ConsultationAbdominalPerimeter: getDecimal("consultation_abdominal_perimeter"),
+        ConsultationCapillaryHemoglobin: getDecimal("consultation_capillary_hemoglobin"),
+        ConsultationCapillaryGlucose: getDecimal("consultation_capillary_glucose"),
+        ConsultationSpo2: getDecimal("consultation_spo2")
     };
 
     // ---- Alergias ----

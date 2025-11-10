@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ExpertMed.Models;
 
@@ -90,4 +91,35 @@ public partial class FamiliaryBackground
     public virtual Catalog? FamiliaryBackgroundRelatshcatalogMalformationNavigation { get; set; }
 
     public virtual Catalog? FamiliaryBackgroundRelatshcatalogOtherNavigation { get; set; }
+
+
+    [NotMapped]
+    public string? RelatshHeartdiseaseName { get; set; }
+
+    [NotMapped]
+    public string? RelatshDiabetesName { get; set; }
+
+    [NotMapped]
+    public string? RelatshDxcardiovascularName { get; set; }
+
+    [NotMapped]
+    public string? RelatshHypertensionName { get; set; }
+
+    [NotMapped]
+    public string? RelatshCancerName { get; set; }
+
+    [NotMapped]
+    public string? RelatshTuberculosisName { get; set; }
+
+    [NotMapped]
+    public string? RelatshDxmentalName { get; set; }
+
+    [NotMapped]
+    public string? RelatshDxinfectiousName { get; set; }
+
+    [NotMapped]
+    public string? RelatshMalformationName { get; set; }
+
+    [NotMapped]
+    public string? RelatshOtherName { get; set; }
 }

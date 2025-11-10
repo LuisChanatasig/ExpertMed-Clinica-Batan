@@ -69,6 +69,15 @@ namespace ExpertMed.Models
 
         // NUEVO:
         public bool ConsultationIsFinal { get; set; }
+        // =====================================
+        // NUEVOS CAMPOS CLÍNICOS (2025-11-07)
+        // =====================================
+        public decimal? ConsultationImc { get; set; }                    // IMC (Kg/m²)
+        public decimal? ConsultationAbdominalPerimeter { get; set; }     // Perímetro Abdominal (cm)
+        public decimal? ConsultationCapillaryHemoglobin { get; set; }    // Hemoglobina capilar (g/dl)
+        public decimal? ConsultationCapillaryGlucose { get; set; }       // Glucosa capilar (mg/dl)
+        public decimal? ConsultationSpo2 { get; set; }                   // Pulsioximetría (%)
+
         public string? UsersNames { get; set; }
         public string? UsersSurcenames { get; set; }
         public string? UsersEmail { get; set; }
@@ -84,6 +93,8 @@ namespace ExpertMed.Models
         public string? SpecialityName { get; set; }
 
         public string? EstablishmentName { get; set; }
+        public string? EstablishmentUnicode { get; set; }
+        public int? EstablishmentType { get; set; }
         public byte[]? UsersEstablishmentLogoBytes { get; set; }
 
         // Puedes también tener el base64 si lo necesitas en vistas Razor:
