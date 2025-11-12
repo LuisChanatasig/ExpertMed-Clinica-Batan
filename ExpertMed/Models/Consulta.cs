@@ -143,6 +143,7 @@ namespace ExpertMed.Models
             DiagnosisConsultations = new List<ConsultaDiagnosticoDTO>();
             OrgansSystem = new OrgansSystem();
             PhysicalExamination = new PhysicalExamination();
+            PersonalBackground = new PersonalBackground();
 
         }
     }

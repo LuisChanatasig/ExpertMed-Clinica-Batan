@@ -2401,15 +2401,17 @@ namespace ExpertMed.Controllers
 
             void SetOrganField(string pdfField, string displayName, string? obs)
             {
-                var textoCampo = string.IsNullOrWhiteSpace(obs) ? "N/A" : obs.Trim();
+                // Si tiene valor, marcar con "X"; si no, dejar vacío
+                var textoCampo = string.IsNullOrWhiteSpace(obs) ? "" : "X";
 
-                // Campo individual del PDF
+                // Establecer campo en el PDF
                 formFields.SetField(pdfField, textoCampo);
 
-                // Para el resumen solo si hay contenido
+                // Agregar al resumen solo si hay texto original
                 if (!string.IsNullOrWhiteSpace(obs))
                     revisionOrganos.Add($"{displayName}: {obs.Trim()}");
             }
+
 
             // Campos individuales
             SetOrganField(
@@ -2492,12 +2494,17 @@ namespace ExpertMed.Controllers
 
             void SetPhysicalField(string pdfField, string displayName, string? obs)
             {
-                var textoCampo = string.IsNullOrWhiteSpace(obs) ? "N/A" : obs.Trim();
+                // Si hay valor, colocar "X"; si no, dejar vacío
+                var textoCampo = string.IsNullOrWhiteSpace(obs) ? "" : "X";
+
+                // Establecer el campo en el PDF
                 formFields.SetField(pdfField, textoCampo);
 
+                // Agregar al resumen solo si hay texto original
                 if (!string.IsNullOrWhiteSpace(obs))
                     examenFisico.Add($"{displayName}: {obs.Trim()}");
             }
+
 
             // Parte “anatómica” del examen físico (usa PhysicalExamination)
             SetPhysicalField("txt_piel_faneras_examenfisico", "Piel y faneras", ex?.PhysicalexaminationSkinfanerasObs);
