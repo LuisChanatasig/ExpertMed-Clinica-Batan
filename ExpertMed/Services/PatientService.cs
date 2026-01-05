@@ -21,13 +21,15 @@ namespace ExpertMed.Services
             _logger = logger;
         }
 
-        /// <summary>
-        /// Servicio para cargar los medicos
-        /// </summary>
-        /// <param name="userId"></param>
-        /// <param name="userProfile"></param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
+   /// <summary>
+   /// Asynchronously retrieves a list of doctors associated with the specified assistant user.
+   /// </summary>
+   /// <param name="userId">The unique identifier of the assistant user whose associated doctors are to be retrieved.</param>
+   /// <param name="userProfile">The profile type of the assistant user. This value is used to filter the doctors returned by the query.</param>
+   /// <returns>A task that represents the asynchronous operation. The task result contains a list of <see cref="User"/> objects
+   /// representing the doctors associated with the specified assistant. If no doctors are found, the list will be
+   /// empty.</returns>
+   /// <exception cref="Exception">Thrown when an error occurs while retrieving the doctors from the database.</exception>
         public async Task<List<User>> GetDoctorsByAssistantAsync(int userId, int userProfile)
         {
             var doctors = new List<User>();
@@ -73,10 +75,14 @@ namespace ExpertMed.Services
         }
 
 
-
-        //Método para obtener todos los pacientes, el administrador o perfil 1 tiene todos los pacientes,
-        //el perfil 2 tiene solo los pacientes de el
-        // Método para obtener todos los pacientes
+        /// <summary>
+        /// Asynchronously retrieves a list of patients accessible to the specified user profile and user ID.
+        /// </summary>
+        /// <param name="userProfile">The profile type of the user requesting patient data. Determines the scope of patients returned based on
+        /// user permissions.</param>
+        /// <param name="userId">The unique identifier of the user whose accessible patients are to be retrieved. Cannot be null.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains a list of PatientDTO objects
+        /// representing the patients accessible to the specified user.</returns>
 
         public async Task<List<PatientDTO>> GetAllPatientsAsync(int userProfile, int? userId = null)
         {
@@ -115,7 +121,21 @@ namespace ExpertMed.Services
         }
 
 
-        // Método para crear un nuevo paciente
+        /// <summary>
+        /// Creates a new patient record in the database asynchronously and returns the unique identifier of the created
+        /// patient.
+        /// </summary>
+        /// <remarks>This method executes the 'sp_CreatePatient' stored procedure to insert a new patient
+        /// record. The operation is performed asynchronously and requires a valid database connection. All mandatory
+        /// patient fields must be provided in the <paramref name="patient"/> parameter. If the creation fails, an
+        /// exception is thrown containing the error message returned by the stored procedure.</remarks>
+        /// <param name="patient">The patient information to be stored. All required patient fields must be populated; optional fields may be
+        /// null.</param>
+        /// <param name="doctorUserId">The user ID of the doctor associated with the patient, if applicable. If not specified, the patient will be
+        /// created without a doctor association.</param>
+        /// <returns>The unique identifier of the newly created patient.</returns>
+        /// <exception cref="Exception">Thrown if the stored procedure does not return a result, if the result does not contain a patient ID, or if
+        /// an error occurs during patient creation.</exception>
         public async Task<int> CreatePatientAsync(Patient patient, int? doctorUserId = null)
         {
             using (var connection = new SqlConnection(_dbContext.Database.GetDbConnection().ConnectionString))
@@ -206,8 +226,17 @@ namespace ExpertMed.Services
             }
         }
 
-
-        // Método para activar o desactivar al usuario
+        
+        /// <summary>
+        /// Activates or deactivates a patient record asynchronously based on the specified status.
+        /// </summary>
+        /// <remarks>This method executes a stored procedure to update the patient's active status in the
+        /// database. The operation is performed asynchronously. If the procedure does not return a valid response or an
+        /// error occurs, the method returns a failure result with an appropriate message.</remarks>
+        /// <param name="patientId">The unique identifier of the patient whose status will be updated.</param>
+        /// <param name="status">The status to apply to the patient. Use 1 to activate or 0 to deactivate the patient.</param>
+        /// <returns>A tuple containing a Boolean value indicating whether the operation was successful, and a message describing
+        /// the result.</returns>
         public async Task<(bool success, string message)> DesactiveOrActivePatientAsync(int patientId, int status)
         {
             try
@@ -260,7 +289,19 @@ namespace ExpertMed.Services
 
         }
 
-
+        /// <summary>
+        /// Asynchronously updates the details of an existing patient in the database using the provided patient
+        /// information.
+        /// </summary>
+        /// <remarks>This method executes a stored procedure to update patient data. The operation is
+        /// performed asynchronously and requires a valid database connection. Ensure that the patient object contains
+        /// all necessary information before calling this method.</remarks>
+        /// <param name="patient">The patient entity containing updated information to be saved. All required fields must be populated; cannot
+        /// be null.</param>
+        /// <param name="doctorUserId">The user ID of the doctor associated with the update operation. If null, no doctor will be linked to the
+        /// update.</param>
+        /// <returns>The unique identifier of the updated patient if the operation succeeds.</returns>
+        /// <exception cref="Exception">Thrown if the update operation fails or if the stored procedure does not return a valid result.</exception>
         public async Task<int> UpdatePatientAsync(Patient patient, int? doctorUserId = null)
         {
             using (var connection = new SqlConnection(_dbContext.Database.GetDbConnection().ConnectionString))
@@ -339,7 +380,16 @@ namespace ExpertMed.Services
         }
 
 
-
+        /// <summary>
+        /// Asynchronously retrieves detailed patient information and associated doctors for the specified patient
+        /// identifier.
+        /// </summary>
+        /// <remarks>The returned patient data includes personal information and a collection of
+        /// associated doctors. If the patient does not exist, the method returns <see langword="null"/>. This method
+        /// performs a database query and may be subject to network or database latency.</remarks>
+        /// <param name="patientId">The unique identifier of the patient whose data is to be retrieved. Must be a valid patient ID.</param>
+        /// <returns>A <see cref="DetailsPatientConsult"/> object containing the patient's details and a list of associated
+        /// doctors, or <see langword="null"/> if no patient is found with the specified ID.</returns>
         public async Task<DetailsPatientConsult> GetPatientDataByIdAsync(int patientId)
         {
             DetailsPatientConsult patient = null;
@@ -430,6 +480,17 @@ namespace ExpertMed.Services
             return patient;
         }
 
+        /// <summary>
+        /// Asynchronously retrieves detailed information for a patient by their unique identifier.
+        /// </summary>
+        /// <remarks>This method executes the stored procedure 'sp_GetPatientById' to obtain patient
+        /// information. The returned <see cref="Patient"/> object includes all available fields from the database. If
+        /// no patient is found with the specified identifier, the method returns <see langword="null"/>. This method is
+        /// not thread-safe and should not be called concurrently on the same instance.</remarks>
+        /// <param name="patientId">The unique identifier of the patient whose details are to be retrieved. Must correspond to an existing
+        /// patient record.</param>
+        /// <returns>A <see cref="Patient"/> object containing the patient's details if found; otherwise, <see langword="null"/>.</returns>
+        /// <exception cref="Exception">Thrown when an error occurs while retrieving patient details from the database.</exception>
         public async Task<Patient> GetPatientDetailsAsync(int patientId)
         {
             Patient patientDetails = null;
@@ -547,7 +608,17 @@ namespace ExpertMed.Services
         }
 
 
-        //Traes todos los daros del paciente 
+        /// <summary>
+        /// Retrieves detailed patient information, including personal and medical data, for the specified patient
+        /// identifier.
+        /// </summary>
+        /// <remarks>The returned data includes both demographic and clinical information for the patient.
+        /// If no patient exists with the specified identifier, the method returns <see langword="null"/>. This method
+        /// performs asynchronous database access and should be awaited.</remarks>
+        /// <param name="patientId">The unique identifier of the patient whose full details are to be retrieved. Must correspond to an existing
+        /// patient record.</param>
+        /// <returns>A <see cref="DetailsPatientConsult"/> object containing the patient's complete details if found; otherwise,
+        /// <see langword="null"/>.</returns>
         public async Task<DetailsPatientConsult> GetPatientFullByIdAsync(int patientId)
         {
             DetailsPatientConsult patient = null;
@@ -642,18 +713,44 @@ namespace ExpertMed.Services
 
             return patient;
         }
+        /// <summary>
+        /// Retrieves the value of the specified column as a nullable value type from the current row of the provided
+        /// <see cref="SqlDataReader"/>.
+        /// </summary>
+        /// <remarks>If the specified column contains a database null (DBNull), the method returns <see
+        /// langword="null"/>. Otherwise, it returns the value converted to type <typeparamref name="T"/>.</remarks>
+        /// <typeparam name="T">The value type to retrieve from the data reader. Must be a struct.</typeparam>
+        /// <param name="reader">The <see cref="SqlDataReader"/> instance to read the value from. Must not be null.</param>
+        /// <param name="column">The name of the column to retrieve the value from. Must not be null or empty.</param>
+        /// <returns>A nullable value of type <typeparamref name="T"/> containing the column value if it is not database null;
+        /// otherwise, <see langword="null"/>.</returns>
         private static T? GetNullable<T>(SqlDataReader reader, string column) where T : struct
         {
             int index = reader.GetOrdinal(column);
             return reader.IsDBNull(index) ? (T?)null : reader.GetFieldValue<T>(index);
         }
 
+        /// <summary>
+        /// Retrieves the value of the specified column as a string, or returns null if the column contains a database
+        /// null value.
+        /// </summary>
+        /// <param name="reader">The SqlDataReader instance from which to retrieve the column value. Must not be null and must be positioned
+        /// on a valid record.</param>
+        /// <param name="column">The name of the column to retrieve. Must correspond to a valid column in the current result set.</param>
+        /// <returns>A string containing the value of the specified column, or null if the column value is DBNull.</returns>
         private static string? GetNullableString(SqlDataReader reader, string column)
         {
             int index = reader.GetOrdinal(column);
             return reader.IsDBNull(index) ? null : reader.GetString(index);
         }
 
+        /// <summary>
+        /// Asynchronously retrieves patient data based on the specified document number.
+        /// </summary>
+        /// <remarks>This method executes the 'sp_GetPatientByCedula' stored procedure to obtain patient
+        /// information. The operation is performed asynchronously and does not modify patient data.</remarks>
+        /// <param name="documentNumber">The document number used to identify the patient. Cannot be null or empty.</param>
+        /// <returns>A <see cref="Patient"/> object containing the patient's data if found; otherwise, <c>null</c>.</returns>
         public async Task<Patient> GetPatientDataByDocumentNumberAsync(string documentNumber)
         {
             Patient patient = null;

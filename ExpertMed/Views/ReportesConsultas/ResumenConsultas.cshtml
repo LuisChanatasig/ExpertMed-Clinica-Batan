@@ -4,365 +4,387 @@
 @using System.Linq
 
 @{
-    ViewData["Title"] = "Resumen de Consultas";
+    ViewData["Title"] = "Dashboard Gerencial";
     Layout = "~/Views/Shared/_Layout.cshtml";
 
-    var ocup = Model?.OcupacionConsultorios ?? Enumerable.Empty<dynamic>();
-    var tipos = Model?.TiposPacientes ?? Enumerable.Empty<dynamic>();
-
-    int totalConsultas = tipos.Any() ? tipos.Sum(t => (int)t.Total) : 0;
-    int totalConsultorios = ocup.Count();
-    int totalMedicosAsignados = ocup.Any() ? ocup.Sum(o => (int)o.MedicosAsignados) : 0;
+    // Inicialización defensiva para evitar NullReferenceException
+    var kpi = Model?.Kpi ?? new ResumenConsultasDto.DashboardKpi();
+    var evolucion = Model?.EvolucionDiaria ?? new List<ResumenConsultasDto.DashboardEvolutionItem>();
+    var estados = Model?.EstadoCitas ?? new List<ResumenConsultasDto.DashboardStatusItem>();
+    var ranking = Model?.RankingMedicos ?? new List<ResumenConsultasDto.DashboardDoctorItem>();
+    var seguros = Model?.PacientesPorSeguro ?? new List<ResumenConsultasDto.DashboardInsuranceItem>();
 
     var qDesde = Context.Request.Query["fechaDesde"].ToString();
     var qHasta = Context.Request.Query["fechaHasta"].ToString();
 
+    // Función local para serializar a JSON seguro para JS
     string SafeJson<T>(T obj) => JsonSerializer.Serialize(obj, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 }
 
-
 <div class="container-fluid mt-3">
-    <div class="toolbar-sticky d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2 pb-2 mb-2 border-bottom">
-        <h2 class="h4 mb-0"><i class="mdi mdi-chart-box me-1"></i> Resumen de Consultas</h2>
+    <div class="toolbar-sticky d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2 pb-2 mb-3 border-bottom">
+        <div>
+            <h2 class="h4 mb-0"><i class="mdi mdi-monitor-dashboard me-1"></i> Dashboard Operativo</h2>
+            <small class="text-muted">
+                @if (!string.IsNullOrEmpty(qDesde) || !string.IsNullOrEmpty(qHasta))
+                {
+                    <span>Filtro activo: <strong>@qDesde</strong> al <strong>@qHasta</strong></span>
+                }
+                else
+                {
+                    <span>Mostrando mes actual</span>
+                }
+            </small>
+        </div>
+
         <div class="d-flex flex-wrap gap-2">
-            <!-- NUEVO: Exportar Excel (preserva filtros) -->
-            <a class="btn btn-success"
-               href="@Url.Action("ExportarResumenConsultasExcel", "Reportes", new { fechaDesde = qDesde, fechaHasta = qHasta })">
-                <i class="mdi mdi-file-excel"></i> Exportar Excel
+            <a class="btn btn-success" href="@Url.Action("ExportarResumenConsultasExcel", "Reportes", new { fechaDesde = qDesde, fechaHasta = qHasta })">
+                <i class="mdi mdi-file-excel"></i> Excel
             </a>
-            <a href="@Url.Action("ResumenConsultas", "Reportes")" class="btn btn-light">
-                <i class="mdi mdi-filter-remove"></i> Limpiar
+            <a href="@Url.Action("ResumenConsultas", "Reportes")" class="btn btn-light" title="Limpiar Filtros">
+                <i class="mdi mdi-refresh"></i>
             </a>
-            <button class="btn btn-outline-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasFiltros">
-                <i class="mdi mdi-filter-outline"></i> Filtros
+            <button class="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasFiltros">
+                <i class="mdi mdi-filter-variant"></i> Filtros
             </button>
         </div>
     </div>
 
-    @if (Context.Session.GetInt32("PerfilId") == 4 && !string.IsNullOrWhiteSpace(Model?.NombreEstablecimiento))
-    {
-        <div class="alert alert-primary border-start border-4 px-3 py-2 mb-3">
-            <i class="mdi mdi-office-building"></i>
-            Reporte filtrado por establecimiento: <strong>@Model.NombreEstablecimiento</strong>
-        </div>
-    }
-
-    @if (!string.IsNullOrEmpty(qDesde) || !string.IsNullOrEmpty(qHasta))
-    {
-        <div class="alert alert-light border d-inline-flex align-items-center gap-2 mb-3">
-            <i class="mdi mdi-calendar-range"></i>
-            <span>
-                Mostrando resultados
-                @if (!string.IsNullOrEmpty(qDesde))
-                {
-                    <text><strong>desde</strong> @qDesde</text>
-                }
-                @if (!string.IsNullOrEmpty(qHasta))
-                {
-                    <text> <strong>hasta</strong> @qHasta</text>
-                }
-            </span>
-        </div>
-    }
-
-    <!-- KPIs -->
-    <div class="row g-3 mb-3">
+    <div class="row g-3 mb-4">
         <div class="col-6 col-lg-3">
-            <div class="card kpi-card shadow-sm">
+            <div class="card border-0 shadow-sm h-100 border-start border-4 border-primary">
                 <div class="card-body">
-                    <div class="text-muted small">Total Consultas</div>
-                    <div class="display-6 fw-semibold">@totalConsultas</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-lg-3">
-            <div class="card kpi-card shadow-sm">
-                <div class="card-body">
-                    <div class="text-muted small">Consultorios</div>
-                    <div class="display-6 fw-semibold">@totalConsultorios</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-lg-3">
-            <div class="card kpi-card shadow-sm">
-                <div class="card-body">
-                    <div class="text-muted small">Médicos asignados</div>
-                    <div class="display-6 fw-semibold">@totalMedicosAsignados</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-lg-3">
-            <div class="card kpi-card shadow-sm">
-                <div class="card-body">
-                    <div class="text-muted small">Rango</div>
-                    <div class="fw-semibold">@(!string.IsNullOrEmpty(qDesde) || !string.IsNullOrEmpty(qHasta) ? $"{qDesde} — {qHasta}" : "Sin filtro")</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tabla: Ocupación por Consultorio -->
-    <div class="card mb-3 shadow-sm">
-        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-            <strong><i class="mdi mdi-office-building-marker"></i> Ocupación por Consultorio</strong>
-            <div class="chip-group">
-                <button class="btn btn-sm btn-light" type="button" id="btnExportConsultorios" title="Exportar CSV">
-                    <i class="mdi mdi-file-delimited"></i> CSV
-                </button>
-            </div>
-        </div>
-        <div class="card-body p-2">
-            @if (!ocup.Any())
-            {
-                <div class="empty-state"><i class="mdi mdi-database-off"></i> Sin datos para mostrar.</div>
-            }
-            else
-            {
-                <div class="table-responsive">
-                    <table class="table table-sm table-bordered align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Consultorio</th>
-                                <th class="text-end">Médicos Asignados</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in ocup)
-                            {
-                                <tr>
-                                    <td>@item.Consultorio</td>
-                                    <td class="text-end">@item.MedicosAsignados</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
-        </div>
-    </div>
-
-    <!-- Tarjeta: Médico con mayor atención -->
-    <div class="card mb-3 shadow-sm">
-        <div class="card-header bg-success text-white">
-            <strong><i class="mdi mdi-doctor"></i> Médico con Mayor Índice de Atención</strong>
-        </div>
-        <div class="card-body">
-            @if (Model?.MedicoTop != null)
-            {
-                <div class="d-flex align-items-center gap-3">
-                    <div class="avatar-title rounded-circle bg-success-subtle text-success">
-                        <i class="mdi mdi-stethoscope"></i>
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="avatar-sm flex-shrink-0">
+                            <span class="avatar-title bg-primary-subtle text-primary rounded fs-3">
+                                <i class="mdi mdi-calendar-clock"></i>
+                            </span>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <p class="text-uppercase fw-medium text-muted mb-0">Total Citas</p>
+                        </div>
                     </div>
-                    <div>
-                        <div><strong>Nombre:</strong> @Model.MedicoTop.Medico</div>
-                        <div><strong>Total de Consultas:</strong> @Model.MedicoTop.TotalConsultas</div>
+                    <h4 class="fs-22 fw-semibold mb-0">@kpi.TotalCitas</h4>
+                    <small class="text-muted">Agendadas en recepción</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100 border-start border-4 border-success">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="avatar-sm flex-shrink-0">
+                            <span class="avatar-title bg-success-subtle text-success rounded fs-3">
+                                <i class="mdi mdi-stethoscope"></i>
+                            </span>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <p class="text-uppercase fw-medium text-muted mb-0">Atenciones</p>
+                        </div>
+                    </div>
+                    <h4 class="fs-22 fw-semibold mb-0">@kpi.TotalConsultas</h4>
+                    <small class="text-muted">Consultas médicas cerradas</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100 border-start border-4 border-warning">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="avatar-sm flex-shrink-0">
+                            <span class="avatar-title bg-warning-subtle text-warning rounded fs-3">
+                                <i class="mdi mdi-cash-multiple"></i>
+                            </span>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <p class="text-uppercase fw-medium text-muted mb-0">Pagadas</p>
+                        </div>
+                    </div>
+                    <h4 class="fs-22 fw-semibold mb-0">@kpi.TotalPagadas</h4>
+                    <small class="text-muted">Citas facturadas (Status Pago)</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100 border-start border-4 border-info">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="avatar-sm flex-shrink-0">
+                            <span class="avatar-title bg-info-subtle text-info rounded fs-3">
+                                <i class="mdi mdi-account-group"></i>
+                            </span>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <p class="text-uppercase fw-medium text-muted mb-0">Cartera</p>
+                        </div>
+                    </div>
+                    <h4 class="fs-22 fw-semibold mb-0">@kpi.TotalPacientesHistorico</h4>
+                    <small class="text-muted">Pacientes únicos históricos</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-lg-8">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">Evolución Diaria de Citas</h5>
+                </div>
+                <div class="card-body">
+                    <div id="chartEvolution" style="height: 350px;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">Estado de Citas</h5>
+                </div>
+                <div class="card-body">
+                    <div id="chartStatus" style="height: 350px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0 text-primary"><i class="mdi mdi-trophy-variant-outline"></i> Top 10 Productividad Médica</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0 align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Médico</th>
+                                    <th class="text-center">Consultas</th>
+                                    <th class="text-end pe-3">Progreso</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (ranking.Any())
+                                {
+                                    var maxVal = ranking.Max(x => x.ConsultasRealizadas);
+                                    foreach (var item in ranking)
+                                    {
+                                        var percent = maxVal > 0 ? (item.ConsultasRealizadas * 100) / maxVal : 0;
+                                        <tr>
+                                            <td class="ps-3 fw-medium">@item.Medico</td>
+                                            <td class="text-center fw-bold">@item.ConsultasRealizadas</td>
+                                            <td class="text-end pe-3" style="width: 30%;">
+                                                <div class="progress" style="height: 6px;">
+                                                    <div class="progress-bar bg-primary" role="progressbar" style="width: @percent%"></div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr><td colspan="3" class="text-center py-3 text-muted">Sin datos disponibles</td></tr>
+                                }
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            }
-            else
-            {
-                <div class="empty-state"><i class="mdi mdi-account-alert-outline"></i> No se encontraron datos.</div>
-            }
-        </div>
-    </div>
-
-    <!-- Tabla: Consultas por Tipo de Paciente -->
-    <div class="card mb-3 shadow-sm">
-        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-            <strong><i class="mdi mdi-account-group-outline"></i> Consultas por Tipo de Paciente</strong>
-            <div class="chip-group">
-                <button class="btn btn-sm btn-light" type="button" id="btnExportPacientes" title="Exportar CSV">
-                    <i class="mdi mdi-file-delimited"></i> CSV
-                </button>
             </div>
         </div>
-        <div class="card-body p-2">
-            @if (!tipos.Any())
-            {
-                <div class="empty-state"><i class="mdi mdi-database-off"></i> Sin datos para mostrar.</div>
-            }
-            else
-            {
-                <div class="table-responsive">
-                    <table class="table table-sm table-bordered align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Tipo de Paciente</th>
-                                <th class="text-end">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var t in tipos)
-                            {
-                                <tr>
-                                    <td>@t.TipoPaciente</td>
-                                    <td class="text-end">@t.Total</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0 text-info"><i class="mdi mdi-shield-account-outline"></i> Pacientes por Aseguradora</h5>
                 </div>
-            }
-        </div>
-    </div>
-
-    <!-- Gráficos -->
-    <div class="charts-2col mb-4">
-        <div class="card">
-            <div class="card-header bg-primary text-white">Gráfico: Ocupación por Consultorio</div>
-            <div class="card-body">
-                <div id="graficoConsultorios" style="height: 320px;" role="img" aria-label="Gráfico de barras de ocupación por consultorio"></div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-header bg-info text-white">Gráfico: Tipo de Paciente</div>
-            <div class="card-body">
-                <div id="graficoPacientes" style="height: 320px;" role="img" aria-label="Gráfico de pastel de consultas por tipo de paciente"></div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Aseguradora</th>
+                                    <th class="text-end pe-3">Pacientes Únicos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (seguros.Any())
+                                {
+                                    foreach (var item in seguros)
+                                    {
+                                        <tr>
+                                            <td class="ps-3">
+                                                @if (item.Seguro.Contains("PARTICULAR"))
+                                                {
+                                                    <span class="badge bg-light text-dark border">@item.Seguro</span>
+                                                }
+                                                else
+                                                {
+                                                    @item.Seguro
+                                                }
+                                            </td>
+                                            <td class="text-end pe-3">@item.CantidadPacientesUnicos</td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr><td colspan="2" class="text-center py-3 text-muted">Sin datos disponibles</td></tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Offcanvas lateral para filtros -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasFiltros" aria-labelledby="offcanvasFiltrosLabel">
-    <div class="offcanvas-header">
-        <h5 id="offcanvasFiltrosLabel" class="offcanvas-title">Filtrar Consultas</h5>
+    <div class="offcanvas-header bg-light">
+        <h5 id="offcanvasFiltrosLabel" class="offcanvas-title">Filtrar Dashboard</h5>
         <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
     </div>
     <div class="offcanvas-body">
         <form method="get" asp-action="ResumenConsultas" asp-controller="Reportes" id="formFiltros">
-            <div class="mb-3">
-                <label for="fechaDesde" class="form-label">Desde</label>
-                <input type="date" class="form-control" id="fechaDesde" name="fechaDesde" value="@qDesde" />
-            </div>
-            <div class="mb-3">
-                <label for="fechaHasta" class="form-label">Hasta</label>
-                <input type="date" class="form-control" id="fechaHasta" name="fechaHasta" value="@qHasta" />
-            </div>
-
-            <div class="d-flex gap-2 flex-wrap mb-3 chip-group">
-                <button type="button" class="btn btn-outline-secondary" data-range="today">Hoy</button>
-                <button type="button" class="btn btn-outline-secondary" data-range="week">Esta semana</button>
-                <button type="button" class="btn btn-outline-secondary" data-range="month">Este mes</button>
+            <div class="mb-4">
+                <label class="form-label fw-bold">Rango de Fechas</label>
+                <div class="input-group mb-2">
+                    <span class="input-group-text"><i class="mdi mdi-calendar"></i></span>
+                    <input type="date" class="form-control" id="fechaDesde" name="fechaDesde" value="@qDesde" required />
+                </div>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="mdi mdi-calendar"></i></span>
+                    <input type="date" class="form-control" id="fechaHasta" name="fechaHasta" value="@qHasta" required />
+                </div>
             </div>
 
-            <div class="d-grid">
-                <button type="submit" class="btn btn-primary"><i class="mdi mdi-magnify"></i> Aplicar</button>
+            <div class="mb-4">
+                <label class="form-label small text-muted text-uppercase">Accesos Rápidos</label>
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm text-start" data-range="today">
+                        <i class="mdi mdi-calendar-today me-2"></i> Hoy
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm text-start" data-range="week">
+                        <i class="mdi mdi-calendar-week me-2"></i> Esta semana
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm text-start" data-range="month">
+                        <i class="mdi mdi-calendar-month me-2"></i> Este mes
+                    </button>
+                </div>
+            </div>
+
+            <div class="d-grid pt-3 border-top">
+                <button type="submit" class="btn btn-primary btn-lg shadow">
+                    <i class="mdi mdi-magnify me-1"></i> Aplicar Filtros
+                </button>
             </div>
         </form>
     </div>
 </div>
 
 @section scripts {
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const dataConsultorios = @Html.Raw(SafeJson(ocup));
-            const dataPacientes = @Html.Raw(SafeJson(tipos));
+            // 1. Obtener datos serializados desde C#
+            const dataEvolution = @Html.Raw(SafeJson(evolucion));
+            const dataStatus = @Html.Raw(SafeJson(estados));
 
-            // Validación simple de fechas
-            const form = document.getElementById('formFiltros');
-            form?.addEventListener('submit', (e) => {
-                const d = document.getElementById('fechaDesde').value;
-                const h = document.getElementById('fechaHasta').value;
-                if (d && h && d > h) {
-                    e.preventDefault();
-                    alert('El rango de fechas es inválido: Desde no puede ser mayor que Hasta.');
-                }
+            // 2. Configurar Gráfico de Evolución (Línea)
+            const chartEv = echarts.init(document.getElementById('chartEvolution'));
+            const optionEv = {
+                tooltip: { trigger: 'axis' },
+                grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+                xAxis: {
+                    type: 'category',
+                    boundaryGap: false,
+                    // Mapeamos solo la parte de fecha "YYYY-MM-DD"
+                    data: dataEvolution.map(i => i.fecha.substring(0, 10)),
+                    axisLine: { lineStyle: { color: '#ccc' } }
+                },
+                yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed' } } },
+                series: [{
+                    name: 'Citas',
+                    type: 'line',
+                    smooth: true,
+                    data: dataEvolution.map(i => i.cantidadCitas),
+                    itemStyle: { color: '#405189' }, // Color primario Velzon
+                    areaStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: 'rgba(64, 81, 137, 0.5)' },
+                            { offset: 1, color: 'rgba(64, 81, 137, 0.01)' }
+                        ])
+                    }
+                }]
+            };
+            chartEv.setOption(optionEv);
+
+            // 3. Configurar Gráfico de Estados (Donut)
+            const chartSt = echarts.init(document.getElementById('chartStatus'));
+            const optionSt = {
+                tooltip: { trigger: 'item' },
+                legend: { bottom: '0%', left: 'center' },
+                series: [{
+                    name: 'Estado',
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    avoidLabelOverlap: false,
+                    itemStyle: { borderRadius: 5, borderColor: '#fff', borderWidth: 2 },
+                    label: { show: false, position: 'center' },
+                    emphasis: {
+                        label: { show: true, fontSize: 16, fontWeight: 'bold' }
+                    },
+                    data: dataStatus.map(i => {
+                        // Asignar colores según estado (Lógica de presentación)
+                        let color = '#ccc';
+                        const st = i.estado.toLowerCase();
+                        if(st.includes('finalizada')) color = '#0ab39c'; // Success
+                        else if(st.includes('cancelada')) color = '#f06548'; // Danger
+                        else if(st.includes('activa')) color = '#299cdb'; // Info
+                        else if(st.includes('emergencia')) color = '#f7b84b'; // Warning
+
+                        return { value: i.cantidad, name: i.estado, itemStyle: { color: color } };
+                    })
+                }]
+            };
+            chartSt.setOption(optionSt);
+
+            // 4. Responsividad
+            window.addEventListener('resize', () => {
+                chartEv.resize();
+                chartSt.resize();
             });
 
-            // Atajos de rango
+            // 5. Lógica de Filtros (Fechas rápidas)
             const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
-            const fmt = (d) => d.toISOString().slice(0,10);
+            const fmt = (d) => d.toISOString().slice(0, 10);
+
             document.querySelectorAll('[data-range]').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const now = new Date();
-                    const id = document.getElementById('fechaDesde');
-                    const ih = document.getElementById('fechaHasta');
-                    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                    const wd = (today.getDay() + 6) % 7; // Lunes=0
-                    const ranges = {
-                        today: [today, today],
-                        week: [new Date(today.getFullYear(), today.getMonth(), today.getDate() - wd), new Date(today.getFullYear(), today.getMonth(), today.getDate() - wd + 6)],
-                        month: [new Date(today.getFullYear(), today.getMonth(), 1), new Date(today.getFullYear(), today.getMonth()+1, 0)]
-                    };
-                    const r = ranges[btn.dataset.range];
-                    id.value = fmt(r[0]); ih.value = fmt(r[1]);
+                    const type = btn.dataset.range;
+                    let dStart, dEnd;
+
+                    if (type === 'today') {
+                        dStart = now; dEnd = now;
+                    } else if (type === 'week') {
+                        const day = now.getDay() || 7;
+                        if (day !== 1) now.setHours(-24 * (day - 1));
+                        dStart = now;
+                        dEnd = addDays(now, 6);
+                    } else if (type === 'month') {
+                        dStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                        dEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                    }
+
+                    document.getElementById('fechaDesde').value = fmt(dStart);
+                    document.getElementById('fechaHasta').value = fmt(dEnd);
                 });
-            });
-
-            // ===== ECharts =====
-            const startCharts = () => {
-                const elBar = document.getElementById('graficoConsultorios');
-                const elPie = document.getElementById('graficoPacientes');
-                if (!window.echarts || !elBar || !elPie) return;
-
-                const chartBar = echarts.init(elBar);
-                const chartPie = echarts.init(elPie);
-
-                const isEmptyOcup = !Array.isArray(dataConsultorios) || dataConsultorios.length === 0;
-                const isEmptyTipos = !Array.isArray(dataPacientes) || dataPacientes.length === 0;
-
-                chartBar.setOption({
-                    aria: { enabled: true },
-                    toolbox: { feature: { saveAsImage: {}, dataView: {}, restore: {} }, right: 10 },
-                    grid: { left: 10, right: 10, top: 20, bottom: 10, containLabel: true },
-                    dataset: isEmptyOcup ? { source: [] } : {
-                        dimensions: ['Consultorio', 'MedicosAsignados'],
-                        source: dataConsultorios.map(x => ({ Consultorio: x.consultorio ?? x.Consultorio, MedicosAsignados: x.medicosAsignados ?? x.MedicosAsignados }))
-                    },
-                    xAxis: { type: 'value', name: 'Médicos', minInterval: 1 },
-                    yAxis: { type: 'category', axisLabel: { interval: 0 } },
-                    series: [{ type: 'bar', encode: { x: 'MedicosAsignados', y: 'Consultorio' }, label: { show: true, position: 'right' } }],
-                    title: isEmptyOcup ? { text: 'Sin datos', left: 'center', top: 'middle', textStyle: { color: '#999', fontSize: 14 } } : undefined
-                });
-
-                chartPie.setOption({
-                    aria: { enabled: true },
-                    toolbox: { feature: { saveAsImage: {}, dataView: {}, restore: {} }, right: 10 },
-                    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-                    legend: { type: 'scroll', bottom: 0 },
-                    series: [{
-                        type: 'pie',
-                        radius: ['35%', '70%'],
-                        label: { show: true, formatter: '{b}: {c} ({d}%)' },
-                        data: isEmptyTipos ? [] : dataPacientes.map(x => ({ name: x.tipoPaciente ?? x.TipoPaciente, value: x.total ?? x.Total }))
-                    }],
-                    title: isEmptyTipos ? { text: 'Sin datos', left: 'center', top: 'middle', textStyle: { color: '#999', fontSize: 14 } } : undefined
-                });
-
-                const ro = new ResizeObserver(() => { chartBar.resize(); chartPie.resize(); });
-                ro.observe(elBar); ro.observe(elPie);
-            };
-            if (window.echarts) startCharts(); else window.addEventListener('load', startCharts);
-
-            // ===== Export CSV por tabla (opcional) =====
-            function toCSV(rows){
-                if (!rows?.length) return '';
-                const keys = Object.keys(rows[0]);
-                const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-                return [keys.join(','), ...rows.map(r => keys.map(k => esc(r[k])).join(','))].join('\n');
-            }
-            function download(name, content){
-                const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a'); a.href = url; a.download = name; a.click();
-                URL.revokeObjectURL(url);
-            }
-            document.getElementById('btnExportConsultorios')?.addEventListener('click', () => {
-                const rows = dataConsultorios.map(x => ({
-                    Consultorio: x.consultorio ?? x.Consultorio,
-                    MedicosAsignados: x.medicosAsignados ?? x.MedicosAsignados
-                }));
-                download('ocupacion_consultorios.csv', toCSV(rows));
-            });
-            document.getElementById('btnExportPacientes')?.addEventListener('click', () => {
-                const rows = dataPacientes.map(x => ({
-                    TipoPaciente: x.tipoPaciente ?? x.TipoPaciente,
-                    Total: x.total ?? x.Total
-                }));
-                download('consultas_por_tipo_paciente.csv', toCSV(rows));
             });
         });
     </script>

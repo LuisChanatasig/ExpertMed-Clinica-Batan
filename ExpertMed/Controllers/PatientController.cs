@@ -22,7 +22,11 @@ namespace ExpertMed.Controllers
             _selectService = selectService;
             _patientService = patientService;
         }
-
+        /// <summary>
+        /// Metodo para obtener los detalles del paciente
+        /// </summary>
+        /// <param name="patientId"></param>
+        /// <returns></returns>
         [HttpGet]
         public async Task<IActionResult> GetPatientDetails(int patientId)
         {
@@ -74,7 +78,14 @@ namespace ExpertMed.Controllers
             }
         }
 
-
+        /// <summary>
+        /// Changes the status of the specified patient to active or inactive.
+        /// </summary>
+        /// <remarks>Displays a success or error message based on the outcome of the status change
+        /// operation. The method is intended to be called via an HTTP POST request.</remarks>
+        /// <param name="patientId">The unique identifier of the patient whose status will be updated.</param>
+        /// <param name="status">The new status value to assign to the patient. Typically, use 1 for active and 0 for inactive.</param>
+        /// <returns>A redirect result to the patient list view after the status change operation completes.</returns>
         [HttpPost]
         public async Task<IActionResult> ChangePatientStatus(int patientId, int status)
         {
@@ -82,16 +93,39 @@ namespace ExpertMed.Controllers
             TempData[result.success ? "SuccessMessage" : "ErrorMessage"] = result.message;
             return RedirectToAction("PatientList");
         }
-
+        /// <summary>
+        /// Displays the form for creating a new patient record.
+        /// </summary>
+        /// <returns>A task that represents the asynchronous operation. The task result contains an <see cref="IActionResult"/>
+        /// that renders the new patient form view.</returns>
         [HttpGet]
         public async Task<IActionResult> NewPatient() => await LoadPatientFormAsync();
+        
 
+        /// <summary>
+        /// Displays the patient registration form, optionally pre-filtered by status.
+        /// </summary>
+        /// <param name="est">An optional status value used to filter the patient registration form. If null, no status filter is applied.</param>
+        /// <returns>An asynchronous operation that returns an <see cref="IActionResult"/> representing the patient registration
+        /// form view.</returns>
         [HttpGet]
         public async Task<IActionResult> RegistroPaciente(int? est = null)
         {
             return await LoadPatientFormBAsync(null, est);
         }
 
+
+        /// <summary>
+        /// Creates a new patient record and optionally associates it with a specified doctor.
+        /// </summary>
+        /// <remarks>If the patient data is invalid, the method returns a BadRequest containing details
+        /// about the validation errors. On successful creation, a success message is stored in TempData and the user is
+        /// redirected to the patient list. If an exception occurs during creation, an error message is stored and the
+        /// patient registration view is returned.</remarks>
+        /// <param name="patient">The patient information to be created. Must contain valid data according to the model requirements.</param>
+        /// <param name="doctorUserId">The user ID of the doctor to associate with the new patient. If null, no doctor will be linked.</param>
+        /// <returns>An IActionResult that redirects to the patient list on success, or returns a BadRequest with validation
+        /// errors if the input is invalid.</returns>
         [HttpPost]
         public async Task<IActionResult> NewPatient(Patient patient, int? doctorUserId = null)
         {
@@ -124,11 +158,17 @@ namespace ExpertMed.Controllers
         }
 
         /// <summary>
-        /// Autoregistro
+        /// Creates a new patient record or associates an existing patient with an emergency appointment, then redirects
+        /// to the patient registration view.
         /// </summary>
-        /// <param name="patient"></param>
-        /// <param name="doctorUserId"></param>
-        /// <returns></returns>
+        /// <remarks>If the patient already exists based on the document number, an emergency appointment
+        /// is registered for the existing patient. Otherwise, a new patient is created and an emergency appointment is
+        /// registered. Success or error messages are provided via TempData for use in the redirected view.</remarks>
+        /// <param name="patient">The patient information to be created or checked for existence. Must contain valid data according to the
+        /// model requirements.</param>
+        /// <param name="doctorUserId">The user ID of the doctor creating or modifying the patient record. If null, no doctor will be associated.</param>
+        /// <returns>An asynchronous action result that redirects to the patient registration view. Returns a bad request result
+        /// if the patient data is invalid.</returns>
         [HttpPost]
         public async Task<IActionResult> NewPatientA(Patient patient, int? doctorUserId = null)
         {
@@ -172,7 +212,12 @@ namespace ExpertMed.Controllers
 
 
 
-
+        /// <summary>
+        /// Displays the patient update form for the specified patient identifier.
+        /// </summary>
+        /// <param name="id">The unique identifier of the patient whose details are to be updated. Must be a valid patient ID.</param>
+        /// <returns>An <see cref="IActionResult"/> that renders the patient update form if the patient exists; otherwise, a
+        /// NotFound result if the patient is not found.</returns>
         [HttpGet]
         public async Task<IActionResult> UpdatePatient(int id)
         {
@@ -181,6 +226,18 @@ namespace ExpertMed.Controllers
             return await LoadPatientFormAsync(patient);
         }
 
+        /// <summary>
+        /// Creates a new patient record or updates an existing one based on the provided patient information.
+        /// </summary>
+        /// <remarks>If the patient data is invalid, the method returns a BadRequest result. On successful
+        /// creation or update, a success message is stored in TempData and the user is redirected to the patient list.
+        /// If an exception occurs, an error message is stored and the patient form is reloaded.</remarks>
+        /// <param name="patient">The patient data to create or update. Must contain valid patient information. The PatientId property
+        /// determines whether a new record is created or an existing one is updated.</param>
+        /// <param name="doctorUserId">The identifier of the doctor associated with the patient. If specified, the patient will be linked to this
+        /// doctor. Optional.</param>
+        /// <returns>An IActionResult that redirects to the patient list on success, or returns a form view with error
+        /// information if the operation fails.</returns>
         [HttpPost]
         public async Task<IActionResult> UpdatePatient(Patient patient,int? doctorUserId = null)
         {
@@ -206,10 +263,15 @@ namespace ExpertMed.Controllers
         }
 
         /// <summary>
-        /// Carga de todos los datos y listados
+        /// Asynchronously prepares and returns the view for creating or editing a patient, populating the form with
+        /// relevant selection lists and user data.
         /// </summary>
-        /// <param name="patient"></param>
-        /// <returns></returns>
+        /// <param name="patient">An optional patient object to pre-populate the form fields. If null, the form will be initialized for a new
+        /// patient.</param>
+        /// <param name="establishmentId">An optional establishment identifier used to filter available medics and insurance companies. If not
+        /// specified, the value is obtained from the current session.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains an IActionResult that renders
+        /// the patient form view with all necessary data for selection fields.</returns>
         private async Task<IActionResult> LoadPatientFormAsync(Patient patient = null, int? establishmentId = null)
         {
             var usuarioId = HttpContext.Session.GetInt32("UsuarioId") ?? 0;
@@ -237,7 +299,20 @@ namespace ExpertMed.Controllers
             return View(viewModel);
         }
 
-
+        /// <summary>
+        /// Asynchronously loads the patient registration form (Form B) with relevant data for display, including
+        /// patient details and selection lists.
+        /// </summary>
+        /// <remarks>The returned view model includes selection lists for gender, blood type, document
+        /// type, civil status, professional training, health insurance, countries, provinces, and medical staff. The
+        /// method uses session data to determine user and establishment context if parameters are not
+        /// provided.</remarks>
+        /// <param name="patient">The patient whose information will be pre-filled in the form. If null, the form will be initialized for a
+        /// new patient.</param>
+        /// <param name="establishmentId">The identifier of the establishment for which to load medical staff and related data. If null, the value is
+        /// obtained from the current session.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains an <see cref="IActionResult"/>
+        /// that renders the patient registration form populated with the specified data.</returns>
         private async Task<IActionResult> LoadPatientFormBAsync(Patient patient = null, int? establishmentId = null)
         {
             var usuarioId = HttpContext.Session.GetInt32("UsuarioId") ?? 0;

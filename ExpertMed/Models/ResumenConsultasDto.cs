@@ -2,29 +2,52 @@
 {
     public class ResumenConsultasDto
     {
-        public string? NombreEstablecimiento { get; set; }
+        // Dataset 1: KPIs
+        public DashboardKpi Kpi { get; set; } = new DashboardKpi();
 
-        public List<OcupacionConsultorioItem> OcupacionConsultorios { get; set; } = new();
-        public MedicoTopItem MedicoTop { get; set; }
-        public List<TipoPacienteItem> TiposPacientes { get; set; } = new();
+        // Dataset 2: Evolución Diaria
+        public List<DashboardEvolutionItem> EvolucionDiaria { get; set; } = new List<DashboardEvolutionItem>();
 
-        public class OcupacionConsultorioItem
+        // Dataset 3: Estado Citas (Pastel)
+        public List<DashboardStatusItem> EstadoCitas { get; set; } = new List<DashboardStatusItem>();
+
+        // Dataset 4: Ranking Médicos
+        public List<DashboardDoctorItem> RankingMedicos { get; set; } = new List<DashboardDoctorItem>();
+
+        // Dataset 5: Pacientes por Seguro
+        public List<DashboardInsuranceItem> PacientesPorSeguro { get; set; } = new List<DashboardInsuranceItem>();
+
+        // Clases anidadas para estructura interna
+        public class DashboardKpi
         {
-            public string Consultorio { get; set; }
-            public int MedicosAsignados { get; set; }
-        }
-
-        public class MedicoTopItem
-        {
-            public string Medico { get; set; }
+            public int TotalCitas { get; set; }
             public int TotalConsultas { get; set; }
+            public int TotalPagadas { get; set; }
+            public int TotalPacientesHistorico { get; set; }
         }
 
-        public class TipoPacienteItem
+        public class DashboardEvolutionItem
         {
-            public string TipoPaciente { get; set; }
-            public int Total { get; set; }
+            public DateTime Fecha { get; set; }
+            public int CantidadCitas { get; set; }
+        }
+
+        public class DashboardStatusItem
+        {
+            public string Estado { get; set; } = string.Empty;
+            public int Cantidad { get; set; }
+        }
+
+        public class DashboardDoctorItem
+        {
+            public string Medico { get; set; } = string.Empty;
+            public int ConsultasRealizadas { get; set; }
+        }
+
+        public class DashboardInsuranceItem
+        {
+            public string Seguro { get; set; } = string.Empty;
+            public int CantidadPacientesUnicos { get; set; }
         }
     }
-
 }

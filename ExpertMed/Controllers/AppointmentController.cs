@@ -24,13 +24,22 @@ namespace ExpertMed.Controllers
         {
             public string Message { get; set; }
         }
+        
         /// <summary>
-        /// 
+        /// Displays a list of appointments filtered by status and payment criteria for the current user.
         /// </summary>
-        /// <param name="appointmentStatus"></param>
-        /// <param name="appointmentStatus2"></param>
-        /// <param name="isPaidOnly"></param>
-        /// <returns></returns>
+        /// <remarks>If both <paramref name="appointmentStatus"/> and <paramref
+        /// name="appointmentStatus2"/> are null and no query string is present, the method defaults to showing active
+        /// and emergency appointments. The method requires the user to be authenticated; otherwise, it redirects to the
+        /// sign-in page.</remarks>
+        /// <param name="appointmentStatus">The primary appointment status to filter the list. Use -1 to include all statuses. If null and no query
+        /// string is present, defaults to active appointments.</param>
+        /// <param name="appointmentStatus2">An optional secondary appointment status to further filter the list. If null, the secondary status is
+        /// ignored.</param>
+        /// <param name="isPaidOnly">Specifies whether to include only paid appointments. Set to <see langword="true"/> to filter for paid
+        /// appointments; otherwise, all appointments are included.</param>
+        /// <returns>An <see cref="IActionResult"/> that renders the appointment list view with the filtered appointments, or
+        /// redirects to the sign-in page if the user is not authenticated.</returns>
         [HttpGet]
         public async Task<IActionResult> AppointmentList(
             int? appointmentStatus,      // <- sin defaults
@@ -103,7 +112,18 @@ namespace ExpertMed.Controllers
                 return View(new AppointmentListViewModel { Appointments = new List<AppointmentDTO>() });
             }
         }
-        // 2️⃣ Sigue existiendo para cuando quieras devolver SOLO el formulario:
+
+
+
+        /// <summary>
+        /// Asynchronously prepares and returns the patient form view for creating or editing a patient record.
+        /// </summary>
+        /// <param name="patient">An optional <see cref="Patient"/> object representing the patient to edit. If <see langword="null"/>, the
+        /// form will be initialized for creating a new patient.</param>
+        /// <param name="establishmentId">An optional identifier for the establishment associated with the patient. If specified, the form will be
+        /// pre-populated with establishment-specific data.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains an <see cref="IActionResult"/>
+        /// that renders the patient form view.</returns>
         private async Task<IActionResult> LoadPatientFormAsync(
             Patient patient = null,
             int? establishmentId = null)
@@ -112,7 +132,20 @@ namespace ExpertMed.Controllers
             return View(viewModel);
         }
 
-        // 1️⃣ Construye SOLO el modelo:
+        /// <summary>
+        /// Asynchronously builds and returns a view model for creating a new patient, including selectable lists and
+        /// user context information.
+        /// </summary>
+        /// <remarks>The returned view model includes lists for gender, blood type, document type, civil
+        /// status, professional training, health insurance, countries, provinces, and users relevant to the current
+        /// session or specified establishment. This method relies on session values to determine user and establishment
+        /// context when parameters are not provided.</remarks>
+        /// <param name="patient">An optional patient entity to prepopulate the view model. If null, the view model will be initialized for a
+        /// new patient.</param>
+        /// <param name="establishmentId">An optional establishment identifier used to filter selectable lists and user data. If null, the value is
+        /// obtained from the current session.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains a populated NewPatientViewModel
+        /// with patient data and related selection lists.</returns>
         private async Task<NewPatientViewModel> BuildNewPatientViewModelAsync(
             Patient patient = null,
             int? establishmentId = null)
@@ -140,13 +173,21 @@ namespace ExpertMed.Controllers
             };
         }
 
+
+
         /// <summary>
-        /// Obtiene las horas del medico
+        /// Retrieves the list of available appointment hours for a specified user and date, optionally filtered by
+        /// doctor.
         /// </summary>
-        /// <param name="userId"></param>
-        /// <param name="date"></param>
-        /// <param name="doctorUserId"></param>
-        /// <returns></returns>
+        /// <remarks>If no available hours are found, the response will have no content and an error
+        /// message will be stored in TempData. In case of an error, a descriptive message is returned in the response
+        /// and stored in TempData.</remarks>
+        /// <param name="userId">The unique identifier of the user for whom available hours are requested.</param>
+        /// <param name="date">The date for which to retrieve available appointment hours.</param>
+        /// <param name="doctorUserId">The unique identifier of the doctor to filter available hours. If null, available hours are retrieved
+        /// without filtering by doctor.</param>
+        /// <returns>An HTTP 200 response containing a list of available hour strings if any are found; otherwise, an HTTP 204 No
+        /// Content response if no hours are available. Returns an HTTP 500 response if an error occurs.</returns>
         [HttpGet]
         public IActionResult GetAvailableHours([FromQuery] int userId, [FromQuery] DateTime date, [FromQuery] int? doctorUserId = null)
         {
@@ -169,14 +210,19 @@ namespace ExpertMed.Controllers
                 return StatusCode(500, new { message = ex.Message });  // Manejo de errores en caso de fallos en el servicio
             }
         }
-
+        
         /// <summary>
-        /// Obtiene los consultorios disponibles para una fecha y hora especifica
+        /// Retrieves a list of available offices for scheduling appointments at the specified date and hour, optionally
+        /// filtered by doctor.
         /// </summary>
-        /// <param name="date"></param>
-        /// <param name="hour"></param>
-        /// <param name="doctorUserId"></param>
-        /// <returns></returns>
+        /// <remarks>Returns an unauthorized response if the user session is invalid. Returns a bad
+        /// request response if the hour parameter is not a valid time or if an error occurs during
+        /// processing.</remarks>
+        /// <param name="date">The date for which to check office availability.</param>
+        /// <param name="hour">The hour, in 'HH:mm' format, for which to check office availability. Must be a valid time string.</param>
+        /// <param name="doctorUserId">The user ID of the doctor to filter available offices by. If null, offices for all doctors are returned.</param>
+        /// <returns>An IActionResult containing a JSON object with the success status and a list of available offices if the
+        /// request is valid; otherwise, an error message.</returns>
         [HttpGet]
         public async Task<IActionResult> GetAvailableOffices(DateTime date, string hour, int? doctorUserId = null)
         {
@@ -198,14 +244,21 @@ namespace ExpertMed.Controllers
             }
         }
 
-
         /// <summary>
-        /// Metodo para crear la cita
+        /// Creates a new appointment using the provided appointment details and assigns an available medical office
+        /// automatically.
         /// </summary>
-        /// <param name="request"></param>
-        /// <param name="doctorUserId"></param>
-        /// <returns></returns>
-
+        /// <remarks>The method automatically selects an available medical office for the appointment
+        /// based on the provided date, time, and doctor. If no offices are available, the request fails. The response
+        /// may include a WhatsApp reminder URL for the patient if a valid cellular phone number is available. The
+        /// caller must be authenticated; otherwise, an unauthorized response is returned.</remarks>
+        /// <param name="request">The appointment information to be created. Must not be null and should contain valid date, time, patient,
+        /// and status details.</param>
+        /// <param name="doctorUserId">The optional user ID of the doctor for whom the appointment is being scheduled. If not specified, the
+        /// appointment will be assigned based on the current session user.</param>
+        /// <returns>An IActionResult containing the result of the appointment creation. Returns a success response with
+        /// appointment details if created successfully; otherwise, returns an error response indicating the reason for
+        /// failure.</returns>
         [HttpPost]
         public async Task<IActionResult> CreateAppointment([FromBody] Appointment request, [FromQuery] int? doctorUserId = null)
         {
@@ -304,11 +357,18 @@ namespace ExpertMed.Controllers
 
 
         /// <summary>
-        /// Crerar una cita  por fuera
+        /// Creates a new appointment using the specified appointment details and optional doctor user identifier.
         /// </summary>
-        /// <param name="request"></param>
-        /// <param name="doctorUserId"></param>
-        /// <returns></returns>
+        /// <remarks>If the appointment is created successfully and the patient has a registered cellular
+        /// phone, a WhatsApp message link is generated for appointment reminders. The method validates the appointment
+        /// time and user authentication before creating the appointment.</remarks>
+        /// <param name="request">The appointment information to be created. Must not be null and should contain valid appointment date, time,
+        /// patient, and status details.</param>
+        /// <param name="doctorUserId">The optional identifier of the doctor user associated with the appointment. If not provided, the appointment
+        /// will be created without linking to a specific doctor.</param>
+        /// <returns>An IActionResult containing the result of the appointment creation. Returns a success response with
+        /// appointment details if creation is successful; otherwise, returns an error response indicating the reason
+        /// for failure.</returns>
         [HttpPost]
         public async Task<IActionResult> CreateAppointmentA([FromBody] Appointment request, [FromQuery] int? doctorUserId = null)
         {
@@ -382,15 +442,19 @@ namespace ExpertMed.Controllers
         }
 
 
+
         /// <summary>
-        /// Obtener una cita por el id
+        /// Retrieves the details of an appointment by its unique identifier and user profile.
         /// </summary>
-        /// <param name="id"></param>
-        /// <param name="userProfile"></param>
-        /// <returns></returns>
-
-
-
+        /// <remarks>The returned appointment details vary based on the specified user profile. For
+        /// certain user profiles, the doctor user ID is included; for others, it is omitted. The method returns
+        /// formatted date and time values for easier client consumption.</remarks>
+        /// <param name="id">The unique identifier of the appointment to retrieve.</param>
+        /// <param name="userProfile">The user profile type requesting the appointment. Determines which appointment details are included in the
+        /// response. Valid values correspond to specific user roles.</param>
+        /// <returns>An <see cref="IActionResult"/> containing the appointment details if found; otherwise, a 404 Not Found
+        /// result if the appointment does not exist, or a 500 Internal Server Error result if an unexpected error
+        /// occurs.</returns>
         [HttpGet("AppointmentGetById")]
         public IActionResult AppointmentGetById(int id, int userProfile)
         {
@@ -427,12 +491,18 @@ namespace ExpertMed.Controllers
             }
         }
 
+        
         /// <summary>
-        /// Modificar reagendar una cita
+        /// Modifies an existing appointment with the specified details and returns the result of the operation.
         /// </summary>
-        /// <param name="request"></param>
-        /// <returns></returns>
-
+        /// <remarks>If the patient associated with the appointment has a registered cellular phone
+        /// number, the response includes a WhatsApp URL for sending a notification message. The appointment
+        /// modification is performed using the current session user as the modifying user. Returns a bad request result
+        /// if an error occurs during processing.</remarks>
+        /// <param name="request">An <see cref="Appointment"/> object containing the updated appointment information. All required fields must
+        /// be provided; the appointment to modify is identified by <c>AppointmentId</c>.</param>
+        /// <returns>An <see cref="IActionResult"/> indicating the outcome of the modification. If successful, the result
+        /// includes a success message and, if available, a WhatsApp URL for patient notification.</returns>
         [HttpPost]
         public async Task<IActionResult> ModifyAppointment([FromBody] Appointment request)
         {
@@ -490,12 +560,17 @@ namespace ExpertMed.Controllers
             }
         }
 
+        
         /// <summary>
-        ///  
+        /// Modifies an existing appointment with the specified details.
         /// </summary>
-        /// <param name="request"></param>
-        /// <returns></returns>
-
+        /// <remarks>This method updates the appointment using the provided details. If the appointment
+        /// status is not specified, it defaults to 1. The modification date is set to the current date and time. The
+        /// method does not perform any notification actions.</remarks>
+        /// <param name="request">The appointment information to update. Must include a valid appointment ID and the updated appointment
+        /// details.</param>
+        /// <returns>An IActionResult indicating the result of the operation. Returns a success message if the appointment is
+        /// updated; otherwise, returns an error message.</returns>
         [HttpPost("ModifyAppointmentA")]
         public async Task<IActionResult> ModifyAppointmentA([FromBody] Appointment request)
         {
@@ -525,7 +600,16 @@ namespace ExpertMed.Controllers
             }
         }
 
-
+        /// <summary>
+        /// Deactivates an existing appointment based on the provided appointment details.
+        /// </summary>
+        /// <remarks>This endpoint expects a valid appointment ID and modifying user ID. If the parameters
+        /// are invalid or an error occurs during deactivation, an error response is returned. The response is formatted
+        /// as JSON.</remarks>
+        /// <param name="request">An <see cref="Appointment"/> object containing the appointment ID and the user ID performing the
+        /// modification. The appointment ID and modifying user ID must be greater than zero.</param>
+        /// <returns>An <see cref="IActionResult"/> indicating the result of the operation. Returns a success message if the
+        /// appointment is deactivated; otherwise, returns an error message with the appropriate HTTP status code.</returns>
         [HttpPost("desactivate")]
         public IActionResult DesactivateAppointment([FromBody] Appointment request)
         {
@@ -550,7 +634,17 @@ namespace ExpertMed.Controllers
             }
         }
 
-
+        /// <summary>
+        /// Sends a WhatsApp reminder message to the patient associated with the specified appointment and redirects the
+        /// caller to the WhatsApp messaging interface.
+        /// </summary>
+        /// <remarks>The patient must have a registered cellular phone number to receive the WhatsApp
+        /// reminder. If the appointment or patient cannot be found, or if the patient lacks a cellular phone number, an
+        /// appropriate error response is returned.</remarks>
+        /// <param name="appointmentId">The unique identifier of the appointment for which the reminder will be sent.</param>
+        /// <param name="userProfile">The identifier of the user profile used to retrieve appointment details.</param>
+        /// <returns>An <see cref="IActionResult"/> that redirects to the WhatsApp messaging interface if the reminder can be
+        /// sent; otherwise, a result indicating why the reminder could not be sent, such as not found or bad request.</returns>
         [HttpGet]
         public async Task<IActionResult> SendWhatsAppReminder(int appointmentId, int userProfile)
         {
@@ -591,9 +685,13 @@ namespace ExpertMed.Controllers
         }
 
         /// <summary>
-        /// 
+        /// Retrieves the list of appointments scheduled for the current day for the authenticated user.
         /// </summary>
-        /// <returns></returns>
+        /// <remarks>This method requires the user to be authenticated and have a valid session. The
+        /// returned appointments are specific to the user associated with the current session.</remarks>
+        /// <returns>An <see cref="IActionResult"/> containing the list of today's appointments for the authenticated user.
+        /// Returns <see cref="UnauthorizedResult"/> if the user is not authenticated, <see cref="NotFoundResult"/> if
+        /// no appointments are found, or <see cref="OkObjectResult"/> with the appointments if successful.</returns>
         [HttpGet]
         public async Task<IActionResult> GetAppointmentsForToday()
         {
