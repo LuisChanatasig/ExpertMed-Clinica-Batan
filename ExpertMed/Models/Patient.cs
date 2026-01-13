@@ -67,7 +67,7 @@ public partial class Patient
     public int PatientStatus { get; set; }
 
     public string? PatientCellularPhone { get; set; }
-
+    [NotMapped]
     public string? PatientSignature { get; set; }
 
     public string PatientFirstsurname { get; set; } = null!;
