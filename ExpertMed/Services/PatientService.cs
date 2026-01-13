@@ -136,97 +136,144 @@ namespace ExpertMed.Services
         /// <returns>The unique identifier of the newly created patient.</returns>
         /// <exception cref="Exception">Thrown if the stored procedure does not return a result, if the result does not contain a patient ID, or if
         /// an error occurs during patient creation.</exception>
-        public async Task<int> CreatePatientAsync(Patient patient, int? doctorUserId = null)
+        public async Task<PatientCreateResponse> CreatePatientAsync(
+            Patient patient,
+            int? doctorUserId = null,
+            bool skipSignatureInsert = false)
         {
-            using (var connection = new SqlConnection(_dbContext.Database.GetDbConnection().ConnectionString))
-            using (var command = new SqlCommand("sp_CreatePatient", connection))
+            if (patient == null) throw new ArgumentNullException(nameof(patient));
+
+            var cs = _dbContext.Database.GetDbConnection().ConnectionString;
+            await using var connection = new SqlConnection(cs);
+            await using var command = new SqlCommand("dbo.sp_CreatePatient", connection)
             {
-                command.CommandType = CommandType.StoredProcedure;
+                CommandType = CommandType.StoredProcedure
+            };
 
-                // Agregar parámetros desde el modelo Patient
-                command.Parameters.AddWithValue("@patient_creationuser", patient.PatientCreationuser);
-                command.Parameters.AddWithValue("@creationuser_profileid", patient.CreationUserProfileId);
-                command.Parameters.AddWithValue("@patient_modificationuser", patient.PatientModificationuser);
-                command.Parameters.AddWithValue("@patient_documenttype", patient.PatientDocumenttype);
-                command.Parameters.AddWithValue("@patient_documentnumber", patient.PatientDocumentnumber);
-                command.Parameters.AddWithValue("@patient_firstname", patient.PatientFirstname);
-                command.Parameters.AddWithValue("@patient_middlename", patient.PatientMiddlename ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@patient_firstsurname", patient.PatientFirstsurname);
-                command.Parameters.AddWithValue("@patient_secondlastname", patient.PatientSecondlastname ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@patient_gender", patient.PatientGender);
-                command.Parameters.AddWithValue("@patient_birthdate", patient.PatientBirthdate);
-                command.Parameters.AddWithValue("@patient_age", patient.PatientAge);
-                command.Parameters.AddWithValue("@patient_bloodtype", patient.PatientBloodtype);
-                command.Parameters.AddWithValue("@patient_donor", patient.PatientDonor ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@patient_maritalstatus", patient.PatientMaritalstatus);
-                command.Parameters.AddWithValue("@patient_vocational_training", patient.PatientVocationalTraining);
-                command.Parameters.AddWithValue("@patient_landline_phone", patient.PatientLandlinePhone ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@patient_cellular_phone", patient.PatientCellularPhone ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@patient_email", patient.PatientEmail ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@patient_nationality", patient.PatientNationality);
-                command.Parameters.AddWithValue("@patient_province", patient.PatientProvince);
-                command.Parameters.AddWithValue("@patient_address", patient.PatientAddress);
-                command.Parameters.AddWithValue("@patient_ocupation", patient.PatientOcupation ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@patient_company", patient.PatientCompany ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@patient_status", 1);
+            // ------------------------------------------------------------------
+            // Auditoría y Perfil (obligatorio)
+            // ------------------------------------------------------------------
+            command.Parameters.AddWithValue("@patient_creationuser", patient.PatientCreationuser);
+            command.Parameters.AddWithValue("@creationuser_profileid", patient.CreationUserProfileId);
+            command.Parameters.AddWithValue("@patient_modificationuser", patient.PatientModificationuser);
 
-             
-                // Parámetro opcional: doctor_userid
-                command.Parameters.AddWithValue("@doctor_userid", doctorUserId.HasValue ? doctorUserId.Value : (object)DBNull.Value);
+            // doctor_userid (opcional)
+            command.Parameters.AddWithValue("@doctor_userid",
+                doctorUserId.HasValue ? doctorUserId.Value : (object)DBNull.Value);
 
-                try
+            // ------------------------------------------------------------------
+            // Datos obligatorios
+            // ------------------------------------------------------------------
+            command.Parameters.AddWithValue("@patient_firstname", patient.PatientFirstname ?? "");
+            command.Parameters.AddWithValue("@patient_firstsurname", patient.PatientFirstsurname ?? "");
+            command.Parameters.AddWithValue("@patient_cellular_phone",
+                string.IsNullOrWhiteSpace(patient.PatientCellularPhone) ? (object)DBNull.Value : patient.PatientCellularPhone);
+
+            // ------------------------------------------------------------------
+            // Firma (directa vs QR)
+            // - Directa: se manda firma para que SP inserte en patient_signatures.
+            // - QR: se manda NULL y luego se consume token con sp_signature_consume_to_patient.
+            // ------------------------------------------------------------------
+            if (skipSignatureInsert)
+            {
+                command.Parameters.AddWithValue("@patient_signature", DBNull.Value);
+            }
+            else
+            {
+                command.Parameters.AddWithValue("@patient_signature",
+                    string.IsNullOrWhiteSpace(patient.PatientSignature) ? (object)DBNull.Value : patient.PatientSignature);
+            }
+
+            // IP para trazabilidad
+            var remoteIpAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+            command.Parameters.AddWithValue("@ip_address", string.IsNullOrWhiteSpace(remoteIpAddress) ? "Unknown" : remoteIpAddress);
+
+            // ------------------------------------------------------------------
+            // Datos opcionales / defaults (según tu SP)
+            // ------------------------------------------------------------------
+            command.Parameters.AddWithValue("@patient_documenttype", patient.PatientDocumenttype == 0 ? (object)DBNull.Value : patient.PatientDocumenttype);
+            command.Parameters.AddWithValue("@patient_documentnumber", patient.PatientDocumentnumber ?? "0000000000");
+
+            command.Parameters.AddWithValue("@patient_middlename", string.IsNullOrWhiteSpace(patient.PatientMiddlename) ? (object)DBNull.Value : patient.PatientMiddlename);
+            command.Parameters.AddWithValue("@patient_secondlastname", string.IsNullOrWhiteSpace(patient.PatientSecondlastname) ? (object)DBNull.Value : patient.PatientSecondlastname);
+
+            command.Parameters.AddWithValue("@patient_gender", patient.PatientGender == 0 ? (object)DBNull.Value : patient.PatientGender);
+            command.Parameters.AddWithValue("@patient_birthdate", patient.PatientBirthdate == default ? (object)DBNull.Value : patient.PatientBirthdate);
+            command.Parameters.AddWithValue("@patient_age", patient.PatientAge == 0 ? (object)DBNull.Value : patient.PatientAge);
+
+            command.Parameters.AddWithValue("@patient_bloodtype", patient.PatientBloodtype == 0 ? (object)DBNull.Value : patient.PatientBloodtype);
+            command.Parameters.AddWithValue("@patient_donor", string.IsNullOrWhiteSpace(patient.PatientDonor) ? (object)DBNull.Value : patient.PatientDonor);
+
+            command.Parameters.AddWithValue("@patient_maritalstatus", patient.PatientMaritalstatus == 0 ? (object)DBNull.Value : patient.PatientMaritalstatus);
+            command.Parameters.AddWithValue("@patient_vocational_training", patient.PatientVocationalTraining == 0 ? (object)DBNull.Value : patient.PatientVocationalTraining);
+
+            command.Parameters.AddWithValue("@patient_landline_phone", string.IsNullOrWhiteSpace(patient.PatientLandlinePhone) ? (object)DBNull.Value : patient.PatientLandlinePhone);
+            command.Parameters.AddWithValue("@patient_email", string.IsNullOrWhiteSpace(patient.PatientEmail) ? (object)DBNull.Value : patient.PatientEmail);
+
+            command.Parameters.AddWithValue("@patient_nationality", patient.PatientNationality == 0 ? (object)DBNull.Value : patient.PatientNationality);
+            command.Parameters.AddWithValue("@patient_province", patient.PatientProvince == 0 ? (object)DBNull.Value : patient.PatientProvince);
+
+            command.Parameters.AddWithValue("@patient_address", string.IsNullOrWhiteSpace(patient.PatientAddress) ? "S/N" : patient.PatientAddress);
+            command.Parameters.AddWithValue("@patient_ocupation", string.IsNullOrWhiteSpace(patient.PatientOcupation) ? (object)DBNull.Value : patient.PatientOcupation);
+            command.Parameters.AddWithValue("@patient_company", string.IsNullOrWhiteSpace(patient.PatientCompany) ? (object)DBNull.Value : patient.PatientCompany);
+
+            command.Parameters.AddWithValue("@patient_status", 1);
+
+            // ------------------------------------------------------------------
+            // Execute + parse JSON result
+            // ------------------------------------------------------------------
+            try
+            {
+                await connection.OpenAsync();
+
+                string? jsonResult = null;
+                await using (var reader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow))
                 {
-                    await connection.OpenAsync();
-
-                    string jsonResult = null;
-                    using (var reader = await command.ExecuteReaderAsync())
+                    if (await reader.ReadAsync())
                     {
-                        if (await reader.ReadAsync())
-                        {
-                            jsonResult = reader.GetString(0);
-                        }
-                    }
-
-                    if (string.IsNullOrEmpty(jsonResult))
-                    {
-                        throw new Exception("Error inesperado: No se obtuvo ningún resultado del procedimiento almacenado.");
-                    }
-
-                    using (JsonDocument document = JsonDocument.Parse(jsonResult))
-                    {
-                        var root = document.RootElement;
-
-                        if (root.TryGetProperty("success", out var success) && success.GetInt32() == 1)
-                        {
-                            if (root.TryGetProperty("patientId", out var patientId))
-                            {
-                                return patientId.GetInt32();
-                            }
-                            else
-                            {
-                                throw new Exception("El campo 'patientId' no se encuentra en el resultado.");
-                            }
-                        }
-                        else
-                        {
-                            string errorMessage = root.TryGetProperty("message", out var message)
-                                ? message.GetString()
-                                : "Error al crear el paciente.";
-                            throw new Exception(errorMessage);
-                        }
+                        jsonResult = reader.GetString(0);
                     }
                 }
-                finally
+
+                if (string.IsNullOrWhiteSpace(jsonResult))
+                    throw new Exception("Error: No se recibió respuesta del servidor de datos.");
+
+                using var document = JsonDocument.Parse(jsonResult);
+                var root = document.RootElement;
+
+                var isSuccess = root.TryGetProperty("success", out var successProp) && successProp.GetInt32() == 1;
+
+                if (!isSuccess)
                 {
-                    if (connection.State == ConnectionState.Open)
-                    {
-                        await connection.CloseAsync();
-                    }
+                    var msg = root.TryGetProperty("message", out var messageProp)
+                        ? messageProp.GetString()
+                        : "Falla en el registro.";
+                    throw new Exception(msg);
                 }
+
+                return new PatientCreateResponse
+                {
+                    Success = true,
+                    Message = root.TryGetProperty("message", out var m) ? m.GetString() : "Éxito",
+                    PatientId = root.TryGetProperty("patientId", out var id) ? id.GetInt32() : 0,
+                    PatientCode = root.TryGetProperty("patientCode", out var pc) ? pc.GetString() : null,
+                    SecurityToken = root.TryGetProperty("securityToken", out var st) ? st.GetString() : "",
+                    SignatureData = root.TryGetProperty("signatureData", out var sd) ? sd.GetString() : null,
+                    SignedAt = root.TryGetProperty("signedAt", out var sa) ? sa.GetString() : null
+                };
+            }
+            catch (SqlException ex)
+            {
+                // Aquí entran también los RAISERROR del SP
+                throw new Exception("Error de Base de Datos: " + ex.Message);
+            }
+            finally
+            {
+                if (connection.State == ConnectionState.Open)
+                    await connection.CloseAsync();
             }
         }
 
-        
         /// <summary>
         /// Activates or deactivates a patient record asynchronously based on the specified status.
         /// </summary>

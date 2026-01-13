@@ -24,7 +24,7 @@ namespace ExpertMed.Controllers
         {
             public string Message { get; set; }
         }
-        
+
         /// <summary>
         /// Displays a list of appointments filtered by status and payment criteria for the current user.
         /// </summary>
@@ -42,77 +42,82 @@ namespace ExpertMed.Controllers
         /// redirects to the sign-in page if the user is not authenticated.</returns>
         [HttpGet]
         public async Task<IActionResult> AppointmentList(
-            int? appointmentStatus,      // <- sin defaults
-            int? appointmentStatus2,     // <- sin defaults
-            bool isPaidOnly = false)
+           int? appointmentStatus,
+           int? appointmentStatus2,
+           bool isPaidOnly = false)
         {
             try
             {
+                // 1. Validación de Sesión (Lógica de Seguridad)
                 var userId = HttpContext.Session.GetInt32("UsuarioId");
                 var userProfile = HttpContext.Session.GetInt32("PerfilId");
+
                 if (!userId.HasValue || !userProfile.HasValue)
                 {
                     TempData["Error"] = "Por favor, inicie sesión para continuar.";
                     return RedirectToAction("SignIn", "Authentication");
                 }
 
-                // Primera carga (no hay QS ni params): Activas + Emergencias
+                // 2. Lógica de Parámetros de Filtro
+                // Si es la carga inicial (sin parámetros), enviamos NULL para que el SP aplique sus defaults (1 y 5)
                 if (!appointmentStatus.HasValue && !appointmentStatus2.HasValue && !Request.QueryString.HasValue)
                 {
-                    appointmentStatus = 1;
-                    appointmentStatus2 = 5;
+                    appointmentStatus = null;
+                    appointmentStatus2 = null;
+                }
+                else if (appointmentStatus == -1)
+                {
+                    // Si el usuario selecciona "Todas", forzamos nulidad en el segundo estado
+                    appointmentStatus2 = null;
                 }
 
-                // “Todas” => ignora el segundo estado
-                if (appointmentStatus == -1)
-                    appointmentStatus2 = null;
-
-                // ViewBags usados por la vista
-                ViewBag.CurrentStatus = appointmentStatus ?? -1;
-                ViewBag.CurrentStatus2 = appointmentStatus2;
-                ViewBag.IsPaidOnly = isPaidOnly;
-                ViewBag.UserProfile = userProfile.Value;
-                ViewBag.UserId = userId.Value;
-
-                // Traer citas
+                // 3. Llamada al Servicio (Capa de Datos)
                 var appointments = await _appointmentService.GetAllAppointmentAsync(
                     userProfile.Value,
-                    appointmentStatus ?? -1,  // -1 = todas
+                    appointmentStatus, // El servicio y SP ya aceptan int?
                     userId.Value,
                     isPaidOnly,
-                    appointmentStatus2        // null => ignora segundo estado
+                    appointmentStatus2
                 ) ?? new List<AppointmentDTO>();
 
-                // Construir VM
+                // 4. Construcción del ViewModel Principal
                 var vm = new AppointmentListViewModel
                 {
                     Appointments = appointments
                 };
 
-                // Carga de catálogos/form de paciente para el modal de agendar
-                var newPatientForm = await BuildNewPatientViewModelAsync();
-                vm.Users = newPatientForm.Users ?? new List<User>();
-                vm.InsuranceCompanies = newPatientForm.InsuranceCompanies ?? new List<InsuranceCompanyDto>();
-                vm.Patient = newPatientForm.Patient;
-                vm.GenderTypes = newPatientForm.GenderTypes ?? new List<Catalog>();
-                vm.BloodTypes = newPatientForm.BloodTypes ?? new List<Catalog>();
-                vm.CivilTypes = newPatientForm.CivilTypes ?? new List<Catalog>();
-                vm.ProfessionalTrainingTypes = newPatientForm.ProfessionalTrainingTypes ?? new List<Catalog>();
-                vm.SureHealthTypes = newPatientForm.SureHealthTypes ?? new List<Catalog>();
-                vm.Countries = newPatientForm.Countries ?? new List<Country>();
-                vm.Provinces = newPatientForm.Provinces ?? new List<Province>();
-                vm.UsersP = newPatientForm.UsersP ?? new List<MedicDetails>();
+                // 5. Carga de Catálogos (Agrupado para mantener orden)
+                // Se asume que BuildNewPatientViewModelAsync ya es eficiente
+                var catalogData = await BuildNewPatientViewModelAsync();
+
+                vm.Users = catalogData.Users ?? new List<User>();
+                vm.InsuranceCompanies = catalogData.InsuranceCompanies ?? new List<InsuranceCompanyDto>();
+                vm.Patient = catalogData.Patient;
+                vm.GenderTypes = catalogData.GenderTypes ?? new List<Catalog>();
+                vm.BloodTypes = catalogData.BloodTypes ?? new List<Catalog>();
+                vm.CivilTypes = catalogData.CivilTypes ?? new List<Catalog>();
+                vm.ProfessionalTrainingTypes = catalogData.ProfessionalTrainingTypes ?? new List<Catalog>();
+                vm.SureHealthTypes = catalogData.SureHealthTypes ?? new List<Catalog>();
+                vm.Countries = catalogData.Countries ?? new List<Country>();
+                vm.Provinces = catalogData.Provinces ?? new List<Province>();
+                vm.UsersP = catalogData.UsersP ?? new List<MedicDetails>();
+
+                // 6. ViewBags para persistencia en UI
+                ViewBag.CurrentStatus = appointmentStatus ?? 1; // Para que el Select muestre "Activas" por defecto
+                ViewBag.CurrentStatus2 = appointmentStatus2;
+                ViewBag.IsPaidOnly = isPaidOnly;
+                ViewBag.UserProfile = userProfile.Value;
+                ViewBag.UserId = userId.Value;
 
                 return View(vm);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unhandled exception in AppointmentList");
-                TempData["Error"] = "Ocurrió un error inesperado. Inténtalo de nuevo más tarde.";
+                _logger.LogError(ex, "Error crítico en AppointmentList para Usuario: {UserId}", HttpContext.Session.GetInt32("UsuarioId"));
+                TempData["Error"] = "Ocurrió un error al cargar la lista de citas.";
                 return View(new AppointmentListViewModel { Appointments = new List<AppointmentDTO>() });
             }
         }
-
 
 
         /// <summary>
@@ -210,7 +215,42 @@ namespace ExpertMed.Controllers
                 return StatusCode(500, new { message = ex.Message });  // Manejo de errores en caso de fallos en el servicio
             }
         }
-        
+
+
+
+        [HttpGet]
+        public IActionResult GetAvailableHoursEvents(int userId, DateTime start, DateTime end)
+        {
+            try
+            {
+                var eventList = new List<object>();
+                int slotDuration = 30; // Minutos para dar cuerpo visual al bloque
+
+                for (DateTime date = start.Date; date <= end.Date; date = date.AddDays(1))
+                {
+                    // Llama a tu servicio que ejecuta el SP sp_GetAvailableHours
+                    List<string> hours = _appointmentService.GetAvailableHours(userId, date, null);
+
+                    foreach (var h in hours)
+                    {
+                        DateTime startTime = DateTime.Parse(date.ToString("yyyy-MM-dd") + " " + h);
+                        eventList.Add(new
+                        {
+                            title = "Disponible",
+                            start = startTime.ToString("yyyy-MM-ddTHH:mm:ss"),
+                            end = startTime.AddMinutes(slotDuration).ToString("yyyy-MM-ddTHH:mm:ss"),
+                            // Clase CSS personalizada para el diseño premium
+                            className = "event-slot-available"
+                        });
+                    }
+                }
+                return Ok(eventList);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
         /// <summary>
         /// Retrieves a list of available offices for scheduling appointments at the specified date and hour, optionally
         /// filtered by doctor.
@@ -717,12 +757,20 @@ namespace ExpertMed.Controllers
         [HttpGet]
         public IActionResult ValidateAppointment(DateTime date, int patientId)
         {
+            // Usamos el servicio que ya mapea correctamente el TimeOnly
             var appointment = _appointmentService.GetAppointmentByPatientAndDay(patientId, date);
+
             if (appointment != null)
             {
-                return Json(new { exists = true, appointmentId = appointment.AppointmentId });
-
+                return Json(new
+                {
+                    exists = true,
+                    appointmentId = appointment.AppointmentId,
+                    // Enviamos la hora formateada para mostrarla en el SweetAlert
+                    hour = appointment.AppointmentHour.ToString("HH:mm")
+                });
             }
+
             return Json(new { exists = false });
         }
 

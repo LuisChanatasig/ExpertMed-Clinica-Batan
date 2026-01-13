@@ -29,45 +29,52 @@ namespace ExpertMed.Services
 
 
         public async Task<List<AppointmentDTO>> GetAllAppointmentAsync(
-           int userProfile,
-           int appointmentStatus,
-           int? userId = null,
-           bool isPaidOnly = false,
-           int? appointmentStatus2 = null) // New optional parameter for the second status
+          int userProfile,
+          int? appointmentStatus = null, // Cambiado a opcional para coincidir con la lógica del SP
+          int? userId = null,
+          bool isPaidOnly = false,
+          int? appointmentStatus2 = null)
         {
             try
             {
-                var parameters = new List<SqlParameter>
-        {
-            new SqlParameter("@UserProfile", userProfile),
-            new SqlParameter("@UserID", userId ?? (object)DBNull.Value),
-            new SqlParameter("@AppointmentStatus", appointmentStatus),
-            new SqlParameter("@IsPaidOnly", isPaidOnly ? 1 : 0)
+                // 1. Ya no necesitamos SetCommandTimeout(120). 
+                // Si el SP tarda más de 30s (default), el problema es de índices, no de tiempo.
+
+                var parameters = new[]
+                {
+            new SqlParameter("@UserProfile", SqlDbType.Int) { Value = userProfile },
+            new SqlParameter("@UserID", SqlDbType.Int) { Value = (object?)userId ?? DBNull.Value },
+            new SqlParameter("@AppointmentStatus", SqlDbType.Int) { Value = (object?)appointmentStatus ?? DBNull.Value },
+            new SqlParameter("@AppointmentStatus2", SqlDbType.Int) { Value = (object?)appointmentStatus2 ?? DBNull.Value },
+            new SqlParameter("@IsPaidOnly", SqlDbType.Bit) { Value = isPaidOnly }
         };
 
-                // Add the second status parameter only if it's provided
-                parameters.Add(new SqlParameter("@AppointmentStatus2", appointmentStatus2 ?? (object)DBNull.Value));
-
-
+                // 2. Ejecución directa y eficiente
                 var result = await _dbContext
-                    .Set<AppointmentDTO>()
-                    .FromSqlRaw("EXEC sp_ListAllAppointment @UserProfile, @UserID, @AppointmentStatus, @AppointmentStatus2, @IsPaidOnly", parameters.ToArray())
+                    .AppointmentDTOs
+                    .FromSqlRaw(@"EXEC dbo.sp_ListAllAppointment 
+                            @UserProfile, 
+                            @UserID, 
+                            @AppointmentStatus, 
+                            @AppointmentStatus2, 
+                            @IsPaidOnly",
+                                parameters)
+                    .AsNoTracking() // Esencial: evita que EF Core guarde copias en memoria
                     .ToListAsync();
 
                 return result;
             }
-            catch (SqlException sqlEx)
+            catch (SqlException ex)
             {
-                _logger.LogError(sqlEx, "Error al ejecutar el procedimiento almacenado en la base de datos.");
+                _logger.LogError(ex, "Error SQL en sp_ListAllAppointment | UserProfile={UserProfile}, UserId={UserId}", userProfile, userId);
                 throw;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener las citas.");
+                _logger.LogError(ex, "Error general al obtener las citas.");
                 throw;
             }
         }
-
         /// <summary>
         /// Obtener horas disponibles por medico
         /// </summary>

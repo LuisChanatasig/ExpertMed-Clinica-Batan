@@ -170,43 +170,68 @@ namespace ExpertMed.Controllers
         /// <returns>An asynchronous action result that redirects to the patient registration view. Returns a bad request result
         /// if the patient data is invalid.</returns>
         [HttpPost]
-        public async Task<IActionResult> NewPatientA(Patient patient, int? doctorUserId = null)
+        public async Task<IActionResult> NewPatientA(Patient patient, int? doctorUserId = null, bool isNewPatient = true)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(new { success = 0, message = "Datos inválidos." });
+
+            // Asignamos el usuario que crea y modifica
+            patient.PatientCreationuser = doctorUserId;
+            patient.PatientModificationuser = doctorUserId;
+
+            // 1. Validación de entrada básica
+            if (string.IsNullOrEmpty(patient.PatientDocumentnumber))
+                return Json(new { success = false, message = "El número de documento es obligatorio." });
+
+            if (doctorUserId == null)
+                return Json(new { success = false, message = "Debe seleccionar un médico." });
 
             try
             {
-                // Asignamos el usuario que crea y modifica
-                patient.PatientCreationuser = doctorUserId;
-                patient.PatientModificationuser = doctorUserId;
-
                 int patientId;
-
-                // Verificamos si el paciente ya existe utilizando el número de documento
+                // Buscamos si ya existe en la base de datos
                 var existingPatient = await _patientService.GetPatientDataByDocumentNumberAsync(patient.PatientDocumentnumber);
-                if (existingPatient != null)
+
+                if (isNewPatient)
                 {
-                    patientId = existingPatient.PatientId;
-                    TempData["SuccessMessage"] = "El paciente ya existe, se registrará una cita de emergencia.";
+                    // CASO: PACIENTE NUEVO
+                    if (existingPatient != null)
+                    {
+                        patientId = existingPatient.PatientId;
+                    }
+                    else
+                    {
+                        // CORRECCIÓN lógica del &&: Evaluamos si cualquiera de los dos está vacío
+                        if (string.IsNullOrEmpty(patient.PatientFirstname) || string.IsNullOrEmpty(patient.PatientFirstsurname))
+                            return Json(new { success = false, message = "Los nombres y apellidos son requeridos para nuevos registros." });
+
+                        patient.PatientCreationuser = doctorUserId;
+
+                        // CORRECCIÓN de conversión: Accedemos a la propiedad del objeto respuesta
+                        var response = await _patientService.CreatePatientAsync(patient, doctorUserId);
+                        patientId = response.PatientId; // Ajusta 'PatientId' según el nombre real en PatientCreateResponse
+                    }
                 }
                 else
                 {
-                    patientId = await _patientService.CreatePatientAsync(patient, doctorUserId);
-                    TempData["SuccessMessage"] = "Paciente creado exitosamente. Se registrará una cita de emergencia.";
+                    // CASO: YA ES PACIENTE
+                    if (existingPatient == null)
+                    {
+                        return Json(new { success = false, message = "No se encontró ningún paciente con ese documento. Por favor, regístrese como Paciente Nuevo." });
+                    }
+                    patientId = existingPatient.PatientId;
                 }
 
-                // Indicamos que debe dispararse automáticamente una cita de emergencia
-                TempData["DoctorUserId"] = doctorUserId;
-                TempData["PatientId"] = patientId;
-                TempData["ForceEmergency"] = true;
-
-                return RedirectToAction("RegistroPaciente");
+                // 2. Respuesta para el AJAX
+                return Json(new
+                {
+                    success = true,
+                    patientId = patientId,
+                    doctorUserId = doctorUserId,
+                    message = "Validación exitosa"
+                });
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message;
-                return await RegistroPaciente();
+                return Json(new { success = false, message = "Error interno: " + ex.Message });
             }
         }
 

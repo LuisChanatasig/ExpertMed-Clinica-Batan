@@ -1,5 +1,5 @@
 ﻿@using Microsoft.AspNetCore.Http
-@model ExpertMed.Models.AppointmentListViewModel  
+@model ExpertMed.Models.AppointmentListViewModel
 @{
     ViewData["Title"] = "Listado De citas";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -245,7 +245,7 @@
                                 <td>@appt.PatientInsuranceName</td>
                                 @if (perfilId == 1 || perfilId == 3 || perfilId == 4 || perfilId == 8)
                                 {
-                                    <td>@(appt.DoctorName ?? appt.DoctorName2)</td>
+                                    <td>@(appt.DoctorName)</td>
                                 }
                                 <td>
                                     @if (!string.IsNullOrEmpty(appt.AppointmentReason))
