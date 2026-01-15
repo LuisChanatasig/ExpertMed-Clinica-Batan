@@ -99,16 +99,36 @@ const VitalSignsManager = {
         });
 
         // ✅ Calcula IMC en vivo
+        // ✅ Cálculo IMC (kg / m²)
         $('#weight, #height').on('input', function () {
-            const peso = parseFloat($('#weight').val());
-            const talla = parseFloat($('#height').val()) / 100;
+
+            const rawPeso = $('#weight').val();
+            const rawTalla = $('#height').val();
+
+            const peso = parseFloat(rawPeso.replace(',', '.'));
+            const talla = parseFloat(rawTalla.replace(',', '.'));
+
+            console.log('--- IMC DEBUG ---');
+            console.log('Peso RAW:', rawPeso);
+            console.log('Altura RAW:', rawTalla);
+            console.log('Peso (num):', peso);
+            console.log('Altura (num):', talla);
+            console.log('Altura²:', talla * talla);
 
             if (!isNaN(peso) && !isNaN(talla) && talla > 0) {
                 const imc = peso / (talla * talla);
-                $('#bmi').val(imc.toFixed(2));
+
+                console.log('Fórmula: peso / (altura²)');
+                console.log(`IMC = ${peso} / (${talla} × ${talla})`);
+                console.log('Resultado IMC:', imc);
+
+                $('#bmi').val(imc.toFixed(1));
             } else {
+                console.warn('Datos inválidos para cálculo IMC');
                 $('#bmi').val('');
             }
+
+            console.log('-----------------\n');
         });
     }
 };
