@@ -56,6 +56,7 @@ namespace ExpertMed
             builder.Services.AddScoped<TarifarioService>();
             builder.Services.AddScoped<EstablishmentService>();
             builder.Services.AddScoped<ProcedimientoService>();
+            builder.Services.AddScoped<AdminService>();
 
             // Configuración de controladores y vistas
             builder.Services.AddControllersWithViews();

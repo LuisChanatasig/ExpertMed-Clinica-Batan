@@ -34,6 +34,7 @@
     bool showConsultorios = isAdminOrGestion;
     bool showEstablishment = isAdminOrGestion;
     bool showUsers = isAdminOrGestion;
+    bool showCatalogos = isAdminOrGestion; // <--- NUEVA VARIABLE DE CONTROL
 
     // Módulos Operativos / Clínicos
     bool showPacientes = isAdminOrGestion || perfilId == 2 || perfilId == 8; // +Doc +Caja
@@ -43,6 +44,7 @@
     bool showImagenes = isAdminOrGestion || perfilId == 2 || perfilId == 5; // +Doc +Img
     bool showFisio = isAdminOrGestion || perfilId == 2 || perfilId == 7; // +Doc +Fisio
     bool showFacturacion = isAdminOrGestion || perfilId == 8; // +Caja
+
 
     // Módulo de Reportes (SEPARADO)
     bool showReportesGeneral = isAdminOrGestion;
@@ -133,6 +135,25 @@
                                 <ul class="nav nav-sm flex-column">
                                     <li class="nav-item"><a href="@Url.Action("UserList", "Users")" class="nav-link"><i class="mdi mdi-clipboard-list-outline"></i> Listado Usuarios</a></li>
                                     <li class="nav-item"><a href="@Url.Action("NewUser", "Users")" class="nav-link"><i class="mdi mdi-account-plus-outline"></i> Crear Usuario</a></li>
+                                </ul>
+                            </div>
+                        </li>
+                    }
+
+                    @if (showCatalogos)
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link menu-link" href="#sidebarCatalogos" data-bs-toggle="collapse" role="button">
+                                <i class="mdi mdi-database-edit-outline"></i> <span>Alimentar Base</span>
+                            </a>
+                            <div class="collapse menu-dropdown" id="sidebarCatalogos">
+                                <ul class="nav nav-sm flex-column">
+                                    
+                                    <li class="nav-item">
+                                        <a href="@Url.Action("Agregar_Items", "Administracion")" class="nav-link">
+                                            <i class="mdi mdi-plus-circle-outline"></i> Agregar Items
+                                        </a>
+                                    </li>
                                 </ul>
                             </div>
                         </li>

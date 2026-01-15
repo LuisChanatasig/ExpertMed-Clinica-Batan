@@ -15,9 +15,9 @@
 
 }
 
-@section Styles{
+@section Styles {
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-   
+
 
 }
 
@@ -288,7 +288,7 @@
                                             data-choices data-choices-sorting-false disabled>
 
                                         @foreach (var professionaltraining in
-                                        Model.ProfessionalTrainingTypes)
+                                                                                Model.ProfessionalTrainingTypes)
                                         {
                                             <option value="@professionaltraining.CatalogId">
                                                 @professionaltraining.CatalogName
@@ -516,8 +516,8 @@
                                         <td style="font-size: 0.7rem;">
                                             <i class="ri-calendar-event-fill"></i> <br /> Fecha de nacimiento <br />
                                             @((Model.DetailsPatient.PatientBirthdate.HasValue) ?
-                                                Model.DetailsPatient.PatientBirthdate.Value.ToString("yyyy-MM-dd")
-                                                : string.Empty)
+                                                                                        Model.DetailsPatient.PatientBirthdate.Value.ToString("yyyy-MM-dd")
+                                                                                        : string.Empty)
                                         </td>
                                         <td style="font-size: 0.7rem;">
                                             <i class="ri-calendar-event-fill"></i> <br /> Edad
@@ -633,7 +633,7 @@
                                     <label for="allergiesSelect"> Seleccione las alergias</label>
                                     <select class="form-control" id="allergiesSelect"
                                             name="allergiesSelect" data-choices data-choices-removeItem
-                                            multiple >
+                                            multiple>
                                         <option value="">En caso de no tener, escriba desconoce</option>
                                         @foreach (var allergies in Model.AllergiesTypes)
                                         {
@@ -661,7 +661,7 @@
                                     </label>
                                     <select class="form-control" id="surgeriesSelect"
                                             name="surgeriesSelect" data-choices data-choices-removeItem
-                                            multiple >
+                                            multiple>
                                         <option value="">En caso de no tener, escriba desconoce</option>
                                         @foreach (var surgeries in Model.SurgeriesTypes)
                                         {
@@ -1255,8 +1255,8 @@
                                         <td style="font-size: 0.7rem;">
                                             <i class="ri-calendar-event-fill"></i> <br /> Fecha de nacimiento <br />
                                             @((Model.DetailsPatient.PatientBirthdate.HasValue) ?
-                                                Model.DetailsPatient.PatientBirthdate.Value.ToString("yyyy-MM-dd")
-                                                : string.Empty)
+                                                                                        Model.DetailsPatient.PatientBirthdate.Value.ToString("yyyy-MM-dd")
+                                                                                        : string.Empty)
                                         </td>
                                         <td style="font-size: 0.7rem;">
                                             <i class="ri-calendar-event-fill"></i> <br /> Edad
@@ -1441,14 +1441,14 @@
                             <div class="col-lg-4">
                                 <div class="mb-3">
                                     <label for="respiratoryRateInput" class="form-label"> Frecuencia respiratoria </label>
-                                    <input type="text" class="form-control" id="consultation_respirationrate" name="respiratoryRateInput" value="@Model.DetailsPatient.RespiratoryRate" placeholder="12" >
+                                    <input type="text" class="form-control" id="consultation_respirationrate" name="respiratoryRateInput" value="@Model.DetailsPatient.RespiratoryRate" placeholder="12">
                                 </div>
                             </div>
 
                             <div class="col-lg-4">
                                 <div class="mb-3">
                                     <label for="bloodPressureInput" class="form-label"> Presion Arterial  </label>
-                                    <input type="text" class="form-control" id="bloodPressureInput" name="bloodPressureInput" value="@Model.DetailsPatient.BloodPressureAS @Model.DetailsPatient.BloodPressureDIS" placeholder="/" >
+                                    <input type="text" class="form-control" id="bloodPressureInput" name="bloodPressureInput" value="@Model.DetailsPatient.BloodPressureAS @Model.DetailsPatient.BloodPressureDIS" placeholder="/">
                                     <span>Si la presión es de dos cifras, anteceda el 0 antes del número. Ej: 046/123 siempre colocar como el ejemplo</span>
 
                                     <input type="hidden" name="PresionArterialDiastolica" id="consultation_bloodpresuredDIS" />
@@ -1460,22 +1460,22 @@
                             <div class="col-lg-4">
                                 <div class="mb-3">
                                     <label for="pulseMinuteInput" class="form-label"> Pulso por minuto  </label>
-                                    <input type="text" class="form-control" id="consultation_pulse" name="pulseMinuteInput" value="@Model.DetailsPatient.Pulse" placeholder="12" >
+                                    <input type="text" class="form-control" id="consultation_pulse" name="pulseMinuteInput" value="@Model.DetailsPatient.Pulse" placeholder="12">
                                 </div>
                             </div>
 
                             <div class="col-lg-4">
                                 <div class="mb-3">
                                     <label for="weightInput" class="form-label"> Peso  (Kg)</label>
-                                    <input type="text" class="form-control" id="consultation_weight" name="weightInput" placeholder="40" value="@Model.DetailsPatient.Weight" >
+                                    <input type="text" class="form-control" id="consultation_weight" name="weightInput" placeholder="40" value="@Model.DetailsPatient.Weight">
                                 </div>
                             </div>
 
 
                             <div class="col-lg-4">
                                 <div class="mb-3">
-                                    <label for="pointofsaleInput" class="form-label"> Altura(m. Ejm 1.60)</label>
-                                    <input type="text" class="form-control" id="consultation_size" name="weightInput" placeholder="160" value="@Model.DetailsPatient.Size" >
+                                    <label for="pointofsaleInput" class="form-label"> Altura  (cm)</label>
+                                    <input type="text" class="form-control" id="consultation_size" name="weightInput" placeholder="160" value="@Model.DetailsPatient.Size">
                                 </div>
                             </div>
                             <!-- IMC (Kg/m²) -->
@@ -1733,8 +1733,8 @@
                                     <td style="font-size: 0.7rem;">
                                         <i class="ri-calendar-event-fill"></i> <br /> Fecha de nacimiento <br />
                                         @((Model.DetailsPatient.PatientBirthdate.HasValue) ?
-                                            Model.DetailsPatient.PatientBirthdate.Value.ToString("yyyy-MM-dd")
-                                            : string.Empty)
+                                                                                Model.DetailsPatient.PatientBirthdate.Value.ToString("yyyy-MM-dd")
+                                                                                : string.Empty)
                                     </td>
                                     <td style="font-size: 0.7rem;">
                                         <i class="ri-calendar-event-fill"></i> <br /> Edad
@@ -1888,9 +1888,9 @@
                                                     </option>
                                                 }
                                             </select>
-                                            <button class="btn btn-outline-primary" type="button" id="btnNuevoMedicamento" data-bs-toggle="tooltip" title="Agregar nuevo medicamento">
+                                            @*       <button class="btn btn-outline-primary" type="button" id="btnNuevoMedicamento" data-bs-toggle="tooltip" title="Agregar nuevo medicamento">
                                                 <i class="mdi mdi-plus-circle"></i> Nuevo
-                                            </button>
+                                            </button> *@
                                         </div>
 
                                         <div class="row">
@@ -2036,7 +2036,7 @@
                                         <h6 class="card-title mb-0">Laboratorios(Test)</h6>
                                     </div>
                                     <select name="LaboratoriesConsultation" id="LaboratoriesConsultation"
-                                            class="form-control" >
+                                            class="form-control">
                                         <option value="">Escriba y seleccione un laboratorio</option>
                                         @foreach (var images in Model.Laboratories)
                                         {
@@ -2272,7 +2272,7 @@
                                maxlength="255">
                         <div class="form-text">
                             <i class="mdi mdi-information-outline"></i>
-                            Incluya presentación y concentración 
+                            Incluya presentación y concentración
                         </div>
                     </div>
 
@@ -2741,6 +2741,8 @@
             });
         })();
     </script>
+
+
 
     <script src="~/assets/js/consultation.js"></script>
 }

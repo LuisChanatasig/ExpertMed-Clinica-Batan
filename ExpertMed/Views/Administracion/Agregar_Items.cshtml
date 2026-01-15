@@ -1,0 +1,238 @@
+﻿@{
+    ViewData["Title"] = "Centro de Alimentación de Datos";
+    Layout = "_Layout";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0 text-uppercase fw-bold">Alimentación de Datos Maestros</h4>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="javascript: void(0);">Configuración</a></li>
+                        <li class="breadcrumb-item active">Alimentar Base</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-3 row-cols-xl-5">
+        <div class="col">
+            <div class="card card-animate border-start border-primary border-3 shadow-sm" style="cursor:pointer" onclick="abrirModalDinamico('CAT')">
+                <div class="card-body p-3 text-center">
+                    <div class="avatar-sm mx-auto mb-3">
+                        <div class="avatar-title bg-primary-subtle text-primary rounded-circle fs-4">
+                            <i class="ri-database-2-line"></i>
+                        </div>
+                    </div>
+                    <h6 class="text-muted text-uppercase fw-semibold mb-0">Catálogos</h6>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card card-animate border-start border-success border-3 shadow-sm" style="cursor:pointer" id="btnNuevoMedicamento">
+                <div class="card-body p-3 text-center">
+                    <div class="avatar-sm mx-auto mb-3">
+                        <div class="avatar-title bg-success-subtle text-success rounded-circle fs-4">
+                            <i class="ri-capsule-fill"></i>
+                        </div>
+                    </div>
+                    <h6 class="text-muted text-uppercase fw-semibold mb-0">Medicamentos</h6>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card card-animate border-start border-warning border-3 shadow-sm" style="cursor:pointer" id="btnNuevoDiagnostico">
+                <div class="card-body p-3 text-center">
+                    <div class="avatar-sm mx-auto mb-3">
+                        <div class="avatar-title bg-warning-subtle text-warning rounded-circle fs-4">
+                            <i class="ri-health-book-line"></i>
+                        </div>
+                    </div>
+                    <h6 class="text-muted text-uppercase fw-semibold mb-0">Diagnósticos</h6>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card card-animate border-start border-info border-3 shadow-sm" style="cursor:pointer" id="btnNuevoLaboratorio">
+                <div class="card-body p-3 text-center">
+                    <div class="avatar-sm mx-auto mb-3">
+                        <div class="avatar-title bg-info-subtle text-info rounded-circle fs-4">
+                            <i class="ri-flask-line"></i>
+                        </div>
+                    </div>
+                    <h6 class="text-muted text-uppercase fw-semibold mb-0">Laboratorios</h6>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card card-animate border-start border-danger border-3 shadow-sm" style="cursor:pointer" id="btnNuevoImagen">
+                <div class="card-body p-3 text-center">
+                    <div class="avatar-sm mx-auto mb-3">
+                        <div class="avatar-title bg-danger-subtle text-danger rounded-circle fs-4">
+                            <i class="ri-screenshot-2-line"></i>
+                        </div>
+                    </div>
+                    <h6 class="text-muted text-uppercase fw-semibold mb-0">Imágenes</h6>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-2">
+        <div class="col-12">
+            <div class="alert alert-info alert-dismissible alert-label-icon label-arrow fade show" role="alert">
+                <i class="ri-information-line label-icon"></i><strong>Sugerencia:</strong> Los campos de descripción se autocompletan pero permiten edición manual (Case-Sensitive).
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalTemplate" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header p-3 bg-soft-primary" id="modalHeader">
+                <h5 class="modal-title fw-bold" id="modalTitle">Nuevo Registro</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="activeForm" class="needs-validation" novalidate>
+                    <div id="formContent" class="row g-3">
+                    </div>
+                    <div id="modalAlert" class="alert alert-borderless alert-danger d-none mt-3 mb-0" role="alert"></div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light p-3">
+                <button type="button" class="btn btn-ghost-danger shadow-none" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary shadow" id="btnSubmitMain">
+                    <span id="btnLoader" class="spinner-border spinner-border-sm d-none me-1"></span>
+                    <i class="ri-save-3-line align-middle me-1"></i> Guardar Datos
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        const API = {
+            med: '@Url.Action("CreateMedication", "Administracion")',
+            diag: '@Url.Action("CreateDiagnosis", "Administracion")',
+            lab: '@Url.Action("CreateLaboratory", "Administracion")',
+            img: '@Url.Action("CreateImage", "Administracion")',
+            cat: '@Url.Action("InsertarDatoGenerico", "Administracion")'
+        };
+
+        let currentType = '';
+        let isManuallyEdited = false;
+
+        $(document).ready(function () {
+
+            // --- CONFIGURACIÓN DE MODAL ---
+            function setupModal(type, title, colorClass) {
+                currentType = type;
+                isManuallyEdited = false;
+                $('#modalTitle').text(title);
+                $('#modalHeader').removeClass().addClass('modal-header p-3 ' + colorClass);
+                $('#modalAlert').addClass('d-none');
+                $('#formContent').empty();
+                $('#activeForm').removeClass('was-validated');
+            }
+
+            // --- DISPARADORES DE MODALES ---
+            $('#btnNuevoMedicamento').click(() => {
+                setupModal('MED', 'Nuevo Medicamento', 'bg-success-subtle text-success');
+                $('#formContent').append(`
+                    <div class="col-12"><label class="form-label fw-medium">Nombre</label><input type="text" id="m_name" class="form-control text-uppercase" required></div>
+                    <div class="col-md-6"><label class="form-label fw-medium">Concentración</label><input type="text" id="m_conc" class="form-control text-uppercase"></div>
+                    <div class="col-md-6"><label class="form-label fw-medium">Código / Ref</label><input type="text" id="m_cie" class="form-control"></div>
+                    <div class="col-12"><div class="p-3 bg-light border border-dashed rounded"><label class="form-label text-success fw-bold">Descripción (Editable)</label><textarea id="m_desc" class="form-control border-0 bg-transparent fs-15 fw-bold" rows="2"></textarea></div></div>
+                `);
+                new bootstrap.Modal('#modalTemplate').show();
+            });
+
+            $('#btnNuevoDiagnostico').click(() => {
+                setupModal('DIAG', 'Nuevo Diagnóstico CIE-10', 'bg-warning-subtle text-warning');
+                $('#formContent').append(`
+                    <div class="col-md-4"><label class="form-label fw-medium">CIE-10</label><input type="text" id="d_cie" class="form-control text-uppercase" required></div>
+                    <div class="col-md-8"><label class="form-label fw-medium">Diagnóstico</label><input type="text" id="d_name" class="form-control text-uppercase" required></div>
+                    <div class="col-12"><div class="p-3 bg-light border border-dashed rounded"><label class="form-label text-warning fw-bold">Descripción (Editable)</label><textarea id="d_desc" class="form-control border-0 bg-transparent fs-15 fw-bold" rows="2"></textarea></div></div>
+                `);
+                new bootstrap.Modal('#modalTemplate').show();
+            });
+
+            $('#btnNuevoLaboratorio').click(() => {
+                setupModal('LAB', 'Nuevo Examen Laboratorio', 'bg-info-subtle text-info');
+                $('#formContent').append(`
+                    <div class="col-md-4"><label class="form-label fw-medium">Código</label><input type="text" id="l_cie" class="form-control" required></div>
+                    <div class="col-md-8"><label class="form-label fw-medium">Nombre Examen</label><input type="text" id="l_name" class="form-control text-uppercase" required></div>
+                    <div class="col-12"><div class="p-3 bg-light border border-dashed rounded"><label class="form-label text-info fw-bold">Descripción (Editable)</label><textarea id="l_desc" class="form-control border-0 bg-transparent fs-15 fw-bold" rows="2"></textarea></div></div>
+                `);
+                new bootstrap.Modal('#modalTemplate').show();
+            });
+
+            $('#btnNuevoImagen').click(() => {
+                setupModal('IMG', 'Nuevo Estudio Imagen', 'bg-danger-subtle text-danger');
+                $('#formContent').append(`
+                    <div class="col-md-4"><label class="form-label fw-medium">Referencia</label><input type="text" id="i_cie" class="form-control" required></div>
+                    <div class="col-md-8"><label class="form-label fw-medium">Estudio</label><input type="text" id="i_name" class="form-control text-uppercase" required></div>
+                    <div class="col-12"><div class="p-3 bg-light border border-dashed rounded"><label class="form-label text-danger fw-bold">Descripción (Editable)</label><textarea id="i_desc" class="form-control border-0 bg-transparent fs-15 fw-bold" rows="2"></textarea></div></div>
+                `);
+                new bootstrap.Modal('#modalTemplate').show();
+            });
+
+            window.abrirModalDinamico = function(t) {
+                setupModal('CAT', 'Nuevo Item Catálogo', 'bg-primary-subtle text-primary');
+                $('#formContent').append(`
+                    <div class="col-12"><label class="form-label fw-medium">Nombre Item</label><input type="text" id="c_name" class="form-control text-uppercase" required></div>
+                    <div class="col-12"><label class="form-label fw-medium">Categoría</label><select id="c_category" class="form-select" required>
+                        <option value="">Seleccione...</option><option value="ALERGIAS">ALERGIAS</option><option value="CIRUGIAS">CIRUGIAS</option>
+                    </select></div>
+                `);
+                new bootstrap.Modal('#modalTemplate').show();
+            };
+
+            // --- LÓGICA AUTO-DESCRIPCIÓN ---
+            $(document).on('input', 'input', function() {
+                if (isManuallyEdited) return;
+                if(currentType === 'MED') { $('#m_desc').val(($('#m_name').val() + ' ' + $('#m_conc').val()).trim().toUpperCase()); }
+                if(currentType === 'LAB') { $('#l_desc').val(($('#l_cie').val() + ' ' + $('#l_name').val().toUpperCase()).trim()); }
+                if(currentType === 'DIAG') { $('#d_desc').val(($('#d_cie').val() + ' ' + $('#d_name').val()).trim().toUpperCase()); }
+                if(currentType === 'IMG') { $('#i_desc').val(($('#i_cie').val() + ' ' + $('#i_name').val().toUpperCase()).trim()); }
+            });
+
+            $(document).on('input', 'textarea', () => isManuallyEdited = true);
+
+            // --- ENVÍO AJAX ---
+            $('#btnSubmitMain').click(function() {
+                const btn = $(this); const form = $('#activeForm')[0];
+                if (!form.checkValidity()) { form.classList.add('was-validated'); return; }
+
+                let data = {}, url = "";
+                switch(currentType) {
+                    case 'MED': url = API.med; data = { medications_name: $('#m_name').val(), medications_description: $('#m_desc').val(), medications_concentration: $('#m_conc').val(), medications_cie10: $('#m_cie').val() }; break;
+                    case 'LAB': url = API.lab; data = { laboratories_name: $('#l_name').val(), laboratories_description: $('#l_desc').val(), laboratories_cie10: $('#l_cie').val() }; break;
+                    case 'DIAG': url = API.diag; data = { diagnosis_name: $('#d_name').val(), diagnosis_description: $('#d_desc').val(), diagnosis_cie10: $('#d_cie').val() }; break;
+                    case 'IMG': url = API.img; data = { images_name: $('#i_name').val(), images_description: $('#i_desc').val(), images_cie10: $('#i_cie').val() }; break;
+                    case 'CAT': url = API.cat; data = { catalog_name: $('#c_name').val(), catalog_category: $('#c_category').val() }; break;
+                }
+
+                btn.prop('disabled', true); $('#btnLoader').removeClass('d-none');
+                $.ajax({
+                    url: url, type: 'POST', contentType: 'application/json', data: JSON.stringify(data),
+                    success: res => {
+                        if(res.success) {
+                            bootstrap.Modal.getInstance('#modalTemplate').hide();
+                            Swal.fire({ icon: 'success', title: 'Guardado', text: res.message, timer: 1500, showConfirmButton: false });
+                        } else { $('#modalAlert').removeClass('d-none').text(res.message); }
+                    },
+                    error: () => $('#modalAlert').removeClass('d-none').text('Error de conexión'),
+                    complete: () => { btn.prop('disabled', false); $('#btnLoader').addClass('d-none'); }
+                });
+            });
+        });
+    </script>
+}

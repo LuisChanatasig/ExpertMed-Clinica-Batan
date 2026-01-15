@@ -544,5 +544,277 @@ namespace ExpertMed.Services
                 return (false, "Error interno: " + ex.Message, null);
             }
         }
+
+
+        /// <summary>
+        /// Crea un nuevo registro de laboratorio en el sistema mediante Store Procedure
+        /// </summary>
+        public async Task<(bool success, string message, LaboratoryDto data)> CreateLaboratoryAsync(CreateLaboratoryDto dto)
+        {
+            try
+            {
+                // Usamos la conexión del contexto de Entity Framework
+                using (var connection = _dbContext.Database.GetDbConnection())
+                {
+                    await connection.OpenAsync();
+
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = "sp_laboratories_insert";
+                        command.CommandType = CommandType.StoredProcedure;
+
+                        // Parámetros de entrada
+                        command.Parameters.Add(new SqlParameter("@laboratories_name", dto.laboratories_name ?? (object)DBNull.Value));
+                        command.Parameters.Add(new SqlParameter("@laboratories_description", dto.laboratories_description ?? (object)DBNull.Value));
+                        command.Parameters.Add(new SqlParameter("@laboratories_category", dto.laboratories_category ?? (object)DBNull.Value));
+                        command.Parameters.Add(new SqlParameter("@laboratories_cie10", dto.laboratories_cie10 ?? (object)DBNull.Value));
+                        command.Parameters.Add(new SqlParameter("@laboratories_status", dto.laboratories_status ?? 1));
+
+                        // Parámetro de salida: @laboratories_id
+                        var paramId = new SqlParameter
+                        {
+                            ParameterName = "@laboratories_id",
+                            DbType = DbType.Int32,
+                            Direction = ParameterDirection.Output
+                        };
+                        command.Parameters.Add(paramId);
+
+                        // Ejecutar SP
+                        await command.ExecuteNonQueryAsync();
+
+                        // Obtener el ID generado por el SP
+                        var newId = (int)paramId.Value;
+
+                        // Consultar el registro recién creado para retornar el objeto completo (Efecto Refresco)
+                        // Nota: Usamos la tabla laboratories generada por EF en el contexto
+                        var newLab = await _dbContext.Laboratories
+                            .FromSqlRaw("SELECT * FROM laboratories WHERE laboratories_id = {0}", newId)
+                            .FirstOrDefaultAsync();
+
+                        if (newLab == null)
+                        {
+                            return (false, "No se pudo recuperar el registro de laboratorio creado", null);
+                        }
+
+                        var result = new LaboratoryDto
+                        {
+                            laboratories_id = newLab.LaboratoriesId,
+                            laboratories_name = newLab.LaboratoriesName,
+                            laboratories_description = newLab.LaboratoriesDescription,
+                            laboratories_category = newLab.LaboratoriesCategory,
+                            laboratories_cie10 = newLab.LaboratoriesCie10,
+                            laboratories_status = newLab.LaboratoriesStatus ?? 1
+                        };
+
+                        return (true, "Laboratorio registrado exitosamente", result);
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                _logger.LogError(ex, "Error SQL al crear registro de laboratorio");
+
+                // Capturamos el RAISERROR del Store Procedure
+                if (ex.Message.Contains("Ya existe un examen"))
+                {
+                    return (false, ex.Message, null);
+                }
+
+                return (false, "Error de base de datos: " + ex.Message, null);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al crear laboratorio");
+                return (false, "Error interno: " + ex.Message, null);
+            }
+        }
+
+        /// <summary>
+        /// Crea un nuevo diagnóstico CIE-10 en el sistema mediante Store Procedure
+        /// </summary>
+        public async Task<(bool success, string message, DiagnosisDto data)> CreateDiagnosisAsync(CreateDiagnosisDto dto)
+        {
+            try
+            {
+                using (var connection = _dbContext.Database.GetDbConnection())
+                {
+                    await connection.OpenAsync();
+
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = "sp_diagnosis_insert";
+                        command.CommandType = CommandType.StoredProcedure;
+
+                        // Parámetros de entrada
+                        command.Parameters.Add(new SqlParameter("@diagnosis_name", dto.diagnosis_name ?? (object)DBNull.Value));
+                        command.Parameters.Add(new SqlParameter("@diagnosis_description", dto.diagnosis_description ?? (object)DBNull.Value));
+                        command.Parameters.Add(new SqlParameter("@diagnosis_category", dto.diagnosis_category ?? (object)DBNull.Value));
+                        command.Parameters.Add(new SqlParameter("@diagnosis_cie10", dto.diagnosis_cie10 ?? (object)DBNull.Value));
+                        command.Parameters.Add(new SqlParameter("@diagnosis_status", dto.diagnosis_status ?? 1));
+
+                        // Parámetro de salida: @diagnosis_id
+                        var paramId = new SqlParameter
+                        {
+                            ParameterName = "@diagnosis_id",
+                            DbType = DbType.Int32,
+                            Direction = ParameterDirection.Output
+                        };
+                        command.Parameters.Add(paramId);
+
+                        // Ejecutar SP
+                        await command.ExecuteNonQueryAsync();
+                        var newId = (int)paramId.Value;
+
+                        // Recuperar el registro fresco para confirmar la carga
+                        var newDiag = await _dbContext.Diagnoses
+                            .FromSqlRaw("SELECT * FROM diagnosis WHERE diagnosis_id = {0}", newId)
+                            .FirstOrDefaultAsync();
+
+                        if (newDiag == null) return (false, "No se pudo recuperar el diagnóstico creado", null);
+
+                        var result = new DiagnosisDto
+                        {
+                            diagnosis_id = newDiag.DiagnosisId,
+                            diagnosis_name = newDiag.DiagnosisName,
+                            diagnosis_description = newDiag.DiagnosisDescription,
+                            diagnosis_category = newDiag.DiagnosisCategory,
+                            diagnosis_cie10 = newDiag.DiagnosisCie10,
+                            diagnosis_status = newDiag.DiagnosisStatus ?? 1
+                        };
+
+                        return (true, "Diagnóstico registrado exitosamente", result);
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                _logger.LogError(ex, "Error SQL al crear diagnóstico");
+                // Captura el mensaje de duplicado del RAISERROR del SP
+                if (ex.Message.Contains("Ya existe un diagnóstico")) return (false, ex.Message, null);
+                return (false, "Error de base de datos: " + ex.Message, null);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error crítico al crear diagnóstico");
+                return (false, "Error interno: " + ex.Message, null);
+            }
+        }
+
+
+        /// <summary>
+        /// Inserta un nuevo estudio de imagenología mediante Store Procedure
+        /// </summary>
+        public async Task<(bool success, string message, ImageResponseDto data)> CreateImageAsync(CreateImageDto dto)
+        {
+            try
+            {
+                using (var connection = _dbContext.Database.GetDbConnection())
+                {
+                    await connection.OpenAsync();
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = "sp_images_insert";
+                        command.CommandType = CommandType.StoredProcedure;
+
+                        // Definición de parámetros
+                        command.Parameters.Add(new SqlParameter("@images_name", dto.images_name ?? (object)DBNull.Value));
+                        command.Parameters.Add(new SqlParameter("@images_description", dto.images_description ?? (object)DBNull.Value));
+                        command.Parameters.Add(new SqlParameter("@images_category", dto.images_category ?? "IMAGEN"));
+                        command.Parameters.Add(new SqlParameter("@images_cie10", dto.images_cie10 ?? (object)DBNull.Value));
+                        command.Parameters.Add(new SqlParameter("@images_status", dto.images_status ?? 1));
+
+                        // Parámetro de salida para recuperar el ID insertado
+                        var outputId = new SqlParameter
+                        {
+                            ParameterName = "@images_id",
+                            SqlDbType = SqlDbType.Int,
+                            Direction = ParameterDirection.Output
+                        };
+                        command.Parameters.Add(outputId);
+
+                        await command.ExecuteNonQueryAsync();
+
+                        int newId = (int)outputId.Value;
+
+                        // Recuperamos el objeto recién creado para enviarlo al frontend
+                        var result = new ImageResponseDto
+                        {
+                            images_id = newId,
+                            images_name = dto.images_name,
+                            images_description = dto.images_description,
+                            images_category = dto.images_category ?? "IMAGEN",
+                            images_cie10 = dto.images_cie10,
+                            images_status = dto.images_status ?? 1
+                        };
+
+                        return (true, "Estudio de imagen registrado correctamente", result);
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                // Captura el RAISERROR del SP (duplicados o falta de nombre)
+                return (false, ex.Message, null);
+            }
+            catch (Exception ex)
+            {
+                return (false, "Error interno del servidor: " + ex.Message, null);
+            }
+        }
+
+
+        /// <summary>
+        /// Inserta un nuevo item en la tabla catalogs mediante Store Procedure.
+        /// </summary>
+        public async Task<(bool success, string message, CatalogResponseDto data)> CreateCatalogItemAsync(CreateCatalogDto dto)
+        {
+            try
+            {
+                using (var connection = _dbContext.Database.GetDbConnection())
+                {
+                    await connection.OpenAsync();
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = "sp_InsertCatalogItem";
+                        command.CommandType = CommandType.StoredProcedure;
+
+                        // Normalización previa: Eliminar espacios innecesarios
+                        command.Parameters.Add(new SqlParameter("@Name", dto.CatalogName?.Trim() ?? (object)DBNull.Value));
+                        command.Parameters.Add(new SqlParameter("@Category", dto.CatalogCategory?.Trim() ?? (object)DBNull.Value));
+                        command.Parameters.Add(new SqlParameter("@Status", dto.CategoryStatus ?? 1));
+
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            if (await reader.ReadAsync())
+                            {
+                                var result = new CatalogResponseDto
+                                {
+                                    // CAMBIO: Usar Convert.ToInt32 para manejar el Decimal que devuelve SQL
+                                    CatalogId = Convert.ToInt32(reader["catalog_id"]),
+                                    CatalogName = reader.GetString(reader.GetOrdinal("catalog_name")),
+                                    CatalogCategory = reader.GetString(reader.GetOrdinal("catalog_category")),
+                                    CategoryStatus = dto.CategoryStatus ?? 1
+                                };
+
+                                return (true, "Registro de catálogo creado exitosamente", result);
+                            }
+                        }
+
+                        return (false, "Error al procesar el retorno del procedimiento", null);
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                // Captura el RAISERROR del SP (duplicados por espacios o mayúsculas)
+                return (false, ex.Message, null);
+            }
+            catch (Exception ex)
+            {
+                return (false, "Error crítico: " + ex.Message, null);
+            }
+        }
+
+
     }
 }
