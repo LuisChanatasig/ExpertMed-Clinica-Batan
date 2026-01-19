@@ -10,8 +10,8 @@
 }
 @using Microsoft.AspNetCore.Http
 @{
-    var perfilId = ViewContext.HttpContext.Session.GetInt32("PerfilId");
-    var usuarioId = ViewContext.HttpContext.Session.GetInt32("UsuarioId"); // 👈 usado cuando perfil=2
+    var perfilId = ViewContext.HttpContext.Session.GetInt32("PerfilId") ?? 0;
+    var usuarioId = ViewContext.HttpContext.Session.GetInt32("UsuarioId") ?? 0;
 }
 
 @section styles {
@@ -49,8 +49,7 @@
         <div class="card shadow-sm border">
             <div class="card-header bg-light">
                 <h5 class="card-title mb-0">
-                    <i class="mdi mdi-account-multiple-outline me-2"></i>
-                    Listado de pacientes
+                    <i class="mdi mdi-account-multiple-outline me-2"></i> Listado de pacientes
                 </h5>
             </div>
 
@@ -68,19 +67,14 @@
                                 <div class="input-group" style="width:320px;">
                                     <span class="input-group-text"><i class="mdi mdi-magnify"></i></span>
                                     <input id="globalSearch" type="search" class="form-control"
-                                           placeholder="Buscar por nombre, documento, email..." autocomplete="off" />
+                                           placeholder="Buscar por nombre, documento..." autocomplete="off" />
                                     <div class="search-spinner">
-                                        <div class="spinner-border spinner-border-sm text-primary" role="status">
-                                            <span class="visually-hidden">Buscando...</span>
-                                        </div>
+                                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
                                     </div>
-                                    <button id="clearSearch" class="btn btn-outline-secondary" type="button" title="Limpiar búsqueda">
-                                        <i class="mdi mdi-close"></i>
-                                    </button>
+                                    <button id="clearSearch" class="btn btn-outline-secondary" type="button"><i class="mdi mdi-close"></i></button>
                                 </div>
                                 <div id="searchResults" class="mt-1 text-muted small"></div>
                             </div>
-
                             <div id="exportButtons" class="btn-group"></div>
                         </div>
                     </div>
@@ -92,7 +86,7 @@
                             <tr>
                                 <th class="d-none">ID</th>
                                 <th>Código</th>
-                                @if (perfilId == 3 || perfilId == 1 || perfilId == 8 || perfilId == 4)
+                                @if (new[] { 1, 3, 4, 8 }.Contains(perfilId))
                                 {
                                     <th>Doctor</th>
                                 }
@@ -109,29 +103,16 @@
                                 <tr data-patient-id="@patient.PatientId">
                                     <td class="d-none">@patient.PatientId</td>
                                     <td><span class="badge bg-primary-subtle text-primary">@patient.PatientCode</span></td>
-
-                                    @if (perfilId == 3 || perfilId == 1 || perfilId == 8 || perfilId == 4)
+                                    @if (new[] { 1, 3, 4, 8 }.Contains(perfilId))
                                     {
-                                        <td>
-                                            <span class="fw-medium">@patient.DoctorFullname</span>
-                                            @* Si quieres un badge cuando falta médico:
-                                        @if (!patient.DoctorAssigned)
-                                        {
-                                            <span class="badge bg-warning text-dark ms-1">Asignar</span>
-                                        } *@
-                                        </td>
+                                        <td><span class="fw-medium">@(string.IsNullOrEmpty(patient.DoctorFullname) ? "(Sin asignar)" : patient.DoctorFullname)</span></td>
                                     }
-
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <img src="~/assets/images/svg/medicUsers.svg" alt="Avatar" class="patient-avatar me-2">
                                             <div>
-                                                <div class="fw-medium text-primary">
-                                                    @patient.PatientFirstsurname @patient.PatientSecondlastname
-                                                </div>
-                                                <div class="text-muted small">
-                                                    @patient.PatientFirstname @patient.PatientMiddlename
-                                                </div>
+                                                <div class="fw-medium text-primary">@patient.PatientFirstsurname @patient.PatientSecondlastname</div>
+                                                <div class="text-muted small">@patient.PatientFirstname @patient.PatientMiddlename</div>
                                             </div>
                                         </div>
                                     </td>
@@ -146,14 +127,12 @@
                                     <td class="text-center">
                                         <button class="btn btn-sm btn-outline-primary btn-actions"
                                                 data-bs-toggle="modal" data-bs-target="#actionsModal"
-                                                data-patient-id="@patient.PatientId"
-                                                data-patient-code="@patient.PatientCode"
-                                                data-patient-name="@($"{patient.PatientFirstname} {patient.PatientFirstsurname}")"
-                                                data-patient-status="@patient.PatientStatus"
-                                                data-create-user="@patient.PatientCreationUser"
-                                                data-creator-id="@patient.PatientCreationUser"
-                                                data-doctor-id="@patient.DoctorUserId"
-                                                data-creator-name="@patient.DoctorFullname">
+                                                data-id="@patient.PatientId"
+                                                data-code="@patient.PatientCode"
+                                                data-name="@($"{patient.PatientFirstname} {patient.PatientFirstsurname}")"
+                                                data-status="@patient.PatientStatus"
+                                                data-doctor-id="@(patient.DoctorUserId ?? 0)"
+                                                data-doctor-name="@patient.DoctorFullname">
                                             <i class="ri-settings-3-line"></i>
                                         </button>
                                     </td>
@@ -167,40 +146,34 @@
     </div>
 </div>
 
-<!-- Modal -->
-<div class="modal fade" id="actionsModal" tabindex="-1" aria-labelledby="actionsModalLabel" aria-hidden="true">
+<div class="modal fade" id="actionsModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="actionsModalLabel"><i class="mdi mdi-account-cog me-2"></i>Acciones para Paciente</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                <h5 class="modal-title"><i class="mdi mdi-account-cog me-2"></i>Acciones para Paciente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="alert alert-info">
                     <div class="d-flex align-items-center">
                         <i class="mdi mdi-information-outline me-2 fs-4"></i>
                         <div>
-                            <strong id="patientModalName"></strong><br>
-                            <small class="text-muted">Código: <span id="patientModalCode"></span></small><br>
-                            <small class="text-muted d-none" id="creatorInfo">
-                                Creado por: <span id="creatorName"></span>
-                            </small>
+                            <strong id="m-name"></strong><br>
+                            <small class="text-muted">Código: <span id="m-code"></span></small><br>
+                            <small class="text-muted" id="m-doctor-info">Médico: <span id="m-doctor-name"></span></small>
                         </div>
                     </div>
                 </div>
 
-                <!-- CTA para asignar médico (redirige a edición) -->
                 <div id="assignDoctorCta" class="mb-3 d-none">
                     <div class="alert alert-warning d-flex align-items-start">
                         <i class="mdi mdi-account-alert-outline me-2 fs-4"></i>
                         <div>
                             <div class="fw-semibold">Este paciente no tiene un médico asignado.</div>
-                            <div class="small text-muted">Debes asignarlo desde la edición del paciente.</div>
+                            <div class="small text-muted mb-2">Debes asignarlo para habilitar todas las funciones.</div>
+                            <a id="goEditPatient" class="btn btn-sm btn-primary">Asignar médico ahora</a>
                         </div>
                     </div>
-                    <a id="goEditPatient" class="btn btn-primary">
-                        <i class="ri-user-add-line me-1"></i> Asignar médico (ir a edición)
-                    </a>
                 </div>
 
                 <div id="actionButtons" class="d-grid gap-2"></div>
@@ -218,256 +191,167 @@
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.colVis.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        // Contexto de usuario
-        const PERFIL_ID = @((perfilId ?? 0));
-        const USUARIO_ID = @((usuarioId ?? 0));
+        const PERFIL_ID = @perfilId;
+        const USUARIO_ID = @usuarioId;
 
         $(function () {
             'use strict';
 
-            // Búsqueda sin acentos
+            // Búsqueda sin acentos (Normalización)
             $.fn.dataTable.ext.type.search.string = function (data) {
-                if (!data) return '';
-                return data.toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                return !data ? '' : data.toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
             };
 
-            // DataTable
             const table = $('#patientsTable').DataTable({
                 language: { url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json' },
                 responsive: true,
                 stateSave: true,
                 pageLength: 25,
-                lengthMenu: [[10,25,50,100,-1],[10,25,50,100,'Todos']],
-                order: [[1,'asc']],
                 dom: 'Blrtip',
                 buttons: [
-                    { extend: 'excelHtml5', text: '<i class="mdi mdi-file-excel-outline"></i><span class="ms-1">Excel</span>', className: 'btn btn-sm btn-success', exportOptions: { columns: ':visible:not(.table-actions)' } },
-                    { extend: 'pdfHtml5', text: '<i class="mdi mdi-file-pdf-outline"></i><span class="ms-1">PDF</span>', className: 'btn btn-sm btn-danger', orientation: 'landscape', pageSize: 'LETTER', exportOptions: { columns: ':visible:not(.table-actions)' } },
-                    { extend: 'print', text: '<i class="mdi mdi-printer"></i><span class="ms-1">Imprimir</span>', className: 'btn btn-sm btn-secondary', exportOptions: { columns: ':visible:not(.table-actions)' } }
-                ],
-                columnDefs: [
-                    { targets: 0, visible: false },
-                    { targets: -1, orderable: false, className: 'table-actions text-center' }
+                    { extend: 'excelHtml5', text: '<i class="mdi mdi-file-excel"></i> Excel', className: 'btn btn-sm btn-success', exportOptions: { columns: ':visible:not(.table-actions)' } },
+                    { extend: 'pdfHtml5', text: '<i class="mdi mdi-file-pdf"></i> PDF', className: 'btn btn-sm btn-danger', orientation: 'landscape', exportOptions: { columns: ':visible:not(.table-actions)' } }
                 ]
             });
             table.buttons().container().appendTo('#exportButtons');
 
-            // Búsqueda con debounce
+            // Búsqueda con Spinner y Debounce
             const $spinner = $('.search-spinner');
-            const debounced = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
-            const doSearch = debounced((termRaw) => {
-                const term = (termRaw || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-                $spinner.show(); table.search(term).draw();
-            }, 250);
-            $('#globalSearch').on('input', function () { doSearch(this.value); })
-                               .on('keydown', function (e) { if (e.key === 'Escape') { $(this).val(''); doSearch(''); } });
-            $('#clearSearch').on('click', function () { $('#globalSearch').val('').focus(); doSearch(''); });
-
-            function refreshCounter() {
-                const filtered = table.rows({ search: 'applied' }).count();
-                const total = table.rows().count();
-                $('#searchResults').text(filtered === total ? '' : `${filtered} de ${total} pacientes encontrados`);
+            const debouncedSearch = (function(fn, ms) {
+                let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+            })((term) => {
+                const norm = term.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                table.search(norm).draw();
                 $spinner.hide();
-            }
-            table.on('draw.dt', refreshCounter);
-            refreshCounter();
+            }, 300);
 
-            // Modal acciones
-            let currentPatientId = 0;
-            let currentDoctorUserId = 0;
-
-            $('#actionsModal').on('show.bs.modal', function (event) {
-                const $btn = $(event.relatedTarget);
-                const patientId      = Number($btn.data('patient-id'));
-                const patientCode    = $btn.data('patient-code');
-                const patientName    = $btn.data('patient-name');
-                const status         = Number($btn.data('patient-status'));
-                const creatorName    = $btn.data('creator-name') || '';
-                const creatorId      = Number($btn.data('creator-id')) || 0;
-                const doctorIdAttr   = Number($btn.data('doctor-id')) || 0;
-                const doctorAssigned = Number($btn.data('doctor-assigned')) === 1;
-
-                currentPatientId = patientId;
-
-                // Doctor:
-                // 1) usa el del SP si viene
-                // 2) si perfil=2 (médico), usa el propio usuario
-                // 3) si nada, queda 0 (bloquea acciones dependientes)
-                let doctorUserId = doctorIdAttr;
-                if (!doctorUserId && PERFIL_ID === 2) doctorUserId = USUARIO_ID;
-                currentDoctorUserId = doctorUserId;
-
-                // Header modal
-                $('#patientModalName').text(patientName);
-                $('#patientModalCode').text(patientCode);
-
-                // Info de creador visible si NO hay médico asignado y tenemos nombre del creador (en DoctorFullname ya viene con “(asignar médico)”)
-                if (!doctorAssigned && creatorName) {
-                    $('#creatorName').text(creatorName);
-                    $('#creatorInfo').removeClass('d-none');
-                } else {
-                    $('#creatorInfo').addClass('d-none');
-                }
-
-                // CTA para asignar doctor -> Editar Paciente
-                const $assignCta = $('#assignDoctorCta');
-                const editUrl = '@Url.Action("UpdatePatient", "Patient")' + '?id=' + patientId + '&returnUrl=' + encodeURIComponent(window.location.pathname);
-                $('#goEditPatient').attr('href', editUrl);
-
-                if (!doctorAssigned) {
-                    $assignCta.removeClass('d-none');
-                } else {
-                    $assignCta.addClass('d-none');
-                }
-
-                // Acciones
-                const $actions = $('#actionButtons').empty();
-                const canEmergency = !!doctorUserId && status === 1;
-
-                const emergencyBtn = canEmergency
-                    ? `<button class="btn btn-danger" onclick="createEmergencyAppointment(${patientId}, ${doctorUserId})">
-                           <i class="ri-alert-line me-2"></i>Crear Cita de Emergencia
-                       </button>`
-                    : `<button class="btn btn-danger" disabled title="${status !== 1 ? 'Paciente inactivo' : 'Asigna un médico desde la edición'}">
-                           <i class="ri-alert-line me-2"></i>Crear Cita de Emergencia
-                       </button>`;
-
-                if (status === 1) {
-                    $actions.append(`
-                        ${emergencyBtn}
-                        <a href="${editUrl}" class="btn btn-info">
-                            <i class="ri-edit-line me-2"></i>Modificar o Agendar Cita
-                        </a>
-                        <button class="btn btn-warning" onclick="changePatientStatus(${patientId}, 0)">
-                            <i class="ri-pause-circle-line me-2"></i>Desactivar Paciente
-                        </button>
-                    `);
-                } else {
-                    $actions.append(`
-                        <button class="btn btn-success" onclick="changePatientStatus(${patientId}, 1)">
-                            <i class="ri-play-circle-line me-2"></i>Activar Paciente
-                        </button>
-                        <a href="${editUrl}" class="btn btn-info">
-                            <i class="ri-edit-line me-2"></i>Modificar (asignar médico)
-                        </a>
-                    `);
-                }
-
-                updateStatusTimeline(status);
+            $('#globalSearch').on('input', function() {
+                $spinner.show();
+                debouncedSearch(this.value);
             });
 
-            function updateStatusTimeline(status) {
-                const html = (status === 1)
-                    ? `<div class="alert alert-success"><div class="d-flex align-items-center">
-                           <i class="mdi mdi-check-circle me-2"></i>
-                           <div><strong>Paciente Activo</strong><p class="mb-0 small">Puede agendar citas y recibir atención médica.</p></div>
-                       </div></div>`
-                    : `<div class="alert alert-secondary"><div class="d-flex align-items-center">
-                           <i class="mdi mdi-pause-circle me-2"></i>
-                           <div><strong>Paciente Inactivo</strong><p class="mb-0 small">No puede agendar nuevas citas.</p></div>
-                       </div></div>`;
-                $('#statusTimeline').html(html);
-            }
+            $('#clearSearch').on('click', function() {
+                $('#globalSearch').val('').focus();
+                table.search('').draw();
+            });
 
-            // Helpers globales
-            window.createEmergencyAppointment = function (patientId, doctorUserId) {
-                if (!doctorUserId) {
-                    const editUrl = '@Url.Action("UpdatePatient", "Patient")' + '?id=' + patientId + '&returnUrl=' + encodeURIComponent(window.location.pathname);
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'Asigna un médico',
-                        text: 'Para crear una cita de emergencia primero debes asignar un médico al paciente.',
-                        showCancelButton: true,
-                        confirmButtonText: 'Ir a edición',
-                        cancelButtonText: 'Cancelar'
-                    }).then(r => { if (r.isConfirmed) window.location.href = editUrl; });
-                    return;
-                }
+            table.on('draw.dt', function() {
+                const info = table.page.info();
+                $('#searchResults').text(info.recordsDisplay === info.recordsTotal ? '' : `${info.recordsDisplay} encontrados`);
+            });
 
-                const now = new Date();
-                const fecha = now.toISOString().split('T')[0];
-                const hora = now.toTimeString().substring(0, 5);
-
-                const requestData = {
-                    appointmentDate: fecha,
-                    appointmentHour: hora,
-                    appointmentPatientid: patientId,
-                    appointmentStatus: 5,
-                    appointmentMedicalofficeid: null
+            // Lógica del Modal
+            $('#actionsModal').on('show.bs.modal', function (event) {
+                const b = $(event.relatedTarget);
+                const p = {
+                    id: b.data('id'),
+                    code: b.data('code'),
+                    name: b.data('name'),
+                    status: Number(b.data('status')),
+                    docId: Number(b.data('doctor-id')) || 0,
+                    docName: b.data('doctor-name') || '(Sin asignar)'
                 };
 
+                // Lógica de Médico: ¿Tiene médico asignado?
+                const isAssigned = p.docId > 0;
+                // Si el logueado es médico, él es el responsable si no hay uno fijo
+                let responsibleDocId = isAssigned ? p.docId : (PERFIL_ID === 2 ? USUARIO_ID : 0);
+
+                $('#m-name').text(p.name);
+                $('#m-code').text(p.code);
+                $('#m-doctor-name').text(p.docName);
+
+                const editUrl = `@Url.Action("UpdatePatient", "Patient")?id=${p.id}&returnUrl=${encodeURIComponent(window.location.pathname)}`;
+                $('#goEditPatient').attr('href', editUrl);
+                $('#assignDoctorCta').toggleClass('d-none', isAssigned);
+
+                const $btns = $('#actionButtons').empty();
+                if (p.status === 1) {
+                    const emergencyBtn = responsibleDocId > 0
+                        ? `<button class="btn btn-danger" onclick="createEmergency(${p.id}, ${responsibleDocId})"><i class="ri-alert-line me-2"></i>Cita de Emergencia</button>`
+                        : `<button class="btn btn-danger" disabled title="Asigna un médico para esta acción"><i class="ri-alert-line me-2"></i>Cita de Emergencia</button>`;
+
+                    $btns.append(`
+                        ${emergencyBtn}
+                        <a href="${editUrl}" class="btn btn-info"><i class="ri-edit-line me-2"></i>Modificar o Agendar</a>
+                        <button class="btn btn-warning" onclick="changeStatus(${p.id}, 0)"><i class="ri-pause-circle-line me-2"></i>Desactivar Paciente</button>
+                    `);
+                } else {
+                    $btns.append(`
+                        <button class="btn btn-success" onclick="changeStatus(${p.id}, 1)"><i class="ri-play-circle-line me-2"></i>Activar Paciente</button>
+                        <a href="${editUrl}" class="btn btn-info"><i class="ri-edit-line me-2"></i>Modificar Datos</a>
+                    `);
+                }
+
+                $('#statusTimeline').html(p.status === 1
+                    ? `<div class="alert alert-success small"><i class="mdi mdi-check-circle me-2"></i>Paciente Activo: Puede recibir atención.</div>`
+                    : `<div class="alert alert-secondary small"><i class="mdi mdi-pause-circle me-2"></i>Paciente Inactivo.</div>`
+                );
+            });
+
+            // Funciones Globales
+            window.changeStatus = function(id, st) {
+                Swal.fire({
+                    title: '¿Confirmar cambio de estado?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, cambiar',
+                    cancelButtonText: 'Cancelar'
+                }).then(r => {
+                    if (!r.isConfirmed) return;
+                    const f = document.createElement('form');
+                    f.method = 'POST';
+                    f.action = '@Url.Action("ChangePatientStatus", "Patient")';
+                    f.innerHTML = `<input type="hidden" name="patientId" value="${id}"><input type="hidden" name="status" value="${st}">`;
+                    document.body.appendChild(f); f.submit();
+                });
+            };
+
+            window.createEmergency = function(pid, did) {
                 Swal.fire({
                     title: '¿Crear cita de emergencia?',
-                    text: 'Se creará una cita inmediata para este paciente.',
+                    text: 'Se agendará una atención inmediata.',
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#d33',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: 'Sí, crear',
-                    cancelButtonText: 'Cancelar'
-                }).then((r) => {
+                    confirmButtonText: 'Sí, crear'
+                }).then(r => {
                     if (!r.isConfirmed) return;
-
-                    const url = `@Url.Action("CreateAppointment", "Appointment")?doctorUserId=${doctorUserId}`;
-                    fetch(url, {
+                    const now = new Date();
+                    fetch(`@Url.Action("CreateAppointment", "Appointment")?doctorUserId=${did}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(requestData)
-                    })
-                    .then(x => x.json())
-                    .then(data => {
-                        if (data?.success) {
-                            Swal.fire({ title: '¡Éxito!', text: 'Cita de emergencia creada correctamente.', icon: 'success', timer: 3000, showConfirmButton: false });
+                        body: JSON.stringify({
+                            appointmentDate: now.toISOString().split('T')[0],
+                            appointmentHour: now.toTimeString().substring(0, 5),
+                            appointmentPatientid: pid,
+                            appointmentStatus: 5
+                        })
+                    }).then(res => res.json()).then(data => {
+                        if (data.success) {
+                            Swal.fire('¡Éxito!', 'Cita creada.', 'success').then(() => location.reload());
                             if (data.whatsappUrl) window.open(data.whatsappUrl, '_blank');
-                            $('#actionsModal').modal('hide');
                         } else {
-                            Swal.fire('Error', data?.message || 'No se pudo crear la cita', 'error');
+                            Swal.fire('Error', data.message || 'No se pudo crear', 'error');
                         }
-                    })
-                    .catch(() => Swal.fire('Error', 'Error de conexión', 'error'));
+                    });
                 });
             };
 
-            window.changePatientStatus = function (patientId, newStatus) {
-                const verb = (newStatus === 1) ? 'activar' : 'desactivar';
-                Swal.fire({
-                    title: `¿${verb.charAt(0).toUpperCase() + verb.slice(1)} paciente?`,
-                    text: 'Esta acción cambiará el estado del paciente.',
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonColor: (newStatus === 1) ? '#28a745' : '#ffc107',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: `Sí, ${verb}`,
-                    cancelButtonText: 'Cancelar'
-                }).then((r) => {
-                    if (!r.isConfirmed) return;
-
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = '@Url.Action("ChangePatientStatus", "Patient")';
-                    form.appendChild(Object.assign(document.createElement('input'), { type: 'hidden', name: 'patientId', value: patientId }));
-                    form.appendChild(Object.assign(document.createElement('input'), { type: 'hidden', name: 'status', value: newStatus }));
-                    document.body.appendChild(form); form.submit();
-                });
-            };
-
-            // Notificaciones
+            // Notificaciones TempData
             @if (!string.IsNullOrEmpty(successMessage))
             {
                 <text>Swal.fire({ title: '¡Éxito!', text: '@Html.Raw(successMessage)', icon: 'success', timer: 3000, showConfirmButton: false });</text>
             }
             @if (!string.IsNullOrEmpty(errorMessage))
             {
-                <text>Swal.fire({ title: 'Error', text: '@Html.Raw(errorMessage)', icon: 'error', confirmButtonText: 'OK' });</text>
+                <text>Swal.fire({ title: 'Error', text: '@Html.Raw(errorMessage)', icon: 'error' });</text>
             }
         });
     </script>

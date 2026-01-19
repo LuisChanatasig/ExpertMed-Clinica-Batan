@@ -1,14 +1,9 @@
 ﻿using ExpertMed.Models;
 using ExpertMed.Services;
+using iTextSharp.text.pdf;
 using Microsoft.AspNetCore.Mvc;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
-using Rotativa.AspNetCore;
-using QuestPDF.Fluent;
-using QuestPDF.Helpers;
-using QuestPDF.Infrastructure;
-using iTextSharp.text.pdf;
-using Microsoft.AspNetCore.Hosting;
 using System.Globalization;
 using System.Text;
 

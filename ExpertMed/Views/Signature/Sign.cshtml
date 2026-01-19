@@ -1,0 +1,277 @@
+﻿@model SignVm
+@{
+    Layout = null;
+    var consentVersion = "LOPDP-EC-2026-V2";
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>Consentimiento Informado - ExpertMed</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet" />
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --bg-soft: #f8f9fa;
+        }
+
+        body {
+            background: var(--bg-soft);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .signature-box {
+            border: 2px dashed var(--primary-color);
+            border-radius: 12px;
+            background: #fff;
+            height: 280px;
+            touch-action: none;
+            position: relative;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .doc-card {
+            border: 1px solid rgba(0,0,0,.1);
+            border-radius: 10px;
+            background: #fff;
+            transition: all 0.3s ease;
+        }
+
+            /* Clase que se activa cuando el documento ha sido leído */
+            .doc-card.read {
+                border-color: #198754;
+                background: #f6fffa;
+            }
+
+        .iframe-doc {
+            width: 100%;
+            height: 75vh;
+            border: 0;
+        }
+
+        #btnFirmar:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body class="py-4">
+
+    <div class="container" style="max-width: 720px;">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+
+                <div class="text-center mb-4">
+                    <h4 class="fw-bold text-primary">Firma de Consentimiento</h4>
+                    <p class="text-muted small">Protección de Datos Personales – LOPDP Ecuador</p>
+                </div>
+
+                <div class="alert alert-info small mb-4">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    Es obligatorio <strong>abrir y revisar</strong> todos los documentos antes de proceder con la firma.
+                </div>
+
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="fw-bold small text-uppercase text-muted">Documentos Requeridos</div>
+                        <span class="badge text-bg-light">ExpertMed 2026</span>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        @* Documento 1 *@
+                        <div class="doc-card p-3" id="cardDoc1">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div style="flex: 1;">
+                                    <div class="fw-bold small">Protección de Datos Personales</div>
+                                    <div class="text-muted" style="font-size: 0.75rem;">Consentimiento Informado v2</div>
+                                </div>
+                                <div class="btn-group ms-2">
+                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                            onclick="openDoc('@Url.Content("~/plantillas/CONSENTIMIENTO_INFORMADO_DE PROTECCION_DE DATOS PERSONALES_2.pdf")', 'Protección de Datos Personales', 'doc1Read', 'cardDoc1')">
+                                        Ver Documento
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        @* Documento 2 *@
+                        <div class="doc-card p-3" id="cardDoc2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div style="flex: 1;">
+                                    <div class="fw-bold small">Uso de Datos Consultorios</div>
+                                    <div class="text-muted" style="font-size: 0.75rem;">Integrales 2026</div>
+                                </div>
+                                <div class="btn-group ms-2">
+                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                            onclick="openDoc('@Url.Content("~/plantillas/CONSENTIMIENTO_USO_DATOS_CONSULTORIOS_INTEGRALES_2026.pdf")', 'Consentimiento Uso de Datos', 'doc2Read', 'cardDoc2')">
+                                        Ver Documento
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <form asp-action="Submit" asp-controller="Signature" method="post" id="formFirma">
+                    @Html.AntiForgeryToken()
+
+                    <input type="hidden" id="doc1Read" value="false" />
+                    <input type="hidden" id="doc2Read" value="false" />
+
+                    <input type="hidden" name="token" value="@Model.Token" />
+                    <input type="hidden" name="signatureDataUrl" id="signatureDataUrl" />
+                    <input type="hidden" name="consentVersion" value="@consentVersion" />
+                    <div id="formAlert" class="alert alert-danger d-none small"></div>
+
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" type="checkbox" id="chkAceptoDocs">
+                        <label class="form-check-label small" for="chkAceptoDocs">
+                            Confirmo que he leído, entiendo y acepto voluntariamente el contenido de los documentos expuestos.
+                        </label>
+                    </div>
+
+                    <label class="fw-bold mb-2 small text-uppercase text-muted">Firma Manuscrita Digitalizada</label>
+
+                    <div class="signature-box mb-2">
+                        <canvas id="signaturePad"></canvas>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <button type="button" class="btn btn-link btn-sm text-danger text-decoration-none p-0" onclick="clearPad()">
+                            <i class="bi bi-eraser"></i> Borrar y reintentar
+                        </button>
+
+                        <span class="badge bg-light text-dark">
+                            <i class="bi bi-clock"></i> Expira: @Model.ExpiresAt.ToString("HH:mm")
+                        </span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-3 fw-bold shadow-sm" id="btnFirmar" disabled>
+                        FINALIZAR Y FIRMAR DOCUMENTOS
+                    </button>
+                </form>
+
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <p class="text-muted small mb-0">
+                ID Seguridad: @(Model.Token.ToString().Length > 8 ? Model.Token.ToString().Substring(0, 8) : Model.Token.ToString())…
+            </p>
+            <p class="text-muted" style="font-size: 0.7rem;">ExpertMed &copy; 2026 | @consentVersion</p>
+        </div>
+    </div>
+
+    <div class="modal fade" id="docModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-light">
+                    <h6 class="modal-title fw-bold text-primary" id="docTitle">Revisión de Documento</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <iframe class="iframe-doc" id="docFrame" src=""></iframe>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success w-100 py-2 fw-bold" data-bs-dismiss="modal">
+                        He terminado de leer este documento
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Inicialización de Firma ---
+        const canvas = document.getElementById("signaturePad");
+              const pad = new SignaturePad(canvas, {
+            backgroundColor: "rgba(0,0,0,0)", // Transparente
+            penColor: "rgb(0,0,128)"
+        });
+
+        const chk = document.getElementById("chkAceptoDocs");
+        const btn = document.getElementById("btnFirmar");
+
+        function resizeCanvas() {
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            const data = pad.toData();
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext("2d").setTransform(ratio, 0, 0, ratio, 0, 0);
+            pad.clear();
+            if (data) pad.fromData(data);
+        }
+
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        function clearPad() {
+            pad.clear();
+            validateForm();
+        }
+
+        // --- Gestión de Documentos ---
+        function openDoc(url, title, flagId, cardId) {
+            document.getElementById("docTitle").textContent = title;
+            document.getElementById("docFrame").src = url;
+
+            // Marcar como leído
+            const flag = document.getElementById(flagId);
+            if(flag) flag.value = "true";
+
+            const card = document.getElementById(cardId);
+            if(card) card.classList.add("read");
+
+            // Mostrar modal
+            const myModal = new bootstrap.Modal(document.getElementById('docModal'));
+            myModal.show();
+
+            validateForm();
+        }
+
+        // --- Validación de Estado del Formulario ---
+        function validateForm() {
+            const d1 = document.getElementById("doc1Read").value === "true";
+            const d2 = document.getElementById("doc2Read").value === "true";
+            const isSigned = !pad.isEmpty();
+            const isChecked = chk.checked;
+
+            // El botón se activa SOLO si cumple TODO
+            btn.disabled = !(d1 && d2 && isSigned && isChecked);
+        }
+
+        // Eventos
+        chk.addEventListener("change", validateForm);
+        pad.addEventListener("endStroke", validateForm);
+
+        // --- Envío de Formulario ---
+        document.getElementById("formFirma").addEventListener("submit", function (e) {
+            const alertBox = document.getElementById("formAlert");
+            alertBox.classList.add("d-none");
+
+            if (pad.isEmpty()) {
+                e.preventDefault();
+                alertBox.textContent = "Por favor, estampe su firma antes de continuar.";
+                alertBox.classList.remove("d-none");
+                return;
+            }
+
+            // Convertir canvas a imagen para el servidor
+        document.getElementById("signatureDataUrl").value = pad.toDataURL("image/png");        });
+    </script>
+
+</body>
+</html>
