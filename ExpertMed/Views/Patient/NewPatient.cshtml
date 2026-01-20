@@ -545,33 +545,41 @@
                 fbFirma.style.display = "none";
             }
         }
-
         function renderizarDescargasLegales() {
             const container = document.getElementById("contenedorDescargasLegales");
-            const filesJson = @Html.Raw(signedFilesJson ?? "[]");
 
-            if (filesJson && filesJson.length > 0) {
+            // Parseamos el JSON del TempData
+            let filesUrls = [];
+            try {
+                const rawJson = @Html.Raw(signedFilesJson ?? "[]");
+                filesUrls = typeof rawJson === 'string' ? JSON.parse(rawJson) : rawJson;
+            } catch (e) {
+                console.error("Error al parsear documentos:", e);
+            }
+
+            if (filesUrls && filesUrls.length > 0) {
                 container.innerHTML = "";
-                filesJson.forEach((url) => {
-                    // Limpiamos el nombre: quitamos el ID y la primera parte del nombre
-                    const fileName = url.split('_').slice(2).join('_');
+                filesUrls.forEach((url) => {
+                    // Extraer un nombre bonito del URL
+                    // El URL viene como: /Signature/Download?fileName=CONSENT_guid_fecha.pdf
+                    const urlParams = new URLSearchParams(url.split('?')[1]);
+                    const fullFileName = urlParams.get('fileName') || "documento.pdf";
+                    const friendlyName = fullFileName.split('_')[0] === "CONSENT" ? "Consentimiento" : "Protección Datos";
 
                     const btn = document.createElement("a");
-                    btn.href = url;
-                    btn.download = fileName;
-                    btn.className = "btn btn-sm btn-outline-danger d-flex align-items-center gap-2 mb-2";
-                    btn.style.width = "fit-content";
+                    btn.href = url; // Esto llama a la acción Download
+                    btn.className = "btn btn-sm btn-outline-danger d-flex align-items-center gap-2 mb-2 w-100";
                     btn.innerHTML = `
-                        <i class="ri-file-pdf-fill fs-18"></i>
+                        <i class="ri-file-pdf-fill fs-4"></i>
                         <div class="text-start">
-                            <div class="fw-bold" style="font-size: 10px;">DESCARGAR COPIA</div>
-                            <div class="text-muted" style="font-size: 9px;">${fileName}</div>
+                            <div class="fw-bold" style="font-size: 11px;">DESCARGAR ${friendlyName}</div>
+                            <div class="text-muted" style="font-size: 9px; max-width: 200px; overflow: hidden;">${fullFileName}</div>
                         </div>
                     `;
                     container.appendChild(btn);
                 });
             } else {
-                container.innerHTML = '<div class="text-muted small italic">No hay documentos adicionales para descargar.</div>';
+                container.innerHTML = '<div class="alert alert-light small m-0">No se encontraron archivos físicos vinculados.</div>';
             }
         }
 

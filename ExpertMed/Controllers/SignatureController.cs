@@ -61,87 +61,36 @@ namespace ExpertMed.Controllers
 
 
         // Celular: enviar firma y generar documentos
-        // Método Submit corregido con logging detallado
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Submit(
-            Guid token,
-            [FromForm] string signatureDataUrl,
-            [FromForm] string consentVersion)
+        public async Task<IActionResult> Submit(Guid token, [FromForm] string signatureDataUrl)
         {
-            var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
-            var ua = HttpContext.Request.Headers.UserAgent.ToString();
+            // 1. Guardar firma
+            var result = await _signatureService.SubmitAsync(token, signatureDataUrl,
+                HttpContext.Connection.RemoteIpAddress?.ToString(),
+                HttpContext.Request.Headers.UserAgent.ToString());
 
-            _logger.LogInformation("Iniciando proceso de firma. Token: {Token}", token);
+            if (!result.Ok) return BadRequest(result.Message);
 
-            // 1. Validar y guardar la firma
-            var result = await _signatureService.SubmitAsync(token, signatureDataUrl, ip, ua);
-            if (!result.Ok)
-            {
-                _logger.LogError("Error al guardar firma: {Message}", result.Message);
-                return BadRequest(new { ok = false, message = result.Message });
-            }
+            // 2. Generar y obtener NOMBRES de archivos
+            List<string> nombresArchivos = await _signatureService.ProcessPatientDocumentsAsync(token, signatureDataUrl);
 
-            // 2. Obtener información del paciente desde la petición
-            int? patientId = await _signatureService.GetPatientIdFromTokenAsync(token);
-
-            if (!patientId.HasValue)
-            {
-                _logger.LogError("No se pudo obtener el paciente asociado al token {Token}", token);
-                return BadRequest(new { ok = false, message = "Token no asociado a un paciente válido" });
-            }
-
-            try
-            {
-                _logger.LogInformation("Procesando documentos para paciente {PatientId}", patientId.Value);
-
-                // 3. Generar y guardar documentos firmados
-                bool procesado = await _signatureService.ProcessPatientDocumentsAsync(
-                    token,
-                    patientId.Value,
-                    signatureDataUrl,
-                    consentVersion
-                );
-
-                if (!procesado)
-                {
-                    _logger.LogWarning("Los documentos no se procesaron correctamente");
-                    // Aún así mostramos éxito porque la firma SÍ se guardó
-                }
-                else
-                {
-                    _logger.LogInformation("Documentos procesados exitosamente");
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error crítico procesando documentos físicos para paciente {PatientId}", patientId);
-
-                // Retornar error en lugar de ocultarlo
-                return StatusCode(500, new
-                {
-                    ok = false,
-                    message = "Error al procesar documentos. La firma fue guardada pero los archivos no se generaron.",
-                    error = ex.Message
-                });
-            }
-
-            return View("SignOk");
+            // 3. Enviar a la vista (Importante: nombresArchivos es el Model)
+            return View("SignOk", nombresArchivos);
         }
-        // Método para que la Laptop o el Celular puedan DESCARGAR el archivo desde la ruta externa
+
+        // NUEVO MÉTODO: Permite descargar desde C:\ExpertMedStorage
         [HttpGet]
-        public async Task<IActionResult> DownloadDoc(int documentoId)
+        public IActionResult Download(string fileName)
         {
-            // Aquí deberías implementar un método en tu servicio que busque la ruta física
-            // en la tabla PacienteDocumentos usando el ID.
+            // Ruta base que vimos en tus logs
+            string basePath = @"C:\ExpertMedStorage\DocumentosFirmados";
+            string fullPath = Path.Combine(basePath, fileName);
 
-            // Ejemplo rápido:
-            // var doc = await _signatureService.GetDocumentMetadata(documentoId);
-            // if (doc == null) return NotFound();
-            // byte[] fileBytes = await System.IO.File.ReadAllBytesAsync(doc.RutaFisica);
-            // return File(fileBytes, "application/pdf", doc.NombreArchivo);
+            if (!System.IO.File.Exists(fullPath)) return NotFound();
 
-            return Ok();
+            var fileBytes = System.IO.File.ReadAllBytes(fullPath);
+            return File(fileBytes, "application/pdf", fileName);
         }
         // Celular: Vista de éxito después de firmar
         [HttpGet]

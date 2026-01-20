@@ -38,7 +38,7 @@
 
     // Módulos Operativos / Clínicos
     bool showPacientes = isAdminOrGestion || perfilId == 2 || perfilId == 8; // +Doc +Caja
-    bool showAgenda = isAdminOrGestion || perfilId == 2 || perfilId == 3 || perfilId == 8; // +Doc +Recep +Caja
+    bool showAgenda = isAdminOrGestion || perfilId == 2 || perfilId == 3 || perfilId == 8 || perfilId == 7; // +Doc +Recep +Caja
     bool showConsultas = isAdminOrGestion || perfilId == 2; // +Doc
     bool showLab = isAdminOrGestion || perfilId == 2 || perfilId == 6; // +Doc +Lab
     bool showImagenes = isAdminOrGestion || perfilId == 2 || perfilId == 5; // +Doc +Img
@@ -280,7 +280,11 @@
                         </a>
                         <div class="collapse menu-dropdown" id="sidebarFisioterapia">
                             <ul class="nav nav-sm flex-column">
-                                <li class="nav-item"><a href="@Url.Action("TherapySchedule", "Fisioterapia")" class="nav-link"><i class="mdi mdi-calendar-clock"></i> Agenda</a></li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("TherapySchedule", "Fisioterapia")" class="nav-link">
+                                        <i class="mdi mdi-calendar-clock"></i> Planificación de Fisioterapia
+                                    </a>
+                                </li>
                                 <li class="nav-item"><a href="@Url.Action("TherapyHistory", "Fisioterapia")" class="nav-link"><i class="mdi mdi-history"></i> Historial</a></li>
                                 @if (perfilId == 7) // Alertas solo para fisio
                                 {

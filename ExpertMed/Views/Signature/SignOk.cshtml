@@ -41,20 +41,26 @@
         .download-item {
             border: 1px solid #e9ecef;
             border-radius: 12px;
-            padding: 12px;
+            padding: 15px;
             transition: all 0.2s;
             background: #fff;
             text-decoration: none;
             color: inherit;
             display: block;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
         }
 
             .download-item:hover {
                 border-color: #0d6efd;
                 background: #f8f9ff;
                 transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(13, 110, 253, 0.1);
             }
+
+        .pdf-icon {
+            color: #dc3545;
+            font-size: 24px;
+        }
     </style>
 </head>
 <body>
@@ -64,30 +70,34 @@
             <div class="card-body">
                 <div class="icon-box">✓</div>
 
-                <h3 class="fw-bold text-dark">¡Proceso Completado!</h3>
-                <p class="text-muted small">Su firma ha sido vinculada legalmente a los siguientes documentos:</p>
+                <h3 class="fw-bold text-dark">¡Firma Registrada!</h3>
+                <p class="text-muted small">El proceso se completó correctamente. Puede descargar sus copias firmadas a continuación:</p>
 
                 @if (Model != null && Model.Any())
                 {
                     <div class="text-start mt-4 mb-4">
-                        <label class="small text-uppercase fw-bold text-muted mb-2 d-block">Descargar mis copias:</label>
-                        @foreach (var file in Model)
-                        {
-                            // Extraer el nombre original para mostrarlo más limpio
-                            var fileName = System.IO.Path.GetFileName(file).Split('_').LastOrDefault();
+                        <label class="small text-uppercase fw-bold text-muted mb-3 d-block">Documentos disponibles:</label>
 
-                            <a href="@file" download class="download-item">
+                        @foreach (var fileName in Model)
+                        {
+                            // Lógica para mostrar un nombre amigable al usuario
+                            // Ejemplo: de "CONSENT_guid_fecha.pdf" a "CONSENTIMIENTO"
+                            string friendlyName = fileName.StartsWith("CONSENT") ? "Consentimiento de Datos" :
+                            fileName.StartsWith("LOPDP") ? "Protección de Datos (LOPDP)" : "Documento Firmado";
+
+                            <a asp-action="Download" asp-controller="Signature" asp-route-fileName="@fileName" class="download-item">
                                 <div class="d-flex align-items-center">
-                                    <div class="me-3 text-danger">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-file-earmark-pdf-fill" viewBox="0 0 16 16">
+                                    <div class="me-3 pdf-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-file-earmark-pdf-fill" viewBox="0 0 16 16">
                                             <path d="M5.667 1.667L10 6.125V14.333c0 .368-.298.667-.667.667H3.333a.667.667 0 0 1-.666-.667V2.333c0-.368.298-.667.666-.667h2.334z" />
+                                            <path d="M5.523 12.124c0 .35-.182.513-.491.513-.236 0-.44-.099-.542-.315-.1-.214-.141-.513-.141-.865v-.14c0-.355.034-.662.113-.883.078-.221.254-.33.483-.33.303 0 .478.175.478.53v.143c0 .358-.036.67-.111.887-.075.217-.23.324-.489.324h-.001zm-.513-1.442c-.105 0-.171.071-.2.213-.03.14-.044.372-.044.697v.147c0 .322.014.55.044.69.03.138.096.21.201.21.104 0 .17-.072.2-.21.03-.14.045-.368.045-.69v-.147c0-.325-.015-.557-.045-.697-.03-.14-.097-.213-.201-.213zM9.07 12.637c-.147.23-.442.333-.791.333-.37 0-.672-.131-.84-.367-.168-.235-.252-.574-.252-.988v-.15c0-.411.085-.75.257-.99.172-.243.473-.368.834-.368.344 0 .591.081.742.239V10.1h-.543v.358h.543v1.652c-.001.211-.06.398-.15.527zM8.28 10.59c-.11 0-.197.054-.26.16-.063.106-.094.275-.094.505v.149c0 .232.03.4.091.503.061.102.148.154.26.154.113 0 .198-.052.257-.154.059-.103.088-.271.088-.503v-.149c0-.23-.03-.399-.089-.505-.058-.106-.144-.16-.253-.16zm1.839 2.047h.556v-.888h.717v-.366h-.717v-.551h.846v-.358h-1.403v2.163z" />
                                         </svg>
                                     </div>
                                     <div class="text-truncate" style="flex: 1; font-size: 0.85rem;">
-                                        <strong>PDF Firmado</strong><br>
-                                        <span class="text-muted small">@fileName</span>
+                                        <strong>@friendlyName</strong><br>
+                                        <span class="text-muted small">Haz clic para descargar</span>
                                     </div>
-                                    <div class="text-primary">
+                                    <div class="text-primary fw-bold">
                                         ↓
                                     </div>
                                 </div>
@@ -97,23 +107,23 @@
                 }
                 else
                 {
-                    <div class="alert alert-warning small">
-                        La firma se registró, pero hubo un inconveniente al generar las copias descargables. Por favor, solicite sus documentos en recepción.
+                    <div class="alert alert-warning small border-0 shadow-sm">
+                        <strong>Nota:</strong> La firma se registró correctamente, pero las copias digitales no pudieron visualizarse en este momento. Puede solicitarlas físicamente en recepción.
                     </div>
                 }
 
                 <hr class="my-4 opacity-25">
 
                 <p class="small text-secondary mb-4">
-                    Estos documentos también estarán disponibles en su historial clínico de ExpertMed.
+                    Sus documentos firmados han sido almacenados de forma segura en su expediente clínico.
                 </p>
 
                 <div class="d-grid gap-2">
-                    <button type="button" class="btn btn-primary fw-bold" onclick="window.close();">Finalizar</button>
+                    <button type="button" class="btn btn-primary btn-lg fw-bold shadow-sm" onclick="window.close();">Finalizar Proceso</button>
                 </div>
             </div>
         </div>
-        <p class="text-center mt-4 text-muted small">© 2026 ExpertMed - Consultorios Integrales</p>
+        <p class="text-center mt-4 text-muted small">© 2026 ExpertMed - Servicios Médicos Integrales</p>
     </div>
 
 </body>

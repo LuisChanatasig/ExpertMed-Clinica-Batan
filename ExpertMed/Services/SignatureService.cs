@@ -192,92 +192,38 @@ namespace ExpertMed.Services
         /// </summary>
 
         // Método ProcessPatientDocumentsAsync CORREGIDO con mejor logging
-        public async Task<bool> ProcessPatientDocumentsAsync(
-            Guid token,
-            int patientId,
-            string signatureBase64,
-            string consentVersion = "LOPDP-EC-2026-V2")
+        public async Task<List<string>> ProcessPatientDocumentsAsync(Guid token, string signatureBase64)
         {
+            var archivosGenerados = new List<string>();
             try
             {
-                _logger.LogInformation("Iniciando proceso de documentos para paciente {PatientId}", patientId);
-
                 var docsToGenerate = new[] {
-            new {
-                Tipo = "Consentimiento de Datos",
-                TemplateName = "ConsentimientoDatosCB.pdf",
-                Prefix = "CONSENT",
-                CampoFirma = "txt_imagen_firma" // Campo específico para este doc
-            },
-            new {
-                Tipo = "Protección de Datos LOPDP",
-                TemplateName = "ConsetimientoLOPDP_Template.pdf",
-                Prefix = "LOPDP",
-                CampoFirma = "txt_imagen_firma" // Campo específico para este doc
-            }
+            new { Tipo = "Consentimiento", Template = "ConsentimientoDatosCB.pdf", Prefix = "CONSENT" },
+            new { Tipo = "LOPDP", Template = "ConsetimientoLOPDP_Template.pdf", Prefix = "LOPDP" }
         };
-
-                int docsGenerados = 0;
 
                 foreach (var doc in docsToGenerate)
                 {
-                    try
+                    string fileName = $"{doc.Prefix}_{token}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+                    string templatePath = Path.Combine(_env.ContentRootPath, "Templates", doc.Template);
+
+                    // Generar PDF (usando tu lógica FillSignedPdfAsync)
+                    string physicalPath = await FillSignedPdfAsync(templatePath, signatureBase64, fileName, "txt_imagen_firma");
+
+                    if (File.Exists(physicalPath))
                     {
-                        string fileName = $"{doc.Prefix}_{patientId}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
-                        string templatePath = Path.Combine(_env.ContentRootPath, "Templates", doc.TemplateName);
-
-                        if (!File.Exists(templatePath))
-                        {
-                            _logger.LogError("Plantilla NO encontrada: {Path}", templatePath);
-                            continue;
-                        }
-
-                        _logger.LogInformation("Procesando plantilla: {Template}", doc.TemplateName);
-
-                        // Generar PDF con firma
-                        string physicalPath = await FillSignedPdfAsync(
-                            templatePath,
-                            signatureBase64,
-                            fileName,
-                            doc.CampoFirma
-                        );
-
-                        if (!File.Exists(physicalPath))
-                        {
-                            _logger.LogError("El archivo NO se generó en: {Path}", physicalPath);
-                            continue;
-                        }
-
-                        _logger.LogInformation("PDF generado exitosamente: {Path}", physicalPath);
-
-                        // Guardar metadata en BD
-                        await SaveDocumentMetadataAsync(patientId, fileName, physicalPath, doc.Tipo);
-
-                        docsGenerados++;
-                        _logger.LogInformation("Documento {Tipo} guardado correctamente", doc.Tipo);
-                    }
-                    catch (Exception docEx)
-                    {
-                        _logger.LogError(docEx, "Error procesando documento {Tipo}", doc.Tipo);
+                        archivosGenerados.Add(fileName); // Solo guardamos el nombre
+                        _logger.LogInformation("Archivo generado: {FileName}", fileName);
                     }
                 }
-
-                if (docsGenerados > 0)
-                {
-                    // Marcar token como consumido solo si al menos un doc se generó
-                    await ConsumeToPatientAsync(token, patientId);
-                    _logger.LogInformation("{Count} documentos generados y token consumido", docsGenerados);
-                }
-
-                return docsGenerados == docsToGenerate.Length;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error crítico en ProcessPatientDocumentsAsync");
-                throw;
+                _logger.LogError(ex, "Error en generación física");
             }
+            return archivosGenerados;
         }
-        private async Task SaveDocumentMetadataAsync(int patientId, string fileName, string physicalPath, string docType)
+        public async Task SaveDocumentMetadataAsync(int patientId, string fileName, string physicalPath, string docType)
         {
             await using var cn = new SqlConnection(_dbContext.Database.GetConnectionString());
             await using var cmd = new SqlCommand("sp_GuardarDocumentoFirmado", cn)

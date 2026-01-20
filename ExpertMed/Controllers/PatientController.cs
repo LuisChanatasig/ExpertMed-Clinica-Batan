@@ -132,16 +132,9 @@ namespace ExpertMed.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> NewPatient(Patient patient, int? doctorUserId = null, Guid? SignatureToken = null)
         {
-            // 1. Validación de integridad de datos (Server-side)
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState.Where(x => x.Value.Errors.Count > 0)
-                    .Select(x => new { Field = x.Key, Errors = x.Value.Errors.Select(e => e.ErrorMessage).ToList() });
+            // 1. Validaciones iniciales
+            if (!ModelState.IsValid) return BadRequest(new { success = 0, message = "Datos incompletos." });
 
-                return BadRequest(new { success = 0, message = "Datos incompletos.", errores = errors });
-            }
-
-            // 2. Validación legal (LOPDP)
             bool hasDirectSig = !string.IsNullOrWhiteSpace(patient.PatientSignature);
             bool hasQrToken = SignatureToken.HasValue && SignatureToken.Value != Guid.Empty;
 
@@ -156,93 +149,80 @@ namespace ExpertMed.Controllers
 
             try
             {
-                // 3. Contexto de sesión
+                // 2. Contexto de Usuario
                 int currentUserId = HttpContext.Session.GetInt32("UsuarioId") ?? 0;
-                int profileId = HttpContext.Session.GetInt32("PerfilId") ?? 0;
                 patient.PatientCreationuser = currentUserId;
                 patient.PatientModificationuser = currentUserId;
-                patient.CreationUserProfileId = profileId;
 
-                // 4. Creación del registro en Base de Datos
+                // 3. Crear Paciente
                 var resultado = await _patientService.CreatePatientAsync(patient, doctorUserId, skipSignatureInsert: isQrMode);
 
                 if (!resultado.Success)
                 {
-                    TempData["ErrorMessage"] = resultado.Message ?? "No se pudo registrar el paciente.";
+                    TempData["ErrorMessage"] = resultado.Message;
                     return await RegistroPaciente();
                 }
 
-                // --- INICIO PROCESO DE DOCUMENTOS FIRMADOS (iText) ---
+                // --- VINCULACIÓN DE DOCUMENTOS FISICOS ---
                 List<string> signedFilesUrls = new List<string>();
-                if (isQrMode)
-                {
-                    // 1. Obtener datos de la firma y el estado
-                    var st = await _signatureQrService.GetStatusAsync(SignatureToken!.Value);
 
+                if (isQrMode && SignatureToken.HasValue)
+                {
+                    var st = await _signatureQrService.GetStatusAsync(SignatureToken.Value);
                     if (st != null)
                     {
                         resultado.SignatureData = st.SignatureDataUrl;
-                        resultado.SignedAt = st.SignedAtLocal?.ToString("yyyy-MM-ddTHH:mm:ss");
+                        resultado.SignedAt = st.SignedAtLocal?.ToString("yyyy-MM-dd HH:mm:ss");
 
-                        // 2. Localizar los archivos en lugar de regenerarlos
-                        try
+                        // RUTA REAL EN EL DISCO
+                        string storageFolder = @"C:\ExpertMedStorage\DocumentosFirmados";
+                        var docTypes = new[] {
+                    new { Prefix = "CONSENT", Label = "Consentimiento" },
+                    new { Prefix = "LOPDP", Label = "LOPDP" }
+                };
+
+                        if (Directory.Exists(storageFolder))
                         {
-                            var plantillas = new[]
+                            var directoryInfo = new DirectoryInfo(storageFolder);
+                            foreach (var doc in docTypes)
                             {
-              "CONSENTIMIENTO USO DATOS CONSULTORIOS INTEGRALES 2026.pdf",
-            "CONSENTIMIENTO INFORMADO DE PROTECCION DE DATOS PERSONALES 2.pdf"
-            };
+                                // Buscamos cualquier archivo que empiece con el prefijo y contenga el GUID
+                                var file = directoryInfo.GetFiles($"{doc.Prefix}_{SignatureToken.Value}*.pdf").FirstOrDefault();
 
-                            foreach (var pdfName in plantillas)
-                            {
-                                // Nombre exacto que usó el SignatureController al generar el archivo
-                                // Nota: Asegúrate de usar el mismo patrón de nombre (ej: Token8_Nombre)
-                                string fileName = $"{SignatureToken.Value.ToString().Substring(0, 8)}_{pdfName}";
-                                string physicalPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "docs", "signed", fileName);
+                                if (file != null)
+                                {
+                                    // IMPORTANTE: Generamos la URL que apunta a nuestra acción de descarga
+                                    string downloadUrl = Url.Action("Download", "Signature", new { fileName = file.Name });
+                                    signedFilesUrls.Add(downloadUrl);
 
-                                // Verificamos si el archivo físico existe en la carpeta
-                                if (System.IO.File.Exists(physicalPath))
-                                {
-                                    signedFilesUrls.Add($"/docs/signed/{fileName}");
-                                }
-                                else if (st.Status == 1) // Si por alguna razón no existe, lo generamos aquí
-                                {
-                                    string templatePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "plantillas", pdfName);
-                                    string relativeUrl = await _signatureQrService.FillSignedPdfAsync(templatePath, st.SignatureDataUrl, fileName);
-                                    signedFilesUrls.Add(relativeUrl);
+                                    // Guardamos metadata en la base de datos (SP sp_GuardarDocumentoFirmado)
+                                    await _signatureQrService.SaveDocumentMetadataAsync(resultado.PatientId, file.Name, file.FullName, doc.Label);
                                 }
                             }
                         }
-                        catch (Exception pdfEx)
-                        {
-                            System.Diagnostics.Debug.WriteLine("Error al localizar PDFs: " + pdfEx.Message);
-                        }
                     }
-
-                    // 3. Consumir el token
                     await _signatureQrService.ConsumeToPatientAsync(SignatureToken.Value, resultado.PatientId);
                 }
 
-                // 5. Preparación de TempData para el Modal de Éxito y Acta
-                TempData["SuccessMessage"] = "Paciente registrado con éxito bajo estándares ISO 27001.";
+                // 4. Datos para el Modal (TempData)
+                // El modal se abre solo si SecurityToken tiene valor
+                TempData["SuccessMessage"] = "Registro completado con éxito.";
+                TempData["SecurityToken"] = Guid.NewGuid().ToString("N"); // Token para el Acta
                 TempData["PatientName"] = $"{patient.PatientFirstname} {patient.PatientFirstsurname}";
                 TempData["PatientCode"] = resultado.PatientCode;
-                TempData["SecurityToken"] = resultado.SecurityToken;
                 TempData["SignatureData"] = resultado.SignatureData;
                 TempData["SignedAt"] = resultado.SignedAt;
-
-                // Serializamos la lista de rutas de PDFs para que la vista genere los botones de descarga
                 TempData["SignedFiles"] = Newtonsoft.Json.JsonConvert.SerializeObject(signedFilesUrls);
 
                 return RedirectToAction(nameof(NewPatient));
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = "Error interno: " + ex.Message;
+                _logger.LogError(ex, "Error en registro");
+                TempData["ErrorMessage"] = ex.Message;
                 return await RegistroPaciente();
             }
         }
-
 
         /// <summary>
         /// Creates a new patient record or associates an existing patient with an emergency appointment, then redirects
