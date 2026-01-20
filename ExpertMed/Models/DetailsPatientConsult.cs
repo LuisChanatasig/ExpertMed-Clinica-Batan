@@ -58,6 +58,15 @@ namespace ExpertMed.Models
         public decimal? CapillaryGlucose { get; set; }
         public decimal? Spo2 { get; set; }
 
+        // El texto largo de antecedentes personales
+        public string? LastPersonalBackground { get; set; }
+
+        // Los IDs de Alergias (Vienen como "66,67,102")
+        public string? LastAllergiesIds { get; set; }
+
+        // Los IDs de Cirugías (Vienen como "93,95")
+        public string? LastSurgeriesIds { get; set; }
+
         public List<DoctorPatient> Doctors { get; set; } = new List<DoctorPatient>();
 
         public static implicit operator DetailsPatientConsult(Task<DetailsPatientConsult> v)

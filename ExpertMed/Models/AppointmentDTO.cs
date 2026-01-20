@@ -30,7 +30,8 @@
         public string? PaymentMethod { get; set; }
         public decimal AmountToBill { get; set; }
 
-
+        // Nueva propiedad para los laboratorios
+        public bool HasLaboratories { get; set; }
         public List<InsuranceCompanyDto> InsuranceCompanies { get; set; }
 
 

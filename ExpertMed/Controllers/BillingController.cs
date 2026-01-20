@@ -42,6 +42,36 @@ namespace ExpertMed.Controllers
 
             return View(cita);
         }
+        public async Task<IActionResult> FacturacionLaboratorio(int? appointmentId)
+        {
+            if (!appointmentId.HasValue)
+                return BadRequest("Falta el ID de la cita.");
+
+            var cita = await _facturacion.GetAppointmentBillingDataAsync(appointmentId.Value);
+
+            if (cita == null)
+                return NotFound("No se encontró la cita.");
+
+            // Creamos el modelo con lo estrictamente necesario que sí tiene la clase
+            var viewModel = new Facturacions
+            {
+                CitaId = cita.AppointmentId,
+                BillingDetailsNames = cita.PatientFullName,
+                InsuranceCompanyId = cita.InsuranceCompanyId,
+
+                // Inicializamos las listas para que el JS no de error
+                Items = new List<BillingItemDTO>(),
+                PaymentMethods = new List<PaymentMethodDTO>()
+            };
+
+            // Usamos el ViewBag para los IDs, así no dependemos de la clase Facturacions
+            ViewBag.AppointmentId = cita.AppointmentId;
+            ViewBag.AppointmentPatientId = cita.PatientId; // El ID del paciente va por aquí
+            ViewBag.PatientFullName = cita.PatientFullName;
+            ViewBag.InsuranceCompanyId = cita.InsuranceCompanyId;
+
+            return View(viewModel);
+        }
 
         /// <summary>
         /// 
@@ -169,6 +199,112 @@ namespace ExpertMed.Controllers
             }
         }
 
+
+
+        [HttpPost]
+        [RequestSizeLimit(52428800)]
+        public async Task<IActionResult> BillingLabs([FromForm] Facturacions viewModel, IFormFile comprobantePagoFile = null, List<IFormFile> PaymentProofs = null)
+        {
+            if (!ModelState.IsValid)
+            {
+                // Log de errores para depuración
+                foreach (var state in ModelState)
+                {
+                    foreach (var error in state.Value.Errors)
+                    {
+                        _logger.LogWarning("Error en campo {Campo}: {Error}", state.Key, error.ErrorMessage);
+                    }
+                }
+
+                TempData["ErrorMessage"] = "Verifique los datos ingresados en el formulario.";
+                return View("FacturacionLaboratorio", viewModel);
+            }
+
+            try
+            {
+                byte[] dummyBytes = new byte[] { 0x00 };
+                bool usarMultiplesPagos = viewModel.PaymentMethods != null && viewModel.PaymentMethods.Any();
+
+                // 1. Validación Analítica: Suma de montos vs Total Factura
+                if (usarMultiplesPagos)
+                {
+                    var totalPagos = viewModel.PaymentMethods.Sum(p => p.PaymentAmount);
+                    if (Math.Abs(totalPagos - viewModel.TotalFactura) > 0.01m)
+                    {
+                        TempData["ErrorMessage"] = $"La suma de los pagos (${totalPagos:F2}) no coincide con el total (${viewModel.TotalFactura:F2}).";
+                        return View("FacturacionLaboratorio", viewModel);
+                    }
+
+                    // 2. Procesamiento de Comprobantes Múltiples (Binary Data)
+                    if (PaymentProofs != null && PaymentProofs.Count > 0)
+                    {
+                        for (int i = 0; i < PaymentProofs.Count && i < viewModel.PaymentMethods.Count; i++)
+                        {
+                            if (PaymentProofs[i] != null && PaymentProofs[i].Length > 0)
+                            {
+                                using var ms = new MemoryStream();
+                                await PaymentProofs[i].CopyToAsync(ms);
+                                viewModel.PaymentMethods[i].PaymentProof = ms.ToArray();
+                            }
+                            else
+                            {
+                                viewModel.PaymentMethods[i].PaymentProof = dummyBytes;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Inicializar con dummy para evitar nulls en el SP
+                        foreach (var p in viewModel.PaymentMethods) p.PaymentProof ??= dummyBytes;
+                    }
+                }
+                else
+                {
+                    // Pago único (Sistema heredado)
+                    if (comprobantePagoFile != null && comprobantePagoFile.Length > 0)
+                    {
+                        using var ms = new MemoryStream();
+                        await comprobantePagoFile.CopyToAsync(ms);
+                        viewModel.ComprobantePagoFacturacion = ms.ToArray();
+                    }
+                    else
+                    {
+                        viewModel.ComprobantePagoFacturacion = dummyBytes;
+                    }
+                }
+
+                // 3. Llamada al NUEVO SERVICIO de Laboratorios (sp_billing_lab)
+                string response = await _facturacion.CreateAndSendInvoice_lab(
+                    viewModel.CitaId ?? 0,
+                    DateTime.Now,
+                    viewModel.TotalFactura,
+                    usarMultiplesPagos ? "MULTIPLE" : viewModel.MetodoPago,
+                    usarMultiplesPagos ? null : viewModel.ComprobantePagoFacturacion,
+                    viewModel.BillingDetailsNames,
+                    viewModel.BillingDetailsCiNumber,
+                    viewModel.BillingDetailsDocumentType,
+                    viewModel.BillingDetailsAddress,
+                    viewModel.BillingDetailsPhone,
+                    viewModel.BillingDetailsEmail,
+                    viewModel.InsuranceCompanyId,
+                    viewModel.Items,
+                    usarMultiplesPagos ? viewModel.PaymentMethods : null
+                );
+
+                _logger.LogInformation("Factura de Laboratorio generada: {CitaId}", viewModel.CitaId);
+                TempData["SuccessMessage"] = "Factura de laboratorio emitida y enviada con éxito.";
+
+                return RedirectToAction("AppointmentList", "Appointment");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error crítico en BillingLabs para Cita {CitaId}", viewModel.CitaId);
+                TempData["ErrorMessage"] = $"Error al generar factura: {ex.Message}";
+
+                // Retornamos la vista con el modelo para que la rehidratación en JS funcione
+                return View("FacturacionLaboratorio", viewModel);
+            }
+        }
 
         [HttpGet("Facturas")]
         public async Task<IActionResult> FacturasEmitidas(DateTime? fechaDesde = null, DateTime? fechaHasta = null)

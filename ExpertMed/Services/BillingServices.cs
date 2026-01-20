@@ -212,6 +212,153 @@ namespace ExpertMed.Services
             }
         }
 
+
+        public async Task<string> CreateAndSendInvoice_lab(
+    int citaId,
+    DateTime fechaFacturacion,
+    decimal totalFactura,
+    string metodoPago,
+    byte[] comprobantePagoFacturacion,
+    string billingDetailsNames,
+    string billingDetailsCiNumber,
+    string billingDetailsDocumentType,
+    string billingDetailsAddress,
+    string billingDetailsPhone,
+    string billingDetailsEmail,
+    int? insuranceCompanyId,
+    List<BillingItemDTO> items,
+    List<PaymentMethodDTO> paymentMethods = null)
+        {
+            string jsonFactura = string.Empty;
+            string xKey = string.Empty;
+            string xPassword = string.Empty;
+
+            try
+            {
+                using (var connection = new SqlConnection(_context.Database.GetConnectionString()))
+                {
+                    await connection.OpenAsync();
+
+                    // 1. Ejecutar el SP específico para Laboratorios
+                    using (var command = new SqlCommand("sp_billing_lab", connection))
+                    {
+                        command.CommandType = CommandType.StoredProcedure;
+                        command.CommandTimeout = 60;
+
+                        command.Parameters.AddWithValue("@CitaId", citaId);
+                        command.Parameters.AddWithValue("@FechaFacturacion", fechaFacturacion);
+                        command.Parameters.AddWithValue("@TotalFactura", totalFactura);
+                        command.Parameters.AddWithValue("@MetodoPago", (object)metodoPago ?? DBNull.Value);
+
+                        var comprobanteParam = new SqlParameter("@ComprobantePago", SqlDbType.VarBinary)
+                        {
+                            Value = comprobantePagoFacturacion != null ? (object)comprobantePagoFacturacion : DBNull.Value
+                        };
+                        command.Parameters.Add(comprobanteParam);
+
+                        command.Parameters.AddWithValue("@insurance_company_id", (object)insuranceCompanyId ?? DBNull.Value);
+                        command.Parameters.AddWithValue("@billing_details_names", (object)billingDetailsNames ?? DBNull.Value);
+                        command.Parameters.AddWithValue("@billing_details_cinumber", (object)billingDetailsCiNumber ?? DBNull.Value);
+                        command.Parameters.AddWithValue("@billing_details_documenttype", (object)billingDetailsDocumentType ?? DBNull.Value);
+                        command.Parameters.AddWithValue("@billing_details_address", (object)billingDetailsAddress ?? DBNull.Value);
+                        command.Parameters.AddWithValue("@billing_details_phone", (object)billingDetailsPhone ?? DBNull.Value);
+                        command.Parameters.AddWithValue("@billing_details_email", (object)billingDetailsEmail ?? DBNull.Value);
+
+                        // Items (Mapeo directo sin buscar en tarifario de seguros)
+                        var table = new DataTable();
+                        table.Columns.Add("billing_item_code", typeof(string));
+                        table.Columns.Add("billing_item_description", typeof(string));
+                        table.Columns.Add("billing_item_quantity", typeof(int));
+                        table.Columns.Add("billing_item_unit_price", typeof(decimal));
+
+                        foreach (var item in items)
+                        {
+                            // Usamos la descripción que viene del frontend (Ingreso Libre)
+                            table.Rows.Add(item.Code, item.Description, item.Quantity, item.UnitPrice);
+                        }
+
+                        var itemsParam = new SqlParameter("@Items", SqlDbType.Structured)
+                        {
+                            TypeName = "dbo.BillingItemsType",
+                            Value = table
+                        };
+                        command.Parameters.Add(itemsParam);
+
+                        // Múltiples métodos de pago
+                        var paymentTable = new DataTable();
+                        paymentTable.Columns.Add("payment_method", typeof(string));
+                        paymentTable.Columns.Add("payment_amount", typeof(decimal));
+                        paymentTable.Columns.Add("payment_proof", typeof(byte[]));
+                        paymentTable.Columns.Add("payment_notes", typeof(string));
+
+                        if (paymentMethods != null && paymentMethods.Any())
+                        {
+                            foreach (var pm in paymentMethods)
+                            {
+                                paymentTable.Rows.Add(
+                                    pm.PaymentMethod,
+                                    pm.PaymentAmount,
+                                    pm.PaymentProof ?? (object)DBNull.Value,
+                                    pm.PaymentNotes ?? (object)DBNull.Value
+                                );
+                            }
+                        }
+
+                        var paymentsParam = new SqlParameter("@PaymentMethods", SqlDbType.Structured)
+                        {
+                            TypeName = "dbo.PaymentMethodsType",
+                            Value = paymentTable
+                        };
+                        command.Parameters.Add(paymentsParam);
+
+                        jsonFactura = (string)await command.ExecuteScalarAsync();
+                    }
+
+                    // 2. Obtener credenciales Dátil del usuario creador de la cita
+                    using (var command = new SqlCommand(@"
+                SELECT users_xkeytaxo, users_xpasstaxo 
+                FROM users 
+                WHERE users_id = (SELECT appointment_createuser FROM appointment WHERE appointment_id = @CitaId)", connection))
+                    {
+                        command.Parameters.AddWithValue("@CitaId", citaId);
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            if (await reader.ReadAsync())
+                            {
+                                xKey = reader["users_xkeytaxo"].ToString();
+                                xPassword = reader["users_xpasstaxo"].ToString();
+                            }
+                        }
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(jsonFactura))
+                    throw new Exception("El Stored Procedure sp_billing_lab no generó el JSON de la factura.");
+
+                // 3. Envío al API de Dátil
+                using (var request = new HttpRequestMessage(HttpMethod.Post, "https://link.datil.co/invoices/issue"))
+                {
+                    request.Content = new StringContent(jsonFactura, Encoding.UTF8, "application/json");
+                    request.Headers.Add("X-Key", xKey);
+                    request.Headers.Add("X-Password", xPassword);
+
+                    var response = await _httpClient.SendAsync(request);
+                    var responseContent = await response.Content.ReadAsStringAsync();
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        throw new Exception($"Error Dátil: {response.StatusCode} - {responseContent}");
+                    }
+
+                    return responseContent;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error en CreateAndSendInvoice_lab para la cita ID: {CitaId}", citaId);
+                throw;
+            }
+        }
         public async Task<AppointmentBillingDTO?> GetAppointmentBillingDataAsync(int appointmentId)
         {
             var parameters = new[]

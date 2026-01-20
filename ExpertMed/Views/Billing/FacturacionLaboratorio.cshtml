@@ -1,0 +1,323 @@
+﻿@using Microsoft.AspNetCore.Http
+@model ExpertMed.Models.Facturacions // Asegúrate de que el namespace coincida con tu proyecto
+@{
+    ViewData["Title"] = "Facturación de Laboratorios";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var successMessage = TempData["SuccessMessage"] as string;
+    var errorMessage = TempData["ErrorMessage"] as string;
+    var perfilId = Context.Session.GetInt32("PerfilId");
+}
+
+@section Styles {
+    <style>
+        .bg-soft-warning {
+            background-color: rgba(255, 190, 84, 0.15) !important;
+        }
+
+        .input-readonly {
+            background-color: #eff2f7 !important;
+            opacity: 1;
+        }
+
+        .card-header {
+            border-bottom: 1px solid #e9ebec;
+        }
+
+        .table-middle td {
+            vertical-align: middle;
+        }
+    </style>
+}
+
+<input type="hidden" id="AppointmentPatientId" value="@ViewBag.AppointmentPatientId" />
+
+<div class="row">
+    <div class="col-xl-12">
+        <div class="card border-warning">
+            <div class="card-header bg-soft-warning">
+                <h4 class="card-title mb-0"><i class="ri-flask-line me-1"></i> Facturación Manual de Laboratorios</h4>
+            </div>
+            <div class="card-body">
+
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <strong><i class="ri-error-warning-line"></i> Errores de validación:</strong>
+                        <ul class="mb-0">
+                            @foreach (var modelState in ViewData.ModelState.Values)
+                            {
+                                foreach (var error in modelState.Errors)
+                                {
+                                    <li>@error.ErrorMessage</li>
+                                }
+                            }
+                        </ul>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                <form asp-action="BillingLabs" asp-controller="Billing" method="post" enctype="multipart/form-data" id="billingForm">
+                    <input type="hidden" name="CitaId" id="CitaId" value="@ViewBag.AppointmentId" />
+                    <input type="hidden" name="AppointmentPatientId" value="@ViewBag.AppointmentPatientId" />
+                    <input type="hidden" name="IsLaboratoryBilling" value="true" />
+                    <input type="hidden" name="InsuranceCompanyId" value="@ViewBag.InsuranceCompanyId" />
+
+                    <div class="mb-4">
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-6">
+                                <button type="button" class="btn btn-outline-primary w-100" onclick="cargarDatosPaciente()">
+                                    <i class="ri-user-shared-line me-1"></i> Cargar Datos del Paciente
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <button type="button" class="btn btn-outline-secondary w-100" data-bs-toggle="collapse" data-bs-target="#datos-factura">
+                                    <i class="ri-edit-box-line me-1"></i> Otros Datos
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="collapse show" id="datos-factura">
+                            <div class="card card-body bg-light border-0 shadow-none">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Razón Social / Nombre</label>
+                                        <input type="text" class="form-control" name="BillingDetailsNames" value="@Model?.BillingDetailsNames" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Identificación</label>
+                                        <input type="text" class="form-control" name="BillingDetailsCiNumber" value="@Model?.BillingDetailsCiNumber" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Tipo</label>
+                                        <select class="form-select" name="BillingDetailsDocumentType">
+                                            <option value="05" selected='@(Model?.BillingDetailsDocumentType == "05")'>Cédula</option>
+                                            <option value="04" selected='@(Model?.BillingDetailsDocumentType == "04")'>RUC</option>
+                                            <option value="06" selected='@(Model?.BillingDetailsDocumentType == "06")'>Pasaporte</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Correo Electrónico</label>
+                                        <input type="email" class="form-control" name="BillingDetailsEmail" value="@Model?.BillingDetailsEmail" required>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <label class="form-label">Dirección</label>
+                                        <input type="text" class="form-control" name="BillingDetailsAddress" value="@Model?.BillingDetailsAddress">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Teléfono</label>
+                                        <input type="tel" class="form-control" name="BillingDetailsPhone" value="@Model?.BillingDetailsPhone">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5 class="text-primary mb-3">Detalle de Servicios</h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Descripción del Examen</th>
+                                        <th style="width: 100px;">Cant.</th>
+                                        <th style="width: 150px;">Precio Unit.</th>
+                                        <th style="width: 100px;">Desc %</th>
+                                        <th style="width: 150px;">Total</th>
+                                        <th style="width: 50px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="invoice-items-body"></tbody>
+                            </table>
+                        </div>
+                        <button type="button" class="btn btn-soft-warning btn-sm" onclick="agregarItemLibre()">
+                            <i class="ri-add-line align-middle"></i> Agregar Fila
+                        </button>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5 class="text-primary mb-3">Formas de Pago</h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Forma de Pago</th>
+                                        <th style="width: 200px;">Monto ($)</th>
+                                        <th>Referencia/Lote</th>
+                                        <th style="width: 50px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="payment-methods-body"></tbody>
+                            </table>
+                        </div>
+                        <button type="button" class="btn btn-soft-primary btn-sm" onclick="agregarMetodoPago()">
+                            <i class="ri-money-dollar-circle-line"></i> Agregar Pago
+                        </button>
+                    </div>
+
+                    <div class="row justify-content-end">
+                        <div class="col-md-4">
+                            <div class="card bg-light border-0">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between h4 mb-0">
+                                        <span>TOTAL:</span>
+                                        <input type="text" class="border-0 bg-transparent text-end fw-bold w-50" id="TotalFactura" name="TotalFactura" readonly value="@(Model?.TotalFactura.ToString("F2") ?? "0.00")">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="alert alert-warning text-center" id="alert-pendiente">
+                                Pendiente de cubrir: $<span id="total-pendiente">0.00</span>
+                            </div>
+                            <button type="submit" class="btn btn-success btn-lg w-100 shadow-sm" id="btnFinalizar">
+                                <i class="ri-save-3-line me-1"></i> FINALIZAR FACTURA
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let contadorItems = 0;
+        let contadorPagos = 0;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            // Rehidratar datos si el modelo regresó con errores
+            const itemsExistentes = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model?.Items));
+            const pagosExistentes = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model?.PaymentMethods));
+
+            if (itemsExistentes && itemsExistentes.length > 0) {
+                itemsExistentes.forEach(item => {
+                    agregarItemLibre(item.Description, item.Quantity, item.UnitPrice, item.DescuentoPorcentaje);
+                });
+            } else {
+                agregarItemLibre();
+            }
+
+            if (pagosExistentes && pagosExistentes.length > 0) {
+                pagosExistentes.forEach(pago => {
+                    agregarMetodoPago(pago.PaymentMethod, pago.PaymentAmount, pago.PaymentNotes);
+                });
+            }
+
+            recalcularTotal();
+        });
+
+           function agregarItemLibre(desc = '', cant = 1, precio = 0, descP = 0) {
+            const tbody = document.getElementById('invoice-items-body');
+            const index = contadorItems++;
+            const row = document.createElement('tr');
+
+            // Generar un código aleatorio de 5 dígitos para cumplir con el [Required] del modelo
+            const codigoAleatorio = Math.floor(10000 + Math.random() * 90000);
+
+            row.innerHTML = `
+                <input type="hidden" name="Items[${index}].Code" value="${codigoAleatorio}">
+
+                <td>
+                    <input type="text" class="form-control" name="Items[${index}].Description"
+                           value="${desc}" placeholder="Ej. Biometría Hemática" required>
+                </td>
+                <td>
+                    <input type="number" class="form-control cantidad" name="Items[${index}].Quantity"
+                           min="1" value="${cant}" onchange="recalcularTotal()">
+                </td>
+                <td>
+                    <input type="number" class="form-control precio" name="Items[${index}].UnitPrice"
+                           step="0.01" value="${parseFloat(precio).toFixed(2)}" onchange="recalcularTotal()">
+                </td>
+                <td>
+                    <input type="number" class="form-control desc" name="Items[${index}].DescuentoPorcentaje"
+                           value="${descP}" min="0" max="100" onchange="recalcularTotal()">
+                </td>
+                <td>
+                    <input type="text" class="form-control total-item input-readonly" readonly value="0.00">
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-outline-danger btn-sm"
+                            onclick="this.closest('tr').remove(); recalcularTotal();">
+                        <i class="ri-delete-bin-line"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+            recalcularTotal();
+        }
+        function recalcularTotal() {
+            let totalGral = 0;
+            document.querySelectorAll('#invoice-items-body tr').forEach(row => {
+                const cant = parseFloat(row.querySelector('.cantidad').value || 0);
+                const precio = parseFloat(row.querySelector('.precio').value || 0);
+                const desc = parseFloat(row.querySelector('.desc').value || 0);
+                const subtotal = (cant * precio) * (1 - (desc / 100));
+                row.querySelector('.total-item').value = subtotal.toFixed(2);
+                totalGral += subtotal;
+            });
+            document.getElementById('TotalFactura').value = totalGral.toFixed(2);
+            validarPagos();
+        }
+
+        function agregarMetodoPago(metodo = 'efectivo', monto = 0, ref = '') {
+            const tbody = document.getElementById('payment-methods-body');
+            const index = contadorPagos++;
+            const row = document.createElement('tr');
+
+            row.innerHTML = `
+                <td>
+                    <select class="form-select" name="PaymentMethods[${index}].PaymentMethod">
+                        <option value="efectivo" ${metodo === 'efectivo' ? 'selected' : ''}>Efectivo</option>
+                        <option value="transferencia" ${metodo === 'transferencia' ? 'selected' : ''}>Transferencia</option>
+                        <option value="tarjeta_debito" ${metodo === 'tarjeta_debito' ? 'selected' : ''}>Tarjeta de débito</option>
+                        <option value="tarjeta_credito" ${metodo === 'tarjeta_credito' ? 'selected' : ''}>Tarjeta de crédito</option>
+                    </select>
+                </td>
+                <td><input type="number" class="form-control pay-amt" name="PaymentMethods[${index}].PaymentAmount" step="0.01" value="${parseFloat(monto).toFixed(2)}" onchange="validarPagos()"></td>
+                <td><input type="text" class="form-control" name="PaymentMethods[${index}].PaymentNotes" value="${ref}" placeholder="Referencia/Lote"></td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove(); validarPagos();">
+                        <i class="ri-close-line"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+            validarPagos();
+        }
+
+        function validarPagos() {
+            const total = parseFloat(document.getElementById('TotalFactura').value || 0);
+            let pagado = 0;
+            document.querySelectorAll('.pay-amt').forEach(input => pagado += parseFloat(input.value || 0));
+
+            const diff = total - pagado;
+            const pText = document.getElementById('total-pendiente');
+            pText.textContent = Math.abs(diff).toFixed(2);
+
+            const alert = document.getElementById('alert-pendiente');
+            const btn = document.getElementById('btnFinalizar');
+
+            if (Math.abs(diff) < 0.01 && total > 0) {
+                alert.className = "alert alert-success text-center mt-2";
+                btn.disabled = false;
+            } else {
+                alert.className = "alert alert-warning text-center mt-2";
+                btn.disabled = total > 0; // Bloquear si no coincide
+            }
+        }
+
+        function cargarDatosPaciente() {
+            const pId = document.getElementById("AppointmentPatientId").value;
+            fetch(`@Url.Action("GetPatientDetails", "Patient")?patientId=${pId}`)
+                .then(r => r.json())
+                .then(data => {
+                    const f = document.getElementById('billingForm');
+                    f.querySelector('[name="BillingDetailsNames"]').value = `${data.patientFirstsurname || ''} ${data.patientFirstname || ''}`.trim();
+                    f.querySelector('[name="BillingDetailsCiNumber"]').value = data.patientDocumentnumber || '';
+                    f.querySelector('[name="BillingDetailsEmail"]').value = data.patientEmail || '';
+                    f.querySelector('[name="BillingDetailsAddress"]').value = data.patientAddress || '';
+                    f.querySelector('[name="BillingDetailsPhone"]').value = data.patientCellularPhone || '';
+                });
+        }
+    </script>
+}

@@ -28,7 +28,8 @@ const AppointmentManager = {
                 appointmentIdInput: data.appointmentId,
                 appointmentStatus: data.status,
                 appointmentPatientId: data.patientId,
-                appointmentPaymentStatus: data.paymentStatus
+                appointmentPaymentStatus: data.paymentStatus,
+                hasLaboratoriesInput: data.hasLaboratories
             });
 
             // Mostrar/ocultar botones según el estado
@@ -69,6 +70,14 @@ const AppointmentManager = {
             $('#payCol').show();
         } else {
             $('#payCol').hide();
+        }
+
+        // ⬇️ NUEVA LÓGICA: Pagar Laboratorio
+        // Se muestra si el estado es 4 Y tiene laboratorios vinculados
+        if (status === 4 && hasLaboratories === true && (paymentStatusLab === 0 || !paymentStatusLab)) {
+            $('#payLaboratoryCol').show();
+        } else {
+            $('#payLaboratoryCol').hide();
         }
     },
 
@@ -250,6 +259,23 @@ const AppointmentManager = {
 
         } catch (error) {
             ErrorHandler.showAlert('Faltan datos para procesar el pago');
+        }
+    },
+
+    /**
+     * Proceder al pago de laboratorios
+     */
+    payLaboratory() {
+        try {
+            const appointmentId = FormHelper.getRequiredValue('appointmentIdInput');
+            const patientId = FormHelper.getRequiredValue('appointmentPatientId');
+
+            // Aquí usamos el ID de la cita o podrías usar el ID de consulta si lo necesitas
+            window.location.href =
+                `${AppConfig.ENDPOINTS.BILL_LABORATORY}?appointmentId=${appointmentId}&patientId=${patientId}`;
+
+        } catch (error) {
+            ErrorHandler.showAlert('Faltan datos para procesar el pago de laboratorios');
         }
     },
 

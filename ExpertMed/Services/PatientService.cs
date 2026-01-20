@@ -745,6 +745,10 @@ namespace ExpertMed.Services
                                     CapillaryHemoglobin = GetNullable<decimal>(reader, "capillary_hemoglobin"),
                                     CapillaryGlucose = GetNullable<decimal>(reader, "capillary_glucose"),
                                     Spo2 = GetNullable<decimal>(reader, "spo2"),
+                                    // ✅ NUEVOS CAMPOS MAREADOS DESDE EL SP ACTUALIZADO
+                                    LastPersonalBackground = GetNullableString(reader, "last_personal_background"),
+                                    LastAllergiesIds = GetNullableString(reader, "last_allergies_ids"),
+                                    LastSurgeriesIds = GetNullableString(reader, "last_surgeries_ids")
 
                                 };
                             }

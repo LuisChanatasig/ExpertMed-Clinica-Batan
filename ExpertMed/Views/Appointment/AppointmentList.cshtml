@@ -288,28 +288,39 @@
                                     <span class="badge @cls">@txt</span>
                                 </td>
 
-
                                 <td>
-                                    @if (appt.AppointmentStatus == 4 && appt.AppointmentPaymentStatus == 0)
-                                    {
-                                        <button class="btn btn-sm btn-soft-success"
-                                                onclick="setAppointmentData(@appt.AppointmentId, @appt.AppointmentPatientId); payAppointment();">
-                                            <i class="ri-money-dollar-circle-line"></i> Pagar
-                                        </button>
-                                    }
-                                    else if (appt.AppointmentStatus == 2 || (appt.AppointmentStatus == 4 && appt.AppointmentPaymentStatus == 1))
-                                    {
-                                        <button class="btn btn-sm btn-soft-secondary" disabled>
-                                            <i class="ri-edit-line"></i> Revisar
-                                        </button>
-                                    }
-                                    else
-                                    {
-                                        <button class="btn btn-sm btn-soft-info"
-                                                onclick="openOptionModal(@appt.AppointmentId, @appt.AppointmentStatus, @appt.AppointmentPatientId)">
-                                            <i class="ri-edit-line"></i> Revisar
-                                        </button>
-                                    }
+                                    <div class="d-flex gap-1">
+                                        @if (appt.AppointmentStatus == 4 && appt.AppointmentPaymentStatus == 0)
+                                        {
+                                            <button class="btn btn-sm btn-soft-success"
+                                                    onclick="setAppointmentData(@appt.AppointmentId, @appt.AppointmentPatientId); payAppointment();">
+                                                <i class="ri-money-dollar-circle-line"></i> Pagar
+                                            </button>
+                                        }
+
+                                        @* NUEVO BOTÓN: Pagar Laboratorio directamente desde la fila *@
+                                        @if (appt.HasLaboratories && perfilId != 2)
+                                        {
+                                            <button class="btn btn-sm btn-soft-warning" title="Pagar Laboratorios"
+                                                    onclick="setAppointmentData(@appt.AppointmentId, @appt.AppointmentPatientId); AppointmentManager.payLaboratory();">
+                                                <i class="ri-flask-line"></i> Lab.
+                                            </button>
+                                        }
+
+                                        @if (appt.AppointmentStatus == 2 || (appt.AppointmentStatus == 4 && appt.AppointmentPaymentStatus == 1))
+                                        {
+                                            <button class="btn btn-sm btn-soft-secondary" disabled>
+                                                <i class="ri-edit-line"></i> Revisar
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-sm btn-soft-info"
+                                                    onclick="openOptionModal(@appt.AppointmentId, @appt.AppointmentStatus, @appt.AppointmentPatientId)">
+                                                <i class="ri-edit-line"></i> Revisar
+                                            </button>
+                                        }
+                                    </div>
                                 </td>
 
 
@@ -323,66 +334,62 @@
 </div>
 
 
-
-<!-- Modal Opciones Cita -->
-<!-- Modal Opciones Cita - Agregar input hidden para el estado de pago -->
-<div class="modal fade" id="optionModal" tabindex="-1"
-     aria-labelledby="optionModalLabel" aria-hidden="true">
+<div class="modal fade" id="optionModal" tabindex="-1" aria-labelledby="optionModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <input type="hidden" id="appointmentIdInput" />
             <input type="hidden" id="appointmentStatus" />
             <input type="hidden" id="appointmentPatientId" />
-            <input type="hidden" id="appointmentPaymentStatus" /> <!-- NUEVO: Estado de pago -->
-            <input type="hidden" id="perfilIdInput" value="@perfilId" />
+            <input type="hidden" id="appointmentPaymentStatus" />
+            <input type="hidden" id="hasLaboratoriesInput" /> <input type="hidden" id="perfilIdInput" value="@perfilId" />
 
             <div class="modal-header">
                 <h5 class="modal-title" id="optionModalLabel">
                     ¿Qué desea hacer con esta cita?
                 </h5>
-                <button type="button" class="btn-close"
-                        data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="row g-3">
                     <div class="col-4" id="rescheduleCol">
-                        <button class="btn btn-soft-info btn-sm w-100"
-                                onclick="openRescheduleModal()">
+                        <button class="btn btn-soft-info btn-sm w-100" onclick="AppointmentManager.openRescheduleModal()">
                             <i class="ri-user-smile-line"></i> Reprogramar
                         </button>
                     </div>
                     <div class="col-4" id="cancelCol">
-                        <button class="btn btn-soft-danger btn-sm w-100"
-                                onclick="cancelAppointment()">
+                        <button class="btn btn-soft-danger btn-sm w-100" onclick="AppointmentManager.cancelAppointment()">
                             <i class="ri-error-warning-fill"></i> Cancelar
                         </button>
                     </div>
 
                     <div class="col-4" id="startConsultCol">
-                        <button class="btn btn-soft-dark btn-sm w-100"
-                                onclick="startConsultation()">
+                        <button class="btn btn-soft-dark btn-sm w-100" onclick="AppointmentManager.startConsultation()">
                             <i class="las la-file-medical-alt"></i> Empezar Consulta
                         </button>
                     </div>
                     <div class="col-4" id="startFollowupCol">
-                        <button class="btn btn-soft-dark btn-sm w-100"
-                                onclick="startFollowupConsultation()">
+                        <button class="btn btn-soft-dark btn-sm w-100" onclick="AppointmentManager.startFollowupConsultation()">
                             <i class="las la-file-medical-alt"></i> Seguimiento
                         </button>
                     </div>
+
                     <div class="col-4" id="reminderCol">
-                        <button class="btn btn-soft-success btn-sm w-100"
-                                onclick="sendReminderMessage()">
+                        <button class="btn btn-soft-success btn-sm w-100" onclick="AppointmentManager.sendReminder()">
                             <i class="ri-whatsapp-fill"></i> Recordatorio
                         </button>
                     </div>
+
                     @if (perfilId != 2)
                     {
-                        <!-- MODIFICADO: Solo mostrar si no está pagada -->
                         <div class="col-4" id="payCol" style="display: none;">
-                            <button class="btn btn-soft-success btn-sm w-100"
-                                    onclick="payAppointment()">
+                            <button class="btn btn-soft-success btn-sm w-100" onclick="AppointmentManager.payAppointment()">
                                 <i class="ri-secure-payment-line"></i> Pagar cita
+                            </button>
+                        </div>
+
+                        <div class="col-4" id="payLaboratoryCol" style="display: none;">
+                            <button class="btn btn-soft-warning btn-sm w-100" onclick="AppointmentManager.payLaboratory()">
+                                <i class="ri-flask-line"></i> Pagar Lab.
                             </button>
                         </div>
 
@@ -390,16 +397,15 @@
                             <button class="btn btn-soft-primary btn-sm w-100"
                                     data-bs-toggle="offcanvas"
                                     data-bs-target="#vitalSignsCanvas"
-                                    onclick="prepareVitalSigns()">
+                                    onclick="AppointmentManager.prepareVitalSigns()">
                                 <i class="ri-heart-pulse-line"></i> Signos Vitales
                             </button>
                         </div>
                     }
 
                     <div class="col-4" id="viewHistoryCol">
-                        <button class="btn btn-soft-primary btn-sm w-100"
-                                onclick="viewPatientHistory()">
-                            <i class="ri-history line"></i> Ver historial clínico
+                        <button class="btn btn-soft-primary btn-sm w-100" onclick="AppointmentManager.viewPatientHistory()">
+                            <i class="ri-history-line"></i> Ver historial
                         </button>
                     </div>
                 </div>
@@ -687,7 +693,8 @@
             NEW_CONSULTATION: '@Url.Action("NewConsultation", "Consultation")',
             CONSULTATION_FOLLOWUP: '@Url.Action("ConsultationFollowUp", "Consultation")',
             CONSULTATION_LIST: '@Url.Action("ConsultationList", "Consultation")',
-            BILLING: '@Url.Action("Facturacion", "Billing")'
+            BILLING: '@Url.Action("Facturacion", "Billing")',
+            BILL_LABORATORY: '@Url.Action("FacturacionLaboratorio", "Billing")'
         };
     </script>
     <script>
