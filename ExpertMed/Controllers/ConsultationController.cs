@@ -435,9 +435,6 @@ namespace ExpertMed.Controllers
             return View(viewModel);
         }
 
-
-
-
         [HttpGet]
         public async Task<IActionResult> ConsultationUpdate(int consultationId)
         {
