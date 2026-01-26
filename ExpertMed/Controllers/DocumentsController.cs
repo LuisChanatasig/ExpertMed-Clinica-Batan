@@ -3098,6 +3098,92 @@ namespace ExpertMed.Controllers
             return File(pdfBytes, "application/pdf", $"pedido_imagenes_{randomNumber}.pdf");
         }
 
+
+        public async Task<IActionResult> OtherStudiesDoc(int consultationId)
+        {
+            var consultation = _consultationService.GetConsultationDetails(consultationId);
+            if (consultation == null)
+            {
+                TempData["ErrorMessage"] = "Consulta no encontrada.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            var patient = await _patientService.GetPatientFullByIdAsync(consultation.ConsultationPatient);
+            if (patient == null)
+            {
+                TempData["ErrorMessage"] = "Paciente no encontrado.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            // Ruta a la plantilla (puedes usar la misma de imagenología o una específica)
+            string templatePath = Path.Combine(_webHostEnvironment.WebRootPath, "plantillas", "otros_estudios_expermed.pdf");
+            byte[] pdfBytes;
+
+            using (var memoryStream = new MemoryStream())
+            {
+                using (var pdfReader = new PdfReader(templatePath))
+                using (var pdfStamper = new PdfStamper(pdfReader, memoryStream))
+                {
+                    AcroFields formFields = pdfStamper.AcroFields;
+
+                    // Logo y Datos del Médico
+                    InsertImageFromField(pdfStamper, formFields, "txt_imagen_logo_2", consultation.UsersEstablishmentLogo);
+                    formFields.SetField("txt_datos_medico", ConstruirDatosMedico(consultation));
+
+                    // Datos del Paciente
+                    formFields.SetField("txt_fecha", consultation.ConsultationCreationdate?.ToShortDateString() ?? "N/A");
+                    formFields.SetField("txt_apellido", $"{patient.PatientFirstsurname} {patient.PatientSecondlastname}".Trim());
+                    formFields.SetField("txt_nombres", $"{patient.PatientFirstname} {patient.PatientMiddlename}".Trim());
+                    formFields.SetField("txt_cedula", patient.PatientDocumentnumber ?? "N/A");
+                    formFields.SetField("txt_edad", patient.PatientAge.ToString());
+
+                    // =============================================================
+                    // DIAGNÓSTICOS (Reutilizando tu lógica de concatenación)
+                    // =============================================================
+                    var diagnosisList = await _selectService.GetAllDiagnosisAsync();
+                    var diagnosisNames = consultation.DiagnosisConsultations?
+                        .Select(d => diagnosisList.FirstOrDefault(x => x.DiagnosisId == d.DiagnosisDiagnosisid)?.DiagnosisName ?? "N/A")
+                        .ToList() ?? new List<string>();
+
+                    formFields.SetField("txt_diagnosticos", diagnosisNames.Any() ? string.Join(", ", diagnosisNames) : "N/A");
+
+                    // =============================================================
+                    // OTROS ESTUDIOS / PROCEDIMIENTOS ESPECIALES (CAMBIO CLAVE)
+                    // =============================================================
+                    // Aquí recorremos la nueva lista que añadimos al DTO y al SP
+                    string estudiosTexto = "";
+                    string indicacionesTexto = "";
+
+                    if (consultation.OtherStudies != null && consultation.OtherStudies.Any())
+                    {
+                        // Opción A: Listarlos en un solo campo de texto
+                        estudiosTexto = string.Join("\n", consultation.OtherStudies.Select(s => $"- {s.StudyName}"));
+
+                        // Opción B: Si tu PDF tiene un campo de indicaciones separado
+                        indicacionesTexto = string.Join("\n", consultation.OtherStudies
+                            .Where(s => !string.IsNullOrEmpty(s.StudyIndication))
+                            .Select(s => $"{s.StudyName}: {s.StudyIndication}"));
+                    }
+                    else
+                    {
+                        estudiosTexto = "No se registraron estudios especiales.";
+                    }
+
+                    // Mapeo a los campos del PDF (ajusta los nombres "txt_estudios" según tu PDF)
+                    formFields.SetField("txt_estudios", estudiosTexto);
+                    formFields.SetField("txt_indicaciones_especiales", indicacionesTexto);
+
+                    formFields.SetField("txt_direccion", consultation.UsersEstablishmentAddress ?? "N/A");
+
+                    pdfStamper.FormFlattening = true;
+                    pdfStamper.Close();
+                }
+                pdfBytes = memoryStream.ToArray();
+            }
+
+            var randomNumber = new Random().Next(1000, 9999);
+            return File(pdfBytes, "application/pdf", $"pedido_estudios_especiales_{randomNumber}.pdf");
+        }
         /// <summary>
         /// Construye la información completa del médico en formato texto
         /// </summary>

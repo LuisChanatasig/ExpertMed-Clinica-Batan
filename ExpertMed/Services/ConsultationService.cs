@@ -313,6 +313,7 @@ namespace ExpertMed.Services
             List<ConsultaLaboratorioDTO> laboratories_consultation,
             List<ConsultaImagenDTO> images_consutlation,
             List<ConsultaDiagnosticoDTO> diagnosis_consultation,
+            List<ConsultaOtroEstudioDTO> other_studies,
             List<ConsultaProcedimientoDTO> procedures
         )
         {
@@ -492,14 +493,28 @@ namespace ExpertMed.Services
             AddSqlParameter(command, "@images", CreateDataTable(images_consutlation));
             AddSqlParameter(command, "@diagnostics", CreateDataTable(diagnosis_consultation));
             AddSqlParameter(command, "@procedures", CreateDataTable(procedures));
-
+            AddSqlParameter(command, "@other_studies", CreateOtherStudiesDataTable(other_studies));
             await connection.OpenAsync();
             await command.ExecuteNonQueryAsync();
 
             return (int)idParam.Value;
         }
 
+        private DataTable CreateOtherStudiesDataTable(List<ConsultaOtroEstudioDTO> studies)
+        {
+            DataTable table = new DataTable();
+            table.Columns.Add("study_name", typeof(string));
+            table.Columns.Add("study_indication", typeof(string));
 
+            if (studies != null)
+            {
+                foreach (var item in studies)
+                {
+                    table.Rows.Add(item.StudyName, item.StudyIndication);
+                }
+            }
+            return table;
+        }
         private void AddSqlParameter(SqlCommand command, string paramName, object value)
         {
             if (value == null)
@@ -551,6 +566,7 @@ namespace ExpertMed.Services
                 MedicationsConsultations = new List<ConsultaMedicamentoDTO>(),
                 Procedures = new List<ConsultaProcedimientoDTO>(),
                 SurgeriesConsultations = new List<ConsultaCirugiaDTO>(),
+                OtherStudies = new List<ConsultaOtroEstudioDTO>(),
                 FamiliaryBackground = new FamiliaryBackground(),
                 OrgansSystem = new OrgansSystem(),
                 PhysicalExamination = new PhysicalExamination(),
@@ -871,6 +887,16 @@ namespace ExpertMed.Services
                 };
             }
 
+            reader.NextResult();
+            while (reader.Read())
+            {
+                consulta.OtherStudies.Add(new ConsultaOtroEstudioDTO
+                {
+                    // Asegúrate de que los nombres coincidan con el SELECT del SP
+                    StudyName = S("study_name"),
+                    StudyIndication = S("study_indication")
+                });
+            }
             return consulta;
         }
 

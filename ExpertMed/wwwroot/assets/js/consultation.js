@@ -82,6 +82,66 @@ document.getElementById("selectMedications").addEventListener("click", function 
     tableBody.appendChild(row);
 });
 
+// --- Otros Estudios / Procedimientos Especiales ---
+document.addEventListener('DOMContentLoaded', function () {
+    // Usamos delegación o aseguramos que los elementos existan
+    const btnAdd = document.getElementById('addOtherStudy');
+    const inputName = document.getElementById('otherStudyName');
+    const inputIndication = document.getElementById('otherStudyIndication');
+    const tableBody = document.querySelector('#tableOtherStudies tbody');
+
+    if (btnAdd) {
+        btnAdd.addEventListener('click', function (e) {
+            e.preventDefault(); // Evita cualquier comportamiento por defecto
+
+            const name = inputName.value.trim();
+            const indication = inputIndication.value.trim();
+
+            if (name === "") {
+                inputName.classList.add('is-invalid');
+                Swal.fire("Aviso", "El nombre del estudio es obligatorio.", "warning");
+                return;
+            }
+            inputName.classList.remove('is-invalid');
+
+            // Crear la fila con clases consistentes para el DTO
+            const row = `
+                <tr>
+                    <td class="study-name">${name}</td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm study-indication" value="${indication}">
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-outline-danger btn-sm remove-study">
+                            <i class="ri-delete-bin-line"></i>
+                        </button>
+                    </td>
+                </tr>`;
+
+            tableBody.insertAdjacentHTML('beforeend', row);
+
+            // IMPORTANTE: Notificar al sistema de auto-save
+            if (typeof isFormChanged !== 'undefined') isFormChanged = true;
+
+            // Limpiar y dar foco
+            inputName.value = "";
+            inputIndication.value = "";
+            inputName.focus();
+        });
+    }
+
+    // Delegación de eventos para eliminar (más eficiente)
+    if (tableBody) {
+        tableBody.addEventListener('click', function (e) {
+            const btnDelete = e.target.closest('.remove-study');
+            if (btnDelete) {
+                btnDelete.closest('tr').remove();
+                if (typeof isFormChanged !== 'undefined') isFormChanged = true;
+            }
+        });
+    }
+});
+
 
 // Guardar medicamento como favorito
 document.addEventListener("click", function (event) {
@@ -881,6 +941,16 @@ function getFormData(isFinal = false) {
         PersonalBackgroundOtherObservation: getValue("personal_background_other_observation")
     };
 
+    // ---- Otros Estudios (Añadir esto junto a los otros TVPs) ----
+  
+    dto.OtherStudies = Array.from(
+        document.querySelectorAll("#tableOtherStudies tbody tr")
+    ).map(tr => ({
+        // Leemos el texto de la primera celda y el valor del input de la segunda
+        StudyName: tr.querySelector('.study-name').textContent.trim(),
+        StudyIndication: tr.querySelector('.study-indication').value.trim()
+    }));
+
     return dto;
 }
 
@@ -1039,6 +1109,22 @@ function preloadDiagnosis(id, name, presumptive, definitive) {
     tableBody.appendChild(row);
 }
 
+function preloadOtherStudy(name, indication) {
+    const tableBody = document.querySelector("#tableOtherStudies tbody");
+    if (!tableBody) return;
+
+    const row = document.createElement("tr");
+    row.innerHTML = `
+        <td>${name}</td>
+        <td>${indication}</td>
+        <td class="text-center">
+            <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove(); isFormChanged = true;">
+                <i class="ri-delete-bin-5-line"></i>
+            </button>
+        </td>
+    `;
+    tableBody.appendChild(row);
+}
 function preloadMedication(id, name, amount, observation) {
     const tableBody = document.querySelector("#selectedMedicationsTable tbody");
     if (!tableBody) return;

@@ -332,6 +332,7 @@ class="btn btn-sm btn-outline-primary @((ViewBag.HasNext ?? false) ? "" : "disab
                 <option value="receta">Receta</option>
                 <option value="laboratorio">Laboratorio</option>
                 <option value="imagen">Imagen</option>
+                <option value="otros">Otros Estudios</option>
             </select>
         </div>
     </form>
@@ -426,6 +427,7 @@ class="btn btn-sm btn-outline-primary @((ViewBag.HasNext ?? false) ? "" : "disab
                 formulario: '@Url.Action("MedicalForm", "Documents")',
                 formulario2: '@Url.Action("MedicalForm2", "Documents")',
                 receta: '@Url.Action("MedicationRecipe", "Documents")',
+                otros: '@Url.Action("OtherStudiesDoc", "Documents")',
                 laboratorio: '@Url.Action("LaboratoryDoc", "Documents")',
                 imagen: '@Url.Action("ImageDoc", "Documents")'
             };

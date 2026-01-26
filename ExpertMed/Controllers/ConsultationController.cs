@@ -334,6 +334,7 @@ namespace ExpertMed.Controllers
                     consultaDto.LaboratoriesConsultations,
                     consultaDto.ImagesConsultations,
                     consultaDto.DiagnosisConsultations,
+                    consultaDto.OtherStudies, // <--- NUEVO PARÁMETRO
                     consultaDto.Procedures
                 );
 

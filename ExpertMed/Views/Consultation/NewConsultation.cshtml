@@ -2792,54 +2792,7 @@
             });
         })();
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const btnAdd = document.getElementById('addOtherStudy');
-            const inputName = document.getElementById('otherStudyName');
-            const inputIndication = document.getElementById('otherStudyIndication');
-            const tableBody = document.querySelector('#tableOtherStudies tbody');
-
-            btnAdd.addEventListener('click', function() {
-                const name = inputName.value.trim();
-                const indication = inputIndication.value.trim();
-
-                if (name === "") {
-                    inputName.classList.add('is-invalid');
-                    return;
-                }
-                inputName.classList.remove('is-invalid');
-
-                const row = `
-                    <tr>
-                        <td>
-                            <input type="hidden" name="OtherStudyNames[]" value="${name}">
-                            <strong>${name}</strong>
-                        </td>
-                        <td>
-                            <input type="text" name="OtherStudyIndications[]" class="form-control form-control-sm" value="${indication}">
-                        </td>
-                        <td class="text-center">
-                            <button type="button" class="btn btn-outline-danger btn-sm remove-study">
-                                <i class="ri-delete-bin-line"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-
-                tableBody.insertAdjacentHTML('beforeend', row);
-
-                // Limpiar campos y dar foco al nombre para el siguiente ingreso
-                inputName.value = "";
-                inputIndication.value = "";
-                inputName.focus();
-            });
-
-            // Eliminar fila
-            tableBody.addEventListener('click', function(e) {
-                if (e.target.closest('.remove-study')) {
-                    e.target.closest('tr').remove();
-                }
-            });
-        });
+       
     </script>
 
 

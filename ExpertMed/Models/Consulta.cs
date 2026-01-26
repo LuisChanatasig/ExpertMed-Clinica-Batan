@@ -113,7 +113,7 @@ namespace ExpertMed.Models
         public List<ConsultaImagenDTO> ImagesConsultations { get; set; } // Lista de imágenes asociadas
         public List<ConsultaDiagnosticoDTO> DiagnosisConsultations { get; set; }
         public List<ConsultaProcedimientoDTO> Procedures { get; set; } = new();
-
+        public List<ConsultaOtroEstudioDTO> OtherStudies { get; set; } = new List<ConsultaOtroEstudioDTO>();
         public OrgansSystem OrgansSystem { get; set; } // Órganos y sistemas asociados
         public PhysicalExamination PhysicalExamination { get; set; } // Examen físico asociado
         public FamiliaryBackground FamiliaryBackground { get; set; } // Antecedentes familiares asociados
@@ -230,6 +230,11 @@ namespace ExpertMed.Models
     {
         public string? Procedure_Name { get; set; }
         public DateTime? Procedure_Date { get; set; }
+    }
+    public class ConsultaOtroEstudioDTO
+    {
+        public string? StudyName { get; set; }
+        public string? StudyIndication { get; set; }
     }
 
 }

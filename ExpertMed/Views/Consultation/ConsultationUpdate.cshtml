@@ -2083,7 +2083,46 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>                        <!-- #endregion Laboratories-->
+                        </div>             
+                        <!-- #endregion Laboratories-->
+                                                <div class="row mt-4">
+                            <div class="col-xxl-12 col-lg-12">
+                                <div class="card border-start border-info">
+                                    <div class="card-header bg-light">
+                                        <h6 class="card-title mb-0 text-info">Otros Estudios / Procedimientos Especiales</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row g-2">
+                                            <div class="col-lg-5">
+                                                <input type="text" id="otherStudyName" class="form-control" placeholder="Nombre del estudio (ej: Biopsia de piel)">
+                                            </div>
+                                            <div class="col-lg-5">
+                                                <input type="text" id="otherStudyIndication" class="form-control" placeholder="Indicación específica (opcional)">
+                                            </div>
+                                            <div class="col-lg-2">
+                                                <button type="button" class="btn btn-info w-100" id="addOtherStudy">
+                                                    <i class="ri-add-circle-line"></i> Agregar
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div class="table-responsive mt-3">
+                                            <table class="table table-sm table-bordered" id="tableOtherStudies">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>Estudio</th>
+                                                        <th>Indicación / Detalle</th>
+                                                        <th width="80px" class="text-center">Acción</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <!--region certificado medico-->
                         <div class="row">
                             <div class="col-xxl-12 col-lg-12">
@@ -2862,4 +2901,46 @@
             console.log('Certificado médico cargado');
         });
     </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Cargando otros estudios/procedimientos...');
+
+            @if (Model?.Consultation?.OtherStudies != null && Model.Consultation.OtherStudies.Any())
+            {
+                    foreach (var estudio in Model.Consultation.OtherStudies)
+                    {
+                            // Escapamos caracteres especiales para evitar errores de sintaxis JS
+                            var studyName = estudio.StudyName?.Replace("'", "\\'").Replace("\n", " ") ?? "";
+                            var studyIndication = estudio.StudyIndication?.Replace("'", "\\'").Replace("\n", " ") ?? "";
+
+                            <text>
+                            if (typeof window.preloadOtherStudy === 'function') {
+                                window.preloadOtherStudy('@Html.Raw(studyName)', '@Html.Raw(studyIndication)');
+                            } else {
+                                // Fallback en caso de que consultation.js no haya cargado la función aún
+                                const tableBody = document.querySelector("#tableOtherStudies tbody");
+                                if (tableBody) {
+                                    const row = `
+                                        <tr>
+                                            <td class="study-name">@Html.Raw(studyName)</td>
+                                            <td>
+                                                <input type="text" class="form-control form-control-sm study-indication" value="@Html.Raw(studyIndication)">
+                                            </td>
+                                            <td class="text-center">
+                                                <button type="button" class="btn btn-outline-danger btn-sm remove-study" onclick="this.closest('tr').remove();">
+                                                    <i class="ri-delete-bin-line"></i>
+                                                </button>
+                                            </td>
+                                        </tr>`;
+                                    tableBody.insertAdjacentHTML('beforeend', row);
+                                }
+                            }
+                            </text>
+                    }
+            }
+            console.log('Carga de estudios completada');
+        });
+    </script>
+
+
 }
