@@ -943,14 +943,18 @@ function getFormData(isFinal = false) {
 
     // ---- Otros Estudios (Añadir esto junto a los otros TVPs) ----
   
-    dto.OtherStudies = Array.from(
-        document.querySelectorAll("#tableOtherStudies tbody tr")
-    ).map(tr => ({
-        // Leemos el texto de la primera celda y el valor del input de la segunda
-        StudyName: tr.querySelector('.study-name').textContent.trim(),
-        StudyIndication: tr.querySelector('.study-indication').value.trim()
-    }));
+    dto.OtherStudies = Array.from(document.querySelectorAll("#tableOtherStudies tbody tr"))
+        .map(tr => {
+            const nameEl = tr.querySelector('.study-name');
+            const indicationEl = tr.querySelector('.study-indication');
 
+            // Si falta alguno de los elementos críticos, ignoramos o devolvemos vacío en lugar de romper
+            return {
+                StudyName: nameEl ? nameEl.textContent.trim() : "",
+                StudyIndication: indicationEl ? indicationEl.value.trim() : ""
+            };
+        })
+        .filter(study => study.StudyName !== ""); // Opcional: Elimina filas vacías del DTO
     return dto;
 }
 
@@ -1025,16 +1029,62 @@ async function autoSaveConsultation() {
         isSaving = false;
     }
 }
+/**
+ * Calcula el IMC automáticamente basándose en peso (kg) y talla (m).
+ * Se dispara al escribir en los inputs correspondientes.
+ */
+function calcularIMC() {
+    const peso = getDecimal("consultation_weight");
+    let talla = getDecimal("consultation_size");
+    const imcInput = document.getElementById("consultation_bmi");
 
-// Detectar cambios (debounced)
+    if (!imcInput) return;
+
+    if (peso > 0 && talla > 0) {
+        // Validación de seguridad: si el médico escribe 170 en lugar de 1.70
+        if (talla > 3) {
+            talla = talla / 100;
+        }
+
+        const imc = peso / (talla * talla);
+        imcInput.value = imc.toFixed(2);
+
+        // Marcamos el formulario como cambiado para que el auto-save lo procese
+        isFormChanged = true;
+    } else {
+        // Si los campos están vacíos o son 0, limpiamos el IMC
+        imcInput.value = "";
+    }
+}
+
+// Detectar cambios (debounced) e integrar cálculo de IMC
 function setupChangeDetection() {
     const form = $("consultationForm");
     if (!form) return;
+
     const markChanged = () => { isFormChanged = true; };
+
+    // --- INTEGRACIÓN DE CÁLCULO IMC ---
+    const weightInput = $("consultation_weight");
+    const sizeInput = $("consultation_size");
+
+    if (weightInput) {
+        weightInput.addEventListener("input", debounce(calcularIMC, 500));
+    }
+    if (sizeInput) {
+        sizeInput.addEventListener("input", debounce(calcularIMC, 500));
+    }
+    // ----------------------------------
+
     form.addEventListener("input", debounce(markChanged));
     form.addEventListener("change", debounce(markChanged));
-    ["#selectedMedicationsTable", "#selectedLaboratoriesTable",
-        "#selectedImagesTable", "#selectedDiagnosesTable", "#procedimientosTable"
+
+    [
+        "#selectedMedicationsTable",
+        "#selectedLaboratoriesTable",
+        "#selectedImagesTable",
+        "#selectedDiagnosesTable",
+        "#procedimientosTable"
     ].forEach(sel => {
         const table = document.querySelector(sel);
         if (table) {
@@ -1043,7 +1093,6 @@ function setupChangeDetection() {
         }
     });
 }
-
 // Iniciar / detener auto-guardado
 function startAutoSave() {
     setupChangeDetection();

@@ -634,7 +634,7 @@
                                     <label for="allergiesSelect"> Seleccione las alergias</label>
                                     <select class="form-control" id="allergiesSelect"
                                             name="allergiesSelect" data-choices data-choices-removeItem
-                                            multiple >
+                                            multiple>
                                         <option value="">En caso de no tener, escriba desconoce</option>
                                         @foreach (var allergies in Model.AllergiesTypes)
                                         {
@@ -649,7 +649,7 @@
 
                                     </select>
                                     <input type="hidden" id="selectallergiesId" name="selectallergiesId" value="@string.Join(",", Model.Consultation.AllergiesConsultations.Select(a => a.AllergiesCatalogid))">
-                              
+
 
                                 </div>
                                 <div class="invalid-feedback">
@@ -666,7 +666,7 @@
                                     </label>
                                     <select class="form-control" id="surgeriesSelect"
                                             name="surgeriesSelect" data-choices data-choices-removeItem
-                                            multiple >
+                                            multiple>
                                         <option value="">En caso de no tener, escriba desconoce</option>
                                         @foreach (var surgeries in Model.SurgeriesTypes)
                                         {
@@ -838,7 +838,7 @@
                             </div>
 
                             <div class="mb-3 personal-wrapper" id="personal_background_other_wrapper">
-                                <input type="text" class="form-control" 
+                                <input type="text" class="form-control"
                                        id="personal_background_other_observation" value="@Model.Consultation.PersonalBackground.PersonalBackgroundOtherObservation"
                                        placeholder="Especifique">
                             </div>
@@ -1827,7 +1827,6 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                               
                                             </tbody>
                                         </table>
                                     </div>
@@ -1897,7 +1896,7 @@
                                                     </option>
                                                 }
                                             </select>
-                                           @*  <button class="btn btn-outline-primary" type="button" id="btnNuevoMedicamento" data-bs-toggle="tooltip" title="Agregar nuevo medicamento">
+                                            @*  <button class="btn btn-outline-primary" type="button" id="btnNuevoMedicamento" data-bs-toggle="tooltip" title="Agregar nuevo medicamento">
                                                 <i class="mdi mdi-plus-circle"></i> Nuevo
                                             </button> *@
                                         </div>
@@ -2017,7 +2016,6 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                               
                                             </tbody>
                                         </table>
                                         <div class="mb-3 mt-4">
@@ -2083,9 +2081,9 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>             
+                        </div>
                         <!-- #endregion Laboratories-->
-                                                <div class="row mt-4">
+                        <div class="row mt-4">
                             <div class="col-xxl-12 col-lg-12">
                                 <div class="card border-start border-info">
                                     <div class="card-header bg-light">
@@ -2187,7 +2185,7 @@
 
                                             <!-- Observación (condicional) -->
                                             <div class="col-md-6" id="observacion_container" style="display: none;">
-                                                <div class="mb-3" >
+                                                <div class="mb-3">
                                                     <label for="cert_observacion" class="form-label">Observación</label>
                                                     <textarea class="form-control" name="observacion" id="cert_observacion" asp-for="Consultation.ConsultationDiseaseobservation" rows="2"></textarea>
                                                 </div>
@@ -2750,82 +2748,82 @@
             // Pre-cargar diagnósticos
             @if (Model?.Consultation?.DiagnosisConsultations != null)
             {
-                    @foreach (var diag in Model.Consultation.DiagnosisConsultations)
-                    {
-                            var diagInfo = Model.Diagnoses?.FirstOrDefault(d => d.DiagnosisId == diag.DiagnosisDiagnosisid);
-                            if (diagInfo != null)
-                            {
-                                    var diagName = diagInfo.DiagnosisName?.Replace("'", "\\'").Replace("\n", " ").Replace("\r", " ") ?? "";
-                                    <text>
-                                    if (typeof window.preloadDiagnosis === 'function') {
-                                        window.preloadDiagnosis(@diag.DiagnosisDiagnosisid, '@diagName', @diag.DiagnosisPresumptive.ToString().ToLower(), @diag.DiagnosisDefinitive.ToString().ToLower());
+                        @foreach (var diag in Model.Consultation.DiagnosisConsultations)
+                        {
+                                    var diagInfo = Model.Diagnoses?.FirstOrDefault(d => d.DiagnosisId == diag.DiagnosisDiagnosisid);
+                                    if (diagInfo != null)
+                                    {
+                                                var diagName = diagInfo.DiagnosisName?.Replace("'", "\\'").Replace("\n", " ").Replace("\r", " ") ?? "";
+                                                <text>
+                                                if (typeof window.preloadDiagnosis === 'function') {
+                                                    window.preloadDiagnosis(@diag.DiagnosisDiagnosisid, '@diagName', @diag.DiagnosisPresumptive.ToString().ToLower(), @diag.DiagnosisDefinitive.ToString().ToLower());
+                                                }
+                                                </text>
                                     }
-                                    </text>
-                            }
-                    }
+                        }
             }
 
             // Pre-cargar medicamentos
             @if (Model?.Consultation?.MedicationsConsultations != null)
             {
-                    @foreach (var med in Model.Consultation.MedicationsConsultations)
-                    {
-                            if (med.MedicationsMedicationsid.HasValue)
-                            {
-                                    var medInfo = Model.Medications?.FirstOrDefault(m => m.MedicationsId == med.MedicationsMedicationsid.Value);
-                                    if (medInfo != null)
+                        @foreach (var med in Model.Consultation.MedicationsConsultations)
+                        {
+                                    if (med.MedicationsMedicationsid.HasValue)
                                     {
-                                            var medName = (medInfo.MedicationsDescription ?? medInfo.MedicationsName)?.Replace("'", "\\'").Replace("\n", " ").Replace("\r", " ") ?? "";
-                                            var amount = (med.MedicationsAmount ?? "")?.Replace("'", "\\'") ?? "";
-                                            var obs = (med.MedicationsObservation ?? "")?.Replace("'", "\\'") ?? "";
-                                            <text>
-                                            if (typeof window.preloadMedication === 'function') {
-                                                window.preloadMedication(@med.MedicationsMedicationsid.Value, '@medName', '@amount', '@obs');
-                                            }
-                                            </text>
+                                                var medInfo = Model.Medications?.FirstOrDefault(m => m.MedicationsId == med.MedicationsMedicationsid.Value);
+                                                if (medInfo != null)
+                                                {
+                                                            var medName = (medInfo.MedicationsDescription ?? medInfo.MedicationsName)?.Replace("'", "\\'").Replace("\n", " ").Replace("\r", " ") ?? "";
+                                                            var amount = (med.MedicationsAmount ?? "")?.Replace("'", "\\'") ?? "";
+                                                            var obs = (med.MedicationsObservation ?? "")?.Replace("'", "\\'") ?? "";
+                                                            <text>
+                                                            if (typeof window.preloadMedication === 'function') {
+                                                                window.preloadMedication(@med.MedicationsMedicationsid.Value, '@medName', '@amount', '@obs');
+                                                            }
+                                                            </text>
+                                                }
                                     }
-                            }
-                    }
+                        }
             }
 
             // Pre-cargar laboratorios
             @if (Model?.Consultation?.LaboratoriesConsultations != null)
             {
-                    @foreach (var lab in Model.Consultation.LaboratoriesConsultations)
-                    {
-                            var labInfo = Model.Laboratories?.FirstOrDefault(l => l.LaboratoriesId == lab.LaboratoriesLaboratoriesid);
-                            if (labInfo != null)
-                            {
-                                    var labName = labInfo.LaboratoriesName?.Replace("'", "\\'").Replace("\n", " ").Replace("\r", " ") ?? "";
-                                    var amount = (lab.LaboratoriesAmount ?? "")?.Replace("'", "\\'") ?? "";
-                                    var obs = (lab.LaboratoriesObservation ?? "")?.Replace("'", "\\'") ?? "";
-                                    <text>
-                                    if (typeof window.preloadLaboratory === 'function') {
-                                        window.preloadLaboratory(@lab.LaboratoriesLaboratoriesid, '@labName', '@amount', '@obs');
+                        @foreach (var lab in Model.Consultation.LaboratoriesConsultations)
+                        {
+                                    var labInfo = Model.Laboratories?.FirstOrDefault(l => l.LaboratoriesId == lab.LaboratoriesLaboratoriesid);
+                                    if (labInfo != null)
+                                    {
+                                                var labName = labInfo.LaboratoriesName?.Replace("'", "\\'").Replace("\n", " ").Replace("\r", " ") ?? "";
+                                                var amount = (lab.LaboratoriesAmount ?? "")?.Replace("'", "\\'") ?? "";
+                                                var obs = (lab.LaboratoriesObservation ?? "")?.Replace("'", "\\'") ?? "";
+                                                <text>
+                                                if (typeof window.preloadLaboratory === 'function') {
+                                                    window.preloadLaboratory(@lab.LaboratoriesLaboratoriesid, '@labName', '@amount', '@obs');
+                                                }
+                                                </text>
                                     }
-                                    </text>
-                            }
-                    }
+                        }
             }
 
             // Pre-cargar imágenes
             @if (Model?.Consultation?.ImagesConsultations != null)
             {
-                    @foreach (var img in Model.Consultation.ImagesConsultations)
-                    {
-                            var imgInfo = Model.Images?.FirstOrDefault(i => i.ImagesId == img.ImagesImagesid);
-                            if (imgInfo != null)
-                            {
-                                    var imgName = imgInfo.ImagesName?.Replace("'", "\\'").Replace("\n", " ").Replace("\r", " ") ?? "";
-                                    var amount = (img.ImagesAmount ?? "")?.Replace("'", "\\'") ?? "";
-                                    var obs = (img.ImagesObservation ?? "")?.Replace("'", "\\'") ?? "";
-                                    <text>
-                                    if (typeof window.preloadImage === 'function') {
-                                        window.preloadImage(@img.ImagesImagesid, '@imgName', '@amount', '@obs');
+                        @foreach (var img in Model.Consultation.ImagesConsultations)
+                        {
+                                    var imgInfo = Model.Images?.FirstOrDefault(i => i.ImagesId == img.ImagesImagesid);
+                                    if (imgInfo != null)
+                                    {
+                                                var imgName = imgInfo.ImagesName?.Replace("'", "\\'").Replace("\n", " ").Replace("\r", " ") ?? "";
+                                                var amount = (img.ImagesAmount ?? "")?.Replace("'", "\\'") ?? "";
+                                                var obs = (img.ImagesObservation ?? "")?.Replace("'", "\\'") ?? "";
+                                                <text>
+                                                if (typeof window.preloadImage === 'function') {
+                                                    window.preloadImage(@img.ImagesImagesid, '@imgName', '@amount', '@obs');
+                                                }
+                                                </text>
                                     }
-                                    </text>
-                            }
-                    }
+                        }
             }
 
             console.log('Pre-carga completada');
@@ -2837,65 +2835,65 @@
 
             @if (Model?.Consultation != null)
             {
-                    <text>
-                    // Cargar días de incapacidad
-                    const certDias = @(Model.Consultation.ConsultationDisablilitydays ?? 0);
-                    const inputDias = document.getElementById('cert_dias_incapacidad');
-                    if (inputDias && certDias > 0) {
-                        inputDias.value = certDias;
-                    }
-
-                    // Cargar tipo de contingencia
-                    const certContingencia = '@Html.Raw(Model.Consultation.ConsultationContingencytype ?? "")';
-                    const selectContingencia = document.getElementById('cert_tipo_contingencia');
-                    if (selectContingencia && certContingencia) {
-                        selectContingencia.value = certContingencia;
-                    }
-
-                    // Cargar checkbox de enfermedad
-                    const certEnfermedad = @(Model.Consultation.ConsultationHasdisease?.ToString().ToLower() ?? "false");
-                    const checkEnfermedad = document.getElementById('cert_tiene_enfermedad');
-                    const obsContainer = document.getElementById('observacion_container');
-
-                    if (checkEnfermedad) {
-                        checkEnfermedad.checked = certEnfermedad;
-                        if (certEnfermedad && obsContainer) {
-                            obsContainer.style.display = 'block';
+                        <text>
+                        // Cargar días de incapacidad
+                        const certDias = @(Model.Consultation.ConsultationDisablilitydays ?? 0);
+                        const inputDias = document.getElementById('cert_dias_incapacidad');
+                        if (inputDias && certDias > 0) {
+                            inputDias.value = certDias;
                         }
-                    }
 
-                    // Cargar observación de enfermedad
-                    const certObservacion = '@Html.Raw(Model.Consultation.ConsultationDiseaseobservation?.Replace("'", "\\'").Replace("\n", "\\n").Replace("\r", "") ?? "")';
-                    const textareaObs = document.getElementById('cert_observacion');
-                    if (textareaObs && certObservacion) {
-                        textareaObs.value = certObservacion;
-                    }
-                    </text>
+                        // Cargar tipo de contingencia
+                        const certContingencia = '@Html.Raw(Model.Consultation.ConsultationContingencytype ?? "")';
+                        const selectContingencia = document.getElementById('cert_tipo_contingencia');
+                        if (selectContingencia && certContingencia) {
+                            selectContingencia.value = certContingencia;
+                        }
+
+                        // Cargar checkbox de enfermedad
+                        const certEnfermedad = @(Model.Consultation.ConsultationHasdisease?.ToString().ToLower() ?? "false");
+                        const checkEnfermedad = document.getElementById('cert_tiene_enfermedad');
+                        const obsContainer = document.getElementById('observacion_container');
+
+                        if (checkEnfermedad) {
+                            checkEnfermedad.checked = certEnfermedad;
+                            if (certEnfermedad && obsContainer) {
+                                obsContainer.style.display = 'block';
+                            }
+                        }
+
+                        // Cargar observación de enfermedad
+                        const certObservacion = '@Html.Raw(Model.Consultation.ConsultationDiseaseobservation?.Replace("'", "\\'").Replace("\n", "\\n").Replace("\r", "") ?? "")';
+                        const textareaObs = document.getElementById('cert_observacion');
+                        if (textareaObs && certObservacion) {
+                            textareaObs.value = certObservacion;
+                        }
+                        </text>
             }
 
             // Pre-cargar procedimientos existentes
             @if (Model?.Consultation?.Procedures != null && Model.Consultation.Procedures.Any())
             {
-                    <text>
-                    const tbody = document.querySelector('#procedimientosTable tbody');
-                    if (tbody) {
-                        @for (int i = 0; i < Model.Consultation.Procedures.Count; i++)
-                        {
-                                var proc = Model.Consultation.Procedures[i];
-                                var procName = (proc.Procedure_Name ?? "").Replace("'", "\\'").Replace("\"", "&quot;");
-                                var procDate = proc.Procedure_Date?.ToString("yyyy-MM-dd") ?? "";
-                                <text>
-                                const row@(i) = document.createElement('tr');
-                                row@(i).innerHTML = `
-                                    <td><input type="text" name="Procedures[@i].procedure_name" class="form-control" value="@Html.Raw(procName)" /></td>
-                                    <td><input type="date" name="Procedures[@i].procedure_date" class="form-control" value="@procDate" /></td>
-                                    <td class="text-center"><button type="button" class="btn btn-sm btn-danger removeRow">−</button></td>
-                                `;
-                                tbody.appendChild(row@(i));
-                                </text>
+                        <text>
+                        const tbody = document.querySelector('#procedimientosTable tbody');
+                        if (tbody) {
+                            @for (int i = 0; i < Model.Consultation.Procedures.Count; i++)
+                            {
+                                        var proc = Model.Consultation.Procedures[i];
+                                        var procName = (proc.Procedure_Name ?? "").Replace("'", "\\'").Replace("\"", "&quot;");
+                                        var procDate = proc.Procedure_Date?.ToString("yyyy-MM-dd") ?? "";
+                                        <text>
+                                        const row@(i) = document.createElement('tr');
+                                        row@(i).innerHTML = `
+                                            <td><input type="text" name="Procedures[@i].procedure_name" class="form-control" value="@Html.Raw(procName)" /></td>
+                                            <td><input type="date" name="Procedures[@i].procedure_date" class="form-control" value="@procDate" /></td>
+                                            <td class="text-center"><button type="button" class="btn btn-sm btn-danger removeRow">−</button></td>
+                                        `;
+                                        tbody.appendChild(row@(i));
+                                        </text>
+                            }
                         }
-                    }
-                    </text>
+                        </text>
             }
 
             console.log('Certificado médico cargado');
@@ -2909,15 +2907,16 @@
             {
                     foreach (var estudio in Model.Consultation.OtherStudies)
                     {
-                            // Escapamos caracteres especiales para evitar errores de sintaxis JS
+                            // Escapamos comillas simples y saltos de línea para no romper el JS
                             var studyName = estudio.StudyName?.Replace("'", "\\'").Replace("\n", " ") ?? "";
                             var studyIndication = estudio.StudyIndication?.Replace("'", "\\'").Replace("\n", " ") ?? "";
 
                             <text>
+                            // Intentamos usar la función global si ya existe
                             if (typeof window.preloadOtherStudy === 'function') {
                                 window.preloadOtherStudy('@Html.Raw(studyName)', '@Html.Raw(studyIndication)');
                             } else {
-                                // Fallback en caso de que consultation.js no haya cargado la función aún
+                                // Fallback: Construcción manual de la fila con las clases correctas para evitar el error de 'null'
                                 const tableBody = document.querySelector("#tableOtherStudies tbody");
                                 if (tableBody) {
                                     const row = `

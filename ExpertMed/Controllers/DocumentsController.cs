@@ -2388,94 +2388,97 @@ namespace ExpertMed.Controllers
 
 
 
-            // ==============================
-            // REVISIÓN DE ÓRGANOS Y SISTEMAS
-            // ==============================
+            // =============================================
+            // REVISIÓN DE ÓRGANOS Y SISTEMAS (Corrección de Tipos)
+            // =============================================
             var organs = consultation.OrgansSystem;
             var revisionOrganos = new List<string>();
 
-            void SetOrganField(string pdfField, string displayName, string? obs)
+            // Cambiamos el tipo del parámetro 'status' a bool? para que coincida con tu modelo
+            void SetOrganField(string pdfField, string displayName, bool? isChecked, string? obs)
             {
-                // Si tiene valor, marcar con "X"; si no, dejar vacío
-                var textoCampo = string.IsNullOrWhiteSpace(obs) ? "" : "X";
+                // 1. Lógica de la "X": En C#, un bool? es true o false. 
+                // Si es true, ponemos "X". Si es false o null, vacío.
+                formFields.SetField(pdfField, (isChecked == true) ? "X" : "");
 
-                // Establecer campo en el PDF
-                formFields.SetField(pdfField, textoCampo);
-
-                // Agregar al resumen solo si hay texto original
+                // 2. Lógica del Resumen
                 if (!string.IsNullOrWhiteSpace(obs))
+                {
                     revisionOrganos.Add($"{displayName}: {obs.Trim()}");
+                }
             }
 
+            // --- Mapeo corregido ---
 
-            // Campos individuales
             SetOrganField(
                 "txt_piel_organos_sistemas",
                 "Piel y anexos",
-                organs?.OrganssystemsSkinObs
-            );
+                organs?.OrganssystemsSkin,
+                organs?.OrganssystemsSkinObs);
 
             SetOrganField(
                 "txt_respiratorio_organos_sistemas",
                 "Respiratorio",
-                organs?.OrganssystemsRespiratoryObs
-            );
+                organs?.OrganssystemsRespiratory,
+                organs?.OrganssystemsRespiratoryObs);
 
             SetOrganField(
                 "txt_digestivo_organos_sistemas",
                 "Digestivo",
-                organs?.OrganssystemsDigestiveObs
-            );
-
-            SetOrganField(
-                "txt_musculo_esqueletico_organos_sistemas",
-                "Músculo–esquelético",
-                organs?.OrganssystemsSkeletalMObs
-            );
-
-            SetOrganField(
-                "txt_hemo_linfatico_organos_sistemas",
-                "Hemo–linfático",
-                organs?.OrganssystemsLymphaticObs
-            );
-
-            SetOrganField(
-                "txt_osentidos_organos_sistemas",  // ajusta al nombre real del campo
-                "Órganos de los sentidos",
-                organs?.OrganssystemsOrgansensesObs
-            );
+                organs?.OrganssystemsDigestive,
+                organs?.OrganssystemsDigestiveObs);
 
             SetOrganField(
                 "txt_cardio_vascular_sistemas",
                 "Cardio-vascular",
-                organs?.OrganssystemsCardiovascularObs
-            );
+                organs?.OrganssystemsCardiovascular,
+                organs?.OrganssystemsCardiovascularObs);
+
+            // Para Genito-urinario, usamos lógica booleana con el operador OR (||)
+            bool? genitoUrinarioCheck = (organs?.OrganssystemsGenital == true || organs?.OrganssystemsUrinary == true);
 
             SetOrganField(
                 "txt_genito_urinario_sistemas",
                 "Genito-urinario",
-                organs?.OrganssystemsGenitalObs
-            );
+                genitoUrinarioCheck,
+                organs?.OrganssystemsGenitalObs);
+
+            SetOrganField(
+                "txt_musculo_esqueletico_organos_sistemas",
+                "Músculo–esquelético",
+                organs?.OrganssystemsSkeletalM,
+                organs?.OrganssystemsSkeletalMObs);
+
+            SetOrganField(
+                "txt_hemo_linfatico_organos_sistemas",
+                "Hemo–linfático",
+                organs?.OrganssystemsLymphatic,
+                organs?.OrganssystemsLymphaticObs);
+
+            SetOrganField(
+                "txt_osentidos_organos_sistemas",
+                "Órganos de los sentidos",
+                organs?.OrganssystemsOrgansenses,
+                organs?.OrganssystemsOrgansensesObs);
 
             SetOrganField(
                 "txt_endocrino_sistemas",
                 "Endocrino",
-                organs?.OrganssystemsEndocrine
-            );
+                organs?.OrganssystemsEndrocrine,
+                organs?.OrganssystemsEndocrine);
 
             SetOrganField(
                 "txt_nervioso_sistemas",
                 "Nervioso",
-                organs?.OrganssystemsNervousObs
-            );
+                organs?.OrganssystemsNervous,
+                organs?.OrganssystemsNervousObs);
 
-            // Resumen horizontal
+            // --- Resumen Final ---
             var textoRevision = revisionOrganos.Count > 0
                 ? string.Join(" | ", revisionOrganos)
-                : "N/A";
+                : "Sin hallazgos patológicos relevantes.";
 
             formFields.SetField("txt_revision_organos_sistemas", textoRevision);
-
 
             // ======================
             // EXAMEN FÍSICO
@@ -2633,6 +2636,7 @@ namespace ExpertMed.Controllers
             // MÉDICO
             // Obtener nombres y apellidos del usuario (médico)
             string fullNames = consultation.UsersNames?.Trim() ?? string.Empty;
+            // --- 2. PROCESAR APELLIDOS (Soporta apellidos compuestos como "Del Pozo") ---
             string fullSurnames = consultation.UsersSurcenames?.Trim() ?? string.Empty;
 
             // --- 1. PROCESAR NOMBRES (txt_primer_nombre_medico) ---
@@ -2645,20 +2649,14 @@ namespace ExpertMed.Controllers
             // Asignar al PDF (el PDF solo pide el primer nombre, así que ignoramos el segundo nombre)
             formFields.SetField("txt_primer_nombre_medico", primerNombre);
 
-            // --- 2. PROCESAR APELLIDOS (txt_primer_apellido_medico y txt_segundo_apellido_medico) ---
-            // Dividir la cadena de apellidos por el espacio.
-            string[] surnamesArray = fullSurnames.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
-            // Asignar el primer apellido.
-            string primerApellido = surnamesArray.Length > 0 ? surnamesArray[0] : string.Empty;
 
-            // Asignar el segundo apellido.
-            // Si hay un segundo elemento en el array, tómalo; de lo contrario, deja la cadena vacía.
-            string segundoApellido = surnamesArray.Length > 1 ? surnamesArray[1] : string.Empty;
+            // Llamamos a nuestra función lógica
+            var apellidosProcesados = SepararApellidos(fullSurnames);
 
             // Asignar al PDF
-            formFields.SetField("txt_primer_apellido_medico", primerApellido);
-            formFields.SetField("txt_segundo_apellido_medico", segundoApellido);
+            formFields.SetField("txt_primer_apellido_medico", apellidosProcesados.primer);
+            formFields.SetField("txt_segundo_apellido_medico", apellidosProcesados.segundo);
             formFields.SetField("txt_email", consultation.UsersEmail ?? "");
             formFields.SetField("txt_telefono", consultation.UsersPhone ?? "");
             formFields.SetField("txt_direccion", consultation.EstablishmentAddress ?? "");
@@ -2676,6 +2674,28 @@ namespace ExpertMed.Controllers
             return File(memoryStream.ToArray(), "application/pdf", $"formulario_consulta_{randomNumber}.pdf");
         }
 
+
+        private (string primer, string segundo) SepararApellidos(string fullSurnames)
+        {
+            if (string.IsNullOrWhiteSpace(fullSurnames)) return (string.Empty, string.Empty);
+
+            var palabras = fullSurnames.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            var conectores = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "de", "del", "la", "las", "los", "san" };
+
+            if (palabras.Length == 1) return (palabras[0], string.Empty);
+
+            // Si la primera palabra es un conector (ej: "Del"), unimos las dos primeras palabras
+            if (conectores.Contains(palabras[0]) && palabras.Length > 1)
+            {
+                string primer = $"{palabras[0]} {palabras[1]}";
+                // El resto de palabras forman el segundo apellido
+                string segundo = string.Join(" ", palabras.Skip(2));
+                return (primer, segundo);
+            }
+
+            // Caso estándar: "Perez Rodriguez" -> primer: Perez, segundo: Rodriguez
+            return (palabras[0], string.Join(" ", palabras.Skip(1)));
+        }
         /// <summary>
         /// 
         /// </summary>
@@ -2787,12 +2807,14 @@ namespace ExpertMed.Controllers
                     // INDICACIONES
                     // =========================
                     var indications = consultation.MedicationsConsultations?.Any() == true
-                        ? string.Join("\n", consultation.MedicationsConsultations.Select(mc =>
+                        ? string.Join("\n\n", consultation.MedicationsConsultations.Select(mc =>
                         {
                             var medication = allMedications.FirstOrDefault(m => m.MedicationsId == mc.MedicationsMedicationsid);
-                            return medication != null
-                                ? $"({medication.MedicationsCie10}) {medication.MedicationsDescription} - Observaciones: {mc.MedicationsObservation ?? "Sin observaciones"}"
-                                : "N/A";
+                            if (medication == null) return "Medicamento no encontrado";
+
+                            // Construimos el string con un salto de línea (\n) antes de "Observaciones"
+                            return $"({medication.MedicationsCie10}) {medication.MedicationsDescription}\n" +
+                                   $"Obs: {mc.MedicationsObservation ?? "Sin observaciones"}";
                         }))
                         : "Sin indicaciones";
 
