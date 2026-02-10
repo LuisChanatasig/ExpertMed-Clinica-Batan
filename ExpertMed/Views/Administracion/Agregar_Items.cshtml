@@ -154,15 +154,15 @@
                 new bootstrap.Modal('#modalTemplate').show();
             });
 
-            $('#btnNuevoDiagnostico').click(() => {
-                setupModal('DIAG', 'Nuevo Diagnóstico CIE-10', 'bg-warning-subtle text-warning');
-                $('#formContent').append(`
-                    <div class="col-md-4"><label class="form-label fw-medium">CIE-10</label><input type="text" id="d_cie" class="form-control text-uppercase" required></div>
-                    <div class="col-md-8"><label class="form-label fw-medium">Diagnóstico</label><input type="text" id="d_name" class="form-control text-uppercase" required></div>
-                    <div class="col-12"><div class="p-3 bg-light border border-dashed rounded"><label class="form-label text-warning fw-bold">Descripción (Editable)</label><textarea id="d_desc" class="form-control border-0 bg-transparent fs-15 fw-bold" rows="2"></textarea></div></div>
-                `);
-                new bootstrap.Modal('#modalTemplate').show();
-            });
+        $('#btnNuevoDiagnostico').click(() => {
+            setupModal('DIAG', 'Nuevo Diagnóstico CIE-10', 'bg-warning-subtle text-warning');
+            $('#formContent').append(`
+                <div class="col-md-8"><label class="form-label fw-medium">Diagnóstico</label><input type="text" id="d_name" class="form-control text-uppercase" required></div>
+                <div class="col-md-4"><label class="form-label fw-medium">CIE-10</label><input type="text" id="d_cie" class="form-control text-uppercase" required></div>
+                <div class="col-12"><div class="p-3 bg-light border border-dashed rounded"><label class="form-label text-warning fw-bold">Descripción (Editable)</label><textarea id="d_desc" class="form-control border-0 bg-transparent fs-15 fw-bold" rows="2"></textarea></div></div>
+            `);
+            new bootstrap.Modal('#modalTemplate').show();
+        });
 
             $('#btnNuevoLaboratorio').click(() => {
                 setupModal('LAB', 'Nuevo Examen Laboratorio', 'bg-info-subtle text-info');

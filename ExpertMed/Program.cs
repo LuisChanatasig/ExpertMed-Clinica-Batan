@@ -1,9 +1,13 @@
 using ExpertMed.Models;
 using ExpertMed.Services;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Rotativa.AspNetCore;
 using System.Globalization;
-using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
+
 
 namespace ExpertMed
 {
@@ -79,6 +83,29 @@ namespace ExpertMed
 
             // Licencia de QuestPDF
             QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
+
+            // Agrega esto ANTES de builder.Build()
+            builder.Services.Configure<FormOptions>(options =>
+            {
+                options.MultipartBodyLengthLimit = 104857600; // 100MB
+                options.ValueLengthLimit = int.MaxValue;
+                options.MultipartHeadersLengthLimit = int.MaxValue;
+            });
+
+            builder.Services.Configure<KestrelServerOptions>(options =>
+            {
+                options.Limits.MaxRequestHeadersTotalSize = 131072; // 128KB (default es 32KB)
+                options.Limits.MaxRequestLineSize = 16384; // 16KB
+                options.Limits.MaxRequestBodySize = 104857600; // 100MB
+            });
+
+            builder.Services.Configure<IISServerOptions>(options =>
+            {
+                // IISServerOptions no tiene MaxRequestHeadersTotalSize; use MaxRequestBodySize si necesita limitar el cuerpo de la petición al alojarse en IIS
+                options.MaxRequestBodySize = 104857600; // 100MB
+            });
+
 
             var app = builder.Build();
 

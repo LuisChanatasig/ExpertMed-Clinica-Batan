@@ -11,7 +11,7 @@ namespace ExpertMed.Models
         public string diagnosis_description { get; set; }
 
         [JsonPropertyName("diagnosis_category")]
-        public string diagnosis_category { get; set; }
+        public string diagnosis_category { get; set; } = "Diagnostico";
 
         [JsonPropertyName("diagnosis_cie10")]
         public string diagnosis_cie10 { get; set; }
