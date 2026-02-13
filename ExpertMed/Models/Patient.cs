@@ -24,6 +24,8 @@ public partial class Patient
 
     public string? PatientMiddlename { get; set; }
 
+    public string PatientFirstsurname { get; set; } = null!; // Movido arriba por orden lógico de nombres
+
     public string? PatientSecondlastname { get; set; }
 
     public int? PatientGender { get; set; }
@@ -42,6 +44,8 @@ public partial class Patient
 
     public string? PatientLandlinePhone { get; set; }
 
+    public string? PatientCellularPhone { get; set; } // Permitir null por si se maneja en el SP
+
     public string PatientEmail { get; set; } = null!;
 
     public int? PatientNationality { get; set; }
@@ -51,12 +55,6 @@ public partial class Patient
     public string? PatientAddress { get; set; }
 
     public string? PatientOcupation { get; set; }
-    [NotMapped]
-    public string? PatientInsuranceAuthorizationCode { get; set; }
-    [NotMapped]
-    public int CreationUserProfileId { get; set; }
-
-
 
     public string? PatientCompany { get; set; }
 
@@ -66,16 +64,28 @@ public partial class Patient
 
     public int PatientStatus { get; set; }
 
-    public string? PatientCellularPhone { get; set; }
-    [NotMapped]
-    public string? PatientSignature { get; set; }
+    // --- PROPIEDADES NO MAPEADAS (Lógica de Negocio / ViewModels) ---
 
-    public string PatientFirstsurname { get; set; } = null!;
+    [NotMapped]
+    public string? PatientInsuranceAuthorizationCode { get; set; }
+
+    [NotMapped]
+    public int CreationUserProfileId { get; set; }
+
     [NotMapped]
     public string? DoctorName { get; set; }
+
     [NotMapped]
     public string? DoctorFullname { get; set; }
 
+    /// <summary>
+    /// Se mantiene para compatibilidad, pero recuerda que ahora 
+    /// la firma se gestionará principalmente en el Check-in de la cita.
+    /// </summary>
+    [NotMapped]
+    public string? PatientSignature { get; set; }
+
+    // --- RELACIONES ---
 
     public virtual ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
 

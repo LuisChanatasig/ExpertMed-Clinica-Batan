@@ -27,51 +27,55 @@ namespace ExpertMed.Services
             public TimeSpan AvailableTime { get; set; }
         }
 
-
         public async Task<List<AppointmentDTO>> GetAllAppointmentAsync(
-          int userProfile,
-          int? appointmentStatus = null, // Cambiado a opcional para coincidir con la lógica del SP
-          int? userId = null,
-          bool isPaidOnly = false,
-          int? appointmentStatus2 = null)
+            int userProfile,
+            int? appointmentStatus = null,
+            int? userId = null,
+            bool isPaidOnly = false,
+            int? appointmentStatus2 = null,
+            DateTime? startDate = null,
+            DateTime? endDate = null)
         {
             try
             {
-                // 1. Ya no necesitamos SetCommandTimeout(120). 
-                // Si el SP tarda más de 30s (default), el problema es de índices, no de tiempo.
-
+                // 1. Definición de parámetros para SQL Server
+                // Usamos (object?) ?? DBNull.Value para manejar correctamente los nulos en el SP
                 var parameters = new[]
                 {
             new SqlParameter("@UserProfile", SqlDbType.Int) { Value = userProfile },
             new SqlParameter("@UserID", SqlDbType.Int) { Value = (object?)userId ?? DBNull.Value },
             new SqlParameter("@AppointmentStatus", SqlDbType.Int) { Value = (object?)appointmentStatus ?? DBNull.Value },
             new SqlParameter("@AppointmentStatus2", SqlDbType.Int) { Value = (object?)appointmentStatus2 ?? DBNull.Value },
-            new SqlParameter("@IsPaidOnly", SqlDbType.Bit) { Value = isPaidOnly }
+            new SqlParameter("@IsPaidOnly", SqlDbType.Bit) { Value = isPaidOnly },
+            new SqlParameter("@StartDate", SqlDbType.Date) { Value = (object?)startDate ?? DBNull.Value },
+            new SqlParameter("@EndDate", SqlDbType.Date) { Value = (object?)endDate ?? DBNull.Value }
         };
 
-                // 2. Ejecución directa y eficiente
-                var result = await _dbContext
-                    .AppointmentDTOs
+                // 2. Ejecución del SP mediante FromSqlRaw
+                // Importante: El orden de los parámetros en el string debe coincidir con el SP
+                var result = await _dbContext.AppointmentDTOs
                     .FromSqlRaw(@"EXEC dbo.sp_ListAllAppointment 
-                            @UserProfile, 
-                            @UserID, 
-                            @AppointmentStatus, 
-                            @AppointmentStatus2, 
-                            @IsPaidOnly",
+                        @UserProfile, 
+                        @UserID, 
+                        @AppointmentStatus, 
+                        @AppointmentStatus2, 
+                        @IsPaidOnly, 
+                        @StartDate, 
+                        @EndDate",
                                 parameters)
-                    .AsNoTracking() // Esencial: evita que EF Core guarde copias en memoria
+                    .AsNoTracking() // Mejora rendimiento al no trackear cambios en memoria
                     .ToListAsync();
 
-                return result;
+                return result ?? new List<AppointmentDTO>();
             }
             catch (SqlException ex)
             {
-                _logger.LogError(ex, "Error SQL en sp_ListAllAppointment | UserProfile={UserProfile}, UserId={UserId}", userProfile, userId);
+                _logger.LogError(ex, "Error de SQL al listar citas para el usuario {UserId}", userId);
                 throw;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error general al obtener las citas.");
+                _logger.LogError(ex, "Error general en GetAllAppointmentAsync");
                 throw;
             }
         }

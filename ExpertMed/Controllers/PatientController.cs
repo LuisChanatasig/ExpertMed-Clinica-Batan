@@ -130,32 +130,40 @@ namespace ExpertMed.Controllers
         /// errors if the input is invalid.</returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> NewPatient(Patient patient, int? doctorUserId = null, Guid? SignatureToken = null)
+        public async Task<IActionResult> NewPatient(Patient patient, int? doctorUserId = null)
         {
             // 1. Validaciones iniciales
-            if (!ModelState.IsValid) return BadRequest(new { success = 0, message = "Datos incompletos." });
-
-            bool hasDirectSig = !string.IsNullOrWhiteSpace(patient.PatientSignature);
-            bool hasQrToken = SignatureToken.HasValue && SignatureToken.Value != Guid.Empty;
-
-            if (!hasDirectSig && !hasQrToken)
+            if (!ModelState.IsValid)
             {
-                TempData["ErrorMessage"] = "Falta la firma del paciente (QR o firma local).";
-                return await RegistroPaciente();
-            }
+                // Extraemos los nombres de los campos y sus errores
+                var errores = ModelState
+                    .Where(x => x.Value.Errors.Count > 0)
+                    .Select(x => new {
+                        Campo = x.Key,
+                        Error = x.Value.Errors.Select(e => e.ErrorMessage).FirstOrDefault()
+                    }).ToList();
 
-            bool isQrMode = hasQrToken && !hasDirectSig;
-            if (isQrMode) { patient.PatientSignature = null; }
+                _logger.LogWarning("Validación fallida al crear paciente: {@Errores}", errores);
+
+                return BadRequest(new
+                {
+                    success = 0,
+                    message = "Datos incompletos o inválidos.",
+                    detalles = errores // Aquí verás exactamente qué campos faltan
+                });
+            }
 
             try
             {
-                // 2. Contexto de Usuario
                 int currentUserId = HttpContext.Session.GetInt32("UsuarioId") ?? 0;
+                int profileId = HttpContext.Session.GetInt32("PerfilId") ?? 0;
+
                 patient.PatientCreationuser = currentUserId;
                 patient.PatientModificationuser = currentUserId;
+                patient.CreationUserProfileId = profileId;
 
-                // 3. Crear Paciente
-                var resultado = await _patientService.CreatePatientAsync(patient, doctorUserId, skipSignatureInsert: isQrMode);
+                // Llamada al servicio simplificado
+                var resultado = await _patientService.CreatePatientAsync(patient, doctorUserId);
 
                 if (!resultado.Success)
                 {
@@ -163,66 +171,17 @@ namespace ExpertMed.Controllers
                     return await RegistroPaciente();
                 }
 
-                // --- VINCULACIÓN DE DOCUMENTOS FISICOS ---
-                List<string> signedFilesUrls = new List<string>();
-
-                if (isQrMode && SignatureToken.HasValue)
-                {
-                    var st = await _signatureQrService.GetStatusAsync(SignatureToken.Value);
-                    if (st != null)
-                    {
-                        resultado.SignatureData = st.SignatureDataUrl;
-                        resultado.SignedAt = st.SignedAtLocal?.ToString("yyyy-MM-dd HH:mm:ss");
-
-                        // RUTA REAL EN EL DISCO
-                        string storageFolder = @"C:\ExpertMedStorage\DocumentosFirmados";
-                        var docTypes = new[] {
-                    new { Prefix = "CONSENT", Label = "Consentimiento" },
-                    new { Prefix = "LOPDP", Label = "LOPDP" }
-                };
-
-                        if (Directory.Exists(storageFolder))
-                        {
-                            var directoryInfo = new DirectoryInfo(storageFolder);
-                            foreach (var doc in docTypes)
-                            {
-                                // Buscamos cualquier archivo que empiece con el prefijo y contenga el GUID
-                                var file = directoryInfo.GetFiles($"{doc.Prefix}_{SignatureToken.Value}*.pdf").FirstOrDefault();
-
-                                if (file != null)
-                                {
-                                    // IMPORTANTE: Generamos la URL que apunta a nuestra acción de descarga
-                                    string downloadUrl = Url.Action("Download", "Signature", new { fileName = file.Name });
-                                    signedFilesUrls.Add(downloadUrl);
-
-                                    // Guardamos metadata en la base de datos (SP sp_GuardarDocumentoFirmado)
-                                    await _signatureQrService.SaveDocumentMetadataAsync(resultado.PatientId, file.Name, file.FullName, doc.Label);
-                                }
-                            }
-                        }
-                    }
-                    await _signatureQrService.ConsumeToPatientAsync(SignatureToken.Value, resultado.PatientId);
-                }
-
-                // 4. Datos para el Modal (TempData)
-                // El modal se abre solo si SecurityToken tiene valor
-                TempData["SuccessMessage"] = "Registro completado con éxito.";
-                TempData["SecurityToken"] = Guid.NewGuid().ToString("N"); // Token para el Acta
-                TempData["PatientName"] = $"{patient.PatientFirstname} {patient.PatientFirstsurname}";
-                TempData["PatientCode"] = resultado.PatientCode;
-                TempData["SignatureData"] = resultado.SignatureData;
-                TempData["SignedAt"] = resultado.SignedAt;
-                TempData["SignedFiles"] = Newtonsoft.Json.JsonConvert.SerializeObject(signedFilesUrls);
-
+                TempData["SuccessMessage"] = "Paciente registrado con éxito. La firma se realizará en la cita.";
                 return RedirectToAction(nameof(NewPatient));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error en registro");
+                _logger.LogError(ex, "Error en registro de paciente");
                 TempData["ErrorMessage"] = ex.Message;
                 return await RegistroPaciente();
             }
         }
+
 
         /// <summary>
         /// Creates a new patient record or associates an existing patient with an emergency appointment, then redirects

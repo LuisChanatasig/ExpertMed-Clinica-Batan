@@ -12,13 +12,14 @@ namespace ExpertMed.Controllers
         private readonly AppointmentService _appointmentService;
         private readonly PatientService _patientService;
         private readonly SelectsService _selectService;
-
-        public AppointmentController(ILogger<AppointmentController> logger, AppointmentService appointmentService, PatientService patientService,SelectsService selectsService)
+        private readonly SignatureService _signatureService;
+        public AppointmentController(ILogger<AppointmentController> logger, AppointmentService appointmentService, PatientService patientService,SelectsService selectsService, SignatureService signatureService)
         {
             _logger = logger;
             _appointmentService = appointmentService;
             _patientService = patientService;
             _selectService = selectsService;
+            _signatureService = signatureService;
         }
         public class ErrorViewModel
         {
@@ -42,13 +43,15 @@ namespace ExpertMed.Controllers
         /// redirects to the sign-in page if the user is not authenticated.</returns>
         [HttpGet]
         public async Task<IActionResult> AppointmentList(
-           int? appointmentStatus,
-           int? appointmentStatus2,
-           bool isPaidOnly = false)
+          int? appointmentStatus,
+          int? appointmentStatus2,
+          bool isPaidOnly = false,
+          DateTime? startDate = null, // Parámetros para el SP
+          DateTime? endDate = null)
         {
             try
             {
-                // 1. Validación de Sesión (Lógica de Seguridad)
+                // 1. Validación de Sesión
                 var userId = HttpContext.Session.GetInt32("UsuarioId");
                 var userProfile = HttpContext.Session.GetInt32("PerfilId");
 
@@ -59,35 +62,36 @@ namespace ExpertMed.Controllers
                 }
 
                 // 2. Lógica de Parámetros de Filtro
-                // Si es la carga inicial (sin parámetros), enviamos NULL para que el SP aplique sus defaults (1 y 5)
-                if (!appointmentStatus.HasValue && !appointmentStatus2.HasValue && !Request.QueryString.HasValue)
+                // Si no hay QueryString (carga inicial), dejamos que el SP use sus defaults (Status 1 y 5, y Fecha HOY)
+                if (!appointmentStatus.HasValue && !appointmentStatus2.HasValue && !startDate.HasValue && !Request.QueryString.HasValue)
                 {
                     appointmentStatus = null;
                     appointmentStatus2 = null;
                 }
                 else if (appointmentStatus == -1)
                 {
-                    // Si el usuario selecciona "Todas", forzamos nulidad en el segundo estado
+                    // "Todas" las citas
                     appointmentStatus2 = null;
                 }
 
-                // 3. Llamada al Servicio (Capa de Datos)
+                // 3. Llamada al Servicio con los 7 parámetros
                 var appointments = await _appointmentService.GetAllAppointmentAsync(
                     userProfile.Value,
-                    appointmentStatus, // El servicio y SP ya aceptan int?
+                    appointmentStatus,
                     userId.Value,
                     isPaidOnly,
-                    appointmentStatus2
+                    appointmentStatus2,
+                    startDate, // Pasado al SP
+                    endDate    // Pasado al SP
                 ) ?? new List<AppointmentDTO>();
 
-                // 4. Construcción del ViewModel Principal
+                // 4. Construcción del ViewModel
                 var vm = new AppointmentListViewModel
                 {
                     Appointments = appointments
                 };
 
-                // 5. Carga de Catálogos (Agrupado para mantener orden)
-                // Se asume que BuildNewPatientViewModelAsync ya es eficiente
+                // 5. Carga de Catálogos
                 var catalogData = await BuildNewPatientViewModelAsync();
 
                 vm.Users = catalogData.Users ?? new List<User>();
@@ -102,10 +106,15 @@ namespace ExpertMed.Controllers
                 vm.Provinces = catalogData.Provinces ?? new List<Province>();
                 vm.UsersP = catalogData.UsersP ?? new List<MedicDetails>();
 
-                // 6. ViewBags para persistencia en UI
-                ViewBag.CurrentStatus = appointmentStatus ?? 1; // Para que el Select muestre "Activas" por defecto
+                // 6. ViewBags para persistencia en UI (Importante para los inputs de la vista)
+                ViewBag.CurrentStatus = appointmentStatus ?? 1;
                 ViewBag.CurrentStatus2 = appointmentStatus2;
                 ViewBag.IsPaidOnly = isPaidOnly;
+
+                // Formateamos las fechas para los inputs tipo <input type="date">
+                ViewBag.StartDate = startDate?.ToString("yyyy-MM-dd");
+                ViewBag.EndDate = endDate?.ToString("yyyy-MM-dd");
+
                 ViewBag.UserProfile = userProfile.Value;
                 ViewBag.UserId = userId.Value;
 
@@ -116,6 +125,81 @@ namespace ExpertMed.Controllers
                 _logger.LogError(ex, "Error crítico en AppointmentList para Usuario: {UserId}", HttpContext.Session.GetInt32("UsuarioId"));
                 TempData["Error"] = "Ocurrió un error al cargar la lista de citas.";
                 return View(new AppointmentListViewModel { Appointments = new List<AppointmentDTO>() });
+            }
+        }
+
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfirmAttendance(int appointmentId, int patientId, Guid signatureToken)
+        {
+            // Lista para capturar las URLs de descarga de los PDFs vinculados
+            List<string> signedFilesUrls = new List<string>();
+            string signatureDataUrl = "";
+            string signedAt = "";
+
+            try
+            {
+                // 1. Validar el estado de la firma en el servicio QR
+                var st = await _signatureService.GetStatusAsync(signatureToken);
+                if (st == null || st.Status != 1) // 1 = Firmado/Aprobado
+                {
+                    return Json(new { success = 0, message = "La firma no ha sido completada o el token es inválido." });
+                }
+
+                signatureDataUrl = st.SignatureDataUrl;
+                signedAt = st.SignedAtLocal?.ToString("yyyy-MM-dd HH:mm:ss");
+
+                // 2. VINCULACIÓN DE DOCUMENTOS FÍSICOS (Tu lógica original de disco)
+                string storageFolder = @"C:\ExpertMedStorage\DocumentosFirmados";
+                var docTypes = new[] {
+            new { Prefix = "CONSENT", Label = "Consentimiento" },
+            new { Prefix = "LOPDP", Label = "LOPDP" }
+        };
+
+                if (Directory.Exists(storageFolder))
+                {
+                    var directoryInfo = new DirectoryInfo(storageFolder);
+                    foreach (var doc in docTypes)
+                    {
+                        // Buscamos archivos: Prefix_GUID*.pdf
+                        var file = directoryInfo.GetFiles($"{doc.Prefix}_{signatureToken}*.pdf").FirstOrDefault();
+
+                        if (file != null)
+                        {
+                            // Generamos la URL de descarga para la interfaz
+                            string downloadUrl = Url.Action("Download", "Signature", new { fileName = file.Name });
+                            signedFilesUrls.Add(downloadUrl);
+
+                            // Guardamos la metadata vinculada al PACIENTE (Importante para el historial)
+                            await _signatureService.SaveDocumentMetadataAsync(patientId, file.Name, file.FullName, doc.Label);
+                        }
+                    }
+                }
+
+                // 3. CONSUMIR FIRMA Y VINCULAR A LA CITA
+                // Este llama al nuevo SP que inserta en patient_signatures y appointment_attendance_signatures
+                // Y pone appointment_asistio = 1
+                await _signatureService.ConsumeToAppointmentAsync(signatureToken, patientId, appointmentId);
+
+                // 4. Preparar respuesta para el Modal de Comprobante (opcional si quieres mostrarlo)
+                return Json(new
+                {
+                    success = 1,
+                    message = "Asistencia registrada correctamente.",
+                    data = new
+                    {
+                        signatureData = signatureDataUrl,
+                        signedAt = signedAt,
+                        signedFiles = signedFilesUrls
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al confirmar asistencia de la cita {appId}", appointmentId);
+                return Json(new { success = 0, message = "Error interno: " + ex.Message });
             }
         }
 

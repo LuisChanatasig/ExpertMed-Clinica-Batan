@@ -137,9 +137,8 @@ namespace ExpertMed.Services
         /// <exception cref="Exception">Thrown if the stored procedure does not return a result, if the result does not contain a patient ID, or if
         /// an error occurs during patient creation.</exception>
         public async Task<PatientCreateResponse> CreatePatientAsync(
-            Patient patient,
-            int? doctorUserId = null,
-            bool skipSignatureInsert = false)
+        Patient patient,
+        int? doctorUserId = null)
         {
             if (patient == null) throw new ArgumentNullException(nameof(patient));
 
@@ -150,130 +149,77 @@ namespace ExpertMed.Services
                 CommandType = CommandType.StoredProcedure
             };
 
-            // ------------------------------------------------------------------
-            // Auditoría y Perfil (obligatorio)
-            // ------------------------------------------------------------------
+            // Auditoría y Perfil
             command.Parameters.AddWithValue("@patient_creationuser", patient.PatientCreationuser);
             command.Parameters.AddWithValue("@creationuser_profileid", patient.CreationUserProfileId);
             command.Parameters.AddWithValue("@patient_modificationuser", patient.PatientModificationuser);
+            command.Parameters.AddWithValue("@doctor_userid", (object?)doctorUserId ?? DBNull.Value);
 
-            // doctor_userid (opcional)
-            command.Parameters.AddWithValue("@doctor_userid",
-                doctorUserId.HasValue ? doctorUserId.Value : (object)DBNull.Value);
-
-            // ------------------------------------------------------------------
-            // Datos obligatorios
-            // ------------------------------------------------------------------
+            // Datos Principales
             command.Parameters.AddWithValue("@patient_firstname", patient.PatientFirstname ?? "");
             command.Parameters.AddWithValue("@patient_firstsurname", patient.PatientFirstsurname ?? "");
-            command.Parameters.AddWithValue("@patient_cellular_phone",
-                string.IsNullOrWhiteSpace(patient.PatientCellularPhone) ? (object)DBNull.Value : patient.PatientCellularPhone);
+            command.Parameters.AddWithValue("@patient_cellular_phone", (object?)patient.PatientCellularPhone ?? DBNull.Value);
 
-            // ------------------------------------------------------------------
-            // Firma (directa vs QR)
-            // - Directa: se manda firma para que SP inserte en patient_signatures.
-            // - QR: se manda NULL y luego se consume token con sp_signature_consume_to_patient.
-            // ------------------------------------------------------------------
-            if (skipSignatureInsert)
-            {
-                command.Parameters.AddWithValue("@patient_signature", DBNull.Value);
-            }
-            else
-            {
-                command.Parameters.AddWithValue("@patient_signature",
-                    string.IsNullOrWhiteSpace(patient.PatientSignature) ? (object)DBNull.Value : patient.PatientSignature);
-            }
-
-            // IP para trazabilidad
-            var remoteIpAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
-            command.Parameters.AddWithValue("@ip_address", string.IsNullOrWhiteSpace(remoteIpAddress) ? "Unknown" : remoteIpAddress);
-
-            // ------------------------------------------------------------------
-            // Datos opcionales / defaults (según tu SP)
-            // ------------------------------------------------------------------
+            // Datos del Documento
             command.Parameters.AddWithValue("@patient_documenttype", patient.PatientDocumenttype == 0 ? (object)DBNull.Value : patient.PatientDocumenttype);
             command.Parameters.AddWithValue("@patient_documentnumber", patient.PatientDocumentnumber ?? "0000000000");
 
-            command.Parameters.AddWithValue("@patient_middlename", string.IsNullOrWhiteSpace(patient.PatientMiddlename) ? (object)DBNull.Value : patient.PatientMiddlename);
-            command.Parameters.AddWithValue("@patient_secondlastname", string.IsNullOrWhiteSpace(patient.PatientSecondlastname) ? (object)DBNull.Value : patient.PatientSecondlastname);
-
+            // Datos Opcionales
+            command.Parameters.AddWithValue("@patient_middlename", (object?)patient.PatientMiddlename ?? DBNull.Value);
+            command.Parameters.AddWithValue("@patient_secondlastname", (object?)patient.PatientSecondlastname ?? DBNull.Value);
             command.Parameters.AddWithValue("@patient_gender", patient.PatientGender == 0 ? (object)DBNull.Value : patient.PatientGender);
             command.Parameters.AddWithValue("@patient_birthdate", patient.PatientBirthdate == default ? (object)DBNull.Value : patient.PatientBirthdate);
             command.Parameters.AddWithValue("@patient_age", patient.PatientAge == 0 ? (object)DBNull.Value : patient.PatientAge);
-
             command.Parameters.AddWithValue("@patient_bloodtype", patient.PatientBloodtype == 0 ? (object)DBNull.Value : patient.PatientBloodtype);
-            command.Parameters.AddWithValue("@patient_donor", string.IsNullOrWhiteSpace(patient.PatientDonor) ? (object)DBNull.Value : patient.PatientDonor);
-
+            command.Parameters.AddWithValue("@patient_donor", (object?)patient.PatientDonor ?? DBNull.Value);
             command.Parameters.AddWithValue("@patient_maritalstatus", patient.PatientMaritalstatus == 0 ? (object)DBNull.Value : patient.PatientMaritalstatus);
             command.Parameters.AddWithValue("@patient_vocational_training", patient.PatientVocationalTraining == 0 ? (object)DBNull.Value : patient.PatientVocationalTraining);
-
-            command.Parameters.AddWithValue("@patient_landline_phone", string.IsNullOrWhiteSpace(patient.PatientLandlinePhone) ? (object)DBNull.Value : patient.PatientLandlinePhone);
-            command.Parameters.AddWithValue("@patient_email", string.IsNullOrWhiteSpace(patient.PatientEmail) ? (object)DBNull.Value : patient.PatientEmail);
-
+            command.Parameters.AddWithValue("@patient_landline_phone", (object?)patient.PatientLandlinePhone ?? DBNull.Value);
+            command.Parameters.AddWithValue("@patient_email", (object?)patient.PatientEmail ?? DBNull.Value);
             command.Parameters.AddWithValue("@patient_nationality", patient.PatientNationality == 0 ? (object)DBNull.Value : patient.PatientNationality);
             command.Parameters.AddWithValue("@patient_province", patient.PatientProvince == 0 ? (object)DBNull.Value : patient.PatientProvince);
-
             command.Parameters.AddWithValue("@patient_address", string.IsNullOrWhiteSpace(patient.PatientAddress) ? "S/N" : patient.PatientAddress);
-            command.Parameters.AddWithValue("@patient_ocupation", string.IsNullOrWhiteSpace(patient.PatientOcupation) ? (object)DBNull.Value : patient.PatientOcupation);
-            command.Parameters.AddWithValue("@patient_company", string.IsNullOrWhiteSpace(patient.PatientCompany) ? (object)DBNull.Value : patient.PatientCompany);
-
+            command.Parameters.AddWithValue("@patient_ocupation", (object?)patient.PatientOcupation ?? DBNull.Value);
+            command.Parameters.AddWithValue("@patient_company", (object?)patient.PatientCompany ?? DBNull.Value);
             command.Parameters.AddWithValue("@patient_status", 1);
 
-            // ------------------------------------------------------------------
-            // Execute + parse JSON result
-            // ------------------------------------------------------------------
             try
             {
                 await connection.OpenAsync();
-
                 string? jsonResult = null;
                 await using (var reader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow))
                 {
-                    if (await reader.ReadAsync())
-                    {
-                        jsonResult = reader.GetString(0);
-                    }
+                    if (await reader.ReadAsync()) jsonResult = reader.GetString(0);
                 }
 
                 if (string.IsNullOrWhiteSpace(jsonResult))
-                    throw new Exception("Error: No se recibió respuesta del servidor de datos.");
+                    throw new Exception("Error: Sin respuesta del servidor.");
 
                 using var document = JsonDocument.Parse(jsonResult);
                 var root = document.RootElement;
 
-                var isSuccess = root.TryGetProperty("success", out var successProp) && successProp.GetInt32() == 1;
-
-                if (!isSuccess)
+                if (root.GetProperty("success").GetInt32() != 1)
                 {
-                    var msg = root.TryGetProperty("message", out var messageProp)
-                        ? messageProp.GetString()
-                        : "Falla en el registro.";
-                    throw new Exception(msg);
+                    throw new Exception(root.GetProperty("message").GetString() ?? "Falla en el registro.");
                 }
 
                 return new PatientCreateResponse
                 {
                     Success = true,
-                    Message = root.TryGetProperty("message", out var m) ? m.GetString() : "Éxito",
-                    PatientId = root.TryGetProperty("patientId", out var id) ? id.GetInt32() : 0,
-                    PatientCode = root.TryGetProperty("patientCode", out var pc) ? pc.GetString() : null,
-                    SecurityToken = root.TryGetProperty("securityToken", out var st) ? st.GetString() : "",
-                    SignatureData = root.TryGetProperty("signatureData", out var sd) ? sd.GetString() : null,
-                    SignedAt = root.TryGetProperty("signedAt", out var sa) ? sa.GetString() : null
+                    Message = root.GetProperty("message").GetString(),
+                    PatientId = root.GetProperty("patientId").GetInt32(),
+                    PatientCode = root.GetProperty("patientCode").GetString()
                 };
             }
             catch (SqlException ex)
             {
-                // Aquí entran también los RAISERROR del SP
-                throw new Exception("Error de Base de Datos: " + ex.Message);
+                throw new Exception("Error DB: " + ex.Message);
             }
             finally
             {
-                if (connection.State == ConnectionState.Open)
-                    await connection.CloseAsync();
+                if (connection.State == ConnectionState.Open) await connection.CloseAsync();
             }
         }
-
         /// <summary>
         /// Activates or deactivates a patient record asynchronously based on the specified status.
         /// </summary>

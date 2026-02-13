@@ -13,6 +13,7 @@
         public int? AppointmentPatientId { get; set; }
         public int? AppointmentStatus { get; set; }
         public int? AppointmentPaymentStatus { get; set; }
+        public int? AppointmentPaymentStatusLab { get; set; }
 
         public int? AppointmentMedicalofficeid { get; set; }
         public string? MedicalOfficeName { get; set; }
@@ -20,6 +21,7 @@
         public string? PatientName { get; set; }
         public string? PatientInsuranceName { get; set; }
 
+        public bool IsCheckedIn { get; set; } // Representa el campo appointment_asistio
         public string? DoctorName { get; set; }
         public string? DoctorName2 { get; set; }
         public int? DoctorUserId { get; set; }

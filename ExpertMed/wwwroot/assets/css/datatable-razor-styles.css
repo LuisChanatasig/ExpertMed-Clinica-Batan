@@ -1,0 +1,414 @@
+﻿/* datatable-improvements.css - Mejoras visuales y funcionales para DataTable */
+
+/* ===== TABLA PRINCIPAL ===== */
+#appointmentTable {
+    width: 100% !important;
+}
+
+    /* Prevenir flash durante carga */
+    #appointmentTable.processing {
+        opacity: 0.6;
+        transition: opacity 0.3s ease;
+    }
+
+/* ===== WRAPPER DE DATATABLES ===== */
+.dataTables_wrapper {
+    padding-top: 10px;
+}
+
+/* ===== BOTONES DE EXPORTACIÓN ===== */
+.dt-buttons {
+    margin-bottom: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+    .dt-buttons .btn {
+        margin: 0 !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+        .dt-buttons .btn i {
+            font-size: 1rem;
+        }
+
+/* ===== BARRA DE BÚSQUEDA ===== */
+.dataTables_filter {
+    margin-bottom: 10px;
+}
+
+    .dataTables_filter input {
+        margin-left: 0.5em;
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+        padding: 0.375rem 0.75rem;
+        transition: border-color 0.15s ease-in-out;
+    }
+
+        .dataTables_filter input:focus {
+            border-color: #4a6cf7;
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(74, 108, 247, 0.25);
+        }
+
+/* ===== SELECTOR DE CANTIDAD ===== */
+.dataTables_length select {
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    padding: 0.375rem 2rem 0.375rem 0.75rem;
+    margin: 0 0.5em;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px 12px;
+}
+
+/* ===== INFORMACIÓN DE REGISTROS ===== */
+.dataTables_info {
+    padding-top: 0.85em;
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+/* ===== PAGINACIÓN ===== */
+.dataTables_paginate {
+    padding-top: 0.5em;
+}
+
+    .dataTables_paginate .pagination {
+        margin: 0;
+    }
+
+    .dataTables_paginate .page-link {
+        padding: 0.5rem 0.75rem;
+        margin-left: 2px;
+    }
+
+/* ===== COLUMNAS ESPECÍFICAS ===== */
+/* Consultorio */
+#appointmentTable td:nth-child(3) {
+    min-width: 120px;
+}
+
+/* Fecha */
+#appointmentTable td:nth-child(4) {
+    min-width: 100px;
+}
+
+/* Hora */
+#appointmentTable td:nth-child(5) {
+    min-width: 90px;
+}
+
+/* Acciones - última columna */
+#appointmentTable td:last-child {
+    min-width: 150px;
+    white-space: nowrap;
+}
+
+/* ===== BADGES EN LA TABLA ===== */
+#appointmentTable .badge {
+    font-size: 0.75rem;
+    padding: 0.35em 0.65em;
+    font-weight: 500;
+}
+
+/* ===== BOTONES DE ACCIÓN ===== */
+#appointmentTable .d-flex.gap-1 {
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+#appointmentTable .btn-sm {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    white-space: nowrap;
+}
+
+    #appointmentTable .btn-sm i {
+        font-size: 0.875rem;
+    }
+
+/* ===== HOVER Y ESTADOS ===== */
+/* Hover en filas */
+#appointmentTable tbody tr:hover {
+    background-color: rgba(74, 108, 247, 0.05);
+    transition: background-color 0.15s ease;
+}
+
+/* Filas alternas */
+#appointmentTable tbody tr:nth-child(even) {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* ===== RESPONSIVE ===== */
+/* Icono de expansión en modo responsivo */
+table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control:before,
+table.dataTable.dtr-inline.collapsed > tbody > tr > th.dtr-control:before {
+    background-color: #4a6cf7;
+    border: 2px solid #4a6cf7;
+    box-shadow: 0 0 3px rgba(74, 108, 247, 0.5);
+}
+
+table.dataTable.dtr-inline.collapsed > tbody > tr.parent > td.dtr-control:before,
+table.dataTable.dtr-inline.collapsed > tbody > tr.parent > th.dtr-control:before {
+    background-color: #d9534f;
+    border-color: #d9534f;
+}
+
+/* Contenido expandido en responsive */
+table.dataTable.dtr-inline.collapsed > tbody > tr.parent ul.dtr-details {
+    display: block;
+}
+
+table.dataTable.dtr-inline.collapsed > tbody > tr.child ul.dtr-details li {
+    border-bottom: 1px solid #efefef;
+    padding: 0.5em 0;
+}
+
+/* ===== SCROLL HORIZONTAL ===== */
+.dataTables_wrapper .dataTables_scroll {
+    clear: both;
+}
+
+.dataTables_wrapper .dataTables_scrollBody {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+    .dataTables_wrapper .dataTables_scrollBody::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    .dataTables_wrapper .dataTables_scrollBody::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+
+    .dataTables_wrapper .dataTables_scrollBody::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+    }
+
+        .dataTables_wrapper .dataTables_scrollBody::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+/* ===== PROCESANDO ===== */
+.dataTables_processing {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 200px;
+    margin-left: -100px;
+    margin-top: -26px;
+    text-align: center;
+    padding: 1em 0;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid #ddd;
+    border-radius: 0.375rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+}
+
+/* ===== MENSAJES VACÍOS ===== */
+.dataTables_empty {
+    text-align: center;
+    padding: 2rem !important;
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* ===== AJUSTES RESPONSIVOS ===== */
+@media screen and (max-width: 768px) {
+    /* Reducir tamaño de fuente */
+    .dataTables_wrapper {
+        font-size: 0.875rem;
+    }
+
+    /* Hacer botones más compactos */
+    .dt-buttons {
+        justify-content: center;
+    }
+
+        .dt-buttons .btn {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+    /* Ajustar paginación */
+    .dataTables_paginate .page-link {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    /* Ajustar filtros y selector */
+    .dataTables_filter,
+    .dataTables_length {
+        text-align: center;
+        margin-bottom: 10px;
+    }
+
+    /* Badges más pequeños */
+    #appointmentTable .badge {
+        font-size: 0.7rem;
+        padding: 0.25em 0.5em;
+    }
+
+    /* Botones de acción más pequeños */
+    #appointmentTable .btn-sm {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.4rem;
+    }
+
+    /* Ajustar información */
+    .dataTables_info {
+        font-size: 0.75rem;
+        text-align: center;
+    }
+}
+
+@media screen and (max-width: 576px) {
+    /* Layout de una columna en móviles pequeños */
+    .dataTables_wrapper .row {
+        display: block;
+    }
+
+    .dataTables_wrapper .col-sm-12 {
+        width: 100%;
+    }
+
+    /* Centrar elementos */
+    .dataTables_length,
+    .dataTables_filter,
+    .dataTables_info,
+    .dataTables_paginate {
+        text-align: center;
+        float: none;
+    }
+
+    /* Stack botones verticalmente */
+    .dt-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+
+        .dt-buttons .btn {
+            width: 100%;
+            justify-content: center;
+        }
+}
+
+/* ===== COMPATIBILIDAD CON BOOTSTRAP 5 ===== */
+.table > :not(caption) > * > * {
+    padding: 0.75rem;
+    vertical-align: middle;
+}
+
+.table-hover > tbody > tr:hover > * {
+    --bs-table-accent-bg: rgba(74, 108, 247, 0.05);
+}
+
+.table-bordered > :not(caption) > * {
+    border-width: 1px 0;
+}
+
+    .table-bordered > :not(caption) > * > * {
+        border-width: 0 1px;
+    }
+
+/* ===== IMPRESIÓN ===== */
+@media print {
+    /* Ocultar controles */
+    .dt-buttons,
+    .dataTables_filter,
+    .dataTables_length,
+    .dataTables_paginate,
+    .dataTables_info {
+        display: none !important;
+    }
+
+    /* Ajustar tabla */
+    #appointmentTable {
+        font-size: 10pt;
+    }
+
+        #appointmentTable th {
+            background-color: #4a6cf7 !important;
+            color: white !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+    /* Mantener colores de badges */
+    .badge {
+        border: 1px solid #000;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* Ocultar botones de acción */
+    #appointmentTable td:last-child {
+        display: none;
+    }
+
+    /* Eliminar hover */
+    #appointmentTable tbody tr:hover {
+        background-color: transparent !important;
+    }
+}
+
+/* ===== ANIMACIONES ===== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.datatable-ready {
+    animation: fadeIn 0.3s ease-in;
+}
+
+/* ===== LOADING OVERLAY ===== */
+.datatable-loading {
+    position: relative;
+}
+
+    .datatable-loading::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.8);
+        z-index: 999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+/* ===== AJUSTES FINALES ===== */
+/* Asegurar que la tabla use todo el ancho disponible */
+.card-body > .dataTables_wrapper {
+    width: 100%;
+}
+
+/* Eliminar márgenes extras */
+.dataTables_wrapper .table {
+    margin-bottom: 0;
+}
+
+/* Mejorar espaciado de filas */
+#appointmentTable tbody tr {
+    transition: background-color 0.15s ease;
+}

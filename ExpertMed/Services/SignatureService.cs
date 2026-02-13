@@ -171,19 +171,39 @@ namespace ExpertMed.Services
             }
         }
 
-        public async Task ConsumeToPatientAsync(Guid token, int patientId)
+        public async Task ConsumeToAppointmentAsync(Guid token, int patientId, int appointmentId)
         {
-            await using var cn = new SqlConnection(_dbContext.Database.GetConnectionString());
+            // Obtenemos la cadena de conexión desde el contexto
+            var connectionString = _dbContext.Database.GetConnectionString();
+
+            await using var cn = new SqlConnection(connectionString);
             await using var cmd = new SqlCommand("dbo.sp_signature_consume_to_patient", cn)
             {
                 CommandType = CommandType.StoredProcedure
             };
 
+            // Parámetros requeridos por el SP modificado
             cmd.Parameters.AddWithValue("@token", token);
             cmd.Parameters.AddWithValue("@patient_id", patientId);
+            cmd.Parameters.AddWithValue("@appointment_id", appointmentId); // <-- Nuevo parámetro clave
 
-            await cn.OpenAsync();
-            await cmd.ExecuteNonQueryAsync();
+            try
+            {
+                if (cn.State != ConnectionState.Open)
+                    await cn.OpenAsync();
+
+                await cmd.ExecuteNonQueryAsync();
+            }
+            catch (SqlException ex)
+            {
+                // El SP lanza un THROW 51010 si el token no es válido o ya fue usado
+                throw new Exception($"Error al procesar la asistencia: {ex.Message}");
+            }
+            finally
+            {
+                if (cn.State == ConnectionState.Open)
+                    await cn.CloseAsync();
+            }
         }
 
 

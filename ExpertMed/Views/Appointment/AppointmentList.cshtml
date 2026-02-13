@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap.min.css" />
 
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.dataTables.min.css">
-
+<link href="~/assets/css/datatable-razor-styles.css" rel="stylesheet" />
     <style>
         /* Cabecera adaptable */
         .card-header.d-flex {
@@ -97,21 +97,6 @@
                                     onclick="filterAppointments(1, false, 5)">
                                 <i class="mdi mdi-clipboard-list-outline"></i> Activas y Emergencias
                             </button>
-
-                            @* Ocultamos o eliminamos los botones individuales de "Activas" y "Emergencias" * /
-                            @* Puedes eliminarlos completamente si no los necesitas, o mantenerlos comentados como referencia. *@
-                            @*
-                            @foreach (var estado in new[] {
-                                (1, "Activas", "btn-soft-warning"), // Este se oculta/elimina
-                                (5, "EMERGENCIAS", "bg-danger text-white fw-bold text-uppercase") // Este se oculta/elimina
-                            })
-                            {
-                                <button class="btn @estado.Item3"
-                                        onclick="filterAppointments(@estado.Item1)">
-                                    @estado.Item2
-                                </button>
-                            }
-                            *@
 
                             @* Mantendremos los otros estados si son necesarios individualmente *@
                             @foreach (var estado in new[] {
@@ -297,15 +282,23 @@
                                                 <i class="ri-money-dollar-circle-line"></i> Pagar
                                             </button>
                                         }
+                                   @if ((appt.AppointmentStatus == 1 || appt.AppointmentStatus == 5) && !appt.IsCheckedIn) 
+{
+    <button class="btn btn-sm btn-soft-primary" title="Registrar Asistencia"
+            onclick="initCheckIn(@appt.AppointmentId, @appt.AppointmentPatientId)">
+        <i class="ri-user-received-2-line"></i> Check-in
+    </button>
+}
 
-                                        @* NUEVO BOTÓN: Pagar Laboratorio directamente desde la fila *@
-                                        @if (appt.HasLaboratories && perfilId != 2)
-                                        {
-                                            <button class="btn btn-sm btn-soft-warning" title="Pagar Laboratorios"
-                                                    onclick="setAppointmentData(@appt.AppointmentId, @appt.AppointmentPatientId); AppointmentManager.payLaboratory();">
-                                                <i class="ri-flask-line"></i> Lab.
-                                            </button>
-                                        }
+
+                                       @* NUEVO BOTÓN: Pagar Laboratorio directamente desde la fila *@
+@if (appt.HasLaboratories && perfilId != 2 && appt.AppointmentPaymentStatusLab == 0)
+{
+    <button class="btn btn-sm btn-soft-warning" title="Pagar Laboratorios"
+            onclick="setAppointmentData(@appt.AppointmentId, @appt.AppointmentPatientId); payLaboratory();">
+        <i class="ri-flask-line"></i> Lab.
+    </button>
+}
 
                                         @if (appt.AppointmentStatus == 2 || (appt.AppointmentStatus == 4 && appt.AppointmentPaymentStatus == 1))
                                         {
@@ -641,7 +634,83 @@
     </div>
 </div>
 
+<div class="modal fade" id="modalCheckIn" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        @Html.AntiForgeryToken()
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="ri-user-received-2-line me-1"></i> Check-in de Paciente
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="detenerPolling()"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="checkInAppId" />
+                <input type="hidden" id="checkInPatientId" />
+                <input type="hidden" id="SignatureToken" />
 
+                <div class="card border-primary-subtle shadow-none mb-0 bg-light-subtle">
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-3 text-primary">
+                            <i class="ri-qr-code-line me-1"></i> Firma Digital del Paciente
+                        </h6>
+                        
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md-4 text-center">
+                                <div class="p-3 border rounded bg-white shadow-sm">
+                                    <img id="qrImg" style="max-width:100%; height:auto; display:none;" alt="QR Firma" />
+                                    <div id="qrPlaceholder" class="text-muted small py-4">
+                                        <i class="ri-qr-scan-2-line fs-1 d-block mb-2 text-primary opacity-50"></i>
+                                        Haga clic en "Generar QR" para que el paciente escanee.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-8">
+                                <div class="d-flex flex-column gap-3">
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-warning fs-12" id="sigBadge">Pendiente</span>
+                                        <small class="text-muted ms-2" id="sigInfo">Esperando inicio de solicitud.</small>
+                                    </div>
+
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-light"><i class="ri-link"></i></span>
+                                        <input class="form-control" id="signUrl" readonly placeholder="Enlace de firma remota..." />
+                                        <button class="btn btn-outline-primary" type="button" title="Copiar enlace" onclick="copiarLinkFirma()">
+                                            <i class="ri-file-copy-line"></i>
+                                        </button>
+                                        <a class="btn btn-outline-primary" id="btnAbrirLink" href="#" target="_blank" style="display:none;" title="Abrir en esta pestaña">
+                                            <i class="ri-external-link-line"></i>
+                                        </a>
+                                    </div>
+
+                                    <div class="d-flex flex-wrap gap-2 pt-2">
+                                        <button type="button" class="btn btn-primary" id="btnGenerarQR" onclick="generarQrFirmaCheckIn()">
+                                            <i class="ri-qr-code-line me-1"></i> Generar QR
+                                        </button>
+
+                                        <button type="button" class="btn btn-success" id="btnRegistrarAsistencia" disabled onclick="confirmarAsistenciaFinal()">
+                                            <i class="ri-check-double-line me-1"></i> Confirmar Asistencia
+                                        </button>
+
+                                        <button type="button" class="btn btn-soft-danger" data-bs-dismiss="modal" onclick="detenerPolling()">
+                                            Cancelar
+                                        </button>
+                                    </div>
+
+                                    <div class="alert alert-info border-0 mb-0 py-2" style="font-size:.75rem;">
+                                        <i class="ri-information-line me-1"></i> 
+                                        Al escanear, el paciente aceptará la <strong>LOPDP</strong> y el <strong>Consentimiento Informado</strong> institucional.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 @section scripts {
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"
@@ -659,7 +728,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <!-- Variables del servidor (deben estar antes de los módulos) -->
     <script>
         // Variables inyectadas desde el servidor
@@ -677,6 +746,7 @@
     <script src="~/js/appointments/vital-signs.js"></script>
     <script src="~/js/appointments/appointment-manager.js"></script>
     <script src="~/js/appointments/appointment-list-main.js"></script>
+    <script src="~/js/appointments/appointment-signature.js"></script>
 
     <!-- Configuración específica de esta vista -->
     <script>
@@ -694,7 +764,11 @@
             CONSULTATION_FOLLOWUP: '@Url.Action("ConsultationFollowUp", "Consultation")',
             CONSULTATION_LIST: '@Url.Action("ConsultationList", "Consultation")',
             BILLING: '@Url.Action("Facturacion", "Billing")',
-            BILL_LABORATORY: '@Url.Action("FacturacionLaboratorio", "Billing")'
+            BILL_LABORATORY: '@Url.Action("FacturacionLaboratorio", "Billing")',
+            // NUEVOS ENDPOINTS PARA FIRMA Y ASISTENCIA
+         SIGNATURE_CREATE: '@Url.Action("CreateRequest", "Signature")',
+         SIGNATURE_STATUS: '@Url.Action("Status", "Signature")',
+         CONFIRM_ATTENDANCE: '@Url.Action("ConfirmAttendance", "Appointment")'
         };
     </script>
     <script>

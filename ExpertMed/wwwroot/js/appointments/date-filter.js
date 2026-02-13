@@ -1,141 +1,141 @@
-﻿// date-filter.js - Filtros de fecha para DataTable
-
+﻿/**
+ * date-filter.js - Gestión de filtrado por rangos de fecha vía servidor
+ * Diseñado para ExpertMed-Clinica-Batan
+ */
 class DateRangeFilter {
-    constructor(tableId, dateColumnIndex) {
-        this.tableId = tableId;
-        this.dateColumnIndex = dateColumnIndex;
-        this.start = null;
-        this.end = null;
-        this.table = null;
-
+    constructor() {
         this.init();
     }
 
     init() {
-        // Esperar a que DataTable esté inicializada
         $(document).ready(() => {
-            this.table = $(`#${this.tableId}`).DataTable();
-            this.setupFilter();
             this.bindEvents();
-
-            // Aplicar filtro inicial (hoy)
-            const today = new Date();
-            this.setRange(today, today, 'Hoy');
+            this.syncInputsFromUrl();
         });
     }
 
-    setupFilter() {
-        const self = this;
-
-        $.fn.dataTable.ext.search.push(function (settings, data) {
-            if (settings.nTable.id !== self.tableId) {
-                return true;
-            }
-
-            const dateStr = data[self.dateColumnIndex];
-            const date = DateHelper.parseDMY(dateStr);
-
-            if (!date) return true;
-
-            if (self.start && date < self.start) return false;
-            if (self.end && date > self.end) return false;
-
-            return true;
-        });
-    }
-
-    setRange(start, end, labelText) {
-        this.start = start ? DateHelper.atStartOfDay(start) : null;
-        this.end = end ? DateHelper.atEndOfDay(end) : null;
-
-        this.updateLabel(labelText);
-
-        if (this.table) {
-            this.table.draw();
+    /**
+     * Redirige a la URL actual añadiendo o actualizando los parámetros de fecha
+     * Preserva los estados de cita (appointmentStatus, isPaidOnly, etc.)
+     */
+    applyDateRedirect(startDate, endDate) {
+        if (typeof AppConfig === 'undefined' || !AppConfig.ENDPOINTS.APPOINTMENT_LIST) {
+            console.error("AppConfig no definido");
+            return;
         }
+
+        const params = new URLSearchParams(window.location.search);
+
+        if (startDate) params.set('startDate', startDate);
+        else params.delete('startDate');
+
+        if (endDate) params.set('endDate', endDate);
+        else params.delete('endDate');
+
+        // Construir URL final
+        const url = `${AppConfig.ENDPOINTS.APPOINTMENT_LIST}?${params.toString()}`;
+
+        console.log('Filtrando por fecha:', url);
+        window.location.href = url;
     }
 
-    updateLabel(text) {
-        const $label = $('#lblRangoActivo');
+    /**
+     * Formatea objetos Date a string YYYY-MM-DD para el input y el controlador
+     */
+    formatDate(date) {
+        const d = new Date(date);
+        let month = '' + (d.getMonth() + 1);
+        let day = '' + d.getDate();
+        const year = d.getFullYear();
 
-        if (text) {
-            $label.text(text).show();
-        } else {
-            $label.hide().text('');
-        }
-    }
+        if (month.length < 2) month = '0' + month;
+        if (day.length < 2) day = '0' + day;
 
-    clearRange() {
-        this.setRange(null, null, '');
-        FormHelper.clearFields('fDesdeFecha', 'fHastaFecha');
+        return [year, month, day].join('-');
     }
 
     bindEvents() {
         // Botón Hoy
         $('#btnHoy').on('click', () => {
-            const today = new Date();
-            this.setRange(today, today, 'Hoy');
+            const today = this.formatDate(new Date());
+            this.applyDateRedirect(today, today);
         });
 
-        // Botón Esta Semana
+        // Botón Esta Semana (Lunes a Domingo)
         $('#btnSemana').on('click', () => {
-            const { start, end } = DateHelper.getWeekRange();
-            this.setRange(start, end, 'Esta semana');
+            const curr = new Date();
+            const first = curr.getDate() - curr.getDay() + (curr.getDay() === 0 ? -6 : 1);
+            const last = first + 6;
+
+            const firstday = this.formatDate(new Date(curr.setDate(first)));
+            const lastday = this.formatDate(new Date(curr.setDate(last)));
+
+            this.applyDateRedirect(firstday, lastday);
         });
 
         // Botón Este Mes
         $('#btnMes').on('click', () => {
-            const { start, end } = DateHelper.getMonthRange();
-            this.setRange(start, end, 'Este mes');
+            const date = new Date();
+            const firstDay = this.formatDate(new Date(date.getFullYear(), date.getMonth(), 1));
+            const lastDay = this.formatDate(new Date(date.getFullYear(), date.getMonth() + 1, 0));
+
+            this.applyDateRedirect(firstDay, lastDay);
         });
 
         // Botón Este Año
         $('#btnAnio').on('click', () => {
-            const { start, end } = DateHelper.getYearRange();
-            this.setRange(start, end, 'Este año');
+            const year = new Date().getFullYear();
+            this.applyDateRedirect(`${year}-01-01`, `${year}-12-31`);
         });
 
         // Aplicar rango personalizado
         $('#btnAplicarRango').on('click', () => {
-            this.applyCustomRange();
+            const desde = $('#fDesdeFecha').val();
+            const hasta = $('#fHastaFecha').val();
+
+            if (!desde || !hasta) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Atención',
+                    text: 'Debe seleccionar ambas fechas para aplicar el filtro.'
+                });
+                return;
+            }
+
+            if (new Date(hasta) < new Date(desde)) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Rango inválido',
+                    text: 'La fecha "Hasta" no puede ser menor a la fecha "Desde".'
+                });
+                return;
+            }
+
+            this.applyDateRedirect(desde, hasta);
         });
 
-        // Limpiar rango
+        // Limpiar rango (Vuelve al default del SP: Hoy)
         $('#btnLimpiarRango').on('click', () => {
-            this.clearRange();
+            this.applyDateRedirect(null, null);
         });
     }
 
-    applyCustomRange() {
-        const desdeVal = FormHelper.getValue('fDesdeFecha');
-        const hastaVal = FormHelper.getValue('fHastaFecha');
+    /**
+     * Mantiene los inputs de fecha visualmente sincronizados con la URL
+     */
+    syncInputsFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        const start = params.get('startDate');
+        const end = params.get('endDate');
 
-        let start = null, end = null;
+        if (start) $('#fDesdeFecha').val(start);
+        if (end) $('#fHastaFecha').val(end);
 
-        if (desdeVal) {
-            const [y, m, d] = desdeVal.split('-').map(n => parseInt(n, 10));
-            start = new Date(y, m - 1, d);
+        if (start && end) {
+            $('#lblRangoActivo').text(`Filtrando: ${start} al ${end}`).show();
         }
-
-        if (hastaVal) {
-            const [y2, m2, d2] = hastaVal.split('-').map(n => parseInt(n, 10));
-            end = new Date(y2, m2 - 1, d2);
-        }
-
-        // Validación
-        if (start && end && end < start) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Rango inválido',
-                text: 'La fecha "Hasta" debe ser mayor o igual a la fecha "Desde"'
-            });
-            return;
-        }
-
-        const label = `Del ${desdeVal || '…'} al ${hastaVal || '…'}`;
-        this.setRange(start, end, label);
     }
 }
 
-// Hacer disponible globalmente
-window.DateRangeFilter = DateRangeFilter;
+// Inicializar globalmente
+window.dateRangeFilter = new DateRangeFilter();

@@ -1,626 +1,135 @@
-﻿@* ===========================
-   Views/Patient/NewPatient.cshtml (VERSIÓN QR-ONLY)
-   Flujo:
-   1) Usuario llena datos mínimos (Apellido, Nombre, Celular)
-   2) Click "Generar QR" -> POST Signature/CreateRequest -> devuelve signUrl + token
-   3) Se muestra QR + enlace + polling a Signature/Status
-   4) Cuando status=1 -> habilita "Registrar Paciente"
-   5) POST Patient/NewPatient envía SignatureToken (NO envía PatientSignature)
-   6) Controller crea paciente (skipSignatureInsert=true) + consume token -> patient_signatures
-   7) Redirect a GET abre Modal Comprobante y genera PDF (cliente)
-   =========================== *@
-
-@using Microsoft.AspNetCore.Http
+﻿@using Microsoft.AspNetCore.Http
 @model NewPatientViewModel
 
 @{
-    ViewBag.Title = "Registro de Paciente";
+    ViewBag.Title = "Registro Rápido de Paciente";
     ViewBag.pTitle = "Pacientes";
-    ViewBag.pageTitle = "Crear Paciente";
+    ViewBag.pageTitle = "Nuevo Registro";
     Layout = "~/Views/Shared/_Layout.cshtml";
 
     var successMessage = TempData["SuccessMessage"] as string;
     var errorMessage = TempData["ErrorMessage"] as string;
-
-    var securityToken = TempData["SecurityToken"] as string; // SHA-256 (server)
-    var patientNameTD = TempData["PatientName"] as string;
-    var patientCodeTD = TempData["PatientCode"] as string;
-
-    var signatureDataTD = TempData["SignatureData"] as string;
-    var signedAtTD = TempData["SignedAt"] as string;
-
-    var signedFilesJson = TempData["SignedFiles"] as string;
-
     var usuarioId = ViewContext.HttpContext.Session.GetInt32("UsuarioId");
-    var perfilId = ViewContext.HttpContext.Session.GetInt32("PerfilId");
 }
-
-<style>
-    .legal-container {
-        background-color: #f4f7f9;
-        border-left: 5px solid #299cdb;
-        padding: 15px;
-        font-size: 13px;
-        text-align: justify;
-        color: #333;
-        border-radius: 4px;
-    }
-
-    .iso-badge {
-        font-size: 10px;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        font-weight: 700;
-        color: #0ab39c;
-    }
-
-    .codebox {
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
-        white-space: pre-wrap;
-        word-break: break-all;
-    }
-
-    /* Área imprimible (convertida a PDF) */
-    #actaPdf {
-        background: #fff;
-        color: #111;
-        padding: 18px;
-        border: 1px solid #e5e5e5;
-        border-radius: 10px;
-    }
-
-        #actaPdf h4, #actaPdf h5, #actaPdf h6 {
-            margin: 0;
-        }
-
-        #actaPdf .muted {
-            color: #666;
-            font-size: 12px;
-        }
-
-        #actaPdf .hr {
-            height: 1px;
-            background: #e9e9e9;
-            margin: 12px 0;
-        }
-
-        #actaPdf .badgeIso {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 999px;
-            background: #e9fff7;
-            color: #0a7f64;
-            font-weight: 700;
-            font-size: 11px;
-            letter-spacing: .5px;
-            text-transform: uppercase;
-            border: 1px solid #b8f1de;
-        }
-</style>
 
 <div class="position-relative mx-n4 mt-n4">
     <div class="profile-wid-bg profile-setting-img">
         <img src="~/assets/images/auth-one-bg.jpg" class="profile-wid-img" alt="">
-        <div class="overlay-content">
-            <div class="text-end p-3">
-                <div class="p-0 ms-auto rounded-circle profile-photo-edit">
-                    <h1 class="cabeceras text-white">
-                        <i class="ri-shield-user-fill"></i> Registro Seguro de Paciente
-                    </h1>
+            <div class="overlay-content">
+                <div class="text-end p-3">
+                    <h1 class="text-white"><i class="ri-user-add-line"></i> Alta de Paciente</h1>
+                    <p class="text-white-50">Registro administrativo inicial - Firma pendiente para cita.</p>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<div class="row">
-    <form asp-action="NewPatient" asp-controller="Patient" method="POST"
-          class="row g-3 needs-validation" id="formPaciente" novalidate enctype="multipart/form-data">
-
-        @Html.AntiForgeryToken()
-
-        <input type="hidden" name="PatientCode" id="PatientCode" value="EC-@DateTime.Now.Ticks">
-        <input type="hidden" name="PatientCreationuser" value="@usuarioId" />
-        <input type="hidden" name="PatientModificationuser" value="@usuarioId" />
-
-        @* QR token que viajará al POST *@
-        <input type="hidden" name="SignatureToken" id="SignatureToken" />
-
+    <div class="row">
         <div class="col-xxl-12">
             <div class="card mt-xxl-n5 shadow-lg">
                 <div class="card-body p-4">
-                    <div class="tab-content">
+                    <form asp-action="NewPatient" asp-controller="Patient" method="POST" class="needs-validation" novalidate>
+                        @Html.AntiForgeryToken()
+                    
+                        @* Auditoría *@
+                        <input type="hidden" name="PatientCode" id="PatientCode" value="EC-@DateTime.Now.Ticks">
+                        <input type="hidden" name="PatientCreationuser" value="@usuarioId" />
+                        <input type="hidden" name="PatientModificationuser" value="@usuarioId" />
 
-                        <h6 class="text-danger fw-bold mb-3">
-                            <i class="ri-asterisk"></i> Campos obligatorios para el expediente
-                        </h6>
 
-                        <div class="tab-pane active" id="personalDetails" role="tabpanel">
-                            <div class="row">
-                                <div class="col-lg-4">
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold text-dark">Primer Apellido*</label>
-                                        <input type="text" class="form-control form-control-lg border-primary-subtle"
-                                               name="PatientFirstsurname" placeholder="García" required>
-                                        <div class="invalid-feedback">El apellido es obligatorio legalmente.</div>
-                                    </div>
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <div class="alert alert-info border-0 rounded-top mb-4">
+                                    <i class="ri-information-line me-2"></i>
+                                    Ingrese los datos básicos para crear el expediente. <strong>La firma legal se capturará cuando el paciente realice el Check-in en su cita.</strong>
                                 </div>
+                            </div>
 
-                                <div class="col-lg-4">
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold text-dark">Primer Nombre*</label>
-                                        <input type="text" class="form-control form-control-lg border-primary-subtle"
-                                               name="PatientFirstname" placeholder="Juan" required>
-                                        <div class="invalid-feedback">El nombre es obligatorio legalmente.</div>
-                                    </div>
+                            @* Datos obligatorios *@
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Primer Apellido*</label>
+                                    <input type="text" class="form-control" name="PatientFirstsurname" placeholder="Apellido" required>
                                 </div>
-
-                                <div class="col-lg-4">
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold text-dark">Celular de Contacto*</label>
-                                        <input type="text" class="form-control form-control-lg border-primary-subtle"
-                                               name="PatientCellularPhone" placeholder="Ej: 0999999999" required>
-                                        <div class="invalid-feedback">Un número de contacto es obligatorio.</div>
-                                    </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Primer Nombre*</label>
+                                    <input type="text" class="form-control" name="PatientFirstname" placeholder="Nombre" required>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Celular*</label>
+                                    <input type="text" class="form-control" name="PatientCellularPhone" placeholder="09XXXXXXXX" required>
+                                </div>
+                            </div>
 
-                                @* Campos ocultos / defaults (mantengo tu lógica) *@
-                                <div style="display:none;">
-                                    @if (perfilId == 3 || perfilId == 1 || perfilId == 4 || perfilId == 8)
+                            @* Campos con valores predeterminados (Ocultos para agilizar) *@
+                            <div style="display:none;">
+                                <input type="text" name="PatientDocumentnumber" value="0000000000">
+                                <input type="date" name="PatientBirthdate" value="2000-01-01">
+                                <input type="email" name="PatientEmail" value="pendiente@expertmed.ec">
+                                <input type="text" name="PatientAddress" value="Quito, Ecuador">
+                                <select name="PatientDocumenttype">
+                                    @foreach (var dt in Model.DocumentTypes)
                                     {
-                                        <select name="doctorUserId">
-                                            <option value="">N/A</option>
-                                            @foreach (var doctor in Model.Users)
-                                            {
-                                                <option value="@doctor.UsersId">@doctor.UsersNames</option>
-                                            }
-                                        </select>
+                                        <option value="@dt.CatalogId">@dt.CatalogName</option>
                                     }
-                                    <input type="text" name="PatientDocumentnumber" value="0000000000">
-                                    <input type="date" name="PatientBirthdate" value="2000-01-01">
-                                    <input type="email" name="PatientEmail" value="no-email@sistema.ec">
-                                    <input type="text" name="PatientAddress" value="Quito, Ecuador">
-
-                                    <select name="PatientDocumenttype">
-                                        @foreach (var dt in Model.DocumentTypes)
-                                        {
-                                            <option value="@dt.CatalogId">@dt.CatalogName</option>
-                                        }
-                                    </select>
-
-                                    <select name="PatientGender">
-                                        @foreach (var gt in Model.GenderTypes)
-                                        {
-                                            <option value="@gt.CatalogId">@gt.CatalogName</option>
-                                        }
-                                    </select>
-                                </div>
+                                </select>
+                                <select name="PatientGender">
+                                    @foreach (var gt in Model.GenderTypes)
+                                    {
+                                        <option value="@gt.CatalogId">@gt.CatalogName</option>
+                                    }
+                                </select>
                             </div>
                         </div>
 
-                        @* ===========================
-                           BLOQUE QR / FIRMA REMOTA
-                           =========================== *@
-                        <div class="card border-primary-subtle mt-3">
-                            <div class="card-body">
-                                <h6 class="fw-bold mb-2"><i class="ri-qr-code-line"></i> Firma del Paciente (QR)</h6>
-
-                                <div class="row g-3 align-items-center">
-                                    <div class="col-md-4 text-center">
-                                        <div class="p-2 border rounded bg-white">
-                                            <img id="qrImg" style="max-width:180px; display:none;" alt="QR Firma" />
-                                            <div id="qrPlaceholder" class="text-muted small">Genera el QR para firmar.</div>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-8">
-                                        <div class="d-flex flex-column gap-2">
-                                            <div>
-                                                <span class="badge bg-warning" id="sigBadge">Pendiente</span>
-                                                <small class="text-muted ms-2" id="sigInfo">Aún no se ha firmado.</small>
-                                            </div>
-
-                                            <div class="input-group">
-                                                <input class="form-control" id="signUrl" readonly placeholder="Aquí aparecerá el enlace de firma..." />
-                                                <button class="btn btn-outline-secondary" type="button" onclick="copiarLinkFirma()">
-                                                    Copiar
-                                                </button>
-                                                <a class="btn btn-outline-primary" id="btnAbrirLink" href="#" target="_blank" style="display:none;">
-                                                    Abrir
-                                                </a>
-                                            </div>
-
-                                            <div class="d-flex gap-2">
-                                                <button type="button" class="btn btn-primary" onclick="generarQrFirma()">
-                                                    <i class="ri-qr-code-line"></i> Generar QR
-                                                </button>
-
-                                                <button type="submit" class="btn btn-success" id="btnRegistrar" disabled>
-                                                    <i class="ri-check-double-line"></i> Registrar Paciente
-                                                </button>
-
-                                                <a href="@Url.Action("PatientList", "Patient")" class="btn btn-soft-secondary">
-                                                    Cancelar
-                                                </a>
-                                            </div>
-
-                                            <small class="text-muted" style="font-size:.8rem;">
-                                                El consentimiento y el texto legal se muestran en el dispositivo del paciente al escanear el QR.
-                                            </small>
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a href="@Url.Action("PatientList", "Patient")" class="btn btn-light">Cancelar</a>
+                            <button type="submit" class="btn btn-success px-4">
+                                <i class="ri-save-line me-1"></i> Crear Expediente
+                            </button>
                         </div>
-
-                    </div> @* tab-content *@
+                    </form>
                 </div>
-            </div>
-        </div>
-    </form>
-</div>
-
-@* ===========================
-   MODAL COMPROBANTE / ACTA (Post-registro)
-   Se abre automáticamente si existe TempData["SecurityToken"]
-   PDF se genera al instante (sin endpoint)
-   =========================== *@
-<div class="modal fade" id="modalComprobante" data-bs-backdrop="static" tabindex="-1">
-    <div class="modal-dialog modal-xl modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title">
-                    <i class="ri-file-shield-2-line"></i> Acta Notarial / Comprobante de Registro
-                </h5>
-            </div>
-
-            <div class="modal-body p-4">
-                <div id="actaPdf">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h4>Acta de Consentimiento y Registro</h4>
-                            <div class="muted">Cumplimiento: LOPDP Ecuador • Seguridad: ISO/IEC 27001</div>
-                        </div>
-                        <div class="text-end">
-                            <span class="badgeIso">ISO 27001</span>
-                            <div class="muted mt-2">Fecha/Hora: <span id="actaFecha">—</span></div>
-                        </div>
-                    </div>
-
-                    <div class="hr"></div>
-
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <h6 class="fw-bold">Paciente</h6>
-                            <div id="actaPaciente">@(patientNameTD ?? "—")</div>
-                            <div class="muted mt-2">Código Expediente: <span id="actaCode">—</span></div>
-                            <div class="muted">Transacción: <span id="actaTxn">—</span></div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <h6 class="fw-bold">Token de Integridad (SHA-256) - Servidor</h6>
-                            <div class="p-3 rounded bg-dark text-white codebox" id="actaTokenServer">
-                                @(securityToken ?? "")
-                            </div>
-                            <div class="muted mt-2">
-                                Este token fue generado por el servidor y se asocia al registro para auditoría.
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="hr"></div>
-
-                    <div class="row g-3">
-                        <div class="col-md-7">
-                            <h6 class="fw-bold mb-2">Declaración</h6>
-                            <div class="muted" style="font-size:13px; text-align:justify;">
-                                El titular declara que autoriza el tratamiento de sus datos personales y sensibles de salud
-                                conforme la Ley Orgánica de Protección de Datos Personales (Ecuador). La firma manuscrita
-                                digitalizada constituye evidencia de consentimiento y se asocia al expediente del paciente.
-                            </div>
-                        </div>
-
-                        <div class="col-md-5">
-                            <h6 class="fw-bold mb-2">Firma del Paciente</h6>
-                            <div class="border rounded p-2 text-center">
-                                <img id="firmaPreview"
-                                     style="max-width:100%; max-height:220px; display:none;"
-                                     alt="Firma del paciente" />
-
-                                <div id="firmaFallback" class="muted" style="display:block;">
-                                    Firma no disponible.
-                                </div>
-                            </div>
-                            <div class="muted mt-2">Firma recuperada desde el servidor (flujo QR).</div>
-                        </div>
-                    </div>
-
-                    <div class="hr"></div>
-
-                    <div class="muted">
-                        Nota: Este documento es generado en el navegador al momento del registro. Conserve el PDF para respaldo.
-                    </div>
-                    <div class="hr"></div>
-
-                    <div class="row">
-                        <div class="col-12">
-                            <h6 class="fw-bold text-primary mb-3">
-                                <i class="ri-folder-shield-2-line"></i> Copias Legales Firmadas (LOPDP)
-                            </h6>
-                            <div id="contenedorDescargasLegales" class="d-flex flex-wrap gap-2">
-                                <div class="text-muted small">Cargando documentos...</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mt-3">
-                    <div class="alert alert-success mb-0">
-                        <strong>Registro confirmado.</strong> Puede descargar el PDF ahora mismo.
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal-footer bg-light">
-                <button class="btn btn-outline-primary" id="btnDescargarPdf" onclick="descargarActaPdf()">
-                    <i class="ri-download-2-line"></i> Descargar PDF
-                </button>
-
-                <button class="btn btn-success" onclick="continuarFlujo()">
-                    <i class="ri-check-line"></i> Continuar a Lista
-                </button>
             </div>
         </div>
     </div>
-</div>
-@section scripts {
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    @* Generador de QR *@
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    @section scripts {
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script>
+            // Mensajes del servidor
+            const successMessage = "@successMessage";
+            const errorMessage = "@errorMessage";
 
-    @* Librerías para PDF en cliente (Acta) *@
-    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-
-    <script>
-        // ---------------------------------------------------------
-        // 1. GESTIÓN DE MENSAJES DEL SERVIDOR
-        // ---------------------------------------------------------
-        const successMessage = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(successMessage ?? ""));
-        const errorMessage   = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(errorMessage ?? ""));
-
-        if (errorMessage) Swal.fire('Error', errorMessage, 'error');
-        if (successMessage) Swal.fire('¡Éxito!', successMessage, 'success');
-
-        // ---------------------------------------------------------
-        // 2. INICIALIZACIÓN POST-REDIRECT (MODAL COMPROBANTE)
-        // ---------------------------------------------------------
-        $(document).ready(function () {
-            const tokenServer = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(securityToken ?? ""));
-
-            if (tokenServer && tokenServer.length > 0) {
-                // Preparamos los datos del Acta
-                prepararComprobante(tokenServer);
-
-                // Renderizamos los botones de descarga de los PDFs de iText
-                renderizarDescargasLegales();
-
-                // Mostramos el modal
-                const modalEl = document.getElementById('modalComprobante');
-                const modal = new bootstrap.Modal(modalEl);
-                modal.show();
-            }
-        });
-
-        // ---------------------------------------------------------
-        // 3. FLUJO DE FIRMA POR QR (POLLING)
-        // ---------------------------------------------------------
-        let currentToken = null;
-        let pollTimer = null;
-
-        function setSigUI(status, infoText) {
-            const badge = document.getElementById("sigBadge");
-            const info  = document.getElementById("sigInfo");
-            const btnReg = document.getElementById("btnRegistrar");
-
-            info.textContent = infoText || "";
-
-            if (status === 1) { // Firmado
-                badge.className = "badge bg-success";
-                badge.textContent = "Firmado";
-                btnReg.disabled = false;
-            } else if (status === 2) { // Expirado
-                badge.className = "badge bg-danger";
-                badge.textContent = "Expirado";
-                btnReg.disabled = true;
-            } else { // Pendiente / Otros
-                badge.className = "badge bg-warning";
-                badge.textContent = "Pendiente";
-                btnReg.disabled = true;
-            }
-        }
-
-        async function generarQrFirma() {
-            const form = document.getElementById("formPaciente");
-            if (!form.checkValidity()) {
-                form.classList.add("was-validated");
-                Swal.fire("Faltan Datos", "Apellido, Nombre y Celular son requeridos.", "warning");
-                return;
-            }
-
-            try {
-                const patientCode = document.getElementById("PatientCode")?.value || "";
-                const url = '@Url.Action("CreateRequest", "Signature")';
-                const tokenAnti = document.querySelector('input[name="__RequestVerificationToken"]').value;
-
-                const resp = await fetch(url, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/x-www-form-urlencoded",
-                        "RequestVerificationToken": tokenAnti
-                    },
-                    body: new URLSearchParams({ patientCode })
-                });
-
-                const data = await resp.json();
-                if (!data.ok) throw new Error(data.message || "Error al crear solicitud.");
-
-                currentToken = data.token;
-                document.getElementById("SignatureToken").value = currentToken;
-
-                // Actualizar Link y QR
-                document.getElementById("signUrl").value = data.signUrl;
-                const btnAbrir = document.getElementById("btnAbrirLink");
-                btnAbrir.href = data.signUrl;
-                btnAbrir.style.display = "inline-block";
-
-                renderQr(data.signUrl);
-                setSigUI(0, "Esperando firma del paciente...");
-                startPolling();
-
-            } catch (e) {
-                Swal.fire("Error", e.message, "error");
-            }
-        }
-
-        function renderQr(text) {
-            const img = document.getElementById("qrImg");
-            const ph  = document.getElementById("qrPlaceholder");
-            const tmp = document.createElement("div");
-
-            ph.style.display = "none";
-            new QRCode(tmp, { text, width: 180, height: 180 });
-
-            setTimeout(() => {
-                const canvas = tmp.querySelector("canvas");
-                if (canvas) {
-                    img.src = canvas.toDataURL("image/png");
-                    img.style.display = "inline-block";
-                }
-            }, 100);
-        }
-
-        function startPolling() {
-            if (pollTimer) clearInterval(pollTimer);
-            pollTimer = setInterval(async () => {
-                const url = '@Url.Action("Status", "Signature")' + '?token=' + encodeURIComponent(currentToken);
-                try {
-                    const resp = await fetch(url);
-                    const data = await resp.json();
-                    if (data.status === 1) {
-                        setSigUI(1, "Firma recibida correctamente.");
-                        clearInterval(pollTimer);
-                    } else if (data.status === 2) {
-                        setSigUI(2, "El tiempo ha expirado.");
-                        clearInterval(pollTimer);
-                    }
-                } catch (e) {}
-            }, 2000);
-        }
-
-        // ---------------------------------------------------------
-        // 4. PREPARACIÓN DEL COMPROBANTE (ACTA Y DOCUMENTOS)
-        // ---------------------------------------------------------
-        function prepararComprobante(tokenServer) {
-            document.getElementById("actaFecha").textContent = new Date().toLocaleString('es-EC', { hour12: false });
-            document.getElementById("actaCode").textContent = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(patientCodeTD ?? "—"));
-            document.getElementById("actaTxn").textContent = "QR-PROCESSED";
-            document.getElementById("actaPaciente").textContent = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(patientNameTD ?? "—"));
-
-            const tokBox = document.getElementById("actaTokenServer");
-            if (tokBox) tokBox.textContent = tokenServer;
-
-            // Mostrar previsualización de firma
-            const sig = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(signatureDataTD ?? ""));
-            const imgFirma = document.getElementById("firmaPreview");
-            const fbFirma  = document.getElementById("firmaFallback");
-
-            if (sig && sig.startsWith("data:image/")) {
-                imgFirma.src = sig;
-                imgFirma.style.display = "block";
-                fbFirma.style.display = "none";
-            }
-        }
-        function renderizarDescargasLegales() {
-            const container = document.getElementById("contenedorDescargasLegales");
-
-            // Parseamos el JSON del TempData
-            let filesUrls = [];
-            try {
-                const rawJson = @Html.Raw(signedFilesJson ?? "[]");
-                filesUrls = typeof rawJson === 'string' ? JSON.parse(rawJson) : rawJson;
-            } catch (e) {
-                console.error("Error al parsear documentos:", e);
-            }
-
-            if (filesUrls && filesUrls.length > 0) {
-                container.innerHTML = "";
-                filesUrls.forEach((url) => {
-                    // Extraer un nombre bonito del URL
-                    // El URL viene como: /Signature/Download?fileName=CONSENT_guid_fecha.pdf
-                    const urlParams = new URLSearchParams(url.split('?')[1]);
-                    const fullFileName = urlParams.get('fileName') || "documento.pdf";
-                    const friendlyName = fullFileName.split('_')[0] === "CONSENT" ? "Consentimiento" : "Protección Datos";
-
-                    const btn = document.createElement("a");
-                    btn.href = url; // Esto llama a la acción Download
-                    btn.className = "btn btn-sm btn-outline-danger d-flex align-items-center gap-2 mb-2 w-100";
-                    btn.innerHTML = `
-                        <i class="ri-file-pdf-fill fs-4"></i>
-                        <div class="text-start">
-                            <div class="fw-bold" style="font-size: 11px;">DESCARGAR ${friendlyName}</div>
-                            <div class="text-muted" style="font-size: 9px; max-width: 200px; overflow: hidden;">${fullFileName}</div>
-                        </div>
-                    `;
-                    container.appendChild(btn);
-                });
-            } else {
-                container.innerHTML = '<div class="alert alert-light small m-0">No se encontraron archivos físicos vinculados.</div>';
-            }
-        }
-
-        // ---------------------------------------------------------
-        // 5. GENERACIÓN DE PDF DEL ACTA (LADO CLIENTE)
-        // ---------------------------------------------------------
-        async function descargarActaPdf() {
-            const btn = document.getElementById("btnDescargarPdf");
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-
-            try {
-                const el = document.getElementById("actaPdf");
-                const canvas = await html2canvas(el, { scale: 2 });
-                const imgData = canvas.toDataURL("image/png");
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF("p", "mm", "a4");
-
-                const pageWidth = pdf.internal.pageSize.getWidth();
-                const imgProps = pdf.getImageProperties(imgData);
-                const imgHeight = (imgProps.height * pageWidth) / imgProps.width;
-
-                pdf.addImage(imgData, "PNG", 0, 0, pageWidth, imgHeight);
-                pdf.save("Acta_Registro_ExpertMed.pdf");
-            } catch (e) {
-                Swal.fire("Error", "No se pudo generar el acta.", "error");
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="ri-download-2-line"></i> Descargar PDF';
-            }
-        }
-
-        function copiarLinkFirma() {
-            const input = document.getElementById("signUrl");
-            input.select();
-            document.execCommand("copy");
-            Swal.fire("Copiado", "Enlace de firma copiado al portapapeles.", "success");
-        }
-
-        function continuarFlujo() {
+            if (errorMessage) Swal.fire('Error', errorMessage, 'error');
+            if (successMessage) {
+            Swal.fire({
+            title: '¡Registrado!',
+            text: successMessage,
+            icon: 'success',
+            confirmButtonText: 'Ir a lista de pacientes'
+            }).then(() => {
             window.location.href = '@Url.Action("PatientList", "Patient")';
-        }
-    </script>
-}
+            });
+            }
+
+            // Validación de Bootstrap
+            (() => {
+            'use strict'
+            const forms = document.querySelectorAll('.needs-validation')
+            Array.from(forms).forEach(form => {
+            form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+            event.preventDefault()
+            event.stopPropagation()
+            }
+            form.classList.add('was-validated')
+            }, false)
+            })
+            })()
+        </script>
+    }
