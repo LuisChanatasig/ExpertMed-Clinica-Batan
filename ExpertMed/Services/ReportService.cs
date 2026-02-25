@@ -25,7 +25,6 @@ namespace ExpertMed.Services
             try
             {
                 using var connection = new SqlConnection(_dbContext.Database.GetConnectionString());
-                // Asegúrate que el nombre coincida con tu SP en base de datos
                 using var command = new SqlCommand("sp_ReporteResumenConsultas", connection)
                 {
                     CommandType = CommandType.StoredProcedure
@@ -40,7 +39,7 @@ namespace ExpertMed.Services
                 using var reader = await command.ExecuteReaderAsync();
 
                 // ---------------------------------------------------------
-                // 1. LECTURA DE KPIs (Una sola fila)
+                // 1. LECTURA DE KPIs (Índices actualizados según el nuevo SP)
                 // ---------------------------------------------------------
                 if (await reader.ReadAsync())
                 {
@@ -48,13 +47,17 @@ namespace ExpertMed.Services
                     {
                         TotalCitas = reader.IsDBNull(0) ? 0 : reader.GetInt32(0),
                         TotalConsultas = reader.IsDBNull(1) ? 0 : reader.GetInt32(1),
-                        TotalPagadas = reader.IsDBNull(2) ? 0 : reader.GetInt32(2),
-                        TotalPacientesHistorico = reader.IsDBNull(3) ? 0 : reader.GetInt32(3)
+                        // NUEVOS CAMPOS:
+                        TotalAsistidos = reader.IsDBNull(2) ? 0 : reader.GetInt32(2),
+                        TotalNoAsistidos = reader.IsDBNull(3) ? 0 : reader.GetInt32(3),
+                        // DESPLAZADOS:
+                        TotalPagadas = reader.IsDBNull(4) ? 0 : reader.GetInt32(4),
+                        TotalPacientesHistorico = reader.IsDBNull(5) ? 0 : reader.GetInt32(5)
                     };
                 }
 
                 // ---------------------------------------------------------
-                // 2. LECTURA DE EVOLUCIÓN DIARIA (Gráfico Líneas)
+                // 2. LECTURA DE EVOLUCIÓN DIARIA
                 // ---------------------------------------------------------
                 if (await reader.NextResultAsync())
                 {
@@ -69,7 +72,7 @@ namespace ExpertMed.Services
                 }
 
                 // ---------------------------------------------------------
-                // 3. LECTURA DE ESTADO DE CITAS (Gráfico Pastel)
+                // 3. LECTURA DE ESTADO DE CITAS
                 // ---------------------------------------------------------
                 if (await reader.NextResultAsync())
                 {

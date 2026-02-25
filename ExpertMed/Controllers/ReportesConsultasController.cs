@@ -24,17 +24,30 @@ namespace ExpertMed.Controllers
         {
             try
             {
-                int usuarioId = HttpContext.Session.GetInt32("UsuarioId") ?? 0;
-                int perfilId = HttpContext.Session.GetInt32("PerfilId") ?? 0;
+                // 1. Validación de Sesión (Seguridad Crítica)
+                int? sessionUsuarioId = HttpContext.Session.GetInt32("UsuarioId");
+                int? sessionPerfilId = HttpContext.Session.GetInt32("PerfilId");
 
+                if (!sessionUsuarioId.HasValue || !sessionPerfilId.HasValue)
+                {
+                    return RedirectToAction("Login", "Account");
+                }
+
+                int usuarioId = sessionUsuarioId.Value;
+                int perfilId = sessionPerfilId.Value;
+
+                // 2. Llamada al Servicio (Ya actualizado con asistencia)
                 var resumen = await _reportService.GetResumenConsultasAsync(
                     fechaDesde, fechaHasta, perfilId, usuarioId);
 
-                return View(resumen); // o Json(resumen) si es para frontend JS/AJAX
+                // 3. Retorno de Información
+                // Si usas una vista Razor, asegúrate de que el modelo sea ResumenConsultasDto
+                return View(resumen);
             }
             catch (Exception ex)
             {
-                // Log y redirigir o mostrar mensaje de error
+                // 4. Gestión de Errores Logística
+                _logger.LogError(ex, "Error en el Controller ResumenConsultas para el UsuarioId: {UsuarioId}", HttpContext.Session.GetInt32("UsuarioId"));
                 TempData["ErrorMessage"] = "Ocurrió un error al cargar el resumen de consultas.";
                 return RedirectToAction("Index", "Home");
             }

@@ -91,21 +91,6 @@
                     </div>
 
                     <div class="d-grid gap-2">
-                        @* Documento 1 *@
-                        <div class="doc-card p-3" id="cardDoc1">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div style="flex: 1;">
-                                    <div class="fw-bold small">Protección de Datos Personales</div>
-                                    <div class="text-muted" style="font-size: 0.75rem;">Consentimiento Informado v2</div>
-                                </div>
-                                <div class="btn-group ms-2">
-                                    <button type="button" class="btn btn-sm btn-outline-primary"
-                                            onclick="openDoc('@Url.Content("~/plantillas/CONSENTIMIENTO_INFORMADO_DE PROTECCION_DE DATOS PERSONALES_2.pdf")', 'Protección de Datos Personales', 'doc1Read', 'cardDoc1')">
-                                        Ver Documento
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
 
                         @* Documento 2 *@
                         <div class="doc-card p-3" id="cardDoc2">
@@ -128,7 +113,7 @@
                 <form asp-action="Submit" asp-controller="Signature" method="post" id="formFirma">
                     @Html.AntiForgeryToken()
 
-                    <input type="hidden" id="doc1Read" value="false" />
+                    <input type="hidden" id="doc1Read" value="true" />
                     <input type="hidden" id="doc2Read" value="false" />
 
                     <input type="hidden" name="token" value="@Model.Token" />

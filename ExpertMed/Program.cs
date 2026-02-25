@@ -62,6 +62,7 @@ namespace ExpertMed
             builder.Services.AddScoped<ProcedimientoService>();
             builder.Services.AddScoped<AdminService>();
             builder.Services.AddScoped<SignatureService>();
+            builder.Services.AddScoped<DocumentosFirmaService>();
 
             // Configuración de controladores y vistas
             builder.Services.AddControllersWithViews();

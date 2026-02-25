@@ -24,6 +24,8 @@
             public int TotalConsultas { get; set; }
             public int TotalPagadas { get; set; }
             public int TotalPacientesHistorico { get; set; }
+            public int TotalAsistidos { get; set; } // Añadir esta
+            public int TotalNoAsistidos { get; set; } // Añadir esta
         }
 
         public class DashboardEvolutionItem

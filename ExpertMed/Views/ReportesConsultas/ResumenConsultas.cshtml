@@ -7,7 +7,7 @@
     ViewData["Title"] = "Dashboard Gerencial";
     Layout = "~/Views/Shared/_Layout.cshtml";
 
-    // Inicialización defensiva para evitar NullReferenceException
+    // Inicialización de seguridad
     var kpi = Model?.Kpi ?? new ResumenConsultasDto.DashboardKpi();
     var evolucion = Model?.EvolucionDiaria ?? new List<ResumenConsultasDto.DashboardEvolutionItem>();
     var estados = Model?.EstadoCitas ?? new List<ResumenConsultasDto.DashboardStatusItem>();
@@ -17,112 +17,118 @@
     var qDesde = Context.Request.Query["fechaDesde"].ToString();
     var qHasta = Context.Request.Query["fechaHasta"].ToString();
 
-    // Función local para serializar a JSON seguro para JS
+    // Lógica Analítica de Negocio
+    double tasaAsistencia = kpi.TotalCitas > 0 ? Math.Round((double)kpi.TotalAsistidos * 100 / kpi.TotalCitas, 1) : 0;
+    double tasaNoShow = kpi.TotalCitas > 0 ? Math.Round((double)kpi.TotalNoAsistidos * 100 / kpi.TotalCitas, 1) : 0;
+
     string SafeJson<T>(T obj) => JsonSerializer.Serialize(obj, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 }
 
 <div class="container-fluid mt-3">
-    <div class="toolbar-sticky d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2 pb-2 mb-3 border-bottom">
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 gap-3">
         <div>
-            <h2 class="h4 mb-0"><i class="mdi mdi-monitor-dashboard me-1"></i> Dashboard Operativo</h2>
-            <small class="text-muted">
-                @if (!string.IsNullOrEmpty(qDesde) || !string.IsNullOrEmpty(qHasta))
-                {
-                    <span>Filtro activo: <strong>@qDesde</strong> al <strong>@qHasta</strong></span>
-                }
-                else
-                {
-                    <span>Mostrando mes actual</span>
-                }
-            </small>
+            <h3 class="fw-bold mb-0 text-dark">Control de Mando Operativo</h3>
+            <p class="text-muted mb-0">Análisis de rendimiento clínico y asistencia de pacientes.</p>
         </div>
-
-        <div class="d-flex flex-wrap gap-2">
-            <a class="btn btn-success" href="@Url.Action("ExportarResumenConsultasExcel", "Reportes", new { fechaDesde = qDesde, fechaHasta = qHasta })">
-                <i class="mdi mdi-file-excel"></i> Excel
+        <div class="d-flex gap-2">
+            <div class="bg-white border rounded p-1 d-flex shadow-sm">
+                <a class="btn btn-sm btn-ghost-secondary" href="@Url.Action("ResumenConsultas", "Reportes")" title="Recargar">
+                    <i class="mdi mdi-refresh fs-5"></i>
+                </a>
+                <button class="btn btn-sm btn-primary px-3" data-bs-toggle="offcanvas" data-bs-target="#offcanvasFiltros">
+                    <i class="mdi mdi-filter-outline me-1"></i> Filtrar Periodo
+                </button>
+            </div>
+            <a class="btn btn-sm btn-success d-flex align-items-center shadow-sm" href="@Url.Action("ExportarResumenConsultasExcel", "Reportes", new { fechaDesde = qDesde, fechaHasta = qHasta })">
+                <i class="mdi mdi-file-excel me-1"></i> Exportar
             </a>
-            <a href="@Url.Action("ResumenConsultas", "Reportes")" class="btn btn-light" title="Limpiar Filtros">
-                <i class="mdi mdi-refresh"></i>
-            </a>
-            <button class="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasFiltros">
-                <i class="mdi mdi-filter-variant"></i> Filtros
-            </button>
         </div>
     </div>
 
     <div class="row g-3 mb-4">
-        <div class="col-6 col-lg-3">
-            <div class="card border-0 shadow-sm h-100 border-start border-4 border-primary">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 h-100">
                 <div class="card-body">
-                    <div class="d-flex align-items-center mb-2">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <p class="text-muted text-uppercase fs-11 fw-bold mb-2">Citas Agendadas</p>
+                            <h2 class="mb-0 fw-bold">@kpi.TotalCitas</h2>
+                        </div>
                         <div class="avatar-sm flex-shrink-0">
-                            <span class="avatar-title bg-primary-subtle text-primary rounded fs-3">
-                                <i class="mdi mdi-calendar-clock"></i>
+                            <span class="avatar-title bg-primary-subtle text-primary rounded-circle fs-2">
+                                <i class="mdi mdi-calendar-multiselect"></i>
                             </span>
                         </div>
-                        <div class="flex-grow-1 ms-3">
-                            <p class="text-uppercase fw-medium text-muted mb-0">Total Citas</p>
-                        </div>
                     </div>
-                    <h4 class="fs-22 fw-semibold mb-0">@kpi.TotalCitas</h4>
-                    <small class="text-muted">Agendadas en recepción</small>
+                    <div class="mt-3">
+                        <span class="text-muted fs-12">Volumen total de recepción</span>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-6 col-lg-3">
-            <div class="card border-0 shadow-sm h-100 border-start border-4 border-success">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 h-100 border-bottom border-3 border-info">
                 <div class="card-body">
-                    <div class="d-flex align-items-center mb-2">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <p class="text-muted text-uppercase fs-11 fw-bold mb-2">Asistencia Confirmada</p>
+                            <h2 class="mb-0 fw-bold text-info">@kpi.TotalAsistidos</h2>
+                        </div>
                         <div class="avatar-sm flex-shrink-0">
-                            <span class="avatar-title bg-success-subtle text-success rounded fs-3">
+                            <span class="avatar-title bg-info-subtle text-info rounded-circle fs-2">
+                                <i class="mdi mdi-account-check"></i>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <div class="progress progress-sm">
+                            <div class="progress-bar bg-info" role="progressbar" style="width: @tasaAsistencia%"></div>
+                        </div>
+                        <small class="text-muted mt-1 d-block">Tasa de cumplimiento: @tasaAsistencia%</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 h-100 border-bottom border-3 border-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <p class="text-muted text-uppercase fs-11 fw-bold mb-2">Consultas Médicas</p>
+                            <h2 class="mb-0 fw-bold text-success">@kpi.TotalConsultas</h2>
+                        </div>
+                        <div class="avatar-sm flex-shrink-0">
+                            <span class="avatar-title bg-success-subtle text-success rounded-circle fs-2">
                                 <i class="mdi mdi-stethoscope"></i>
                             </span>
                         </div>
-                        <div class="flex-grow-1 ms-3">
-                            <p class="text-uppercase fw-medium text-muted mb-0">Atenciones</p>
-                        </div>
                     </div>
-                    <h4 class="fs-22 fw-semibold mb-0">@kpi.TotalConsultas</h4>
-                    <small class="text-muted">Consultas médicas cerradas</small>
+                    <div class="mt-3">
+                        <span class="text-muted fs-12">Atenciones cerradas por médico</span>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-6 col-lg-3">
-            <div class="card border-0 shadow-sm h-100 border-start border-4 border-warning">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 h-100 border-bottom border-3 border-danger">
                 <div class="card-body">
-                    <div class="d-flex align-items-center mb-2">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <p class="text-muted text-uppercase fs-11 fw-bold mb-2">Ausentismo (No-Show)</p>
+                            <h2 class="mb-0 fw-bold text-danger">@kpi.TotalNoAsistidos</h2>
+                        </div>
                         <div class="avatar-sm flex-shrink-0">
-                            <span class="avatar-title bg-warning-subtle text-warning rounded fs-3">
-                                <i class="mdi mdi-cash-multiple"></i>
+                            <span class="avatar-title bg-danger-subtle text-danger rounded-circle fs-2">
+                                <i class="mdi mdi-account-remove"></i>
                             </span>
                         </div>
-                        <div class="flex-grow-1 ms-3">
-                            <p class="text-uppercase fw-medium text-muted mb-0">Pagadas</p>
-                        </div>
                     </div>
-                    <h4 class="fs-22 fw-semibold mb-0">@kpi.TotalPagadas</h4>
-                    <small class="text-muted">Citas facturadas (Status Pago)</small>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-6 col-lg-3">
-            <div class="card border-0 shadow-sm h-100 border-start border-4 border-info">
-                <div class="card-body">
-                    <div class="d-flex align-items-center mb-2">
-                        <div class="avatar-sm flex-shrink-0">
-                            <span class="avatar-title bg-info-subtle text-info rounded fs-3">
-                                <i class="mdi mdi-account-group"></i>
-                            </span>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <p class="text-uppercase fw-medium text-muted mb-0">Cartera</p>
-                        </div>
+                    <div class="mt-3 text-danger">
+                        <i class="mdi mdi-trending-down"></i> <small class="fw-bold">@tasaNoShow% de citas perdidas</small>
                     </div>
-                    <h4 class="fs-22 fw-semibold mb-0">@kpi.TotalPacientesHistorico</h4>
-                    <small class="text-muted">Pacientes únicos históricos</small>
                 </div>
             </div>
         </div>
@@ -130,157 +136,130 @@
 
     <div class="row g-3 mb-4">
         <div class="col-lg-8">
-            <div class="card shadow-sm h-100">
-                <div class="card-header bg-light">
-                    <h5 class="card-title mb-0">Evolución Diaria de Citas</h5>
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="card-title mb-0 fw-bold text-dark">Tendencia de Demanda Diaria</h5>
                 </div>
                 <div class="card-body">
-                    <div id="chartEvolution" style="height: 350px;"></div>
+                    <div id="chartEvolution" style="height: 380px;"></div>
                 </div>
             </div>
         </div>
         <div class="col-lg-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-header bg-light">
-                    <h5 class="card-title mb-0">Estado de Citas</h5>
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="card-title mb-0 fw-bold text-dark">Distribución de Estados</h5>
                 </div>
-                <div class="card-body">
-                    <div id="chartStatus" style="height: 350px;"></div>
+                <div class="card-body d-flex flex-column justify-content-center">
+                    <div id="chartStatus" style="height: 380px;"></div>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="row g-3">
-        <div class="col-lg-6">
-            <div class="card shadow-sm h-100">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0 text-primary"><i class="mdi mdi-trophy-variant-outline"></i> Top 10 Productividad Médica</h5>
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white py-3">
+                    <h5 class="card-title mb-0 fw-bold text-primary">Top 10 Productividad Médica</h5>
                 </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover table-striped mb-0 align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th class="ps-3">Médico</th>
-                                    <th class="text-center">Consultas</th>
-                                    <th class="text-end pe-3">Progreso</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @if (ranking.Any())
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr class="fs-12 text-muted uppercase">
+                                <th class="ps-3">MÉDICO RESPONSABLE</th>
+                                <th class="text-center">ATENCIONES</th>
+                                <th class="text-end pe-4">RENDIMIENTO</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (ranking.Any())
+                            {
+                                var maxVal = ranking.Max(x => x.ConsultasRealizadas);
+                                foreach (var item in ranking)
                                 {
-                                    var maxVal = ranking.Max(x => x.ConsultasRealizadas);
-                                    foreach (var item in ranking)
-                                    {
-                                        var percent = maxVal > 0 ? (item.ConsultasRealizadas * 100) / maxVal : 0;
-                                        <tr>
-                                            <td class="ps-3 fw-medium">@item.Medico</td>
-                                            <td class="text-center fw-bold">@item.ConsultasRealizadas</td>
-                                            <td class="text-end pe-3" style="width: 30%;">
-                                                <div class="progress" style="height: 6px;">
-                                                    <div class="progress-bar bg-primary" role="progressbar" style="width: @percent%"></div>
+                                    var percent = maxVal > 0 ? (item.ConsultasRealizadas * 100) / maxVal : 0;
+                                    <tr>
+                                        <td class="ps-3">
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-xs me-2">
+                                                    <span class="avatar-title bg-soft-primary text-primary rounded-circle fs-10">@item.Medico.Substring(0, 1)</span>
                                                 </div>
-                                            </td>
-                                        </tr>
-                                    }
+                                                <span class="fw-medium">@item.Medico</span>
+                                            </div>
+                                        </td>
+                                        <td class="text-center fw-bold text-dark">@item.ConsultasRealizadas</td>
+                                        <td class="pe-4" style="width: 30%;">
+                                            <div class="d-flex align-items-center justify-content-end gap-2">
+                                                <div class="progress flex-grow-1" style="height: 5px; max-width: 100px;">
+                                                    <div class="progress-bar bg-primary" style="width: @percent%"></div>
+                                                </div>
+                                                <small class="text-muted">@percent%</small>
+                                            </div>
+                                        </td>
+                                    </tr>
                                 }
-                                else
-                                {
-                                    <tr><td colspan="3" class="text-center py-3 text-muted">Sin datos disponibles</td></tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
+                            }
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-6">
-            <div class="card shadow-sm h-100">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0 text-info"><i class="mdi mdi-shield-account-outline"></i> Pacientes por Aseguradora</h5>
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0 mb-3 bg-gradient-primary text-white" style="background: linear-gradient(135deg, #405189 0%, #299cdb 100%);">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <p class="fs-13 fw-medium text-white-50 mb-1 text-uppercase">Total Pagado / Facturado</p>
+                            <h3 class="mb-0 text-white">@kpi.TotalPagadas <span class="fs-14 fw-normal">Citas</span></h3>
+                        </div>
+                        <i class="mdi mdi-cash-check fs-1 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3">
+                    <h5 class="card-title mb-0 fw-bold text-info">Pacientes por Aseguradora</h5>
                 </div>
                 <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0 align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th class="ps-3">Aseguradora</th>
-                                    <th class="text-end pe-3">Pacientes Únicos</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @if (seguros.Any())
-                                {
-                                    foreach (var item in seguros)
-                                    {
-                                        <tr>
-                                            <td class="ps-3">
-                                                @if (item.Seguro.Contains("PARTICULAR"))
-                                                {
-                                                    <span class="badge bg-light text-dark border">@item.Seguro</span>
-                                                }
-                                                else
-                                                {
-                                                    @item.Seguro
-                                                }
-                                            </td>
-                                            <td class="text-end pe-3">@item.CantidadPacientesUnicos</td>
-                                        </tr>
-                                    }
-                                }
-                                else
-                                {
-                                    <tr><td colspan="2" class="text-center py-3 text-muted">Sin datos disponibles</td></tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
+                    <ul class="list-group list-group-flush">
+                        @foreach (var item in seguros.Take(5))
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center border-0 py-2">
+                                <div class="d-flex align-items-center">
+                                    <i class="mdi mdi-shield-check-outline text-success me-2 fs-5"></i>
+                                    <span class="text-muted fs-13">@item.Seguro</span>
+                                </div>
+                                <span class="badge bg-light text-dark border">@item.CantidadPacientesUnicos</span>
+                            </li>
+                        }
+                    </ul>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasFiltros" aria-labelledby="offcanvasFiltrosLabel">
-    <div class="offcanvas-header bg-light">
-        <h5 id="offcanvasFiltrosLabel" class="offcanvas-title">Filtrar Dashboard</h5>
-        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+<div class="offcanvas offcanvas-end" id="offcanvasFiltros">
+    <div class="offcanvas-header border-bottom bg-light">
+        <h5 class="offcanvas-title fw-bold">Parámetros del Dashboard</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
     </div>
     <div class="offcanvas-body">
-        <form method="get" asp-action="ResumenConsultas" asp-controller="Reportes" id="formFiltros">
-            <div class="mb-4">
-                <label class="form-label fw-bold">Rango de Fechas</label>
-                <div class="input-group mb-2">
-                    <span class="input-group-text"><i class="mdi mdi-calendar"></i></span>
-                    <input type="date" class="form-control" id="fechaDesde" name="fechaDesde" value="@qDesde" required />
-                </div>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="mdi mdi-calendar"></i></span>
-                    <input type="date" class="form-control" id="fechaHasta" name="fechaHasta" value="@qHasta" required />
-                </div>
+        <form method="get" asp-action="ResumenConsultas">
+            <div class="mb-3">
+                <label class="form-label fw-medium">Desde</label>
+                <input type="date" class="form-control" name="fechaDesde" value="@qDesde" />
             </div>
-
             <div class="mb-4">
-                <label class="form-label small text-muted text-uppercase">Accesos Rápidos</label>
-                <div class="d-grid gap-2">
-                    <button type="button" class="btn btn-outline-secondary btn-sm text-start" data-range="today">
-                        <i class="mdi mdi-calendar-today me-2"></i> Hoy
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm text-start" data-range="week">
-                        <i class="mdi mdi-calendar-week me-2"></i> Esta semana
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm text-start" data-range="month">
-                        <i class="mdi mdi-calendar-month me-2"></i> Este mes
-                    </button>
-                </div>
+                <label class="form-label fw-medium">Hasta</label>
+                <input type="date" class="form-control" name="fechaHasta" value="@qHasta" />
             </div>
-
-            <div class="d-grid pt-3 border-top">
-                <button type="submit" class="btn btn-primary btn-lg shadow">
-                    <i class="mdi mdi-magnify me-1"></i> Aplicar Filtros
-                </button>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary shadow">Actualizar Reporte</button>
+                <a href="@Url.Action("ResumenConsultas")" class="btn btn-outline-secondary">Limpiar</a>
             </div>
         </form>
     </div>
@@ -288,104 +267,47 @@
 
 @section scripts {
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
-
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            // 1. Obtener datos serializados desde C#
-            const dataEvolution = @Html.Raw(SafeJson(evolucion));
-            const dataStatus = @Html.Raw(SafeJson(estados));
+        const dataEvolution = @Html.Raw(SafeJson(evolucion));
+        const dataStatus = @Html.Raw(SafeJson(estados));
 
-            // 2. Configurar Gráfico de Evolución (Línea)
-            const chartEv = echarts.init(document.getElementById('chartEvolution'));
-            const optionEv = {
-                tooltip: { trigger: 'axis' },
-                grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-                xAxis: {
-                    type: 'category',
-                    boundaryGap: false,
-                    // Mapeamos solo la parte de fecha "YYYY-MM-DD"
-                    data: dataEvolution.map(i => i.fecha.substring(0, 10)),
-                    axisLine: { lineStyle: { color: '#ccc' } }
-                },
-                yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed' } } },
-                series: [{
-                    name: 'Citas',
-                    type: 'line',
-                    smooth: true,
-                    data: dataEvolution.map(i => i.cantidadCitas),
-                    itemStyle: { color: '#405189' }, // Color primario Velzon
-                    areaStyle: {
-                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                            { offset: 0, color: 'rgba(64, 81, 137, 0.5)' },
-                            { offset: 1, color: 'rgba(64, 81, 137, 0.01)' }
-                        ])
-                    }
-                }]
-            };
-            chartEv.setOption(optionEv);
+        // Gráfico de Tendencia
+        const chartEv = echarts.init(document.getElementById('chartEvolution'));
+        chartEv.setOption({
+        tooltip: { trigger: 'axis', backgroundColor: 'rgba(255, 255, 255, 0.9)', textStyle: { color: '#333' } },
+        grid: { left: '2%', right: '3%', bottom: '5%', top: '5%', containLabel: true },
+        xAxis: { type: 'category', boundaryGap: false, data: dataEvolution.map(i => i.fecha.substring(0, 10)), axisLine: { lineStyle: { color: '#eee' } } },
+        yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#eee' } } },
+        series: [{
+        name: 'Citas', type: 'line', smooth: true, symbol: 'circle', symbolSize: 8,
+        lineStyle: { width: 3, color: '#405189' },
+        itemStyle: { color: '#405189' },
+        areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{offset: 0, color: 'rgba(64,81,137,0.2)'}, {offset: 1, color: 'transparent'}]) },
+        data: dataEvolution.map(i => i.cantidadCitas)
+        }]
+        });
 
-            // 3. Configurar Gráfico de Estados (Donut)
-            const chartSt = echarts.init(document.getElementById('chartStatus'));
-            const optionSt = {
-                tooltip: { trigger: 'item' },
-                legend: { bottom: '0%', left: 'center' },
-                series: [{
-                    name: 'Estado',
-                    type: 'pie',
-                    radius: ['40%', '70%'],
-                    avoidLabelOverlap: false,
-                    itemStyle: { borderRadius: 5, borderColor: '#fff', borderWidth: 2 },
-                    label: { show: false, position: 'center' },
-                    emphasis: {
-                        label: { show: true, fontSize: 16, fontWeight: 'bold' }
-                    },
-                    data: dataStatus.map(i => {
-                        // Asignar colores según estado (Lógica de presentación)
-                        let color = '#ccc';
-                        const st = i.estado.toLowerCase();
-                        if(st.includes('finalizada')) color = '#0ab39c'; // Success
-                        else if(st.includes('cancelada')) color = '#f06548'; // Danger
-                        else if(st.includes('activa')) color = '#299cdb'; // Info
-                        else if(st.includes('emergencia')) color = '#f7b84b'; // Warning
+        // Gráfico de Pastel
+        const chartSt = echarts.init(document.getElementById('chartStatus'));
+        chartSt.setOption({
+        tooltip: { trigger: 'item' },
+        legend: { bottom: '0%', left: 'center', itemWidth: 10, itemHeight: 10, textStyle: { fontSize: 11 } },
+        series: [{
+        name: 'Estatus', type: 'pie', radius: ['45%', '75%'], avoidLabelOverlap: false,
+        itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
+        label: { show: false },
+        data: dataStatus.map(i => {
+        let c = '#405189';
+        if(i.estado.includes('Fin')) c = '#0ab39c';
+        if(i.estado.includes('Can')) c = '#f06548';
+        if(i.estado.includes('Act')) c = '#299cdb';
+        return { value: i.cantidad, name: i.estado, itemStyle: { color: c } };
+        })
+        }]
+        });
 
-                        return { value: i.cantidad, name: i.estado, itemStyle: { color: color } };
-                    })
-                }]
-            };
-            chartSt.setOption(optionSt);
-
-            // 4. Responsividad
-            window.addEventListener('resize', () => {
-                chartEv.resize();
-                chartSt.resize();
-            });
-
-            // 5. Lógica de Filtros (Fechas rápidas)
-            const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
-            const fmt = (d) => d.toISOString().slice(0, 10);
-
-            document.querySelectorAll('[data-range]').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const now = new Date();
-                    const type = btn.dataset.range;
-                    let dStart, dEnd;
-
-                    if (type === 'today') {
-                        dStart = now; dEnd = now;
-                    } else if (type === 'week') {
-                        const day = now.getDay() || 7;
-                        if (day !== 1) now.setHours(-24 * (day - 1));
-                        dStart = now;
-                        dEnd = addDays(now, 6);
-                    } else if (type === 'month') {
-                        dStart = new Date(now.getFullYear(), now.getMonth(), 1);
-                        dEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-                    }
-
-                    document.getElementById('fechaDesde').value = fmt(dStart);
-                    document.getElementById('fechaHasta').value = fmt(dEnd);
-                });
-            });
+        window.addEventListener('resize', () => { chartEv.resize(); chartSt.resize(); });
         });
     </script>
 }

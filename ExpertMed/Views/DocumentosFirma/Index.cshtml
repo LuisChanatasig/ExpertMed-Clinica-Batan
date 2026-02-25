@@ -1,0 +1,124 @@
+﻿@model IEnumerable<ExpertMed.Models.PacienteDocumentosAgrupadoDto>
+
+@{
+    ViewData["Title"] = "Gestión de Documentos Firmados";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="fw-bold text-dark"><i class="mdi mdi-file-signature me-2"></i>Documentos por Paciente</h3>
+                <p class="text-muted">Listado de consentimientos y archivos ordenados por actividad reciente.</p>
+            </div>
+            <div class="search-box">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="mdi mdi-magnify text-muted"></i></span>
+                    <input type="text" id="busquedaPaciente" class="form-control border-start-0" placeholder="Buscar paciente o cédula...">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="mdi mdi-alert-circle-outline me-2"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="accordion shadow-sm" id="accordionDocumentos">
+        @if (Model != null && Model.Any())
+        {
+            foreach (var item in Model)
+            {
+                var collapseId = "collapse" + item.PacienteId;
+                var headingId = "heading" + item.PacienteId;
+                var ultimoDoc = item.ListaDocumentos.FirstOrDefault()?.FechaCreacion.ToString("dd/MM/yyyy HH:mm");
+
+                <div class="accordion-item border-light paciente-row">
+                    <h2 class="accordion-header" id="@headingId">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#@collapseId" aria-expanded="false" aria-controls="@collapseId">
+                            <div class="d-flex justify-content-between w-100 align-items-center pe-3">
+                                <div>
+                                    <span class="fw-bold text-primary">@item.Paciente</span>
+                                    <span class="badge bg-soft-info text-info ms-2">@item.ListaDocumentos.Count() Archivos</span>
+                                </div>
+                                <small class="text-muted">
+                                    <i class="mdi mdi-clock-outline me-1"></i>Último documento: @ultimoDoc
+                                </small>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="@collapseId" class="accordion-collapse collapse" aria-labelledby="@headingId" data-bs-parent="#accordionDocumentos">
+                        <div class="accordion-body bg-light-subtle">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover align-middle bg-white rounded shadow-sm mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Nombre del Archivo</th>
+                                            <th>Tipo de Documento</th>
+                                            <th>Fecha de Creación</th>
+                                            <th class="text-center">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var doc in item.ListaDocumentos)
+                                        {
+                                            <tr>
+                                                <td class="fw-medium text-dark">
+                                                    <i class="mdi mdi-file-pdf-box text-danger fs-4 me-1"></i> @doc.NombreArchivo
+                                                </td>
+                                                <td><span class="badge border text-dark">@doc.TipoDocumento</span></td>
+                                                <td>@doc.FechaCreacion.ToString("f")</td>
+                                                <td class="text-center">
+                                                  
+                                                    <a href="@Url.Action("VerDocumento", "DocumentosFirma", new { rutaFisica = doc.RutaFisica })" 
+                                                       class="btn btn-sm btn-outline-primary shadow-sm" target="_blank">
+                                                        <i class="mdi mdi-eye-outline me-1"></i> Visualizar
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="text-center py-5 bg-white rounded shadow-sm">
+                <i class="mdi mdi-folder-open-outline display-1 text-light"></i>
+                <p class="mt-3 text-muted">No se encontraron pacientes con documentos registrados.</p>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Buscador en tiempo real
+        document.getElementById('busquedaPaciente').addEventListener('keyup', function() {
+            let filtro = this.value.toLowerCase();
+            let filas = document.querySelectorAll('.paciente-row');
+
+            filas.forEach(fila => {
+                let texto = fila.innerText.toLowerCase();
+                fila.style.display = texto.includes(filtro) ? "" : "none";
+            });
+        });
+    </script>
+}
+
+<style>
+    .bg-soft-info { background-color: rgba(41, 156, 219, 0.1); }
+    .accordion-button:not(.collapsed) { background-color: #f8f9fa; color: #405189; }
+    .accordion-button::after { background-size: 1rem; }
+    .search-box { width: 350px; }
+    .table thead th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+</style>

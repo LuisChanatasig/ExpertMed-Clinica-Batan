@@ -218,8 +218,7 @@ namespace ExpertMed.Services
             try
             {
                 var docsToGenerate = new[] {
-            new { Tipo = "Consentimiento", Template = "ConsentimientoDatosCB.pdf", Prefix = "CONSENT" },
-            new { Tipo = "LOPDP", Template = "ConsetimientoLOPDP_Template.pdf", Prefix = "LOPDP" }
+            new { Tipo = "Consentimiento", Template = "ConsentimientoDatosCB.pdf", Prefix = "CONSENT" }
         };
 
                 foreach (var doc in docsToGenerate)
@@ -227,12 +226,12 @@ namespace ExpertMed.Services
                     string fileName = $"{doc.Prefix}_{token}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
                     string templatePath = Path.Combine(_env.ContentRootPath, "Templates", doc.Template);
 
-                    // Generar PDF (usando tu lógica FillSignedPdfAsync)
+                    // Generar PDF
                     string physicalPath = await FillSignedPdfAsync(templatePath, signatureBase64, fileName, "txt_imagen_firma");
 
                     if (File.Exists(physicalPath))
                     {
-                        archivosGenerados.Add(fileName); // Solo guardamos el nombre
+                        archivosGenerados.Add(fileName);
                         _logger.LogInformation("Archivo generado: {FileName}", fileName);
                     }
                 }
@@ -241,6 +240,7 @@ namespace ExpertMed.Services
             {
                 _logger.LogError(ex, "Error en generación física");
             }
+
             return archivosGenerados;
         }
         public async Task SaveDocumentMetadataAsync(int patientId, string fileName, string physicalPath, string docType)
