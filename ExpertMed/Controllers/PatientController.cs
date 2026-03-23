@@ -171,7 +171,7 @@ namespace ExpertMed.Controllers
                     return await RegistroPaciente();
                 }
 
-                TempData["SuccessMessage"] = "Paciente registrado con éxito. La firma se realizará en la cita.";
+                TempData["SuccessMessage"] = "Paciente registrado con éxito. La firma se registrara en la cita.";
                 return RedirectToAction(nameof(NewPatient));
             }
             catch (Exception ex)

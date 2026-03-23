@@ -47,7 +47,7 @@ const AppointmentManager = {
      * Actualiza la visibilidad de botones según el estado de la cita
      */
     updateModalButtons(data) {
-        const { status, hasConsultation, paymentStatus } = data;
+        const { status, hasConsultation, paymentStatus, hasLaboratories, paymentStatusLab } = data;
 
         // Ocultar inicialmente todos los botones de consulta
         $('#startConsultCol, #startFollowupCol').hide();
@@ -72,13 +72,50 @@ const AppointmentManager = {
             $('#payCol').hide();
         }
 
-        // ⬇️ NUEVA LÓGICA: Pagar Laboratorio
-        // Se muestra si el estado es 4 Y tiene laboratorios vinculados
+        // Pagar Laboratorio
         if (status === 4 && hasLaboratories === true && (paymentStatusLab === 0 || !paymentStatusLab)) {
             $('#payLaboratoryCol').show();
         } else {
             $('#payLaboratoryCol').hide();
         }
+    },
+
+    /**
+     * Prepara el offcanvas de signos vitales usando los IDs ya guardados en memoria
+     */
+    prepareVitalSigns() {
+        const appointmentId = this.currentAppointmentId;
+        const patientId = this.currentPatientId;
+
+        console.log('prepareVitalSigns — appointmentId:', appointmentId, '| patientId:', patientId);
+
+        if (!appointmentId || !patientId) {
+            console.warn('IDs vacíos al preparar signos vitales. Intentando desde hidden inputs...');
+
+            // Fallback: leer desde los hidden inputs del modal
+            const idFromInput = FormHelper.getValue('appointmentIdInput');
+            const patientFromInput = FormHelper.getValue('appointmentPatientId');
+
+            if (!idFromInput || !patientFromInput) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No se pudo identificar la cita. Cierre el panel e intente nuevamente.'
+                });
+                return;
+            }
+
+            FormHelper.setValues({
+                vsAppointmentId: idFromInput,
+                vsPatientId: patientFromInput
+            });
+            return;
+        }
+
+        FormHelper.setValues({
+            vsAppointmentId: appointmentId,
+            vsPatientId: patientId
+        });
     },
 
     /**
@@ -270,7 +307,6 @@ const AppointmentManager = {
             const appointmentId = FormHelper.getRequiredValue('appointmentIdInput');
             const patientId = FormHelper.getRequiredValue('appointmentPatientId');
 
-            // Aquí usamos el ID de la cita o podrías usar el ID de consulta si lo necesitas
             window.location.href =
                 `${AppConfig.ENDPOINTS.BILL_LABORATORY}?appointmentId=${appointmentId}&patientId=${patientId}`;
 
@@ -300,7 +336,6 @@ const AppointmentManager = {
         try {
             const patientId = FormHelper.getRequiredValue('appointmentPatientId');
 
-            // Cerrar modal actual
             ModalManager.hide('optionModal');
 
             window.location.href =
@@ -357,5 +392,9 @@ const AppointmentManager = {
     }
 };
 
-// Hacer disponible globalmente
+// Alias globales para compatibilidad con llamadas desde la vista (.cshtml)
 window.AppointmentManager = AppointmentManager;
+window.openOptionModal = (id, status, patientId) => AppointmentManager.openOptionsModal(id, status, patientId);
+window.setAppointmentData = (id, patientId) => AppointmentManager.setAppointmentData(id, patientId);
+window.filterAppointments = (status, isPaid, s2) => AppointmentManager.filterAppointments(status, isPaid, s2);
+window.prepareVitalSigns = () => AppointmentManager.prepareVitalSigns();
