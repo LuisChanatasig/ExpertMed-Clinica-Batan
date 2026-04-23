@@ -188,64 +188,97 @@ const DataTableManager = {
      * Obtiene la configuración de botones de exportación
      */
     getExportButtons() {
+        const cleanData = function (data) {
+            return typeof data === 'string'
+                ? $('<div>').html(data).text().trim()
+                : data;
+        };
+
+        const exportAllConfig = {
+            columns: ':not(:last-child)',
+            modifier: {
+                page: 'all',
+                search: 'applied'
+            },
+            format: {
+                body: function (data) {
+                    return cleanData(data);
+                }
+            }
+        };
+
         return [
+            // ===== EXCEL =====
             {
                 extend: 'excelHtml5',
                 text: '<i class="mdi mdi-file-excel"></i> Excel',
                 titleAttr: 'Exportar a Excel',
                 className: 'btn btn-sm btn-success',
-                exportOptions: {
-                    columns: ':visible:not(:last-child)',
-                    format: {
-                        body: function (data, row, column, node) {
-                            // Limpiar HTML de badges y spans
-                            return $(data).text() || data;
-                        }
-                    }
-                }
+                exportOptions: exportAllConfig,
+                title: 'Listado de Citas',
+                filename: 'Listado_Citas_' + new Date().toISOString().slice(0, 10)
             },
+
+            // ===== PDF =====
             {
                 extend: 'pdfHtml5',
                 text: '<i class="mdi mdi-file-pdf"></i> PDF',
                 titleAttr: 'Exportar a PDF',
                 className: 'btn btn-sm btn-danger',
-                exportOptions: {
-                    columns: ':visible:not(:last-child)',
-                    format: {
-                        body: function (data, row, column, node) {
-                            return $(data).text() || data;
-                        }
-                    }
-                },
+                exportOptions: exportAllConfig,
                 orientation: 'landscape',
                 pageSize: 'LEGAL',
+                title: 'Listado de Citas',
                 customize: function (doc) {
+                    // Tamaños
                     doc.defaultStyle.fontSize = 8;
                     doc.styles.tableHeader.fontSize = 9;
+
+                    // Header bonito
                     doc.styles.tableHeader.fillColor = '#4a6cf7';
                     doc.styles.tableHeader.color = 'white';
+                    doc.styles.tableHeader.alignment = 'center';
 
-                    // Ajustar anchos de columna
-                    doc.content[1].table.widths = Array(doc.content[1].table.body[0].length).fill('auto');
+                    // Centrar tabla
+                    doc.content[1].alignment = 'center';
+
+                    // Márgenes
+                    doc.pageMargins = [20, 20, 20, 20];
+
+                    // Auto width columnas
+                    const colCount = doc.content[1].table.body[0].length;
+                    doc.content[1].table.widths = Array(colCount).fill('*');
+
+                    // Título más elegante
+                    doc.content.splice(0, 0, {
+                        text: 'REPORTE DE CITAS',
+                        style: 'header',
+                        alignment: 'center',
+                        margin: [0, 0, 0, 10]
+                    });
                 }
             },
+
+            // ===== PRINT =====
             {
                 extend: 'print',
                 text: '<i class="mdi mdi-printer"></i> Imprimir',
                 titleAttr: 'Imprimir',
                 className: 'btn btn-sm btn-secondary',
-                exportOptions: {
-                    columns: ':visible:not(:last-child)',
-                    format: {
-                        body: function (data, row, column, node) {
-                            return $(data).text() || data;
-                        }
-                    }
+                exportOptions: exportAllConfig,
+                title: 'Listado de Citas',
+                customize: function (win) {
+                    $(win.document.body)
+                        .css('font-size', '10pt')
+                        .prepend('<h3 style="text-align:center;">Listado de Citas</h3>');
+
+                    $(win.document.body).find('table')
+                        .addClass('compact')
+                        .css('font-size', 'inherit');
                 }
             }
         ];
     },
-
     /**
      * Configura event listeners
      */

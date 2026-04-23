@@ -653,6 +653,8 @@ function getFormData(isFinal = false) {
 
     // 1) Obtener el consultationId del input hidden
     const hiddenInput = document.getElementById("consultationId");
+    const dias1 = document.getElementById("consultation_disablilitydays")?.value;
+    const dias2 = document.getElementById("cert_dias_incapacidad")?.value;
     let currentConsultationId = null;
 
     if (hiddenInput && hiddenInput.value) {
@@ -686,7 +688,12 @@ function getFormData(isFinal = false) {
         ConsultationTreatmentplan: getValue("consultation_treatmentplan"),
         ConsultationObservation: getValue("consultation_observation"),
         ConsultationPersonalbackground: getValue("consultation_personalbackground"),
-        ConsultationDisablilitydays: getInt("consultation_disablilitydays"),
+    
+
+        ConsultationDisablilitydays:
+            dias1 ? parseInt(dias1)
+                : dias2 ? parseInt(dias2)
+                    : 0,
         ConsultationEvolutionNotes: getValue("consultation_evolution_notes"),
         ConsultationTherapies: getValue("consultation_therapies"),
         ConsultationType: getInt("consultation_type", null),
@@ -942,19 +949,24 @@ function getFormData(isFinal = false) {
     };
 
     // ---- Otros Estudios (Añadir esto junto a los otros TVPs) ----
-  
-    dto.OtherStudies = Array.from(document.querySelectorAll("#tableOtherStudies tbody tr"))
-        .map(tr => {
-            const nameEl = tr.querySelector('.study-name');
-            const indicationEl = tr.querySelector('.study-indication');
+  const otherStudiesRows = document.querySelectorAll("#tableOtherStudies tbody tr");
+                    console.log("Filas encontradas en Otros Estudios:", otherStudiesRows.length); // Debug
 
-            // Si falta alguno de los elementos críticos, ignoramos o devolvemos vacío en lugar de romper
-            return {
-                StudyName: nameEl ? nameEl.textContent.trim() : "",
-                StudyIndication: indicationEl ? indicationEl.value.trim() : ""
-            };
-        })
-        .filter(study => study.StudyName !== ""); // Opcional: Elimina filas vacías del DTO
+                    dto.OtherStudies = Array.from(otherStudiesRows).map((tr, index) => {
+                        // Intentamos capturar el nombre de dos formas por si acaso
+                        const nameCell = tr.querySelector('.study-name');
+                        const indicationInput = tr.querySelector('.study-indication');
+    
+                        const name = nameCell ? nameCell.innerText.trim() : "";
+                        const indication = indicationInput ? indicationInput.value.trim() : "";
+
+                        console.log(`Fila ${index}:`, { name, indication }); // Ver que capture todo
+
+                        return {
+                            StudyName: name,
+                            StudyIndication: indication
+                        };
+                    }).filter(s => s.StudyName !== "");
     return dto;
 }
 
@@ -1164,10 +1176,10 @@ function preloadOtherStudy(name, indication) {
 
     const row = document.createElement("tr");
     row.innerHTML = `
-        <td>${name}</td>
-        <td>${indication}</td>
+        <td class="study-name">${name}</td> <td>
+            <input type="text" class="form-control form-control-sm study-indication" value="${indication}"> </td>
         <td class="text-center">
-            <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove(); isFormChanged = true;">
+            <button type="button" class="btn btn-outline-danger btn-sm remove-study">
                 <i class="ri-delete-bin-5-line"></i>
             </button>
         </td>

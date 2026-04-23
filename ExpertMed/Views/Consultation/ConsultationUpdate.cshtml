@@ -2900,46 +2900,47 @@
         });
     </script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Cargando otros estudios/procedimientos...');
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Cargando otros estudios/procedimientos...');
 
-            @if (Model?.Consultation?.OtherStudies != null && Model.Consultation.OtherStudies.Any())
+        @if (Model?.Consultation?.OtherStudies != null && Model.Consultation.OtherStudies.Any())
+        {
+            foreach (var estudio in Model.Consultation.OtherStudies)
             {
-                    foreach (var estudio in Model.Consultation.OtherStudies)
-                    {
-                            // Escapamos comillas simples y saltos de línea para no romper el JS
-                            var studyName = estudio.StudyName?.Replace("'", "\\'").Replace("\n", " ") ?? "";
-                            var studyIndication = estudio.StudyIndication?.Replace("'", "\\'").Replace("\n", " ") ?? "";
+                // Escapamos comillas simples y saltos de línea para no romper el JS
+                var studyName = estudio.StudyName?.Replace("'", "\\'").Replace("\n", " ") ?? "";
+                var studyIndication = estudio.StudyIndication?.Replace("'", "\\'").Replace("\n", " ") ?? "";
 
-                            <text>
-                            // Intentamos usar la función global si ya existe
-                            if (typeof window.preloadOtherStudy === 'function') {
-                                window.preloadOtherStudy('@Html.Raw(studyName)', '@Html.Raw(studyIndication)');
-                            } else {
-                                // Fallback: Construcción manual de la fila con las clases correctas para evitar el error de 'null'
-                                const tableBody = document.querySelector("#tableOtherStudies tbody");
-                                if (tableBody) {
-                                    const row = `
-                                        <tr>
-                                            <td class="study-name">@Html.Raw(studyName)</td>
-                                            <td>
-                                                <input type="text" class="form-control form-control-sm study-indication" value="@Html.Raw(studyIndication)">
-                                            </td>
-                                            <td class="text-center">
-                                                <button type="button" class="btn btn-outline-danger btn-sm remove-study" onclick="this.closest('tr').remove();">
-                                                    <i class="ri-delete-bin-line"></i>
-                                                </button>
-                                            </td>
-                                        </tr>`;
-                                    tableBody.insertAdjacentHTML('beforeend', row);
-                                }
-                            }
-                            </text>
+                <text>
+                // Intentamos usar la función global definida en tu archivo JS externo
+                if (typeof window.preloadOtherStudy === 'function') {
+                    window.preloadOtherStudy('@Html.Raw(studyName)', '@Html.Raw(studyIndication)');
+                } else {
+                    // Fallback: Construcción manual con CLASES CORRECTAS para que getFormData los vea
+                    const tableBody = document.querySelector("#tableOtherStudies tbody");
+                    if (tableBody) {
+                        const row = `
+                            <tr>
+                                <td class="study-name">@Html.Raw(studyName)</td>
+                                <td>
+                                    <input type="text" class="form-control form-control-sm study-indication" value="@Html.Raw(studyIndication)">
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-outline-danger btn-sm remove-study" 
+                                            onclick="this.closest('tr').remove(); if(typeof isFormChanged !== 'undefined') isFormChanged = true;">
+                                        <i class="ri-delete-bin-line"></i>
+                                    </button>
+                                </td>
+                            </tr>`;
+                        tableBody.insertAdjacentHTML('beforeend', row);
                     }
+                }
+                </text>
             }
-            console.log('Carga de estudios completada');
-        });
-    </script>
+        }
+        console.log('Carga de estudios completada');
+    });
+</script>
 
 
 }
