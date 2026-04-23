@@ -23,8 +23,8 @@
     <link rel="stylesheet" href="https://unpkg.com/intro.js/minified/introjs.min.css" />
 
     <!-- Estilos del bot -->
-    <link rel="stylesheet" href="~/css/expertbot.guide.css" asp-append-version="true" />
-</head>
+@*     <link rel="stylesheet" href="~/css/expertbot.guide.css" asp-append-version="true" />
+ *@</head>
 <body>
     <div id="layout-wrapper">
         @await Html.PartialAsync("_menu")
@@ -42,15 +42,15 @@
     @await Html.PartialAsync("_vendor_scripts")
 
     <!-- === ExpertBot (partial con el HTML del widget) === -->
-    @await Html.PartialAsync("_ExpertBot")
+ @*    @await Html.PartialAsync("_ExpertBot") *@
 
     <!-- Intro.js JS -->
     <script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
     <!-- Librería del bot -->
-    <script src="~/assets/js/expertbot.guide.js" asp-append-version="true"></script>
-
+@*     <script src="~/assets/js/expertbot.guide.js" asp-append-version="true"></script>
+ *@
     <!-- Inicialización global (segura y con saludo por nombre) -->
-    <script>
+    @* <script>
         if (!window.__EBG_INIT__) {
             window.__EBG_INIT__ = true;
 
@@ -91,7 +91,7 @@
             document.addEventListener('click', (e) => { if (e.target.closest('[data-ebg]')) resetTimer(); });
             document.addEventListener('input', (e) => { if (e.target.closest('[data-ebg]')) resetTimer(); });
         }
-    </script>
+    </script> *@
 
     @RenderSection("scripts", required: false)
 

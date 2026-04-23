@@ -2,129 +2,196 @@
 @model List<ExpertMed.Models.ConsultationGroupViewModel>
 
 @{
-    ViewBag.Title = "Listado de Consultas";
+    ViewBag.Title  = "Listado de Consultas";
     ViewBag.pTitle = "Listado de Consultas";
     ViewBag.pageTitle = "Listado de Consultas";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var perfilId = ViewContext.HttpContext.Session.GetInt32("PerfilId");
 
+    var perfilId       = ViewContext.HttpContext.Session.GetInt32("PerfilId");
     var successMessage = TempData["SuccessMessage"] as string;
-    var errorMessage = TempData["ErrorMessage"] as string;
+    var errorMessage   = TempData["ErrorMessage"]   as string;
+
+    // Totales (preferimos ViewBag si el controller los calculó; si no, los calculamos aquí)
+    var totalPacientes  = (int)(ViewBag.TotalPacientes  ?? Model.Count);
+    var totalConsultas  = (int)(ViewBag.TotalConsultas  ?? Model.Sum(g => g.TotalConsultas));
+    var totalPendientes = (int)(ViewBag.ConsultasPendientes ?? Model.Sum(g => g.Consultas.Count(c => c.AppointmentStatus != 4)));
+
+    int currentPage  = ViewBag.Page      ?? 1;
+    int totalPages   = ViewBag.TotalPages ?? 1;
+    int pageSize     = ViewBag.PageSize   ?? 10;
+    bool hasPrevious = ViewBag.HasPrevious ?? false;
+    bool hasNext     = ViewBag.HasNext     ?? false;
+    string? patientId = Context.Request.Query["patientId"];
 }
 
 @section styles {
     <style>
+        /* ── Badges ─────────────────────────────────────── */
         .status-badge {
-            font-size: 0.75rem;
-            padding: 0.35rem 0.65rem;
+            font-size: 0.72rem;
+            padding: 0.3rem 0.6rem;
             font-weight: 500;
+            letter-spacing: 0.02em;
         }
+
+        /* ── Tarjeta de grupo ────────────────────────────── */
         .grupo-consulta {
-            transition: all 0.3s ease;
+            transition: box-shadow 0.2s ease;
         }
         .grupo-consulta:hover {
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.075);
+            box-shadow: 0 0.4rem 0.9rem rgba(0, 0, 0, 0.07);
+        }
+
+        /* ── Paginación ──────────────────────────────────── */
+        .pagination-bar {
+            border-top: 1px solid var(--bs-border-color);
+        }
+
+        /* ── Opción destacada en el select ───────────────── */
+        .new-form-highlight {
+            color: #0d6efd;
+            font-weight: 600;
         }
     </style>
 }
 
+<!-- ══════════════════════════════════════════════════════════
+     URLs inyectadas para el archivo JS externo.
+     Se usa Json.Serialize para escapar correctamente cualquier
+     carácter especial y evitar XSS.
+     ══════════════════════════════════════════════════════════ -->
+<script>
+    window.AppUrls = {
+        consultationUpdate : @Html.Raw(Json.Serialize(Url.Action("ConsultationUpdate",  "Consultation"))),
+        consultationDetails: @Html.Raw(Json.Serialize(Url.Action("ConsultationDetails", "Consultation"))),
+        consultationList   : @Html.Raw(Json.Serialize(Url.Action("ConsultationList",    "Consultation"))),
+        medicalCertificate : @Html.Raw(Json.Serialize(Url.Action("MedicalCertificate",  "Documents"))),
+        medicalForm        : @Html.Raw(Json.Serialize(Url.Action("MedicalForm",          "Documents"))),
+        medicalForm2       : @Html.Raw(Json.Serialize(Url.Action("MedicalForm2",         "Documents"))),
+        medicationRecipe   : @Html.Raw(Json.Serialize(Url.Action("MedicationRecipe",    "Documents"))),
+        laboratoryDoc      : @Html.Raw(Json.Serialize(Url.Action("LaboratoryDoc",        "Documents"))),
+        imageDoc           : @Html.Raw(Json.Serialize(Url.Action("ImageDoc",             "Documents")))
+    };
+</script>
+
 <div class="row">
     <div class="col-lg-12">
         <div class="card">
+
+            <!-- ── Header ───────────────────────────────────── -->
             <div class="card-header">
                 <div class="row align-items-center g-3">
+
                     <div class="col-md-3">
                         <h5 class="card-title mb-0">
-                            <i class="mdi mdi-clipboard-text-multiple-outline"></i> 
+                            <i class="mdi mdi-clipboard-text-multiple-outline"></i>
                             Consultas Médicas
                         </h5>
                     </div>
+
                     <div class="col-md-4">
-                        <input type="text" id="consultaSearch" 
-                               class="form-control form-control-sm" 
-                               placeholder="🔍 Buscar paciente, médico o especialidad..." />
+                        <input type="search"
+                               id="consultaSearch"
+                               class="form-control form-control-sm"
+                               placeholder="🔍 Buscar paciente, médico o especialidad..."
+                               autocomplete="off" />
                     </div>
+
                     <div class="col-md-5">
-                        <div class="d-flex justify-content-end gap-3">
+                        <div class="d-flex justify-content-end gap-3 align-items-center">
+                            <!-- Selector de tamaño de página -->
+                            <div>
+                                <select id="pageSizeSelect"
+                                        class="form-select form-select-sm"
+                                        onchange="changePageSize()"
+                                        aria-label="Registros por página">
+                                    @foreach (var size in new[] { 10, 25, 50, 100 })
+                                    {
+                                        <option value="@size" selected="@(pageSize == size)">
+                                            @size / pág.
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+                            <!-- Contadores -->
                             <div class="text-center">
                                 <small class="text-muted d-block">Pacientes</small>
-                                <strong class="fs-5 text-primary">@(ViewBag.TotalPacientes ?? Model.Count)</strong>
+                                <strong class="fs-5 text-primary">@totalPacientes</strong>
                             </div>
                             <div class="text-center">
-                                <small class="text-muted d-block">Total Consultas</small>
-                                <strong class="fs-5 text-info">@(ViewBag.TotalConsultas ?? Model.Sum(g => g.TotalConsultas))</strong>
+                                <small class="text-muted d-block">Consultas</small>
+                                <strong class="fs-5 text-info">@totalConsultas</strong>
                             </div>
                             <div class="text-center">
                                 <small class="text-muted d-block">Pendientes</small>
-                                <strong class="fs-5 text-danger">@(ViewBag.ConsultasPendientes ?? Model.Sum(g => g.Consultas.Count(c => c.AppointmentStatus != 4)))</strong>
+                                <strong class="fs-5 text-danger">@totalPendientes</strong>
                             </div>
                         </div>
                     </div>
+
                 </div>
             </div>
-             <!-- Paginación arriba -->
-            <div class="d-flex justify-content-between align-items-center p-2">
-                <span class="text-muted">Página @ViewBag.Page</span>
 
-                <div class="btn-group">
+            <!-- ── Paginación superior ───────────────────────── -->
+            <div class="d-flex justify-content-between align-items-center px-3 py-2 pagination-bar">
+                <span class="text-muted small">
+                    Página @currentPage de @totalPages
+                </span>
+                <div class="btn-group btn-group-sm">
                     <a asp-action="ConsultationList"
-                       asp-route-patientId="@Context.Request.Query["patientId"]"
-                       asp-route-page="@(ViewBag.Page - 1)"
-                       asp-route-pageSize="@ViewBag.PageSize"
-                        class="btn btn-sm btn-outline-secondary @((ViewBag.HasPrevious ?? false) ? "" : "disabled")">
-                        ← Anterior
-                    </a>
-
+                       asp-route-patientId="@patientId"
+                       asp-route-page="@(currentPage - 1)"
+                       asp-route-pageSize="@pageSize"
+                       class="btn btn-outline-secondary @(!hasPrevious ? "disabled" : "")"
+                       aria-disabled="@(!hasPrevious)">← Anterior</a>
                     <a asp-action="ConsultationList"
-                       asp-route-patientId="@Context.Request.Query["patientId"]"
-                       asp-route-page="@(ViewBag.Page + 1)"
-                       asp-route-pageSize="@ViewBag.PageSize"
-class="btn btn-sm btn-outline-primary @((ViewBag.HasNext ?? false) ? "" : "disabled")">
-                        Siguiente →
-                    </a>
+                       asp-route-patientId="@patientId"
+                       asp-route-page="@(currentPage + 1)"
+                       asp-route-pageSize="@pageSize"
+                       class="btn btn-outline-primary @(!hasNext ? "disabled" : "")"
+                       aria-disabled="@(!hasNext)">Siguiente →</a>
                 </div>
             </div>
+
+            <!-- ── Cuerpo: lista de grupos ───────────────────── -->
             <div class="card-body">
-
 
                 @if (Model != null && Model.Any())
                 {
-                    int grupoId = 1;
-                    foreach (var grupo in Model)
+                    @foreach (var (grupo, idx) in Model.Select((g, i) => (g, i + 1)))
                     {
-                        var firstConsulta = grupo.PrimeraConsulta;
-                        var collapseId = $"collapseConsulta{grupoId}";
+                        var first      = grupo.PrimeraConsulta;
+                        var collapseId = $"collapseConsulta{idx}";
 
-                        <div class="mb-3 border rounded grupo-consulta">
+                        // Texto de búsqueda precalculado en el servidor (evita recorrer el DOM en JS)
+                        var searchText = $"{grupo.PacienteNombre} {grupo.UltimaMedicoNombre} {first?.ConsultationSpecialityNavigation?.SpecialityName}".ToLower();
+
+                        <div class="mb-3 border rounded grupo-consulta" data-search="@searchText">
+
+                            <!-- Cabecera del grupo -->
                             <div class="bg-light px-3 py-2">
                                 <div class="row align-items-center">
                                     <div class="col-md-8">
-                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                        <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
                                             <strong>
                                                 <i class="mdi mdi-account"></i> @grupo.PacienteNombre
                                             </strong>
                                             <span class="badge bg-secondary status-badge">
                                                 @grupo.TotalConsultas consulta@(grupo.TotalConsultas > 1 ? "s" : "")
                                             </span>
-                                            @if (firstConsulta != null)
+                                            @if (first != null)
                                             {
-                                                <span class="badge @(firstConsulta.AppointmentStatus == 4 ? "bg-success" : "bg-danger") status-badge">
-                                                    @if (firstConsulta.AppointmentStatus == 4)
-                                                    {
-                                                        <i class="mdi mdi-check-circle"></i> <text>Finalizada</text>
-                                                    }
-                                                    else
-                                                    {
-                                                        <i class="mdi mdi-alert-circle"></i> <text>Pendiente</text>
-                                                    }
+                                                var esF  = first.AppointmentStatus == 4;
+                                                <span class="badge @(esF ? "bg-success" : "bg-danger") status-badge">
+                                                    <i class="mdi @(esF ? "mdi-check-circle" : "mdi-alert-circle")"></i>
+                                                    @(esF ? "Finalizada" : "Pendiente")
                                                 </span>
                                             }
                                         </div>
-                                        @if (firstConsulta != null)
+                                        @if (first != null)
                                         {
                                             <div class="text-muted small">
-                                                <i class="mdi mdi-stethoscope"></i>
-                                                Médico: @grupo.UltimaMedicoNombre
+                                                <i class="mdi mdi-stethoscope"></i> Médico: @grupo.UltimaMedicoNombre
                                             </div>
                                             <div class="text-muted small">
                                                 <i class="mdi mdi-calendar-clock"></i>
@@ -132,12 +199,16 @@ class="btn btn-sm btn-outline-primary @((ViewBag.HasNext ?? false) ? "" : "disab
                                             </div>
                                         }
                                     </div>
-                                    <div class="col-md-4 text-end">
-                                        <a class="btn btn-sm btn-soft-info" data-bs-toggle="collapse" 
-                                           href="#@collapseId" role="button" aria-expanded="false" aria-controls="@collapseId">
+                                    <div class="col-md-4 text-end d-flex justify-content-end gap-2 flex-wrap">
+                                        <button class="btn btn-sm btn-soft-info"
+                                                type="button"
+                                                data-bs-toggle="collapse"
+                                                data-bs-target="#@collapseId"
+                                                aria-expanded="false"
+                                                aria-controls="@collapseId">
                                             <i class="mdi mdi-eye-outline"></i> Ver detalles
-                                        </a>
-                                        <a href="@Url.Action("AppointmentList", "Appointment")" 
+                                        </button>
+                                        <a href="@Url.Action("AppointmentList", "Appointment")"
                                            class="btn btn-sm btn-soft-primary">
                                             <i class="bx bx-user-plus"></i> Nueva
                                         </a>
@@ -145,6 +216,7 @@ class="btn btn-sm btn-outline-primary @((ViewBag.HasNext ?? false) ? "" : "disab
                                 </div>
                             </div>
 
+                            <!-- Detalle colapsable -->
                             <div class="collapse px-2 py-2" id="@collapseId">
                                 <div class="table-responsive">
                                     <table class="table table-sm table-hover table-bordered align-middle mb-0">
@@ -152,21 +224,24 @@ class="btn btn-sm btn-outline-primary @((ViewBag.HasNext ?? false) ? "" : "disab
                                             <tr>
                                                 @if (perfilId == 1 || perfilId == 2)
                                                 {
-                                                    <th>Secuencial</th>
-                                                    <th>Médico</th>
+                                                    <th scope="col">Secuencial</th>
+                                                    <th scope="col">Médico</th>
                                                 }
-                                                <th>H. Clínica</th>
-                                                <th>Fecha</th>
-                                                <th>Especialidad</th>
-                                                <th>Motivo</th>
-                                                <th>Tipo</th>
-                                                <th>Estado</th>
-                                                <th>Acción</th>
+                                                <th scope="col">H. Clínica</th>
+                                                <th scope="col">Fecha</th>
+                                                <th scope="col">Especialidad</th>
+                                                <th scope="col">Motivo</th>
+                                                <th scope="col">Tipo</th>
+                                                <th scope="col">Estado</th>
+                                                <th scope="col">Acción</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             @foreach (var consulta in grupo.Consultas)
                                             {
+                                                var finalizada = consulta.AppointmentStatus == 4;
+                                                var hoy        = consulta.ConsultationCreationdate?.Date == DateTime.Today;
+
                                                 <tr>
                                                     @if (perfilId == 1 || perfilId == 2)
                                                     {
@@ -175,8 +250,12 @@ class="btn btn-sm btn-outline-primary @((ViewBag.HasNext ?? false) ? "" : "disab
                                                             @if (consulta.ConsultationUsercreateNavigation != null)
                                                             {
                                                                 <div class="d-flex align-items-center fw-medium">
-                                                                    <img src="~/assets/images/svg/medicUsers.svg" alt="" class="avatar-xxs me-2" />
-                                                                    @consulta.ConsultationUsercreateNavigation.UsersNames @consulta.ConsultationUsercreateNavigation.UsersSurcenames
+                                                                    <img src="~/assets/images/svg/medicUsers.svg"
+                                                                         alt="Médico"
+                                                                         class="avatar-xxs me-2"
+                                                                         loading="lazy" />
+                                                                    @consulta.ConsultationUsercreateNavigation.UsersNames
+                                                                    @consulta.ConsultationUsercreateNavigation.UsersSurcenames
                                                                 </div>
                                                             }
                                                             else
@@ -186,49 +265,49 @@ class="btn btn-sm btn-outline-primary @((ViewBag.HasNext ?? false) ? "" : "disab
                                                         </td>
                                                     }
                                                     <td>@consulta.ConsultationHistoryclinic</td>
-                                                    <td>@(consulta.ConsultationCreationdate?.ToString("dd/MM/yyyy") ?? "")</td>
+                                                    <td>@(consulta.ConsultationCreationdate?.ToString("dd/MM/yyyy") ?? "—")</td>
                                                     <td>@(consulta.ConsultationSpecialityNavigation?.SpecialityName ?? "No especificada")</td>
                                                     <td>@(consulta.ConsultationReason ?? "—")</td>
                                                     <td>
-                                                        <span class="badge @(consulta.ConsultationType == 1 ? "bg-success-subtle text-success" : "bg-info-subtle text-info")">
-                                                            @(consulta.ConsultationType == 1 ? "Principal" : consulta.ConsultationType == 2 ? "Seguimiento" : "Otro")
+                                                        @{
+                                                            var (tipoCss, tipoLabel) = consulta.ConsultationType switch
+                                                            {
+                                                                1 => ("bg-success-subtle text-success", "Principal"),
+                                                                2 => ("bg-info-subtle text-info",       "Seguimiento"),
+                                                                _ => ("bg-secondary-subtle text-secondary", "Otro"),
+                                                            };
+                                                        }
+                                                        <span class="badge @tipoCss">@tipoLabel</span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge @(finalizada ? "bg-success" : "bg-danger") status-badge">
+                                                            <i class="mdi @(finalizada ? "mdi-check" : "mdi-clock-outline")"></i>
+                                                            @(finalizada ? "Finalizada" : "Pendiente")
                                                         </span>
                                                     </td>
                                                     <td>
-                                                        <span class="badge @(consulta.AppointmentStatus == 4 ? "bg-success" : "bg-danger") status-badge">
-                                                            @if (consulta.AppointmentStatus == 4)
-                                                            {
-                                                                <i class="mdi mdi-check"></i> <text>Finalizada</text>
-                                                            }
-                                                            else
-                                                            {
-                                                                <i class="mdi mdi-clock-outline"></i> <text>Pendiente</text>
-                                                            }
-                                                        </span>
-                                                    </td>
-                                                    <td>
-                                                        @if (consulta.AppointmentStatus == 4)
+                                                        @if (finalizada)
                                                         {
-                                                            if (consulta.ConsultationCreationdate?.Date == DateTime.Today)
+                                                            @if (hoy)
                                                             {
                                                                 <a href="@Url.Action("ConsultationUpdate", "Consultation", new { consultationId = consulta.ConsultationId })"
-                                                                   class="btn btn-sm btn-soft-warning">
+                                                                   class="btn btn-sm btn-soft-warning me-1">
                                                                     <i class="ri-edit-line"></i> Editar
                                                                 </a>
                                                             }
-                                                            <a href="#" class="btn btn-sm btn-soft-success"
-                                                               data-bs-toggle="modal" data-bs-target="#optionModal"
-                                                               onclick="openOptionModal(@consulta.ConsultationId, @consulta.AppointmentStatus)">
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-soft-success"
+                                                                    onclick="openOptionModal(@consulta.ConsultationId, @consulta.AppointmentStatus)">
                                                                 <i class="ri-eye-line"></i> Revisar
-                                                            </a>
+                                                            </button>
                                                         }
                                                         else
                                                         {
-                                                            <a href="#" class="btn btn-sm btn-soft-warning"
-                                                               data-bs-toggle="modal" data-bs-target="#optionModal"
-                                                               onclick="openOptionModal(@consulta.ConsultationId, @consulta.AppointmentStatus)">
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-soft-warning"
+                                                                    onclick="openOptionModal(@consulta.ConsultationId, @consulta.AppointmentStatus)">
                                                                 <i class="ri-edit-line"></i> Completar
-                                                            </a>
+                                                            </button>
                                                         }
                                                     </td>
                                                 </tr>
@@ -237,254 +316,173 @@ class="btn btn-sm btn-outline-primary @((ViewBag.HasNext ?? false) ? "" : "disab
                                     </table>
                                 </div>
                             </div>
+
                         </div>
-                        grupoId++;
                     }
                 }
                 else
                 {
-                    <div class="text-center text-muted py-4">
+                    <div class="text-center text-muted py-5">
                         <i class="mdi mdi-information-outline fs-1 d-block mb-2"></i>
                         No hay consultas registradas.
                     </div>
                 }
-            </div>
-            <!-- Paginación abajo -->
-            <div class="d-flex justify-content-between align-items-center p-3">
-                <span class="text-muted">Página @ViewBag.Page</span>
 
-                <div class="btn-group">
-                    <a asp-action="ConsultationList"
-                       asp-route-patientId="@Context.Request.Query["patientId"]"
-                       asp-route-page="@(ViewBag.Page - 1)"
-                       asp-route-pageSize="@ViewBag.PageSize"
-class="btn btn-sm btn-outline-secondary @((ViewBag.HasPrevious ?? false) ? "" : "disabled")">
-                        ← Anterior
-                    </a>
+            </div><!-- /card-body -->
 
+            <!-- ── Paginación inferior ───────────────────────── -->
+            <div class="d-flex justify-content-between align-items-center px-3 py-2 pagination-bar">
+                <span class="text-muted small">
+                    Página @currentPage de @totalPages
+                </span>
+                <div class="btn-group btn-group-sm">
                     <a asp-action="ConsultationList"
-                       asp-route-patientId="@Context.Request.Query["patientId"]"
-                       asp-route-page="@(ViewBag.Page + 1)"
-                       asp-route-pageSize="@ViewBag.PageSize"
-class="btn btn-sm btn-outline-primary @((ViewBag.HasNext ?? false) ? "" : "disabled")">
-                        Siguiente →
-                    </a>
+                       asp-route-patientId="@patientId"
+                       asp-route-page="@(currentPage - 1)"
+                       asp-route-pageSize="@pageSize"
+                       class="btn btn-outline-secondary @(!hasPrevious ? "disabled" : "")"
+                       aria-disabled="@(!hasPrevious)">← Anterior</a>
+                    <a asp-action="ConsultationList"
+                       asp-route-patientId="@patientId"
+                       asp-route-page="@(currentPage + 1)"
+                       asp-route-pageSize="@pageSize"
+                       class="btn btn-outline-primary @(!hasNext ? "disabled" : "")"
+                       aria-disabled="@(!hasNext)">Siguiente →</a>
                 </div>
             </div>
-        </div>
+
+        </div><!-- /card -->
     </div>
 </div>
 
-<!--Modal opciones consulta-->
-<div class="modal flip" id="optionModal" tabindex="-1" aria-labelledby="exampleModalgridLabel" aria-modal="true">
+<!-- ══════════════════════════════════════════════════════════
+     Modal: opciones de consulta
+     ══════════════════════════════════════════════════════════ -->
+<div class="modal flip" id="optionModal" tabindex="-1"
+     aria-labelledby="optionModalLabel" aria-modal="true" role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
-            <input type="hidden" id="consultationId" name="ConsultationId" />
-            <input type="hidden" id="perfiltIdInput" value="@perfilId" name="perfil" />
+
+            <input type="hidden" id="consultationId"  name="ConsultationId" />
+            <input type="hidden" id="perfiltIdInput"  value="@perfilId"     name="perfil" />
 
             <div class="modal-header">
-                <h5 class="modal-title" id="optionModal">¿Qué desea hacer con esta consulta?</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title" id="optionModalLabel">
+                    ¿Qué desea hacer con esta consulta?
+                </h5>
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
 
             <div class="modal-body">
                 <div class="row g-3">
                     <div class="col-6">
-                        <button type="button" class="btn btn-soft-info btn-label btn-sm w-100 waves-effect waves-light"
+                        <button type="button"
+                                class="btn btn-soft-info btn-label btn-sm w-100 waves-effect waves-light"
                                 onclick="openReviewConsulta()">
-                            <i class="ri-eye-fill label-icon align-middle fs-16 me-2"></i> Revisar Consulta
+                            <i class="ri-eye-fill label-icon align-middle fs-16 me-2"></i>
+                            Revisar Consulta
                         </button>
                     </div>
                     <div class="col-6">
-                        <button type="button" class="btn btn-soft-success btn-label btn-sm w-100 waves-effect waves-light"
+                        <button type="button"
+                                class="btn btn-soft-success btn-label btn-sm w-100 waves-effect waves-light"
                                 onclick="openModalDocument()">
-                            <i class="ri-file-text-fill label-icon align-middle fs-16 me-2"></i> Generar Documento
+                            <i class="ri-file-text-fill label-icon align-middle fs-16 me-2"></i>
+                            Generar Documento
                         </button>
                     </div>
-                    <button id="btnFinishConsult"
-                            type="button"
-                            class="btn btn-success d-none"
-                            onclick="finishConsultation()">
-                        <i class="ri-check-line me-1"></i> Terminar Consulta
-                    </button>
+                    <div class="col-12">
+                        <button id="btnFinishConsult"
+                                type="button"
+                                class="btn btn-success w-100 d-none"
+                                onclick="finishConsultation()">
+                            <i class="ri-check-line me-1"></i> Terminar Consulta
+                        </button>
+                    </div>
                 </div>
             </div>
+
         </div>
     </div>
 </div>
 
-<!--Modal opciones documentos-->
-<div class="modal fade" id="optionsDocuments" tabindex="-1" aria-labelledby="optionsDocuments">
+<!-- ══════════════════════════════════════════════════════════
+     Modal: opciones de documento
+     ══════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="optionsDocuments" tabindex="-1"
+     aria-labelledby="optionsDocumentsLabel" role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
+
             <div class="modal-header">
-                <h5 class="modal-title" id="optionsDocuments">¿Qué documento desea generar?</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title" id="optionsDocumentsLabel">
+                    ¿Qué documento desea generar?
+                </h5>
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-<div class="modal-body">
-    <form action="javascript:void(0);">
-        <div class="row g-3">
-            <select class="form-select mb-3" id="documentType" aria-label="Seleccione un documento" onchange="enableDownloadButton()">
-                <option selected>Seleccione un documento</option>
-                <option value="justificante">Certificado Médico</option>
-                <option value="formulario">Formulario Médico antiguo</option>
-                <option value="formulario2" class="new-form-highlight">Formulario Médico 2026</option> 
-                <option value="receta">Receta</option>
-                <option value="laboratorio">Laboratorio</option>
-                <option value="imagen">Imagen</option>
-            </select>
-        </div>
-    </form>
-</div>
+
+            <div class="modal-body">
+                <select class="form-select"
+                        id="documentType"
+                        aria-label="Seleccione un documento"
+                        onchange="enableDownloadButton()">
+                    <option value="" selected disabled>Seleccione un documento</option>
+                    <option value="justificante">Certificado Médico</option>
+                    <option value="formulario">Formulario Médico antiguo</option>
+                    <option value="formulario2" class="new-form-highlight">Formulario Médico 2026 ✨</option>
+                    <option value="receta">Receta</option>
+                    <option value="laboratorio">Laboratorio</option>
+                    <option value="imagen">Imagen</option>
+                </select>
+            </div>
+
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-primary" id="downloadButton" onclick="downloadDocument()" disabled>
+                <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary"
+                        id="downloadButton"
+                        onclick="downloadDocument()"
+                        disabled>
                     <span id="downloadText">Descargar</span>
-                    <span id="downloadSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                    <span id="downloadSpinner"
+                          class="spinner-border spinner-border-sm d-none"
+                          role="status" aria-hidden="true"></span>
                 </button>
             </div>
+
         </div>
     </div>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════
+     Scripts
+     ══════════════════════════════════════════════════════════ -->
 @section scripts {
-    <script src="~/assets/js/app.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- SweetAlert2 (sólo se carga si hay mensajes que mostrar) -->
+    @if (!string.IsNullOrEmpty(successMessage) || !string.IsNullOrEmpty(errorMessage))
+    {
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
+    }
 
-    <script>
-        function openOptionModal(consultationId, appointmentStatus) {
-            console.log('Estado de la cita:', appointmentStatus);
-            document.getElementById('consultationId').value = consultationId;
-            const btnFinish = document.getElementById('btnFinishConsult');
-            
-            if (appointmentStatus === 4) {
-                btnFinish.classList.add('d-none');
-            } else {
-                btnFinish.classList.remove('d-none');
-            }
-            
-            new bootstrap.Modal(document.getElementById('optionModal'), { keyboard: false }).show();
-        }
+    <!-- JS propio de esta vista (sin jQuery) -->
+    <script src="~/js/consultationlist.js" defer></script>
 
-        function finishConsultation() {
-            const id = document.getElementById('consultationId').value;
-            window.location.href = '@Url.Action("ConsultationUpdate", "Consultation")' + '?consultationId=' + encodeURIComponent(id);
-        }
-
-        function openModalDocument() {
-            const modalElement = document.getElementById('optionsDocuments');
-            if (!modalElement) {
-                console.error("El modal 'optionsDocuments' no fue encontrado.");
-                return;
-            }
-            new bootstrap.Modal(modalElement, { keyboard: false }).show();
-        }
-
-        function openReviewConsulta() {
-            const consultationId = document.getElementById('consultationId').value;
-            if (!consultationId) {
-                alert("No se encontró un ID de consulta válido.");
-                return;
-            }
-            window.location.href = '@Url.Action("ConsultationDetails", "Consultation")' + '?consultationId=' + encodeURIComponent(consultationId);
-        }
-
-        function enableDownloadButton() {
-            const selectedValue = document.getElementById('documentType').value;
-            const downloadButton = document.getElementById('downloadButton');
-            if (!downloadButton) {
-                console.error("Botón de descarga no encontrado.");
-                return;
-            }
-            downloadButton.disabled = (selectedValue === "Seleccione un documento");
-        }
-
-        function downloadDocument() {
-            const selectedValue = document.getElementById('documentType').value;
-            const downloadButton = document.getElementById('downloadButton');
-            const downloadText = document.getElementById('downloadText');
-            const downloadSpinner = document.getElementById('downloadSpinner');
-            const consultationId = document.getElementById('consultationId').value;
-
-            if (!consultationId) {
-                alert("No se encontró un ID de consulta válido.");
-                return;
-            }
-            if (!downloadButton || !downloadText || !downloadSpinner) {
-                console.error("Elementos del botón de descarga no encontrados.");
-                return;
-            }
-
-            downloadText.textContent = "Generando...";
-            downloadSpinner.classList.remove('d-none');
-            downloadButton.disabled = true;
-
-            const actions = {
-                justificante: '@Url.Action("MedicalCertificate", "Documents")',
-                formulario: '@Url.Action("MedicalForm", "Documents")',
-                formulario2: '@Url.Action("MedicalForm2", "Documents")',
-                receta: '@Url.Action("MedicationRecipe", "Documents")',
-                laboratorio: '@Url.Action("LaboratoryDoc", "Documents")',
-                imagen: '@Url.Action("ImageDoc", "Documents")'
-            };
-
-            if (actions[selectedValue]) {
-                const url = actions[selectedValue] + '?consultationId=' + encodeURIComponent(consultationId);
-                window.open(url, '_blank');
-            } else {
-                alert("Opción no válida.");
-            }
-
-            setTimeout(() => {
-                downloadText.textContent = "Descargar";
-                downloadSpinner.classList.add('d-none');
-                downloadButton.disabled = false;
-            }, 2000);
-        }
-
-         function changePageSize() {
-            const size = document.getElementById("pageSizeSelect").value;
-            window.location.href = '@Url.Action("ConsultationList", "Consultation")'
-                + '?page=1&pageSize=' + size;
-        }
-        $(document).ready(function () {
-            // Búsqueda en tiempo real
-            $('#consultaSearch').on('keyup', function () {
-                var filtro = $(this).val().toLowerCase();
-                
-                $('.grupo-consulta').each(function () {
-                    var textoGrupo = $(this).text().toLowerCase();
-                    var match = textoGrupo.indexOf(filtro) > -1;
-                    $(this).toggle(match);
-                });
-            });
-        });
-    </script>
-
+    <!-- Notificaciones (después de que el DOM y Swal estén listos) -->
     @if (!string.IsNullOrEmpty(successMessage))
     {
         <script>
-            Swal.fire({
-                title: '¡Éxito!',
-                text: '@successMessage',
-                icon: 'success',
-                confirmButtonText: 'OK',
-                timer: 3000
+            document.addEventListener('DOMContentLoaded', function () {
+                window.showToast('success', @Html.Raw(Json.Serialize(successMessage)));
             });
         </script>
     }
-
     @if (!string.IsNullOrEmpty(errorMessage))
     {
         <script>
-            Swal.fire({
-                title: 'Error',
-                text: '@errorMessage',
-                icon: 'error',
-                confirmButtonText: 'OK',
-                timer: 3000
+            document.addEventListener('DOMContentLoaded', function () {
+                window.showToast('error', @Html.Raw(Json.Serialize(errorMessage)));
             });
         </script>
     }
