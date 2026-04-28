@@ -1,29 +1,16 @@
 ﻿@using Microsoft.AspNetCore.Http
-@using System.Text.Json
-@{
-    // ===== Serializa datos de sesión a JSON (seguros para JS) =====
-    var pageKeyRaw = $"{ViewContext.RouteData.Values["controller"]}.{ViewContext.RouteData.Values["action"]}";
-    var usuarioNombreRaw = ViewContext.HttpContext.Session.GetString("UsuarioNombre") ?? "";
-    var usuarioPerfilRaw = ViewContext.HttpContext.Session.GetString("UsuarioPerfil") ?? "Perfil no identificado";
-    var usuarioEstabRaw = ViewContext.HttpContext.Session.GetString("UsuarioEstablecimiento") ?? "";
-
-    var pageKeyJs = JsonSerializer.Serialize(pageKeyRaw);
-    var usuarioNombreJs = JsonSerializer.Serialize(usuarioNombreRaw);
-    var usuarioPerfilJs = JsonSerializer.Serialize(usuarioPerfilRaw);
-    var usuarioEstabJs = JsonSerializer.Serialize(usuarioEstabRaw);
-}
 <!doctype html>
-<html lang="es" data-layout="vertical" data-topbar="light" data-sidebar="light" data-sidebar-size="lg" data-sidebar-image="none" data-preloader="disable">
+<html lang="es"
+      data-layout="vertical"
+      data-topbar="light"
+      data-sidebar="light"
+      data-sidebar-size="lg"
+      data-sidebar-image="none"
+      data-preloader="disable">
 <head>
     @await Html.PartialAsync("_title_meta")
     @RenderSection("styles", required: false)
     @await Html.PartialAsync("_head_css")
-
-    <!-- Intro.js CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/intro.js/minified/introjs.min.css" />
-
-    <!-- Estilos del bot -->
-    <link rel="stylesheet" href="~/css/expertbot.guide.css" asp-append-version="true" />
 </head>
 <body>
     <div id="layout-wrapper">
@@ -41,68 +28,25 @@
 
     @await Html.PartialAsync("_vendor_scripts")
 
-    <!-- === ExpertBot (partial con el HTML del widget) === -->
-    @await Html.PartialAsync("_ExpertBot")
-
-    <!-- Intro.js JS -->
-    <script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
-    <!-- Librería del bot -->
-    <script src="~/assets/js/expertbot.guide.js" asp-append-version="true"></script>
-
-    <!-- Inicialización global (segura y con saludo por nombre) -->
-    <script>
-        if (!window.__EBG_INIT__) {
-            window.__EBG_INIT__ = true;
-
-            const pageKey         = @Html.Raw(pageKeyJs);
-            const usuarioNombre   = @Html.Raw(usuarioNombreJs);
-            const usuarioPerfil   = @Html.Raw(usuarioPerfilJs);
-            const usuarioEstablec = @Html.Raw(usuarioEstabJs);
-
-            const defaultSteps = [
-                { selector: '#sidebar-menu', html: 'Aquí tienes el menú del sistema.', position: 'right' },
-                { selector: '.page-title, h1.h5, h1', html: 'Título y contexto de la vista.', position: 'bottom' },
-                { selector: '.main-content', html: 'Contenido principal donde trabajarás.', position: 'bottom' }
-            ];
-
-            // Overrides opcionales definidos por cada vista
-            const pageOptions     = (window.EBG_OPTIONS || {});
-            const profileOverride = (typeof window.EBG_PROFILE_TEXT === 'string') ? window.EBG_PROFILE_TEXT : null;
-
-            const baseOptions = {
-                storagePrefix: 'exp.page.' + pageKey,
-                steps: (window.EBG_STEPS || defaultSteps),
-                functionsList: (window.EBG_FUNCS || []),
-
-                // Personalización por usuario
-                userName: usuarioNombre,
-                greetMessage: '¡Hola, {name}! Haz clic en mí para empezar 👋',
-
-                // Perfil global (puede ser sobreescrito por la vista)
-                profileText: `Perfil: ${usuarioPerfil}${usuarioEstablec ? ' • ' + usuarioEstablec : ''}`
-            };
-            if (profileOverride) baseOptions.profileText = profileOverride;
-
-            const finalOptions = Object.assign({}, baseOptions, pageOptions);
-            ExpertBotGuide?.init(finalOptions);
-
-            // Opción: resetear el temporizador al usar el bot
-            const resetTimer = window.resetTimer || function(){};
-            document.addEventListener('click', (e) => { if (e.target.closest('[data-ebg]')) resetTimer(); });
-            document.addEventListener('input', (e) => { if (e.target.closest('[data-ebg]')) resetTimer(); });
-        }
-    </script>
-
     @RenderSection("scripts", required: false)
 
     <script>
-        // Temporizador de inactividad
-        var timeout = 30 * 60 * 1000; // 30 min
-        var logoutTimer = setTimeout(logout, timeout);
-        function logout(){ window.location.href = "@Url.Action("SignIn", "Authentication")"; }
-        function resetTimer(){ clearTimeout(logoutTimer); logoutTimer = setTimeout(logout, timeout); }
-        document.addEventListener("mousemove", resetTimer);
-        document.addEventListener("keydown", resetTimer);
+            (function () {
+                var timeout = 30 * 60 * 1000;
+                var logoutTimer = setTimeout(logout, timeout);
+
+                function logout() {
+                    window.location.href = "@Url.Action("SignIn", "Authentication")";
+                }
+
+                function resetTimer() {
+                    clearTimeout(logoutTimer);
+                    logoutTimer = setTimeout(logout, timeout);
+                }
+
+                document.addEventListener("mousemove", resetTimer);
+                document.addEventListener("keydown", resetTimer);
+            }());
     </script>
 </body>
 </html>

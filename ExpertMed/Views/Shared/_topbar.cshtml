@@ -1,102 +1,99 @@
 ﻿@using Microsoft.AspNetCore.Http
 @{
     var usuarioId = ViewContext.HttpContext.Session.GetInt32("UsuarioId");
-    var perfilId = ViewContext.HttpContext.Session.GetInt32("PerfilId");
     var usuarioNombre = ViewContext.HttpContext.Session.GetString("UsuarioNombre");
     var usuarioApellido = ViewContext.HttpContext.Session.GetString("UsuarioApellido");
     var usuarioEspecialidad = ViewContext.HttpContext.Session.GetString("UsuarioEspecialidad");
-    var especialidadId = ViewContext.HttpContext.Session.GetInt32("UsuarioIdEspecialidad");
-    var usuarioEstablecimiento = ViewContext.HttpContext.Session.GetString("UsuarioEstablecimiento");
-    var usuarioDireccion = ViewContext.HttpContext.Session.GetString("UsuarioDireccion");
     var fotoPerfilBase64 = ViewContext.HttpContext.Session.GetString("UsuarioFotoPerfil");
-    var rutaImagenPorDefecto = Url.Content("~/assets/images/users/multi-user.jpg");
+    var rutaImagenDefault = Url.Content("~/assets/images/users/multi-user.jpg");
 
     string fotoPerfilSrc = string.IsNullOrEmpty(fotoPerfilBase64)
-    ? rutaImagenPorDefecto
-    : $"data:image/jpeg;base64,{fotoPerfilBase64}";
+        ? rutaImagenDefault
+        : $"data:image/jpeg;base64,{fotoPerfilBase64}";
 }
-
 
 <header id="page-topbar">
     <div class="layout-width">
         <div class="navbar-header">
-            <div class="d-flex">
-                <!-- LOGO -->
+
+            <div class="d-flex align-items-center">
+
                 <div class="navbar-brand-box horizontal-logo">
                     <a href="@Url.Action("Home", "Dashboard")" class="logo logo-dark">
                         <span class="logo-sm">
-                            <img src="~/assets/images/LogoAzulE.png" alt="" height="22">
+                            <img src="~/assets/images/LogoAzulE.png" alt="ExpertMed" height="22">
                         </span>
                         <span class="logo-lg">
-                            <img src="~/assets/images/logo-dark" alt="" height="17">
+                            <img src="~/assets/images/logo-dark.png" alt="ExpertMed" height="17">
                         </span>
                     </a>
-
                     <a href="@Url.Action("Home", "Dashboard")" class="logo logo-light">
                         <span class="logo-sm">
-                            <img src="~/assets/images/LogoAzulE.png" alt="" height="22">
+                            <img src="~/assets/images/LogoAzulE.png" alt="ExpertMed" height="22">
                         </span>
                         <span class="logo-lg">
-                            <img src="~/assets/images/logo-light.png" alt="" height="17">
+                            <img src="~/assets/images/logo-light.png" alt="ExpertMed" height="17">
                         </span>
                     </a>
                 </div>
 
-                <button type="button" class="btn btn-sm px-3 fs-16 header-item vertical-menu-btn topnav-hamburger"
-                        id="topnav-hamburger-icon">
+                <button type="button"
+                        class="btn btn-sm px-3 fs-16 header-item vertical-menu-btn topnav-hamburger"
+                        id="topnav-hamburger-icon"
+                        aria-label="Menú">
                     <span class="hamburger-icon">
                         <span></span>
                         <span></span>
                         <span></span>
                     </span>
                 </button>
-
-
             </div>
 
-            <div class="d-flex align-items-center">
+            <div class="d-flex align-items-center gap-1">
 
                 <div class="dropdown d-md-none topbar-head-dropdown header-item">
-                    <button type="button" class="btn btn-icon btn-topbar btn-ghost-secondary rounded-circle"
-                            id="page-header-search-dropdown" data-bs-toggle="dropdown" aria-haspopup="true"
-                            aria-expanded="false">
+                    <button type="button"
+                            class="btn btn-icon btn-topbar btn-ghost-secondary rounded-circle"
+                            data-bs-toggle="dropdown"
+                            aria-haspopup="true"
+                            aria-expanded="false"
+                            aria-label="Buscar">
                         <i class="bx bx-search fs-22"></i>
                     </button>
-                    <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end p-0"
-                         aria-labelledby="page-header-search-dropdown">
+                    <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end p-0">
                         <form class="p-3">
-                            <div class="form-group m-0">
-                                <div class="input-group">
-                                    <input type="text" class="form-control" placeholder="Search ..."
-                                           aria-label="Recipient's username">
-                                    <button class="btn btn-primary" type="submit">
-                                        <i class="mdi mdi-magnify"></i>
-                                    </button>
-                                </div>
+                            <div class="input-group">
+                                <input type="search" class="form-control" placeholder="Buscar…" aria-label="Buscar">
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="mdi mdi-magnify"></i>
+                                </button>
                             </div>
                         </form>
                     </div>
                 </div>
 
-                <!-- fullscreen -->
-
-             
-
-                <div class="ms-1 header-item d-none d-sm-flex">
+                <div class="header-item d-none d-sm-flex">
                     <button type="button"
-                            class="btn btn-icon btn-topbar btn-ghost-secondary rounded-circle light-dark-mode">
-                        <i class='bx bx-moon fs-22'></i>
+                            class="btn btn-icon btn-topbar btn-ghost-secondary rounded-circle light-dark-mode"
+                            aria-label="Cambiar tema">
+                        <i class="bx bx-moon fs-22"></i>
                     </button>
                 </div>
 
-                <div class="dropdown topbar-head-dropdown ms-1 header-item" id="notificationDropdown">
-                    <button type="button" class="btn btn-icon btn-topbar btn-ghost-secondary rounded-circle"
-                            id="page-header-notifications-dropdown" data-bs-toggle="dropdown" data-bs-auto-close="outside"
-                            aria-haspopup="true" aria-expanded="false">
-                        <i class='bx bx-bell fs-22'></i>
+                <div class="dropdown topbar-head-dropdown header-item" id="notificationDropdown">
+                    <button type="button"
+                            class="btn btn-icon btn-topbar btn-ghost-secondary rounded-circle"
+                            id="page-header-notifications-dropdown"
+                            data-bs-toggle="dropdown"
+                            data-bs-auto-close="outside"
+                            aria-haspopup="true"
+                            aria-expanded="false"
+                            aria-label="Notificaciones">
+                        <i class="bx bx-bell fs-22"></i>
                         <span class="position-absolute topbar-badge fs-10 translate-middle badge rounded-pill bg-danger"
                               id="notification-count">0</span>
                     </button>
+
                     <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end p-0"
                          aria-labelledby="page-header-notifications-dropdown">
 
@@ -104,23 +101,26 @@
                             <div class="p-3">
                                 <div class="row align-items-center">
                                     <div class="col">
-                                        <h6 class="m-0 fs-16 fw-semibold text-white"> Notificaciones </h6>
+                                        <h6 class="m-0 fs-16 fw-semibold text-white">Notificaciones</h6>
                                     </div>
-                                    <div class="col-auto dropdown-tabs">
+                                    <div class="col-auto">
                                         <span class="badge bg-light-subtle text-body fs-13">
-                                            <span id="new-notifications-count">0</span> Nueva
+                                            <span id="new-notifications-count">0</span> nuevas
                                         </span>
                                     </div>
                                 </div>
                             </div>
-
                             <div class="px-2 pt-2">
-                                <ul class="nav nav-tabs dropdown-tabs nav-tabs-custom" data-dropdown-tabs="true"
+                                <ul class="nav nav-tabs dropdown-tabs nav-tabs-custom"
+                                    data-dropdown-tabs="true"
                                     id="notificationItemsTab">
                                     <li class="nav-item waves-effect waves-light">
-                                        <a class="nav-link active" data-bs-toggle="tab" href="#appointments-noti-tab"
-                                           role="tab" aria-selected="true">
-                                            citas médicas
+                                        <a class="nav-link active"
+                                           data-bs-toggle="tab"
+                                           href="#appointments-noti-tab"
+                                           role="tab"
+                                           aria-selected="true">
+                                            Citas médicas
                                         </a>
                                     </li>
                                 </ul>
@@ -128,19 +128,24 @@
                         </div>
 
                         <div class="tab-content position-relative" id="notificationItemsTabContent">
-                            <div class="tab-pane fade show active py-2 ps-2" id="appointments-noti-tab" role="tabpanel">
-                                <div data-simplebar style="max-height: 300px;" class="pe-2" id="notification-list">
-                                    <!-- Las notificaciones se cargarán aquí dinámicamente -->
+                            <div class="tab-pane fade show active py-2 ps-2"
+                                 id="appointments-noti-tab"
+                                 role="tabpanel">
+                                <div data-simplebar style="max-height:300px;" class="pe-2" id="notification-list">
+                                    <p class="text-muted p-2 small">Cargando citas…</p>
                                 </div>
                             </div>
 
                             <div class="notification-actions" id="notification-actions">
-                                <div class="d-flex text-muted justify-content-center">
-                                    Seleccionar <div id="select-content" class="text-body fw-semibold px-1">0</div> Resultado
-                                    <button type="button" class="btn btn-link link-danger p-0 ms-3"
-                                            data-bs-toggle="modal" data-bs-target="#removeNotificationModal">
-                                      Eliminar
-notificación de cita
+                                <div class="d-flex text-muted justify-content-center align-items-center">
+                                    Seleccionar
+                                    <span id="select-content" class="text-body fw-semibold px-1">0</span>
+                                    resultado
+                                    <button type="button"
+                                            class="btn btn-link link-danger p-0 ms-3"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#removeNotificationModal">
+                                        Eliminar
                                     </button>
                                 </div>
                             </div>
@@ -149,134 +154,141 @@ notificación de cita
                 </div>
 
                 <div class="dropdown ms-sm-3 header-item topbar-user">
-                    <button type="button" class="btn" id="page-header-user-dropdown" data-bs-toggle="dropdown"
-                            aria-haspopup="true" aria-expanded="false">
+                    <button type="button"
+                            class="btn"
+                            id="page-header-user-dropdown"
+                            data-bs-toggle="dropdown"
+                            aria-haspopup="true"
+                            aria-expanded="false">
                         <span class="d-flex align-items-center">
-                            <img class="rounded-circle header-profile-user" src="@fotoPerfilSrc" alt="Header Avatar">
+                            <img class="rounded-circle header-profile-user"
+                                 src="@fotoPerfilSrc"
+                                 alt="Foto de perfil">
                             <span class="text-start ms-xl-2">
                                 <span class="d-none d-xl-inline-block ms-1 fw-medium user-name-text">
-                                    @usuarioNombre
-                                    @usuarioApellido
+                                    @usuarioNombre @usuarioApellido
                                 </span>
-                                <span class="d-none d-xl-block ms-1 fs-12 user-name-sub-text">@usuarioEspecialidad</span>
+                                <span class="d-none d-xl-block ms-1 fs-12 user-name-sub-text">
+                                    @usuarioEspecialidad
+                                </span>
                             </span>
                         </span>
                     </button>
+
                     <div class="dropdown-menu dropdown-menu-end">
-                        <!-- item-->
-                        <h6 class="dropdown-header">Bienvenida @usuarioNombre @usuarioApellido!</h6>
+                        <h6 class="dropdown-header">
+                            Bienvenido, @usuarioNombre @usuarioApellido
+                        </h6>
                         <a class="dropdown-item" href="@Url.Action("ProfileSimple", "Users")">
-                            <i class="mdi mdi-account-circle text-muted fs-16 align-middle me-1"></i> <span class="align-middle">Perfil</span>
+                            <i class="mdi mdi-account-circle text-muted fs-16 align-middle me-1"></i>
+                            <span class="align-middle">Perfil</span>
                         </a>
-
                         <div class="dropdown-divider"></div>
-
                         <a class="dropdown-item" href="@Url.Action("UpdateUserP", "Users", new { id = usuarioId })">
-                            <span class="mdi mdi-cog-outline text-muted fs-16 align-middle me-1">
-                            </span>
+                            <i class="mdi mdi-cog-outline text-muted fs-16 align-middle me-1"></i>
                             <span class="align-middle">Ajustes</span>
                         </a>
-
                         <a class="dropdown-item" href="@Url.Action("SignOutBasic", "Authentication")">
-                            <i class="mdi mdi-logout text-muted fs-16 align-middle me-1"></i> <span class="align-middle" data-key="t-logout">Cerrar sesión</span>
+                            <i class="mdi mdi-logout text-muted fs-16 align-middle me-1"></i>
+                            <span class="align-middle">Cerrar sesión</span>
                         </a>
                     </div>
                 </div>
+
             </div>
         </div>
     </div>
 </header>
 
-<!-- removeNotificationModal -->
 <div id="removeNotificationModal" class="modal fade zoomIn" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0">
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Cerrar"
                         id="NotificationModalbtn-close"></button>
             </div>
-            <div class="modal-body">
-                <div class="mt-2 text-center">
-                    <lord-icon src="https://cdn.lordicon.com/gsqxdxog.json" trigger="loop"
-                               colors="primary:#f7b84b,secondary:#f06548" style="width:100px;height:100px"></lord-icon>
-                    <div class="mt-4 pt-2 fs-15 mx-4 mx-sm-5">
-                        <h4>Are you sure ?</h4>
-                        <p class="text-muted mx-4 mb-0">¿Estás seguro de que quieres eliminar esta notificación?</p>
-                    </div>
-                </div>
-                <div class="d-flex gap-2 justify-content-center mt-4 mb-2">
-                    <button type="button" class="btn w-sm btn-light" data-bs-dismiss="modal">Cerca</button>
-                    <button type="button" class="btn w-sm btn-danger" id="delete-notification">¡Sí, borrarlo!</button>
+            <div class="modal-body text-center pb-4">
+                <lord-icon src="https://cdn.lordicon.com/gsqxdxog.json"
+                           trigger="loop"
+                           colors="primary:#f7b84b,secondary:#f06548"
+                           style="width:80px;height:80px">
+                </lord-icon>
+                <h5 class="mt-3 mb-1">¿Eliminar notificación?</h5>
+                <p class="text-muted small mb-4">Esta acción no se puede deshacer.</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger px-4" id="delete-notification">Sí, eliminar</button>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
 
-        </div><!-- /.modal-content -->
-    </div><!-- /.modal-dialog -->
-</div><!-- /.modal -->
 <script>
-    // Ocultar mensajes de consola en producción (opcional)
-    // console.error = function() {};
-    // console.log = function() {};
+    (function () {
+        'use strict';
 
-    const loadAppointments = async () => {
-        try {
-            const response = await fetch('@Url.Action("GetAppointmentsForToday", "Appointment")');
+        const ENDPOINT = '@Url.Action("GetAppointmentsForToday", "Appointment")';
 
-            if (!response.ok) {
-                console.log("No hay citas para hoy o no autenticado.");
-                document.getElementById('notification-list').innerHTML = '<p class="text-muted p-2">No hay citas para hoy.</p>';
-                // Actualiza también los contadores
-                document.getElementById('notification-count').textContent = '0';
-                document.getElementById('new-notifications-count').textContent = '0';
-                return;
+        async function loadAppointments() {
+            const $list  = document.getElementById('notification-list');
+            const $count = document.getElementById('notification-count');
+            const $new   = document.getElementById('new-notifications-count');
+
+            const setCount = n => { $count.textContent = n; $new.textContent = n; };
+
+            try {
+                const res = await fetch(ENDPOINT);
+
+                if (!res.ok) {
+                    $list.innerHTML = '<p class="text-muted p-2 small">No hay citas para hoy.</p>';
+                    setCount(0);
+                    return;
+                }
+
+                const appointments = await res.json();
+                setCount(appointments.length);
+
+                if (!appointments.length) {
+                    $list.innerHTML = '<p class="text-muted p-2 small">No hay citas programadas para hoy.</p>';
+                    return;
+                }
+
+                $list.innerHTML = appointments.map(app => {
+                    const fecha    = new Date(app.appointment_date).toLocaleDateString('es-EC');
+                    const hora     = (app.appointment_hour ?? '').substring(0, 5);
+                    const nombre   = app.patientName     ?? 'Desconocido';
+                    const apellido = app.patientLastName  ?? '';
+
+                    return `
+                        <div class="notification-item dropdown-item">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="avatar-xs flex-shrink-0">
+                                    <span class="avatar-title bg-success-subtle text-success rounded-circle fs-16">
+                                        <i class="mdi mdi-calendar-check"></i>
+                                    </span>
+                                </div>
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <h6 class="fs-13 mb-0 text-truncate">
+                                        Paciente: ${nombre} ${apellido}
+                                    </h6>
+                                    <small class="text-muted">
+                                        <i class="mdi mdi-clock-outline me-1"></i>${fecha} a las ${hora}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>`;
+                }).join('');
+
+            } catch (err) {
+                console.error('Error cargando notificaciones:', err);
+                $list.innerHTML = '<p class="text-muted p-2 small">Error al cargar las citas.</p>';
+                setCount(0);
             }
-
-            const appointments = await response.json();
-            let notificationList = document.getElementById('notification-list');
-            notificationList.innerHTML = '';
-
-            // Actualizar campanita con la cantidad de citas
-            document.getElementById('notification-count').textContent = appointments.length;
-            document.getElementById('new-notifications-count').textContent = appointments.length;
-
-            appointments.forEach(app => {
-                    console.log(app); // <-- Agrega esta línea
-
-                const date = new Date(app.appointment_date);
-                const hour = app.appointment_hour.substring(0, 5);
-                const doctor = app.DoctorName ? app.doctorName : 'Desconocido';
-                const patient = app.patientName ? app.patientName : 'Desconocido';
-    const patientl = app.patientLastName ? app.patientLastName : 'Desconocido';
-
-                const notificationItem = `\
-                    <div class="notification-item dropdown-item">\
-                        <div class="d-flex align-items-center">\
-                            <div class="avatar-xs me-3">\
-                                <span class="avatar-title bg-success-subtle text-success rounded-circle fs-16">\
-                                    <i class="mdi mdi-calendar-check"></i>\
-                                </span>\
-                            </div>\
-                            <div class="flex-grow-1">\
-                                <h6 class="fs-14 mb-1">Cita con  - Paciente: ${patient}  ${patientl}</h6>\
-                                <small class="text-muted">\
-                                    <i class="mdi mdi-clock-outline"></i> ${date.toLocaleDateString()} a las ${hour}\
-                                </small>\
-                            </div>\
-                        </div>\
-                    </div>\
-                `;
-
-                notificationList.innerHTML += notificationItem;
-            });
-
-        } catch (error) {
-            console.error('Error cargando citas:', error);
-            // Opcional: actualizar contadores a 0 también en caso de error
-            document.getElementById('notification-count').textContent = '0';
-            document.getElementById('new-notifications-count').textContent = '0';
         }
-    };
 
-    document.addEventListener('DOMContentLoaded', loadAppointments);
+        document.addEventListener('DOMContentLoaded', loadAppointments);
+    }());
 </script>
-
